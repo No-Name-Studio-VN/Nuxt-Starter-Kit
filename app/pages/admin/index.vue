@@ -60,6 +60,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   title: 'Admin Dashboard',
   breadcrumb: 'Admin',
+  layout: 'dashboard',
 })
 
 const clearServerCache = () => {

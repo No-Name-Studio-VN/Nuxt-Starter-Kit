@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { VueElement } from 'vue'
 
+import { APP_MANIFEST } from '@/constants/manifest'
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -59,7 +61,7 @@ withDefaults(defineProps<{
           <BreadcrumbList>
             <BreadcrumbItem class="hidden md:block">
               <BreadcrumbLink href="/">
-                Gromet Reader
+                {{ APP_MANIFEST.short_name }}
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator class="hidden md:block" />

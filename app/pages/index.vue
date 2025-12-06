@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import AppLayout from '@/components/AppLayout.vue'
-
 definePageMeta({
   title: 'Home',
   breadcrumb: 'Home',
@@ -8,9 +6,7 @@ definePageMeta({
 </script>
 
 <template>
-  <AppLayout>
-    <span>
-      Hello World!
-    </span>
-  </AppLayout>
+  <span>
+    Hello World!
+  </span>
 </template>
