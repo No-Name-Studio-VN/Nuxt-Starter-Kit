@@ -1,0 +1,28 @@
+<template>
+  <NuxtPwaManifest />
+  <NuxtLoadingIndicator />
+  <TooltipProvider>
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </TooltipProvider>
+  <Toaster class="pointer-events-auto" />
+</template>
+
+<script lang="ts" setup>
+import { Toaster } from '@/components/ui/sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { toast } from 'vue-sonner'
+
+const { $pwa } = useNuxtApp()
+
+onMounted(() => {
+  if ($pwa?.needRefresh)
+    toast.warning('New update available! Update will be applied on next reload.', {
+      action: {
+        label: 'Reload',
+        onClick: () => $pwa.updateServiceWorker(),
+      },
+    })
+})
+</script>
