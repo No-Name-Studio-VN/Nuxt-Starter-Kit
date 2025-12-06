@@ -50,25 +50,6 @@ export default defineNuxtConfig({
       },
     },
 
-    site: {
-      url: 'nnsvn.me',
-      name: APP_MANIFEST.name,
-    },
-
-    colorMode: {
-      preference: 'system', // default value of $colorMode.preference
-      fallback: 'light', // fallback value if not system preference found
-      classSuffix: '',
-      storage: 'cookie',
-      disableTransition: true,
-    },
-
-    runtimeConfig: {
-      public: {
-        NUXT_APP_VERSION: process.env.npm_package_version || '0.0.0',
-      },
-    },
-
     routeRules: {
       '/api/**': {
         security: {
@@ -80,87 +61,158 @@ export default defineNuxtConfig({
           },
         },
       },
-      'experimental': {
-        emitRouteChunkError: 'automatic-immediate',
-      },
-      'nitro': {
-        compressPublicAssets: true,
-        minify: true,
-        experimental: {
-          openAPI: true,
-          wasm: true,
-        },
-        cloudflare: {
-          nodeCompat: true,
-        },
-      },
-
-      'pwa': pwaConfig,
     },
-
-    compatibilityDate: '2025-09-15',
-
-    hub: {
-      cache: true,
-      bindings: {
-        observability: {
-          logs: true,
-        },
-        compatibilityDate: '2025-09-15',
-      },
-      database: true,
-      kv: true,
-      blob: false,
+    experimental: {
+      emitRouteChunkError: 'automatic-immediate',
     },
-
-    eslint: {
-      config: {
-        stylistic: {
-          semi: false,
-          quotes: 'single',
-          indent: 2,
-        },
+    nitro: {
+      compressPublicAssets: true,
+      minify: true,
+      experimental: {
+        openAPI: true,
+        wasm: true,
+      },
+      cloudflare: {
+        nodeCompat: true,
+      },
+      prerender: {
+        crawlLinks: false, // set this to false so we do not bundle everything
+        routes: ['/sitemap.xml', '/robots.txt'], // never render homepage because somehow it breaks the build
+        ignore: ['/admin', '/pwa', '/__og-image__/static/pwa'],
       },
     },
 
-    fonts: {
-      families: [
-        {
-          name: 'Manrope',
-          preload: true,
-          provider: 'google',
-          global: true,
+    pwa: pwaConfig,
+    security: {
+      rateLimiter: false,
+      strict: true,
+      headers: {
+        crossOriginOpenerPolicy: 'same-origin-allow-popups',
+        crossOriginEmbedderPolicy: 'unsafe-none',
+        contentSecurityPolicy: {
+          'script-src': [
+            '\'self\'',
+            'https:',
+            '\'unsafe-inline\'',
+            '\'strict-dynamic\'',
+            '\'nonce-{{nonce}}\'',
+            '\'unsafe-eval\'',
+          ],
+          'style-src': ['\'self\'', 'https:', '\'unsafe-inline\''],
+          'img-src': ['\'self\'', 'data:', 'https://*.gstatic.com'],
+          'media-src': ['\'self\'', 'blob:'],
+          'connect-src': ['\'self\''],
+          'font-src': ['\'self\'', 'https://*.gstatic.com'],
         },
-      ],
-    },
-
-    schemaOrg: {
-      identity: 'Organization',
-    },
-
-    seo: {
-      meta: {
-        description: APP_MANIFEST.description,
-        keywords: SEO_CONFIG.keywords,
-        themeColor: APP_MANIFEST.theme_color,
-        applicationName: APP_MANIFEST.short_name,
-        appleMobileWebAppTitle: APP_MANIFEST.short_name,
-        appleMobileWebAppCapable: 'yes',
-        appleMobileWebAppStatusBarStyle: 'black-translucent',
-        mobileWebAppCapable: 'yes',
-        msapplicationTileColor: APP_MANIFEST.background_color,
-        charset: 'utf-8',
-        viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no',
-        ogImage: '/pwa-512x512.png',
-        twitterTitle: APP_MANIFEST.name,
-        twitterDescription: APP_MANIFEST.description,
-        twitterImage: '/pwa-512x512.png',
+        permissionsPolicy: {
+          'fullscreen': ['self'],
+          'picture-in-picture': ['self'],
+          'web-share': ['self'],
+          'autoplay': ['self'],
+        },
       },
     },
+  },
 
-    shadcn: {
-      prefix: '',
-      componentDir: './app/components/ui',
+  site: {
+    url: 'nnsvn.me',
+    name: APP_MANIFEST.name,
+  },
+
+  colorMode: {
+    preference: 'system', // default value of $colorMode.preference
+    fallback: 'light', // fallback value if not system preference found
+    classSuffix: '',
+    storage: 'cookie',
+    disableTransition: true,
+  },
+
+  content: {
+    build: {
+      markdown: {
+        highlight: false,
+      },
     },
+  },
+
+  runtimeConfig: {
+    public: {
+      NUXT_APP_VERSION: process.env.npm_package_version || '0.0.0',
+    },
+  },
+
+  routeRules: {
+    '/admin/**': {
+      ssr: false,
+    },
+  },
+
+  compatibilityDate: '2025-09-15',
+
+  hub: {
+    cache: true,
+    bindings: {
+      observability: {
+        logs: true,
+      },
+      compatibilityDate: '2025-09-15',
+    },
+    database: true,
+    kv: true,
+    blob: true,
+  },
+
+  auth: {
+    webAuthn: true,
+  },
+
+  eslint: {
+    config: {
+      stylistic: {
+        semi: false,
+        quotes: 'single',
+        indent: 2,
+      },
+    },
+  },
+
+  fonts: {
+    families: [
+      {
+        name: 'Manrope',
+        preload: true,
+        provider: 'google',
+        global: true,
+      },
+    ],
+  },
+
+  schemaOrg: {
+    identity: 'Organization',
+  },
+
+  seo: {
+    meta: {
+      description: APP_MANIFEST.description,
+      keywords: SEO_CONFIG.keywords,
+      themeColor: APP_MANIFEST.theme_color,
+      applicationName: APP_MANIFEST.short_name,
+      appleMobileWebAppTitle: APP_MANIFEST.short_name,
+      appleMobileWebAppCapable: 'yes',
+      appleMobileWebAppStatusBarStyle: 'black-translucent',
+      mobileWebAppCapable: 'yes',
+      msapplicationTileColor: APP_MANIFEST.background_color,
+      charset: 'utf-8',
+      viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no',
+      ogImage: '/pwa-512x512.png',
+      twitterTitle: APP_MANIFEST.name,
+      twitterDescription: APP_MANIFEST.description,
+      twitterImage: '/pwa-512x512.png',
+    },
+  },
+
+  shadcn: {
+    prefix: '',
+    componentDir: './app/components/ui',
   },
 })
