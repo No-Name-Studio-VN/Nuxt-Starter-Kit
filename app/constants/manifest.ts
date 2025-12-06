@@ -1,9 +1,9 @@
 import type { ManifestOptions } from 'vite-plugin-pwa'
 
 export const APP_MANIFEST: Partial<ManifestOptions> = {
-  name: 'Nuxt Template',
+  name: 'Nuxt Starter Kit',
   short_name: 'Nuxt Template',
-  description: 'A Nuxt 3 starter template with PWA support',
+  description: 'A Nuxt 3 starter template with NuxtHub, Auth, and PWA support',
   start_url: '/pwa',
   display: 'standalone',
   background_color: '#ffffff',

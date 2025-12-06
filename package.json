@@ -1,7 +1,7 @@
 {
-  "name": "nuxt-template",
+  "name": "nuxt-starter-kit",
   "version": "1.0",
-  "description": "A Nuxt 3 template project",
+  "description": "A Nuxt 3 starter template with NuxtHub, Auth, and PWA support",
   "author": {
     "name": "No Name Studio",
     "email": "contact@nnsvn.me"
