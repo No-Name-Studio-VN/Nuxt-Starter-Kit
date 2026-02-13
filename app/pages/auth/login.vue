@@ -5,47 +5,26 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, User, Lock, Eye, EyeOff, Fingerprint } from 'lucide-vue-next'
-import CenteredAppLayout from '@/components/CenteredAppLayout.vue'
-import type { NuxtError } from '#app'
+import { getAuthErrorMessage } from '#shared/constants/authMessages'
 
-const { fetch } = useUserSession()
 const { authenticate } = useWebAuthn()
+const route = useRoute()
 const username = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const isLoading = ref(false)
 const error = ref('')
+const turnstileToken = ref('')
 
-async function signInWithPassword() {
-  if (!username.value.trim()) {
-    error.value = 'Username is required'
-    return
-  }
-  if (!password.value.trim()) {
-    error.value = 'Password is required'
-    return
-  }
+const redirectTo = computed(() => route.query.redirectTo as string || '/')
 
-  isLoading.value = true
-  error.value = ''
-
-  try {
-    await $fetch('/api/auth/login-password', {
-      method: 'POST',
-      body: { username: username.value, password: password.value },
-    })
-    await fetch()
-    await navigateTo('/')
+// Check for error in URL query parameter
+onMounted(() => {
+  const errorCode = route.query.error as string
+  if (errorCode) {
+    error.value = getAuthErrorMessage(errorCode) || 'An error occurred during login'
   }
-  catch (err: unknown) {
-    error.value = err instanceof Error && 'statusMessage' in err
-      ? (err as NuxtError).statusMessage || 'Authentication failed'
-      : 'Authentication failed'
-  }
-  finally {
-    isLoading.value = false
-  }
-}
+})
 
 async function signInWithPasskey() {
   if (!username.value.trim()) {
@@ -58,15 +37,14 @@ async function signInWithPasskey() {
 
   try {
     await authenticate(username.value)
-    await fetch()
-    await navigateTo('/')
+    window.location.href = redirectTo.value
   }
-  catch (err: unknown) {
-    error.value = err instanceof Error && 'statusMessage' in err
-      ? (err as NuxtError).statusMessage || 'Authentication failed'
-      : 'Authentication failed'
-  }
-  finally {
+  catch (err) {
+    createError({
+      statusCode: 401,
+      statusMessage: 'Authentication failed. Please ensure your passkey is set up correctly.',
+      data: err,
+    })
     isLoading.value = false
   }
 }
@@ -91,7 +69,7 @@ definePageMeta({
           Welcome Back
         </CardTitle>
         <CardDescription>
-          Sign in to your account to continue
+          Sign in to your Gromet Reader account to continue
         </CardDescription>
       </CardHeader>
 
@@ -105,9 +83,15 @@ definePageMeta({
         </Alert>
 
         <form
+          action="/api/auth/login-password"
+          method="POST"
           class="space-y-4"
-          @submit.prevent
         >
+          <input
+            type="hidden"
+            name="redirectTo"
+            :value="redirectTo"
+          >
           <div class="space-y-2">
             <Label
               for="username"
@@ -120,6 +104,7 @@ definePageMeta({
               <Input
                 id="username"
                 v-model="username"
+                name="username"
                 type="text"
                 placeholder="Enter your username"
                 class="pl-9 h-11"
@@ -141,11 +126,11 @@ definePageMeta({
               <Input
                 id="password"
                 v-model="password"
+                name="password"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Enter your password"
                 class="pl-9 pr-9 h-11"
                 :disabled="isLoading"
-                @keydown.enter="signInWithPassword"
               />
               <Button
                 type="button"
@@ -167,11 +152,13 @@ definePageMeta({
           </div>
 
           <div class="space-y-3">
+            <NuxtTurnstile
+              v-model="turnstileToken"
+            />
             <Button
-              type="button"
+              type="submit"
               class="w-full h-11"
               :disabled="isLoading || !username.trim() || !password.trim()"
-              @click="signInWithPassword"
             >
               <Loader2
                 v-if="isLoading"

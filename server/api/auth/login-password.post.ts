@@ -1,39 +1,38 @@
-import { z } from 'zod'
-import { getUserByUsername } from '~~/server/utils/database/user'
-
-const loginSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
-  password: z.string().min(1, 'Password is required'),
-})
+import userService from '~~/server/utils/database/user'
+import { apiRoutes } from '#shared/apiRoutes'
+import { loginSchema } from '#shared/schemas/userSchema'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const { username, password } = await loginSchema.parseAsync(body)
+  const result = await readValidatedBody(event, body => loginSchema.safeParse(body))
+  if (!result.success) {
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=validation')
+  }
+
+  const { username, password, 'cf-turnstile-response': token } = result.data
+  if (!token) {
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha')
+  }
+
+  const tokenValidation = await verifyTurnstileToken(token)
+  if (!tokenValidation.success) {
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha')
+  }
 
   // Find user by username
-  const user = await getUserByUsername(username)
-
+  const user = await userService.getByUsername(username)
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Cannot find user with the provided username',
-    })
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials')
   }
 
   // Verify password using nuxt-auth-utils
   const isValidPassword = await verifyPassword(user.password, password)
 
   if (!isValidPassword) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Invalid username or password',
-    })
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials')
   }
 
   // Update last login
-  await updateUser(user.id, { lastLoginAt: new Date() })
-
-  // Set user session
+  await userService.update({ id: user.id, lastLoginAt: new Date() })
   await setUserSession(event, {
     user: {
       id: user.id,
@@ -42,5 +41,10 @@ export default defineEventHandler(async (event) => {
     },
   })
 
-  return { success: true }
+  if (result.data['redirect-to']) {
+    return sendRedirect(event, result.data['redirect-to'])
+  }
+  else {
+    return sendRedirect(event, '/')
+  }
 })

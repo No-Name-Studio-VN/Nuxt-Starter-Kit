@@ -1,6 +1,6 @@
 {
   "name": "nuxt-starter-kit",
-  "version": "1.0",
+  "version": "1.1",
   "description": "A Nuxt 3 starter template with NuxtHub, Auth, and PWA support",
   "author": {
     "name": "No Name Studio",
@@ -9,13 +9,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pwa-assets-generator && nuxt build",
-    "dev": "pwa-assets-generator && nuxt dev",
-    "generate": "pwa-assets-generator && nuxt generate",
-    "preview": "nuxt preview --port=4000",
+    "prepare": "pwa-assets-generator",
+    "build": "npm run prepare && nuxt build",
+    "dev": "npm run prepare && nuxt dev --bun",
+    "deploy": "npx wrangler --cwd .output deploy && npx wrangler --cwd .output d1 migrations apply DB --remote",
+    "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint --fix",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "npx nuxt db generate",
+    "db:seed": "nitro task run db:admin-creation"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",
@@ -27,6 +29,7 @@
     "@nuxtjs/robots": "^5.7.0",
     "@nuxtjs/sitemap": "^7.6.0",
     "@nuxtjs/tailwindcss": "^7.0.0-beta.1",
+    "@nuxtjs/turnstile": "^1.1.1",
     "@pinia/nuxt": "^0.11.3",
     "@simplewebauthn/browser": "^11.0.0",
     "@simplewebauthn/server": "^11.0.0",
@@ -43,6 +46,7 @@
     "clsx": "^2.1.1",
     "dexie": "^4.3.0",
     "drizzle-orm": "^0.45.1",
+    "drizzle-zod": "^0.8.3",
     "es-toolkit": "^1.44.0",
     "lucide-vue-next": "^0.563.0",
     "luxon": "^3.7.2",

@@ -2,14 +2,22 @@ import { sqliteTable, text, integer, unique } from 'drizzle-orm/sqlite-core'
 import { relations } from 'drizzle-orm'
 import type { WebAuthnCredential } from '#auth-utils'
 
+const timestampColumns = {
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .$defaultFn(() => new Date()), // Auto-set on create
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .$defaultFn(() => new Date()), // Auto-set on create (needs trigger or manual update for 'on update')
+}
+
 export const users = sqliteTable('users', {
-  id: integer('id').primaryKey(),
+  id: integer('id').primaryKey({ autoIncrement: true }),
   username: text('username').notNull().unique(),
   name: text('name').notNull(),
   password: text('password').notNull(),
+  email: text('email').notNull().unique(),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  lastLoginAt: integer('last_login_at', { mode: 'timestamp' }).notNull(),
+  lastLoginAt: integer('last_login_at', { mode: 'timestamp' }), // Can be null if never logged in
+  ...timestampColumns,
 })
 
 export const credentials = sqliteTable('credentials', {
@@ -19,6 +27,7 @@ export const credentials = sqliteTable('credentials', {
   counter: integer('counter').notNull(),
   backedUp: integer('backed_up', { mode: 'boolean' }).notNull(),
   transports: text('transports', { mode: 'json' }).notNull().$type<WebAuthnCredential['transports']>(),
+  ...timestampColumns,
 }, table => ({
   pk: unique().on(table.userId, table.id),
 }))

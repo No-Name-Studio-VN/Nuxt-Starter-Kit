@@ -1,4 +1,4 @@
-import { deleteUsers } from '~~/server/utils/database/user'
+import userSchema from '~~/server/utils/database/user'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -10,21 +10,10 @@ export default defineEventHandler(async (event) => {
       message: 'User IDs array is required',
     })
   }
+  await userSchema.bulkDelete(userIds)
 
-  try {
-    await deleteUsers(userIds)
-
-    return {
-      success: true,
-      deleted: userIds.length,
-    }
-  }
-  catch (error) {
-    console.error('Error deleting users:', error)
-
-    throw createError({
-      statusCode: 500,
-      message: 'Failed to delete users',
-    })
+  return {
+    success: true,
+    deleted: userIds.length,
   }
 })

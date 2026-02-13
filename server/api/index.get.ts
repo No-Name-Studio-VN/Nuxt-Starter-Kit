@@ -1,4 +1,4 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   return {
     status: 'ok',
     timestamp: Date.now(),

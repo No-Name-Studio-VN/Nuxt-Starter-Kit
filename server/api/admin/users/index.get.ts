@@ -1,9 +1,6 @@
-export default defineEventHandler(async () => {
-  const db = useDB()
-  const users = await db
-    .select()
-    .from(tables.users)
-    .execute()
+import userService from '~~/server/utils/database/user'
 
-  return users
+export default defineEventHandler(async () => {
+  const userList = await userService.getList()
+  return success(userList)
 })

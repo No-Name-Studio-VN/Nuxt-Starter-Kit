@@ -5,15 +5,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, User, Lock, Eye, EyeOff, Mail } from 'lucide-vue-next'
+import { Loader2, UserIcon, Lock, Eye, EyeOff, Mail } from 'lucide-vue-next'
 import PasskeyRegistrationDialog from '@/components/PasskeyRegistrationDialog.vue'
 import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator.vue'
-import type { NuxtError } from '#app'
+import { registerUserSchema, type RegisterUserInput } from '#shared/schemas/userSchema'
+import { calculatePasswordStrength } from '@/utils/passwordValidation'
+import { getAuthErrorMessage } from '#shared/constants/authMessages'
 
-const { fetch } = useUserSession()
-const { calculatePasswordStrength, validateField, validateForm } = usePasswordValidation()
-
+const route = useRoute()
 const username = ref('')
+const name = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
@@ -23,101 +24,69 @@ const isLoading = ref(false)
 const error = ref('')
 const showPasskeyDialog = ref(false)
 const registeredUsername = ref('')
-const fieldErrors = ref<{
-  username?: string
-  email?: string
-  password?: string
-  confirmPassword?: string
-}>({})
+const turnstileToken = ref('')
+const fieldErrors = ref<Partial<Record<keyof RegisterUserInput, string>>>({})
+
+// Check for error in URL query parameter
+onMounted(() => {
+  const errorCode = route.query.error as string
+  if (errorCode) {
+    error.value = getAuthErrorMessage(errorCode) || 'An error occurred during registration'
+  }
+})
+
 const passwordStrength = computed(() => calculatePasswordStrength(password.value))
-
-// Validate field on blur
-function handleFieldBlur(field: 'username' | 'email' | 'password' | 'confirmPassword') {
-  let value = ''
-  if (field === 'username')
-    value = username.value
-  else if (field === 'email')
-    value = email.value
-  else if (field === 'password')
-    value = password.value
-  else
-    value = confirmPassword.value
-
-  const validationError = validateField(field, value, {
-    username: username.value,
-    email: email.value,
-    password: password.value,
-    confirmPassword: confirmPassword.value,
-  })
-
-  if (validationError) {
-    fieldErrors.value[field] = validationError
-  }
-  else {
-    fieldErrors.value[field] = undefined
-  }
-}
-
-// Clear field error on input
-function handleFieldInput(field: 'username' | 'email' | 'password' | 'confirmPassword') {
-  if (fieldErrors.value[field]) {
-    fieldErrors.value[field] = undefined
-  }
-}
 
 // Check if form is valid for submission
 const isFormValid = computed(() => {
-  return username.value.trim()
-    && email.value.trim()
-    && password.value.trim()
-    && confirmPassword.value.trim() === password.value.trim()
-    && passwordStrength.value.score >= 60 // Require strong password
-    && Object.values(fieldErrors.value).every(error => !error)
+  const result = registerUserSchema.safeParse({
+    'username': username.value,
+    'name': name.value,
+    'email': email.value,
+    'password': password.value,
+    'confirm-password': confirmPassword.value,
+    'cf-turnstile-response': turnstileToken.value,
+  })
+  return result.success && passwordStrength.value.score >= 80
 })
 
-async function registerWithPassword() {
-  // Clear previous errors
-  error.value = ''
+async function onSubmit(event: Event) {
+  event.preventDefault()
   fieldErrors.value = {}
+  error.value = ''
 
-  // Validate entire form
-  const validation = validateForm({
-    username: username.value,
-    email: email.value,
-    password: password.value,
-    confirmPassword: confirmPassword.value,
-  })
-
-  if (!validation.success) {
-    fieldErrors.value = validation.errors
-    error.value = Object.values(validation.errors)[0] || 'Please fix the errors below'
-    return
+  const formData: RegisterUserInput = {
+    'username': username.value,
+    'name': name.value,
+    'email': email.value,
+    'password': password.value,
+    'confirm-password': confirmPassword.value,
+    'cf-turnstile-response': turnstileToken.value,
   }
 
-  // Check password strength
-  if (passwordStrength.value.score < 60) {
-    error.value = 'Please use a stronger password'
-    return
-  }
+  const result = registerUserSchema.safeParse(formData)
 
-  try {
-    isLoading.value = true
-    await $fetch('/api/auth/register-password', {
-      method: 'POST',
-      body: {
-        username: username.value,
-        email: email.value,
-        password: password.value,
-      },
+  if (!result.success) {
+    // Map Zod errors to field errors
+    result.error.issues.forEach((err) => {
+      const field = err.path[0] as keyof RegisterUserInput
+      if (field) {
+        fieldErrors.value[field] = err.message
+      }
     })
-    registeredUsername.value = username.value
-    await fetch()
-    showPasskeyDialog.value = true
+    return
   }
-  catch (err: unknown) {
-    error.value = err instanceof Error && 'statusMessage' in err
-      ? (err as NuxtError).statusMessage || 'Registration failed'
-      : 'Registration failed'
+
+  // Form is valid, proceed with submission
+  isLoading.value = true
+  try {
+    // Your submit logic here
+    const form = event.target as HTMLFormElement
+    form.submit()
+  }
+  catch (err) {
+    error.value = 'An error occurred during registration'
+    console.error(err)
   }
   finally {
     isLoading.value = false
@@ -125,11 +94,11 @@ async function registerWithPassword() {
 }
 
 function onPasskeyCreated() {
-  navigateTo('/')
+  window.location.href = '/'
 }
 
 function onPasskeySkipped() {
-  navigateTo('/')
+  window.location.href = '/'
 }
 
 definePageMeta({
@@ -152,7 +121,7 @@ definePageMeta({
           Create Account
         </CardTitle>
         <CardDescription>
-          Join to start your journey
+          Join Gromet Reader and start your reading journey
         </CardDescription>
       </CardHeader>
 
@@ -166,8 +135,10 @@ definePageMeta({
         </Alert>
 
         <form
+          action="/api/auth/register-password"
+          method="POST"
           class="space-y-4"
-          @submit.prevent="registerWithPassword"
+          @submit="onSubmit"
         >
           <div class="space-y-2">
             <Label
@@ -177,18 +148,16 @@ definePageMeta({
               Username
             </Label>
             <div class="relative">
-              <User class="absolute left-3 top-3 h-4 w-4" />
+              <UserIcon class="absolute left-3 top-3 h-4 w-4" />
               <Input
                 id="username"
                 v-model="username"
+                name="username"
                 type="text"
                 placeholder="Enter your username"
                 class="pl-9 h-11"
                 :class="{ 'border-destructive': fieldErrors.username }"
                 :disabled="isLoading"
-                required
-                @blur="handleFieldBlur('username')"
-                @input="handleFieldInput('username')"
               />
             </div>
             <p
@@ -196,6 +165,34 @@ definePageMeta({
               class="text-xs text-destructive"
             >
               {{ fieldErrors.username }}
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <Label
+              for="name"
+              class="text-sm font-medium"
+            >
+              Display Name
+            </Label>
+            <div class="relative">
+              <UserIcon class="absolute left-3 top-3 h-4 w-4" />
+              <Input
+                id="name"
+                v-model="name"
+                name="name"
+                type="text"
+                placeholder="Enter your display name"
+                class="pl-9 h-11"
+                :class="{ 'border-destructive': fieldErrors.name }"
+                :disabled="isLoading"
+              />
+            </div>
+            <p
+              v-if="fieldErrors.name"
+              class="text-xs text-destructive"
+            >
+              {{ fieldErrors.name }}
             </p>
           </div>
 
@@ -211,14 +208,12 @@ definePageMeta({
               <Input
                 id="email"
                 v-model="email"
+                name="email"
                 type="email"
                 placeholder="Enter your email"
                 class="pl-9 h-11"
                 :class="{ 'border-destructive': fieldErrors.email }"
                 :disabled="isLoading"
-                required
-                @blur="handleFieldBlur('email')"
-                @input="handleFieldInput('email')"
               />
             </div>
             <p
@@ -241,14 +236,12 @@ definePageMeta({
               <Input
                 id="password"
                 v-model="password"
+                name="password"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Enter your password"
                 class="pl-9 pr-9 h-11"
                 :class="{ 'border-destructive': fieldErrors.password }"
                 :disabled="isLoading"
-                required
-                @blur="handleFieldBlur('password')"
-                @input="handleFieldInput('password')"
               />
               <Button
                 type="button"
@@ -292,14 +285,12 @@ definePageMeta({
               <Input
                 id="confirmPassword"
                 v-model="confirmPassword"
+                name="confirm-password"
                 :type="showConfirmPassword ? 'text' : 'password'"
                 placeholder="Confirm your password"
                 class="pl-9 pr-9 h-11"
-                :class="{ 'border-destructive': fieldErrors.confirmPassword }"
+                :class="{ 'border-destructive': fieldErrors['confirm-password'] }"
                 :disabled="isLoading"
-                required
-                @blur="handleFieldBlur('confirmPassword')"
-                @input="handleFieldInput('confirmPassword')"
               />
               <Button
                 type="button"
@@ -319,13 +310,14 @@ definePageMeta({
               </Button>
             </div>
             <p
-              v-if="fieldErrors.confirmPassword"
+              v-if="fieldErrors['confirm-password']"
               class="text-xs text-destructive"
             >
-              {{ fieldErrors.confirmPassword }}
+              {{ fieldErrors['confirm-password'] }}
             </p>
           </div>
 
+          <NuxtTurnstile v-model="turnstileToken" />
           <Button
             type="submit"
             class="w-full h-11"

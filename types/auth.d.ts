@@ -3,7 +3,7 @@ declare module '#auth-utils' {
     id: number
     username: string
     name: string
-    isPremium: boolean
+    isAdmin: boolean
   }
 
   interface UserSession {
@@ -24,5 +24,4 @@ export type SessionUser = {
   id: number
   username: string
   name: string
-  isPremium: boolean
 }

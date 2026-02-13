@@ -1,6 +1,11 @@
 import { storeCurrentPage } from '@/composables/usePageTracker'
 
 export default defineNuxtRouteMiddleware((to) => {
-  if (to.meta?.track === false) return
-  storeCurrentPage(to.fullPath || to.path)
+  if (to.meta.noPageTrack) {
+    console.log('Ignored')
+  }
+  else {
+    storeCurrentPage(to.fullPath || to.path)
+  }
+  return
 })

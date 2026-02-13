@@ -47,6 +47,7 @@ const sorting = ref<SortingState>([])
 const columnFilters = ref<ColumnFiltersState>([])
 const columnVisibility = ref<VisibilityState>({})
 const rowSelection = ref({})
+const globalFilter = ref('')
 
 const table = useVueTable({
   get data() {
@@ -66,6 +67,12 @@ const table = useVueTable({
     valueUpdater(updaterOrValue, columnVisibility),
   onRowSelectionChange: updaterOrValue =>
     valueUpdater(updaterOrValue, rowSelection),
+  onGlobalFilterChange: (updaterOrValue) => {
+    globalFilter.value
+      = typeof updaterOrValue === 'function'
+        ? updaterOrValue(globalFilter.value)
+        : updaterOrValue
+  },
   state: {
     get sorting() {
       return sorting.value
@@ -79,6 +86,9 @@ const table = useVueTable({
     get rowSelection() {
       return rowSelection.value
     },
+    get globalFilter() {
+      return globalFilter.value
+    },
   },
 })
 
@@ -91,6 +101,15 @@ defineExpose({
   <div class="w-full">
     <!-- Column Visibility Toggle -->
     <div class="flex items-center py-4">
+      <!-- search input -->
+      <div class="flex items-center space-x-2">
+        <Input
+          :model-value="globalFilter ?? ''"
+          placeholder="Search..."
+          class="max-w-sm"
+          @update:model-value="(value) => (globalFilter = String(value))"
+        />
+      </div>
       <div class="ml-auto flex items-center gap-2">
         <Button
           variant="outline"
