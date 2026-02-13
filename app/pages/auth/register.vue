@@ -152,7 +152,7 @@ definePageMeta({
           Create Account
         </CardTitle>
         <CardDescription>
-          Join Gromet Reader and start your reading journey
+          Join to start your journey
         </CardDescription>
       </CardHeader>
 

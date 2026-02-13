@@ -91,7 +91,7 @@ definePageMeta({
           Welcome Back
         </CardTitle>
         <CardDescription>
-          Sign in to your Gromet Reader account to continue
+          Sign in to your account to continue
         </CardDescription>
       </CardHeader>
 
