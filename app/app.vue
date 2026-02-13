@@ -1,5 +1,5 @@
 <template>
-  <NuxtPwaManifest />
+  <NuxtPwaAssets />
   <NuxtLoadingIndicator />
   <TooltipProvider>
     <NuxtLayout>
@@ -11,7 +11,6 @@
 
 <script lang="ts" setup>
 import { Toaster } from '@/components/ui/sonner'
-import { TooltipProvider } from '@/components/ui/tooltip'
 import { toast } from 'vue-sonner'
 
 const { $pwa } = useNuxtApp()
