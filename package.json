@@ -31,6 +31,7 @@
     "@nuxtjs/tailwindcss": "^7.0.0-beta.1",
     "@nuxtjs/turnstile": "^1.1.1",
     "@pinia/nuxt": "^0.11.3",
+    "@sentry/nuxt": "^10.38.0",
     "@simplewebauthn/browser": "^11.0.0",
     "@simplewebauthn/server": "^11.0.0",
     "@tanstack/vue-table": "^8.21.3",
