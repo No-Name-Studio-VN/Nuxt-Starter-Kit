@@ -24,6 +24,7 @@ export default defineNuxtConfig({
     'nuxt-schema-org',
     'nuxt-seo-utils',
     '@nuxtjs/turnstile',
+    '@sentry/nuxt/module',
   ],
 
   $development: {
