@@ -1,6 +1,8 @@
-# Nuxt Starter Kit
+# Nuxt SaaS Starter Kit
 
-A modern, production-ready Nuxt 3 starter template with NuxtHub, Authentication, PWA support, and more.
+Fully equipped Technical Starter Pack for busy Nuxters.
+
+A comprehensive, production-ready SaaS starter kit built with Nuxt 4, featuring authentication, admin dashboard, AI integration, and modern UI components.
 
 ![Nuxt](https://img.shields.io/badge/Nuxt-4.x-00DC82?style=flat&logo=nuxt.js&logoColor=white)
 ![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D?style=flat&logo=vue.js&logoColor=white)
@@ -9,49 +11,63 @@ A modern, production-ready Nuxt 3 starter template with NuxtHub, Authentication,
 
 ## ✨ Features
 
-- **🚀 Nuxt 4** - The latest Nuxt with improved performance and developer experience
-- **🔐 Authentication** - Built-in auth with password and WebAuthn/Passkey support via `nuxt-auth-utils`
-- **📱 PWA Ready** - Progressive Web App with offline support and installable experience
-- **🎨 UI Components** - Pre-configured shadcn-vue components with Tailwind CSS v4
-- **🗄️ Database** - SQLite with Drizzle ORM for type-safe database operations
-- **☁️ NuxtHub** - Ready for deployment on Cloudflare with edge computing
-- **🔒 Security** - Built-in security headers and rate limiting via `nuxt-security`
-- **🎯 SEO** - Optimized with robots, sitemap, and schema.org support
-- **🌙 Dark Mode** - Color mode switching with `@nuxtjs/color-mode`
-- **📝 Content** - Markdown content management with `@nuxt/content`
-- **🖼️ Image Optimization** - Automatic image optimization with `@nuxt/image`
-- **🔤 Fonts** - Optimized font loading with `@nuxt/fonts`
+### 🔐 Authentication & User Management
+- **nuxt-auth-utils** - Modern authentication system
+- Google OAuth integration
+- Session management with database persistence
+- User profile management
+- Passwordless authentication with WebAuthn/Passkeys
+
+### 🎨 Modern UI/UX
+- **Tailwind CSS v4** - Latest utility-first styling
+- **shadcn/ui** components - Accessible, customizable
+- **Reka UI** primitives - Unstyled, accessible components
+- Dark/light theme support with smooth transitions
+- Responsive design with mobile-first approach
+- Loading skeletons and optimistic UI updates
+
+### 🗄️ Database & Storage
+- **Drizzle ORM** - Type-safe database toolkit
+- **Cloudflare R2** - Scalable file storage with zero egress fees
+- Database migrations with Drizzle Kit
+
+### 🎯 SEO
+- Pre-configured SEO with `@nuxtjs/seo`
+- Dynamic meta tags and Open Graph support
+- Sitemap generation
+- Robots.txt configuration
+
+### 📱 PWA Features
+- Auto-update service worker
+- Offline caching with Workbox
+- App manifest with shortcuts
+- Install prompts
+- Asset generation via `@vite-pwa/assets-generator`
+
+### Content
+- Blog and documentation system with `@nuxt/content`
+- Markdown support with custom components
+- SEO-friendly content structure
+- Multi-language support with locale-based content
 
 ## 📦 Tech Stack
 
-### Frontend
-- [Vue 3](https://vuejs.org/) - Progressive JavaScript Framework
-- [Nuxt 4](https://nuxt.com/) - The Intuitive Vue Framework
-- [Tailwind CSS 4](https://tailwindcss.com/) - Utility-first CSS framework
-- [shadcn-vue](https://www.shadcn-vue.com/) - Re-usable UI components
-- [Reka UI](https://reka-ui.com/) - Unstyled, accessible components for Vue
-- [VueUse](https://vueuse.org/) - Collection of Vue Composition Utilities
-- [Pinia](https://pinia.vuejs.org/) - State management
-- [Motion V](https://motion.dev/) - Animation library
-- [Lucide Icons](https://lucide.dev/) - Beautiful icons
-
-### Backend
-- [NuxtHub](https://hub.nuxt.com/) - Cloudflare deployment platform
-- [Drizzle ORM](https://orm.drizzle.team/) - Type-safe SQL ORM
-- [SQLite](https://www.sqlite.org/) - Embedded database (via better-sqlite3)
-- [nuxt-auth-utils](https://github.com/Atinux/nuxt-auth-utils) - Authentication utilities
-- [SimpleWebAuthn](https://simplewebauthn.dev/) - WebAuthn/Passkey support
-
-### DevTools
-- [ESLint](https://eslint.org/) - Code linting with @nuxt/eslint
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- **Framework**: Nuxt 4 with Vue 3
+- **Language**: TypeScript with strict mode
+- **Styling**: Tailwind CSS v4 + shadcn-vue
+- **Database**: Sqlite + Drizzle ORM
+- **Authentication**: nuxt-auth-utils + SimpleWebAuthn
+- **Payments**: dodopayment
+- **Storage**: Cloudflare R2
+- **Analytics**: Sentry
+- **Deployment**: Nuxthub -> Cloudflare (recommended) / Vercel / Netlify ...
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js 18.x or higher
-- npm, pnpm, or yarn
+- npm, pnpm, yarn or bun
 
 ### Installation
 
@@ -70,6 +86,7 @@ npm install
 ```bash
 cp .env.example .env
 ```
+Fill in the required environment variables in the `.env` file.
 
 4. Generate database migrations:
 ```bash
@@ -83,115 +100,35 @@ npm run dev
 
 The app will be available at `http://localhost:3000`.
 
-## 📜 Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with PWA assets generation |
-| `npm run build` | Build for production |
-| `npm run generate` | Generate static site |
-| `npm run preview` | Preview production build on port 4000 |
-| `npm run lint` | Run ESLint with auto-fix |
-| `npm run db:generate` | Generate Drizzle migrations |
-
 ## 📁 Project Structure
 
 ```
 nuxt-template/
 ├── app/
-│   ├── assets/css/        # Global styles and Tailwind CSS
+│   ├── assets/css/        # style sheets and Tailwind config
 │   ├── components/        # Vue components
-│   │   ├── ui/            # shadcn-vue UI components
-│   │   ├── admin/         # Admin-related components
-│   │   └── nav/           # Navigation components
 │   ├── composables/       # Vue composables
 │   ├── constants/         # App constants and configurations
 │   ├── layouts/           # Page layouts (default, dashboard, empty)
 │   ├── lib/               # Utility functions
 │   ├── middleware/        # Route middleware
 │   ├── pages/             # File-based routing
-│   │   ├── admin/         # Admin pages
-│   │   ├── auth/          # Authentication pages (login, register)
-│   │   └── dashboard.vue  # Dashboard page
 │   └── plugins/           # Nuxt plugins
 ├── public/                # Static assets
 ├── server/
 │   ├── api/               # API routes
-│   │   ├── admin/         # Admin API endpoints
-│   │   └── auth/          # Auth API endpoints
 │   ├── database/          # Database schema and migrations
 │   └── utils/             # Server utilities
 ├── types/                 # TypeScript type definitions
 ├── nuxt.config.ts         # Nuxt configuration
-├── drizzle.config.ts      # Drizzle ORM configuration
 ├── pwa.config.ts          # PWA configuration
-└── components.json        # shadcn-vue configuration
-```
-
-## 🔐 Authentication
-
-This template includes a complete authentication system with:
-
-- **Password-based authentication** - Traditional email/password login
-- **WebAuthn/Passkeys** - Passwordless authentication support
-- **Admin role management** - Built-in admin user support
-- **Session management** - Secure session handling
-
-### Database Schema
-
-The authentication uses SQLite with the following tables:
-
-- `users` - User accounts with username, password hash, and admin flag
-- `credentials` - WebAuthn credentials for passkey authentication
-
-## 🎨 UI Components
-
-Pre-configured with [shadcn-vue](https://www.shadcn-vue.com/) using the New York style:
-
-- Accordion, Alert, Avatar, Badge, Button, Card
-- Checkbox, Dialog, Dropdown, Form, Input
-- Progress, Select, Skeleton, Slider, Switch
-- Table, Tabs, Tooltip, and more...
-
-Add new components using:
-```bash
-npx shadcn-vue@latest add <component-name>
 ```
 
 ## ☁️ Deployment
 
-### NuxtHub (Cloudflare)
+This template uses [NuxtHub](https://hub.nuxt.com/) version 0.10x, which allows deploying to multiple providers. We recommend deploying to Cloudflare for best performance and zero egress fees, but you can also deploy to Vercel or Netlify.
 
-This template is optimized for deployment on NuxtHub/Cloudflare:
-
-1. Connect your repository to [NuxtHub](https://hub.nuxt.com/)
-2. Configure environment variables
-3. Deploy automatically on push
-
-### Environment Variables
-
-Create a `.env` file with the following variables:
-
-```env
-NUXT_SESSION_PASSWORD=your-secret-session-password-min-32-chars
-```
-
-## 🔒 Security
-
-Built-in security features via `nuxt-security`:
-
-- Content Security Policy (CSP)
-- Cross-Origin policies
-- Rate limiting on API routes (250 requests/minute in production)
-- Secure headers
-
-## 📱 PWA Features
-
-- Auto-update service worker
-- Offline caching with Workbox
-- App manifest with shortcuts
-- Install prompts
-- Asset generation via `@vite-pwa/assets-generator`
+Follow the [NuxtHub deployment guide](https://hub.nuxt.com/docs/getting-started/deploy) to host a full-stack Nuxt application with minimal configuration.
 
 ## 📄 License
 
@@ -201,7 +138,3 @@ This project is open source and available under the [MIT License](LICENSE).
 
 **No Name Studio**  
 📧 contact@nnsvn.me
-
----
-
-Made with ❤️ using Nuxt
