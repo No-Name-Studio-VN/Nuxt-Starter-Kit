@@ -47,6 +47,7 @@
     "drizzle-orm": "^0.45.1",
     "drizzle-zod": "^0.8.3",
     "es-toolkit": "^1.44.0",
+    "feed": "^5.2.0",
     "lucide-vue-next": "^0.563.0",
     "luxon": "^3.7.2",
     "motion-v": "^1.10.3",
