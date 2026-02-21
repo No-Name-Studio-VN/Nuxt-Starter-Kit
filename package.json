@@ -10,7 +10,7 @@
   "type": "module",
   "scripts": {
     "prepare": "pwa-assets-generator",
-    "build": "npm run prepare && nuxt build",
+    "build": "npm run prepare && NODE_OPTIONS='--max-old-space-size=8192' nuxt build",
     "dev": "npm run prepare && nuxt dev --bun",
     "deploy": "npx wrangler --cwd .output deploy && npx wrangler --cwd .output d1 migrations apply DB --remote",
     "preview": "nuxt preview",
