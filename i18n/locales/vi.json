@@ -1,0 +1,57 @@
+{
+  "common": {
+    "privacy": "Chính sách bảo mật",
+    "terms": "Điều khoản",
+    "required": "bắt buộc",
+    "locale": {
+      "prompt": "Chọn ngôn ngữ của bạn"
+    },
+    "lang": "Ngôn ngữ",
+    "collapse": "Thu gọn",
+    "expand": "Mở rộng",
+    "light": "Sáng",
+    "dark": "Tối",
+    "system": "Hệ thống",
+    "theme": "Chủ đề",
+    "color": "Màu",
+    "copy": {
+      "success": "Đã sao chép vào bảng nhớ tạm"
+    }
+  },
+  "errors": {
+    "adblock": "Làm ơn hãy ủng hộ chúng tôi bằng cách tắt trình chặn quảng cáo (adblock) T.T",
+    "no_result": "Không tìm thấy kết quả.",
+    "empty_page": "Trang trống",
+    "not_found": {
+      "description": "Trang bạn đang tìm kiếm không tồn tại. \nHãy thử tìm kiếm những gì bạn cần dưới đây.",
+      "title": "Không tìm thấy"
+    }
+  },
+  "customizer": {
+    "radius": "Bán kính",
+    "title": "Tùy chỉnh",
+    "prompt": "Chọn giao diện và màu sắc cho trang."
+  },
+  "docs": {
+    "toc": {
+      "title": "Trên trang này"
+    },
+    "editlink": {
+      "title": "Chỉnh sửa trang này"
+    },
+    "issuelink": {
+      "title": "Phản ánh vấn đề"
+    }
+  },
+  "cta": {
+    "start_writing": "Trang đang trống, hãy bắt đầu viết tại {fileLink}.",
+    "read_more": "Đọc thêm tại",
+    "contact": "Liên hệ hỗ trợ",
+    "need_help": "Cần giúp đỡ?",
+    "search_pages": "Hãy thử tìm kiếm các trang"
+  },
+  "search": {
+    "title": "Tìm kiếm...",
+    "document": "Tìm kiếm tài liệu..."
+  }
+}
