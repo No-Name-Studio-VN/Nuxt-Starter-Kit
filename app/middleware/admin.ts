@@ -1,12 +1,10 @@
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(() => {
   const { user } = useUserSession()
 
   if (!user.value?.isAdmin) {
-    return navigateTo({
-      path: '/auth/login',
-      query: {
-        redirectTo: to.fullPath,
-      },
+    return createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden',
     })
   }
 })
