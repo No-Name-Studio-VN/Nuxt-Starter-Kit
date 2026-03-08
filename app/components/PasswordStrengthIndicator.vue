@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { Progress } from '@/components/ui/progress'
 import { Check, X } from 'lucide-vue-next'
-import type { PasswordStrength } from '@/composables/usePasswordValidation'
+import type { PasswordStrength } from '@/utils/passwordValidation'
 
 const props = withDefaults(defineProps<{
   password: string
