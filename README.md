@@ -1,5 +1,7 @@
 # Nuxt SaaS Starter Kit
 
+https://nnsvn.me/products/nuxt-starter-kit
+
 Fully equipped Technical Starter Pack for busy Nuxters.
 
 A comprehensive, production-ready SaaS starter kit built with Nuxt 4, featuring authentication, admin dashboard, AI integration, and modern UI components.
