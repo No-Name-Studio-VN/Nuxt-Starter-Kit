@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
       id: user.id,
       username: user.username,
       name: user.name,
+      isAdmin: user.isAdmin,
     },
   })
 

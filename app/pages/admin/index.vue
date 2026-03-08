@@ -115,10 +115,6 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'vue-sonner'
 import {
   UsersIcon,
-  TicketIcon,
-  HardDriveIcon,
-  AlertTriangleIcon,
-  BookOpenIcon,
   ChevronRightIcon,
   TrashIcon,
 } from 'lucide-vue-next'
@@ -128,6 +124,7 @@ definePageMeta({
   title: 'Admin Dashboard',
   breadcrumb: 'Admin',
   middleware: ['auth', 'admin'],
+  layout: 'dashboard',
 })
 
 interface ManagementCard {
@@ -149,51 +146,6 @@ const managementCards: ManagementCard[] = [
     route: '/admin/users',
     bgColor: 'bg-blue-500/10',
     textColor: 'text-blue-500',
-  },
-  {
-    id: 'coupons',
-    icon: TicketIcon,
-    title: 'Coupons',
-    description: 'Create, manage, and track promotional coupons and discount codes',
-    route: '/admin/coupons',
-    bgColor: 'bg-green-500/10',
-    textColor: 'text-green-500',
-  },
-  {
-    id: 'drives',
-    icon: HardDriveIcon,
-    title: 'Drives',
-    description: 'Configure and monitor connected storage drives and file systems',
-    route: '/admin/drives',
-    bgColor: 'bg-purple-500/10',
-    textColor: 'text-purple-500',
-  },
-  {
-    id: 'removal-requests',
-    icon: AlertTriangleIcon,
-    title: 'Removal Requests',
-    description: 'Review and process content removal and deletion requests',
-    route: '/admin/removal-requests',
-    bgColor: 'bg-orange-500/10',
-    textColor: 'text-orange-500',
-  },
-  {
-    id: 'stories',
-    icon: BookOpenIcon,
-    title: 'Stories',
-    description: 'Browse and manage all stories in the library',
-    route: '/admin/stories',
-    bgColor: 'bg-pink-500/10',
-    textColor: 'text-pink-500',
-  },
-  {
-    id: 'subscriptions',
-    icon: TicketIcon,
-    title: 'Subscriptions',
-    description: 'Manage user subscriptions, plans, and billing information',
-    route: '/admin/subscriptions',
-    bgColor: 'bg-teal-500/10',
-    textColor: 'text-teal-500',
   },
 ]
 

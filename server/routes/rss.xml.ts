@@ -1,6 +1,7 @@
 import { Feed } from 'feed'
 import { queryCollection } from '@nuxt/content/server'
 import { withoutTrailingSlash } from 'ufo'
+import { defaultLocale } from '../../i18n-constants'
 
 export default defineEventHandler(async (event) => {
   const runtimeConfig = useRuntimeConfig()
@@ -13,12 +14,12 @@ export default defineEventHandler(async (event) => {
     description: 'The homepage of No Name Studio',
     id: url,
     link: url,
-    language: 'en',
+    language: defaultLocale,
     favicon: `${url}/favicon.ico`,
     copyright: `All rights reserved ${now.getFullYear()}, No Name Studio`,
   })
 
-  const docs = await queryCollection(event, 'docs')
+  const docs = await queryCollection(event, 'content')
     .where('draft', '<>', true)
     .all()
 

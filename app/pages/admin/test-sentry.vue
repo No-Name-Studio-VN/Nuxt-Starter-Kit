@@ -32,6 +32,13 @@ async function getSentryData() {
     isLoading.value = false
   }
 }
+
+definePageMeta({
+  title: 'Test Sentry Integration',
+  breadcrumb: 'Test Sentry',
+  layout: 'dashboard',
+  middleware: ['auth', 'admin'],
+})
 </script>
 
 <template>

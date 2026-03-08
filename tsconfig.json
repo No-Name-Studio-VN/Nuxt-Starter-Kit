@@ -14,5 +14,12 @@
     {
       "path": "./.nuxt/tsconfig.node.json"
     }
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "playground",
+    "docs",
+    "test"
   ]
 }

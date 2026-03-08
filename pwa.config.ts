@@ -10,6 +10,6 @@ export default {
     globPatterns: ['**/*.{js,css,html,ico,svg}'],
     cleanupOutdatedCaches: true,
     clientsClaim: true,
-    maximumFileSizeToCacheInBytes: 3000000,
+    maximumFileSizeToCacheInBytes: 5000000,
   },
 } as Partial<VitePWAOptions>

@@ -19,13 +19,11 @@
 import { Loader2 } from 'lucide-vue-next'
 import { computed } from 'vue'
 
-interface Props {
+const props = withDefaults(defineProps<{
   size?: 'sm' | 'md' | 'lg'
   text?: string
   fullHeight?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
+}>(), {
   size: 'md',
   fullHeight: false,
 })

@@ -150,22 +150,11 @@
                     />
                   </div>
                 </Field>
-
-                <Field>
-                  <FieldLabel for="dodoCustomerId">
-                    Dodo Customer ID
-                  </FieldLabel>
-                  <Input
-                    id="dodoCustomerId"
-                    v-model="formData.dodoCustomerId"
-                    placeholder="Enter Dodo Customer ID"
-                  />
-                </Field>
               </FieldGroup>
             </FieldSet>
           </FieldGroup>
 
-          <DialogFooter class="mt-6">
+          <DialogFooter>
             <Button
               variant="outline"
               type="button"
@@ -216,7 +205,7 @@ import {
 import { toast } from 'vue-sonner'
 import DataTable from '@/components/DataTable.vue'
 import { createColumns } from './columns'
-import type { User } from '~~/shared/db'
+import type { User } from '#shared/db'
 import { InfoIcon, Loader2Icon, Trash2Icon, UserPlus } from 'lucide-vue-next'
 import type { ApiResponse } from '~~/server/utils/apiResponse'
 
@@ -231,7 +220,6 @@ const defaultFormData = {
   name: '',
   password: '',
   isAdmin: false,
-  dodoCustomerId: '',
 }
 
 const formData = ref({ ...defaultFormData })
@@ -285,7 +273,6 @@ function handleEdit(user: User) {
   formData.value.email = user.email
   formData.value.name = user.name
   formData.value.isAdmin = user.isAdmin
-  formData.value.dodoCustomerId = user.dodoCustomerId
   formData.value.password = user.password
   showDialog.value = true
 }

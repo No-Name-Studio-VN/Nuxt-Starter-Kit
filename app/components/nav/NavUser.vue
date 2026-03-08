@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ChevronsUpDown, LogOut, SunMoon, Settings, LogIn, UserIcon, UsersIcon } from 'lucide-vue-next'
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -19,42 +18,18 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
-import type { User } from '~~/server/utils/db'
 
-const { user, clear } = useUserSession()
+const { user, clear, loggedIn } = useUserSession()
 
-const defaultUser = {
-  name: 'Guest User',
-  username: 'guest',
-  avatar: '/images/avatar/default.png',
-} as const
+function getInitials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase()
+}
 
-const isAuthenticated = computed(() => !!user.value)
-
-const {
-  data: fetchedUser,
-  refresh: refreshUser,
-} = useFetch<User>('/api/users/me', {
-  immediate: isAuthenticated.value,
-  watch: false,
-})
-
-// Refresh user data when authentication state changes
-watch(isAuthenticated, async (authenticated) => {
-  if (authenticated) {
-    await refreshUser()
-  }
-})
-
-const displayUser = computed(() => fetchedUser.value ?? user.value ?? defaultUser)
-const userInitial = computed(() =>
-  isAuthenticated.value ? displayUser.value.name?.charAt(0).toUpperCase() : 'G',
-)
-
-async function logout() {
-  await clear()
+function logout() {
+  clear().then(() => {
+    location.reload()
+  })
 }
 </script>
 
@@ -67,20 +42,26 @@ async function logout() {
             size="lg"
             class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >
-            <Avatar class="h-8 w-8 rounded-lg">
-              <AvatarImage
-                :src="defaultUser.avatar"
-                :alt="displayUser.name"
-              />
-              <AvatarFallback class="rounded-lg">
-                {{ userInitial }}
-              </AvatarFallback>
-            </Avatar>
-            <div class="grid flex-1 text-left text-sm leading-tight">
-              <span class="truncate font-medium">{{ displayUser.name }}</span>
-              <span class="truncate text-xs">{{ displayUser.username }}</span>
-            </div>
-            <ChevronsUpDown class="ml-auto size-4" />
+            <template v-if="user">
+              <Avatar class="h-8 w-8 rounded-lg">
+                <AvatarImage
+                  src="/images/avatar/default.png"
+                  :alt="user.name"
+                />
+                <AvatarFallback class="rounded-lg">
+                  {{ getInitials(user.name) }}
+                </AvatarFallback>
+              </Avatar>
+              <div class="grid flex-1 text-left text-sm leading-tight">
+                <span class="truncate font-medium">{{ user.name }}</span>
+                <span class="truncate text-xs">{{ user.username }}</span>
+              </div>
+              <ChevronsUpDown class="ml-auto size-4" />
+            </template>
+            <template v-else>
+              <span class="font-medium">Sign In</span>
+              <ChevronsUpDown class="ml-auto size-4" />
+            </template>
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -91,14 +72,14 @@ async function logout() {
         >
           <DropdownMenuGroup>
             <DropdownMenuItem
-              v-if="fetchedUser?.isAdmin"
+              v-if="user?.isAdmin"
               @click="navigateTo('/admin')"
             >
               <UsersIcon />
               Admin
             </DropdownMenuItem>
             <DropdownMenuItem
-              v-if="isAuthenticated"
+              v-if="loggedIn"
               @click="navigateTo('/settings/account')"
             >
               <UserIcon />
@@ -133,7 +114,7 @@ async function logout() {
           </DropdownMenuGroup>
 
           <DropdownMenuItem
-            v-if="isAuthenticated"
+            v-if="loggedIn"
             class="hover:bg-red-500/10 focus:bg-red-500/10 hover:text-red-600 focus:text-red-600"
             @click="logout"
           >

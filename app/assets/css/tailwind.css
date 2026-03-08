@@ -46,6 +46,23 @@
     --radius-xl: calc(var(--radius) + 4px);
     --animate-accordion-down: accordion-down 0.2s ease-out;
     --animate-accordion-up: accordion-up 0.2s ease-out;
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+  --font-dm-sans: "Manrope", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-sans: var(--font-dm-sans), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --display-family: var(--font-sans);
+  --text-family: var(--font-inter);
+  --display-weight: 600;
+  --text-weight: 400;
 
     @keyframes accordion-down {
         from {
@@ -171,6 +188,25 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.541 0.281 293.009);
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+
+  @media (width >=1400px) {
+    max-width: 1220px;
+  }
+}
+
+@utility step {
+  counter-increment: step;
+
+  &:before {
+    @apply absolute w-9 h-9 bg-muted rounded-full font-mono font-medium text-center text-base inline-flex items-center justify-center -indent-px border-4 border-background;
+    @apply -ml-[50px] -mt-1;
+    content: counter(step);
+  }
 }
 
 @layer base {

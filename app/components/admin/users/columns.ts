@@ -12,8 +12,6 @@ import {
 import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from 'lucide-vue-next'
 import type { User } from '~~/shared/db'
 import { formatRelativeTime } from '@/lib/utils'
-import type { ApiResponse } from '~~/server/utils/apiResponse'
-import { isEmpty } from 'es-toolkit/compat'
 
 export function createColumns(
   onEdit: (user: User) => void,
@@ -78,33 +76,6 @@ export function createColumns(
       },
       cell: ({ row }) =>
         h('div', { class: 'text-sm text-muted-foreground' }, row.getValue('email')),
-    },
-    {
-      accessorKey: 'dodoCustomerId',
-      header: ({ column }) => {
-        return h(Button, {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        }, () => ['Dodo Customer ID', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-      },
-      cell: ({ row }) => {
-        const dodoCustomerId = row.getValue('dodoCustomerId')
-        if (!isEmpty(dodoCustomerId)) {
-          return h('a', {
-            class: 'text-sm text-muted-foreground', href: '#', onClick: () => {
-              const customerPortalLink = $fetch<ApiResponse<string>>(`/api/users/${row.getValue('id')}/customer-portal`)
-              customerPortalLink.then((response) => {
-                if (response.success) {
-                  window.open(response.data, 'Customer Portal', `width=${window.outerWidth / 1.3}, height=${window.outerHeight / 1.2}, location=0, resizable, scrollbars, toolbar=0, menubar=0, popup=true`)
-                }
-              })
-            },
-          }, row.getValue('dodoCustomerId'))
-        }
-        else {
-          return h('div', { class: 'text-sm text-muted-foreground' }, '-')
-        }
-      },
     },
     {
       accessorKey: 'isAdmin',

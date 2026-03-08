@@ -44,6 +44,7 @@
     }
   },
   "cta": {
+    "primary": "Bắt đầu ngay",
     "start_writing": "Trang đang trống, hãy bắt đầu viết tại {fileLink}.",
     "read_more": "Đọc thêm tại",
     "contact": "Liên hệ hỗ trợ",
@@ -53,5 +54,37 @@
   "search": {
     "title": "Tìm kiếm...",
     "document": "Tìm kiếm tài liệu..."
+  },
+  "footer": {
+    "tagline": "Chúng tôi kiến tạo trải nghiệm số cùng phát triển với bạn.",
+    "navigation": "Điều hướng",
+    "services": "Dịch vụ",
+    "connect": "Kết nối",
+    "about_us": "Về chúng tôi",
+    "our_work": "Dự án",
+    "faq": "Câu hỏi",
+    "contact": "Liên hệ",
+    "web_development": "Phát triển Web",
+    "consulting": "Tư vấn Kỹ thuật",
+    "ui_design": "Thiết kế UI/UX",
+    "maintenance": "Bảo trì & Hỗ trợ",
+    "copyright": "© {year} No Name Studio. Bảo lưu mọi quyền.",
+    "made_in": "Chế tác tại Việt Nam"
+  },
+  "blog": {
+    "badge": "Blog",
+    "title": "Câu Chuyện & Ý Tưởng",
+    "subtitle": "Hướng dẫn, phân tích kỹ thuật chuyên sâu, và tư duy thiết kế từ đội ngũ của chúng tôi.",
+    "search_placeholder": "Tìm kiếm bài viết...",
+    "filter_all": "Tất cả",
+    "featured": "Nổi bật",
+    "read_article": "Đọc bài viết",
+    "min_read": "{time} phút đọc",
+    "articles_count": "{count} bài viết",
+    "no_results_title": "Không tìm thấy bài viết",
+    "no_results_description": "Hãy thử điều chỉnh tìm kiếm hoặc bộ lọc để tìm thấy nội dung bạn cần.",
+    "clear_filters": "Xóa bộ lọc",
+    "seo_title": "Blog — No Name Studio",
+    "seo_description": "Chia sẻ kiến thức, hướng dẫn, và cập nhật từ No Name Studio."
   }
 }

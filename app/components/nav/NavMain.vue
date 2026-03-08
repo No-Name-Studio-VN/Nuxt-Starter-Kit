@@ -19,9 +19,12 @@ import type { SidebarItem } from '~~/types/common'
 const route = useRoute()
 const { isMobile, setOpenMobile } = useSidebar()
 
-defineProps<{
+withDefaults(defineProps<{
+  title?: string
   items: SidebarItem[]
-}>()
+}>(), {
+  title: 'Platform',
+})
 
 const isItemActive = (itemUrl: string) => {
   return route.path === itemUrl
@@ -40,7 +43,7 @@ const handleSubItemClick = () => {
 
 <template>
   <SidebarGroup>
-    <SidebarGroupLabel>Platform</SidebarGroupLabel>
+    <SidebarGroupLabel>{{ title }}</SidebarGroupLabel>
     <SidebarMenu>
       <template
         v-for="item in items"

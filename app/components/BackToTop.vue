@@ -1,5 +1,4 @@
 <template>
-  <!-- Back to Top Button -->
   <Transition
     enter-active-class="transition-all duration-300"
     leave-active-class="transition-all duration-300"
@@ -22,15 +21,18 @@ import { ArrowUp } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 
 import { Button } from './ui/button'
+import { useWindowScroll } from '@vueuse/core'
+
+const { y } = useWindowScroll({ behavior: 'smooth' })
 
 const showBackToTop = ref(false)
 const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  y.value = 0
 }
 
 onMounted(() => {
   const handleScroll = () => {
-    showBackToTop.value = window.scrollY > 300
+    showBackToTop.value = y.value > 300
   }
 
   window.addEventListener('scroll', handleScroll)

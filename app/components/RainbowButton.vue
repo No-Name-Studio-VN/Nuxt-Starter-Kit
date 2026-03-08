@@ -20,13 +20,11 @@
 import { cn } from '@/lib/utils'
 import { computed } from 'vue'
 
-interface RainbowButtonProps {
+const props = withDefaults(defineProps<{
   class?: string
   is?: string
   speed?: number
-}
-
-const props = withDefaults(defineProps<RainbowButtonProps>(), {
+}>(), {
   speed: 2,
   is: 'button',
 })

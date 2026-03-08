@@ -17,9 +17,50 @@ import { cn } from '@/lib/utils'
 
 import MaxWidthWrapper from './MaxWidthWrapper.vue'
 import { HomeIcon } from 'lucide-vue-next'
-import { useBreadcrumbs } from '@/composables/useBreadcrumbs'
 
-const { breadcrumbs } = useBreadcrumbs()
+const route = useRoute()
+const router = useRouter()
+
+const breadcrumbs = computed<BreadcrumbItem[]>(() => {
+  const path = route.path
+  const crumbs: BreadcrumbItem[] = [{ title: 'Home', href: '/' }]
+
+  if (path === '/') return crumbs
+
+  const segments = path.split('/').filter(Boolean)
+  let currentPath = ''
+
+  segments.forEach((segment, index) => {
+    currentPath += `/${segment}`
+
+    // Try to find a matching route record to get meta
+    const match = router.resolve(currentPath)
+
+    let title = segment
+    if (match && match.meta && (match.meta.breadcrumb || match.meta.title)) {
+      title = (match.meta.breadcrumb as string) || (match.meta.title as string)
+    }
+    else {
+      // Capitalize
+      title = segment.charAt(0).toUpperCase() + segment.slice(1)
+    }
+
+    // If it's the last segment, it matches the current route
+    // We can check if the current route has specific meta that overrides the segment name
+    if (index === segments.length - 1) {
+      if (route.meta.breadcrumb || route.meta.title) {
+        title = (route.meta.breadcrumb as string) || (route.meta.title as string)
+      }
+    }
+
+    crumbs.push({
+      title,
+      href: currentPath,
+    })
+  })
+
+  return crumbs
+})
 
 withDefaults(defineProps<{
   titleControls?: VueElement
@@ -58,7 +99,7 @@ withDefaults(defineProps<{
           <BreadcrumbList class="flex-nowrap">
             <BreadcrumbItem>
               <BreadcrumbLink :href="breadcrumbs[0]?.href">
-                {{ breadcrumbs[0]?.label }}
+                {{ breadcrumbs[0]?.title }}
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator v-if="breadcrumbs.length > 1" />
@@ -74,14 +115,14 @@ withDefaults(defineProps<{
             >
               <BreadcrumbItem class="hidden md:inline-flex">
                 <BreadcrumbLink :href="crumb.href">
-                  {{ crumb.label }}
+                  {{ crumb.title }}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator class="hidden md:block" />
             </template>
             <BreadcrumbItem v-if="breadcrumbs.length > 1">
               <BreadcrumbPage class="max-w-20 truncate md:max-w-none">
-                {{ breadcrumbs[breadcrumbs.length - 1]?.label }}
+                {{ breadcrumbs[breadcrumbs.length - 1]?.title }}
               </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>

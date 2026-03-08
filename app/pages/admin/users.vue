@@ -13,5 +13,6 @@ definePageMeta({
   title: 'Users Management',
   breadcrumb: 'Users',
   middleware: ['auth', 'admin'],
+  layout: 'dashboard',
 })
 </script>

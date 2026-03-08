@@ -1,10 +1,10 @@
 import type { SidebarItem } from '~~/types/common'
 import {
   Home,
-  UserCog2Icon,
+  LayoutDashboardIcon,
 } from 'lucide-vue-next'
 
-export const SIDEBAR_LINKS: { navMain: SidebarItem[], navSecondary: SidebarItem[] } = {
+export const SIDEBAR_LINKS: { navMain: SidebarItem[], navSecondary: SidebarItem[], navAdmin: SidebarItem[] } = {
   navMain: [
     {
       title: 'Home',
@@ -12,11 +12,12 @@ export const SIDEBAR_LINKS: { navMain: SidebarItem[], navSecondary: SidebarItem[
       icon: Home,
     },
   ],
-  navSecondary: [
+  navSecondary: [],
+  navAdmin: [
     {
-      title: 'Support',
-      url: '/support',
-      icon: UserCog2Icon,
+      title: 'Admin Dashboard',
+      url: '/admin',
+      icon: LayoutDashboardIcon,
     },
   ],
 }

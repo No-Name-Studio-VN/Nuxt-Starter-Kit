@@ -2,6 +2,12 @@ html {
   font-family: Manrope, sans-serif;
   scroll-behavior: smooth;
   --header-height: calc(var(--spacing) * 12)
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 ::-webkit-scrollbar {
@@ -79,4 +85,9 @@ html {
 
 .skeleton-shimmer {
   animation: shimmer 2s infinite;
+}
+
+nuxt-studio {
+  z-index: 999999;
+  position: relative;
 }

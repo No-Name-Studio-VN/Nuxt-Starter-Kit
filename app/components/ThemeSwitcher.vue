@@ -9,19 +9,19 @@ const colorMode = useColorMode()
 const themeOptions = [
   {
     value: 'light' as const,
-    label: 'Light',
+    label: $t('common.light'),
     icon: Sun,
     action: () => colorMode.preference = 'light',
   },
   {
     value: 'dark' as const,
-    label: 'Dark',
+    label: $t('common.dark'),
     icon: Moon,
     action: () => colorMode.preference = 'dark',
   },
   {
     value: 'system' as const,
-    label: 'System',
+    label: $t('common.system'),
     icon: Monitor,
     action: () => colorMode.preference = 'system',
   },

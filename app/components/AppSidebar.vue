@@ -12,7 +12,6 @@ import {
 import { useSidebar } from '@/components/ui/sidebar/utils'
 import { SIDEBAR_LINKS } from '@/constants/sidebar'
 
-import InstallPrompter from './InstallPrompter.vue'
 import { Separator } from './ui/separator'
 
 const props = withDefaults(defineProps<SidebarProps>(), {
@@ -29,6 +28,13 @@ const { open } = useSidebar()
     </SidebarHeader>
     <SidebarContent>
       <NavMain :items="SIDEBAR_LINKS.navMain" />
+      <AuthState v-slot="{ user }">
+        <NavMain
+          v-if="user?.isAdmin"
+          title="Admin"
+          :items="SIDEBAR_LINKS.navAdmin"
+        />
+      </AuthState>
       <NavSecondary
         :items="SIDEBAR_LINKS.navSecondary"
         class="mt-auto"
@@ -36,7 +42,12 @@ const { open } = useSidebar()
     </SidebarContent>
     <Separator />
     <SidebarFooter>
-      <InstallPrompter :sidebar-open="open" />
+      <span
+        v-show="open"
+        class="text-sm text-muted-foreground"
+      >
+        © {{ new Date().getFullYear() }} {{ useConfig().value.footer.credits }}
+      </span>
     </SidebarFooter>
   </Sidebar>
 </template>

@@ -1,6 +1,8 @@
 <template>
-  <NuxtPwaAssets />
-  <NuxtLoadingIndicator />
+  <NuxtLoadingIndicator
+    :color="false"
+    class="z-100 bg-primary/80"
+  />
   <TooltipProvider>
     <NuxtLayout>
       <NuxtPage />

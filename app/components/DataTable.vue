@@ -105,7 +105,7 @@ defineExpose({
       <div class="flex items-center space-x-2">
         <Input
           :model-value="globalFilter ?? ''"
-          placeholder="Search..."
+          :placeholder="$t('search.title')"
           class="max-w-sm"
           @update:model-value="(value) => (globalFilter = String(value))"
         />
