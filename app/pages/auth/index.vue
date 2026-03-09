@@ -13,4 +13,9 @@ useHead({
 onMounted(() => {
   navigateTo('/auth/login')
 })
+
+definePageMeta({
+  title: 'Login',
+  breadcrumb: 'Login',
+})
 </script>
