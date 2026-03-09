@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ChevronRight } from 'lucide-vue-next'
-import { useRoute } from 'vue-router'
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
