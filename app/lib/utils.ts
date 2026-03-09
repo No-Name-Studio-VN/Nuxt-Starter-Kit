@@ -18,13 +18,21 @@ export function valueUpdater<T extends Updater<unknown>>(updaterOrValue: T, ref:
 /**
  * Format a date/time in a Facebook-like relative format using Luxon
  *
+ * Past:
  * - Just now (< 1 minute)
  * - X minutes ago (1-59 minutes)
  * - X hours ago (1-23 hours)
  * - Yesterday at HH:MM
  * - Day at HH:MM (within the last week)
- * - MMM D (within the same year)
- * - MMM D, YYYY (different year)
+ * - MMM D, YYYY (beyond threshold)
+ *
+ * Future:
+ * - In a moment (< 1 minute)
+ * - In X minutes (1-59 minutes)
+ * - In X hours (1-23 hours)
+ * - Tomorrow at HH:MM
+ * - Day at HH:MM (within the next week)
+ * - MMM D, YYYY (beyond threshold)
  *
  * @param date - The date to format (Date object, timestamp, or ISO string)
  * @param options - Configuration options
@@ -46,40 +54,50 @@ export function formatRelativeTime(
 
   const dt = toDateTime(date)
   const now = DateTime.now()
-  const diff = now.diff(dt, ['days', 'hours', 'minutes', 'seconds'])
+  const diffMillis = now.diff(dt).toMillis()
+  const isFuture = diffMillis < 0
 
-  // Future dates - show absolute time
-  if (diff.toMillis() < 0) {
-    return formatAbsoluteDate(dt, now, locale)
-  }
+  // Calculate diff in the correct direction
+  const diff = isFuture
+    ? dt.diff(now, ['days', 'hours', 'minutes', 'seconds'])
+    : now.diff(dt, ['days', 'hours', 'minutes', 'seconds'])
 
   const { days, hours, minutes } = diff.toObject()
 
   // Within relative threshold
   if ((days ?? 0) < relativeDaysThreshold) {
-    // Just now (< 1 minute)
+    // Just now / In a moment (< 1 minute)
     if ((minutes ?? 0) < 1 && (hours ?? 0) === 0 && (days ?? 0) === 0) {
-      return 'Just now'
+      return isFuture ? 'In a moment' : 'Just now'
     }
 
-    // Minutes ago (< 1 hour)
+    // Minutes (< 1 hour)
     if ((hours ?? 0) < 1 && (days ?? 0) === 0) {
       const m = Math.floor(minutes ?? 0)
+      if (isFuture) {
+        return dt.toRelative({ locale, unit: 'minutes' }) ?? `in ${m} minute${m === 1 ? '' : 's'}`
+      }
       return dt.toRelative({ locale, unit: 'minutes' }) ?? `${m} minute${m === 1 ? '' : 's'} ago`
     }
 
-    // Hours ago (< 24 hours)
+    // Hours (< 24 hours)
     if ((days ?? 0) < 1) {
       const h = Math.floor(hours ?? 0)
+      if (isFuture) {
+        return dt.toRelative({ locale, unit: 'hours' }) ?? `in ${h} hour${h === 1 ? '' : 's'}`
+      }
       return dt.toRelative({ locale, unit: 'hours' }) ?? `${h} hour${h === 1 ? '' : 's'} ago`
     }
 
-    // Yesterday
-    if (dt.hasSame(now.minus({ days: 1 }), 'day')) {
+    // Tomorrow / Yesterday
+    if (isFuture && dt.hasSame(now.plus({ days: 1 }), 'day')) {
+      return `Tomorrow at ${dt.toFormat('h:mm a', { locale })}`
+    }
+    if (!isFuture && dt.hasSame(now.minus({ days: 1 }), 'day')) {
       return `Yesterday at ${dt.toFormat('h:mm a', { locale })}`
     }
 
-    // Within last week (show day name)
+    // Within week (show day name)
     if ((days ?? 0) < 7) {
       return `${dt.toFormat('cccc', { locale })} at ${dt.toFormat('h:mm a', { locale })}`
     }
