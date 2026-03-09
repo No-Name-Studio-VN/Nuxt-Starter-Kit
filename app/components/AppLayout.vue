@@ -17,13 +17,14 @@ import { cn } from '@/lib/utils'
 
 import MaxWidthWrapper from './MaxWidthWrapper.vue'
 import { HomeIcon } from 'lucide-vue-next'
+import type { BreadcrumbItemType } from '@/composables/useBreadcrumb'
 
 const route = useRoute()
 const router = useRouter()
 
-const breadcrumbs = computed<BreadcrumbItem[]>(() => {
+const breadcrumbs = computed<BreadcrumbItemType[]>(() => {
   const path = route.path
-  const crumbs: BreadcrumbItem[] = [{ title: 'Home', href: '/' }]
+  const crumbs: BreadcrumbItemType[] = [{ title: 'Home', href: '/' }]
 
   if (path === '/') return crumbs
 

@@ -1,11 +1,12 @@
 import type { ContentNavigationItem } from '@nuxt/content'
 
-export interface BreadcrumbItem {
+export interface BreadcrumbItemType {
   title: string
   href: string
 }
-export function useBreadcrumb(url: string, nav: ContentNavigationItem[] = []): BreadcrumbItem[] {
-  const breadcrumbItems: BreadcrumbItem[] = []
+
+export function useBreadcrumb(url: string, nav: ContentNavigationItem[] = []): BreadcrumbItemType[] {
+  const breadcrumbItems: BreadcrumbItemType[] = []
   // Remove empty segments
   const segments = url.split('/').filter(segment => segment !== '')
 
