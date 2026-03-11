@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { isEmpty } from 'es-toolkit/compat'
 import { defaultLocale } from '~~/i18n-constants'
+import { APP_MANIFEST } from '@/constants/manifest'
 
 definePageMeta({
   breadcrumb: 'Home',
 })
 
 useSeo({
-  title: 'No Name Studio',
-  description: 'No Name Studio is a software development company that creates high-quality software for businesses and individuals.',
+  title: APP_MANIFEST.short_name,
+  description: APP_MANIFEST.description,
   type: 'website',
 })
 

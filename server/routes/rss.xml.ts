@@ -2,6 +2,7 @@ import { Feed } from 'feed'
 import { queryCollection } from '@nuxt/content/server'
 import { withoutTrailingSlash } from 'ufo'
 import { defaultLocale } from '../../i18n-constants'
+import { APP_MANIFEST } from '@/constants/manifest'
 
 export default defineEventHandler(async (event) => {
   const runtimeConfig = useRuntimeConfig()
@@ -10,13 +11,13 @@ export default defineEventHandler(async (event) => {
   const now = new Date()
 
   const feed = new Feed({
-    title: 'No Name Studio',
-    description: 'The homepage of No Name Studio',
+    title: APP_MANIFEST.name,
+    description: APP_MANIFEST.description,
     id: url,
     link: url,
     language: defaultLocale,
     favicon: `${url}/favicon.ico`,
-    copyright: `All rights reserved ${now.getFullYear()}, No Name Studio`,
+    copyright: `All rights reserved ${now.getFullYear()}, ${APP_MANIFEST.short_name}`,
   })
 
   const docs = await queryCollection(event, 'content')

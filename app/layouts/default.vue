@@ -20,11 +20,11 @@
           >
             <NuxtImg
               src="/favicon.svg"
-              alt="No Name Studio"
+              :alt="APP_MANIFEST.short_name"
               class="h-6 w-6 transition-all duration-300"
             />
             <span class="text-md font-semibold tracking-tight text-primary hover:text-foreground">
-              No Name Studio
+              {{ APP_MANIFEST.short_name }}
             </span>
           </NuxtLink>
 
@@ -289,11 +289,11 @@
             >
               <NuxtImg
                 src="/favicon.svg"
-                alt="No Name Studio"
+                :alt="APP_MANIFEST.short_name"
                 class="h-6 w-6"
               />
               <span class="text-sm font-semibold tracking-tight text-foreground">
-                No Name Studio
+                {{ APP_MANIFEST.short_name }}
               </span>
             </NuxtLink>
             <p class="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
@@ -470,6 +470,7 @@ import { Menu, X, ChevronLeft, ChevronRight, ArrowRight, SunIcon, MoonIcon, Mail
 import { cn } from '@/lib/utils'
 import { Motion } from 'motion-v'
 import { defaultLocale } from '~~/i18n-constants'
+import { APP_MANIFEST } from '@/constants/manifest'
 
 const config = useConfig()
 
