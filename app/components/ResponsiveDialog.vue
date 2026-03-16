@@ -21,7 +21,7 @@ const forwarded = useForwardPropsEmits(props, emits)
     <DialogContent
       class="p-0 md:max-w-[900px] lg:max-w-[1000px] sm:max-w-[550px] max-w-[95vw] h-[80vh] max-h-[80vh] flex flex-col"
     >
-      <div class="flex-1 min-h-0 overflow-hidden">
+      <div class="flex-1 min-h-0 overflow-y-auto">
         <slot />
       </div>
     </DialogContent>
@@ -32,7 +32,7 @@ const forwarded = useForwardPropsEmits(props, emits)
     v-bind="forwarded"
   >
     <DrawerContent class="h-[85vh] max-h-[85vh] flex flex-col">
-      <div class="flex-1 min-h-0">
+      <div class="flex-1 min-h-0 overflow-y-auto">
         <slot />
       </div>
     </DrawerContent>
