@@ -2,8 +2,6 @@ html {
   font-family: Manrope, sans-serif;
   scroll-behavior: smooth;
   --header-height: calc(var(--spacing) * 12)
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
