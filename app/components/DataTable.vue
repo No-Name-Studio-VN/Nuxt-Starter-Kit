@@ -14,7 +14,7 @@ import {
   useVueTable,
 } from '@tanstack/vue-table'
 import { ref } from 'vue'
-import { ChevronDown, RefreshCw } from 'lucide-vue-next'
+import { ChevronDown, RefreshCw } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -35,6 +35,7 @@ import { valueUpdater } from '@/lib/utils'
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  loading: boolean
 }
 
 const props = defineProps<DataTableProps<TData, TValue>>()
@@ -113,10 +114,11 @@ defineExpose({
       <div class="ml-auto flex items-center gap-2">
         <Button
           variant="outline"
+          :is-loading="props.loading"
           @click="emit('update:data')"
         >
-          Reload
           <RefreshCw />
+          Reload
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>

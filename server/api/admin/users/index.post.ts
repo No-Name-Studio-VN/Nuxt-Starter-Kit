@@ -4,7 +4,7 @@ import userService from '~~/server/utils/database/user'
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, body => createUserSchema.safeParse(body))
   if (!result.success) {
-    throw createError({ statusCode: 400, message: 'Invalid user data', data: result.error })
+    throw createError({ statusCode: 400, statusMessage: 'Bad Request. The submitted user data is invalid.', data: result.error })
   }
 
   const { password } = result.data

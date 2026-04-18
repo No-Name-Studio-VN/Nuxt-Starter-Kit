@@ -4,11 +4,11 @@ import userService from '~~/server/utils/database/user'
 export default defineEventHandler(async (event) => {
   const userId = Number(getRouterParam(event, 'id'))
   if (Number.isNaN(userId)) {
-    throw createError({ statusCode: 400, message: 'Invalid user ID' })
+    throw createError({ statusCode: 400, statusMessage: 'Bad Request. The provided user ID is not a valid number.' })
   }
   const result = await readValidatedBody(event, body => userUpdateSchema.safeParse(body))
   if (!result.success) {
-    throw createError({ statusCode: 400, message: 'Invalid user data', data: result.error })
+    throw createError({ statusCode: 400, statusMessage: 'Bad Request. The submitted user data is invalid.', data: result.error })
   }
 
   // Hash password if provided

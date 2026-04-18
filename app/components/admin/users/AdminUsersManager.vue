@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-6">
-    <!-- Header with Actions -->
     <div class="flex justify-between items-center">
       <div>
         <h2 class="text-2xl font-semibold">
@@ -11,30 +10,25 @@
         </p>
       </div>
       <Button @click="openAddDialog">
-        <UserPlus
-          class="mr-2 h-4 w-4"
-        />
+        <UserPlus class="h-4 w-4" />
         Add User
       </Button>
     </div>
 
-    <!-- Users DataTable -->
     <DataTable
       ref="dataTableRef"
       :columns="columns"
       :data="users"
+      :loading="loading"
       @update:data="fetchUsers"
     />
 
-    <!-- Batch Delete Action -->
     <div
       v-if="selectedUserIds.length > 0"
       class="flex gap-2 p-4 bg-muted rounded-lg border"
     >
       <div class="flex-1 flex items-center gap-2">
-        <InfoIcon
-          class="h-4 w-4 text-muted-foreground"
-        />
+        <InfoIcon class="h-4 w-4 text-muted-foreground" />
         <span class="text-sm text-muted-foreground">
           {{ selectedUserIds.length }} user(s) selected
         </span>
@@ -44,18 +38,13 @@
         :disabled="loading"
         @click="handleBatchDelete"
       >
-        <Trash2Icon
-          class="mr-2 h-4 w-4"
-        />
+        <Trash2Icon class="h-4 w-4" />
         Delete Selected
       </Button>
     </div>
 
-    <!-- Add/Edit User Dialog -->
-    <Dialog
-      v-model:open="showDialog"
-    >
-      <DialogContent class="sm:max-w-125">
+    <Dialog v-model:open="showDialog">
+      <DialogScrollContent>
         <DialogHeader>
           <DialogTitle>
             {{ isEditing ? 'Edit User' : 'Add New User' }}
@@ -65,68 +54,112 @@
           </DialogDescription>
         </DialogHeader>
 
-        <form @submit.prevent="handleSave">
+        <form
+          id="admin-user-form"
+          @submit="onSubmit"
+        >
           <FieldGroup>
             <FieldSet>
+              <FieldLegend>Basic Information</FieldLegend>
               <FieldGroup>
-                <Field>
-                  <FieldLabel for="username">
-                    Username
-                  </FieldLabel>
-                  <Input
-                    id="username"
-                    v-model="formData.username"
-                    placeholder="Enter username"
-                    :disabled="isEditing"
-                    autocomplete="off"
-                  />
-                  <FieldDescription
-                    v-if="isEditing"
-                  >
-                    Username cannot be changed
-                  </FieldDescription>
-                </Field>
+                <VeeField
+                  v-slot="{ componentField, errorMessage, meta }"
+                  name="username"
+                  :rules="validateUsername"
+                >
+                  <Field :data-invalid="meta.touched && !!errorMessage">
+                    <FieldLabel for="username">
+                      Username
+                    </FieldLabel>
+                    <Input
+                      id="username"
+                      v-bind="componentField"
+                      placeholder="Enter username"
+                      :disabled="isEditing"
+                      autocomplete="off"
+                      :aria-invalid="meta.touched && !!errorMessage"
+                    />
+                    <FieldDescription v-if="isEditing">
+                      Username cannot be changed
+                    </FieldDescription>
+                    <FieldError
+                      v-if="errorMessage"
+                      :errors="[errorMessage]"
+                    />
+                  </Field>
+                </VeeField>
 
-                <Field>
-                  <FieldLabel for="name">
-                    Full Name
-                  </FieldLabel>
-                  <Input
-                    id="name"
-                    v-model="formData.name"
-                    placeholder="Enter full name"
-                  />
-                </Field>
+                <VeeField
+                  v-slot="{ componentField, errorMessage, meta }"
+                  name="name"
+                  :rules="validateName"
+                >
+                  <Field :data-invalid="meta.touched && !!errorMessage">
+                    <FieldLabel for="name">
+                      Full Name
+                    </FieldLabel>
+                    <Input
+                      id="name"
+                      v-bind="componentField"
+                      placeholder="Enter full name"
+                      :aria-invalid="meta.touched && !!errorMessage"
+                    />
+                    <FieldError
+                      v-if="errorMessage"
+                      :errors="[errorMessage]"
+                    />
+                  </Field>
+                </VeeField>
 
-                <Field>
-                  <FieldLabel for="email">
-                    Email
-                  </FieldLabel>
-                  <Input
-                    id="email"
-                    v-model="formData.email"
-                    type="email"
-                    placeholder="Enter email"
-                  />
-                </Field>
+                <VeeField
+                  v-slot="{ componentField, errorMessage, meta }"
+                  name="email"
+                  :rules="validateEmail"
+                >
+                  <Field :data-invalid="meta.touched && !!errorMessage">
+                    <FieldLabel for="email">
+                      Email
+                    </FieldLabel>
+                    <Input
+                      id="email"
+                      v-bind="componentField"
+                      type="email"
+                      placeholder="Enter email"
+                      :aria-invalid="meta.touched && !!errorMessage"
+                    />
+                    <FieldError
+                      v-if="errorMessage"
+                      :errors="[errorMessage]"
+                    />
+                  </Field>
+                </VeeField>
 
-                <Field>
-                  <FieldLabel for="password">
-                    Password
-                  </FieldLabel>
-                  <Input
-                    id="password"
-                    v-model="formData.password"
-                    type="password"
-                    :placeholder="isEditing ? 'Leave blank to keep current password' : 'Enter password'"
-                    autocomplete="new-password"
-                  />
-                  <FieldDescription
-                    v-if="isEditing"
-                  >
-                    Only fill this if you want to change the password
-                  </FieldDescription>
-                </Field>
+                <VeeField
+                  v-slot="{ componentField, errorMessage, meta }"
+                  name="password"
+                  :rules="validatePassword"
+                >
+                  <Field :data-invalid="meta.touched && !!errorMessage">
+                    <FieldLabel for="password">
+                      Password
+                    </FieldLabel>
+                    <Input
+                      id="password"
+                      v-bind="componentField"
+                      type="password"
+                      :placeholder="isEditing ? 'Leave blank to keep current password' : 'Enter password'"
+                      autocomplete="new-password"
+                      :aria-invalid="meta.touched && !!errorMessage"
+                    />
+                    <FieldDescription v-if="isEditing">
+                      Only fill this if you want to change the password
+                    </FieldDescription>
+                    <FieldError
+                      v-if="errorMessage"
+                      :errors="[errorMessage]"
+                    />
+                  </Field>
+                </VeeField>
               </FieldGroup>
             </FieldSet>
 
@@ -144,50 +177,60 @@
                         Mark as an admin user with elevated permissions
                       </FieldDescription>
                     </div>
-                    <Switch
-                      id="isAdmin"
-                      v-model="formData.isAdmin"
-                    />
+                    <VeeField
+                      v-slot="{ field }"
+                      name="isAdmin"
+                      :rules="validateIsAdmin"
+                    >
+                      <Switch
+                        id="isAdmin"
+                        :model-value="field.value"
+                        @update:model-value="field.onChange"
+                      />
+                    </VeeField>
                   </div>
                 </Field>
               </FieldGroup>
             </FieldSet>
           </FieldGroup>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              type="button"
-              :disabled="loading"
-              @click="closeDialog"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              :disabled="loading || !isFormValid"
-            >
-              <Loader2Icon
-                v-if="loading"
-                class="mr-2 h-4 w-4 animate-spin"
-              />
-              {{ isEditing ? 'Save Changes' : 'Create User' }}
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            type="button"
+            :disabled="loading"
+            @click="closeDialog"
+          >
+            Cancel
+          </Button>
+          <Button
+            form="admin-user-form"
+            type="submit"
+            :is-loading="loading"
+          >
+            {{ isEditing ? 'Save Changes' : 'Create User' }}
+          </Button>
+        </DialogFooter>
+      </DialogScrollContent>
     </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { Field as VeeField, useForm } from 'vee-validate'
+import { toast } from 'vue-sonner'
+import { emailSchema, usernameSchema } from '#shared/schemas/userSchema'
+import type { User } from '#shared/db'
+import type { ApiResponse } from '~~/server/utils/apiResponse'
+import { InfoIcon, Trash2Icon, UserPlus } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
-  DialogContent,
+  DialogScrollContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -196,24 +239,22 @@ import {
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
   FieldLegend,
   FieldSeparator,
 } from '@/components/ui/field'
-import { toast } from 'vue-sonner'
 import DataTable from '@/components/DataTable.vue'
 import { createColumns } from './columns'
-import type { User } from '#shared/db'
-import { InfoIcon, Loader2Icon, Trash2Icon, UserPlus } from 'lucide-vue-next'
-import type { ApiResponse } from '~~/server/utils/apiResponse'
 
 const dataTableRef = ref()
 const users = ref<User[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const editingUserId = ref<number | null>(null)
+
 const defaultFormData = {
   username: '',
   email: '',
@@ -222,20 +263,89 @@ const defaultFormData = {
   isAdmin: false,
 }
 
-const formData = ref({ ...defaultFormData })
 const isEditing = computed(() => editingUserId.value !== null)
 
-const isFormValid = computed(() => {
-  if (isEditing.value) {
-    return formData.value.name!.trim().length > 0 && formData.value.email!.trim().length > 0
-  }
-  return (
-    formData.value.username!.trim().length > 0
-    && formData.value.name!.trim().length > 0
-    && formData.value.email!.trim().length > 0
-    && formData.value.password!.trim().length > 0
-  )
+const {
+  handleSubmit,
+  resetForm,
+} = useForm({
+  initialValues: { ...defaultFormData },
 })
+
+const onSubmit = handleSubmit(
+  async (values) => {
+    try {
+      loading.value = true
+      const submitData = { ...values }
+
+      if (isEditing.value && submitData.password.trim() === '') {
+        const { password: _password, ...payload } = submitData
+        await $fetch(`/api/admin/users/${editingUserId.value}`, {
+          method: 'PUT',
+          body: { ...payload, id: editingUserId.value },
+        })
+      }
+      else if (isEditing.value) {
+        await $fetch(`/api/admin/users/${editingUserId.value}`, {
+          method: 'PUT',
+          body: { ...submitData, id: editingUserId.value },
+        })
+      }
+      else {
+        await $fetch('/api/admin/users', {
+          method: 'POST',
+          body: submitData,
+        })
+      }
+
+      toast.success(isEditing.value ? 'User updated successfully' : 'User created successfully')
+      closeDialog()
+      await fetchUsers()
+    }
+    catch (error) {
+      createError({ statusCode: 500, statusMessage: 'Internal Client Error. Failed to save the user record.', data: error })
+    }
+    finally {
+      loading.value = false
+    }
+  },
+  ({ errors }) => {
+    const firstError = Object.values(errors)[0]
+    if (firstError)
+      toast.error(firstError)
+    else
+      toast.error('Please fix the errors above')
+  },
+)
+
+function validateUsername(value: unknown) {
+  const result = usernameSchema.safeParse(value)
+  return result.success ? true : (result.error.issues[0]?.message ?? 'Invalid username')
+}
+
+function validateName(value: unknown) {
+  return typeof value === 'string' && value.trim().length > 0
+    ? true
+    : 'Full name is required'
+}
+
+function validateEmail(value: unknown) {
+  const result = emailSchema.safeParse(value)
+  return result.success ? true : (result.error.issues[0]?.message ?? 'Valid email is required')
+}
+
+function validatePassword(value: unknown) {
+  if (isEditing.value)
+    return true
+
+  return typeof value === 'string' && value.trim().length > 0
+    ? true
+    : 'Password is required for new users'
+}
+
+function validateIsAdmin(_value: unknown) {
+  return true
+}
 
 const selectedUserIds = computed(() => {
   if (!dataTableRef.value?.table) return []
@@ -243,7 +353,6 @@ const selectedUserIds = computed(() => {
   return selectedRows.map((row: { original: User }) => row.original.id)
 })
 
-// Create columns with callbacks
 const columns = computed(() => createColumns(handleEdit, handleDeleteConfirm))
 
 async function fetchUsers() {
@@ -254,70 +363,41 @@ async function fetchUsers() {
     users.value = res.data
   }
   catch (error) {
-    createError({ message: 'Failed to save user', statusCode: 500, data: error })
+    createError({ statusCode: 500, statusMessage: 'Internal Client Error. Failed to load the user records.', data: error })
   }
   finally {
     loading.value = false
   }
 }
 
+function resetToDefaults() {
+  resetForm({ values: { ...defaultFormData } })
+}
+
 function openAddDialog() {
   editingUserId.value = null
-  resetForm()
+  resetToDefaults()
   showDialog.value = true
 }
 
 function handleEdit(user: User) {
   editingUserId.value = user.id
-  formData.value.username = user.username
-  formData.value.email = user.email
-  formData.value.name = user.name
-  formData.value.isAdmin = user.isAdmin
-  formData.value.password = user.password
+  resetForm({
+    values: {
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      password: '',
+      isAdmin: user.isAdmin,
+    },
+  })
   showDialog.value = true
 }
 
 function closeDialog() {
   showDialog.value = false
   editingUserId.value = null
-  resetForm()
-}
-
-function resetForm() {
-  formData.value = { ...defaultFormData }
-}
-
-async function handleSave() {
-  if (!isFormValid.value) return
-
-  try {
-    loading.value = true
-
-    if (isEditing.value) {
-      await $fetch(`/api/admin/users/${editingUserId.value}`, {
-        method: 'PUT',
-        body: formData.value,
-      })
-      toast.success('User updated successfully')
-    }
-    else {
-      // Create new user
-      await $fetch('/api/admin/users', {
-        method: 'POST',
-        body: formData.value,
-      })
-      toast.success('User created successfully')
-    }
-
-    closeDialog()
-    await fetchUsers()
-  }
-  catch (error) {
-    createError({ message: 'Failed to save user', statusCode: 500, data: error })
-  }
-  finally {
-    loading.value = false
-  }
+  resetToDefaults()
 }
 
 function handleDeleteConfirm(userId: number) {
@@ -325,7 +405,7 @@ function handleDeleteConfirm(userId: number) {
   if (!user) return
 
   if (confirm(`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`)) {
-    handleDelete(userId)
+    void handleDelete(userId)
   }
 }
 
@@ -339,7 +419,7 @@ async function handleDelete(userId: number) {
     await fetchUsers()
   }
   catch (error) {
-    createError({ message: 'Failed to save user', statusCode: 500, data: error })
+    createError({ statusCode: 500, statusMessage: 'Internal Client Error. Failed to delete the user record.', data: error })
   }
   finally {
     loading.value = false
@@ -362,21 +442,19 @@ async function handleBatchDelete() {
     })
     toast.success(`Successfully deleted ${count} user(s)`)
 
-    // Clear selection
     if (dataTableRef.value?.table) {
       dataTableRef.value.table.resetRowSelection()
     }
     await fetchUsers()
   }
   catch (error) {
-    createError({ message: 'Failed to save user', statusCode: 500, data: error })
+    createError({ statusCode: 500, statusMessage: 'Internal Client Error. Failed to delete the selected users.', data: error })
   }
   finally {
     loading.value = false
   }
 }
 
-// Fetch users on mount
 onMounted(() => {
   fetchUsers()
 })

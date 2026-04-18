@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   if (Number.isNaN(id)) {
     throw createError({
       statusCode: 400,
-      message: 'Invalid user ID',
+      statusMessage: 'Bad Request. The provided user ID is not a valid number.',
     })
   }
 

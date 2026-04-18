@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from 'lucide-vue-next'
+import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from '@lucide/vue'
 import type { User } from '~~/shared/db'
 import { formatRelativeTime } from '@/lib/utils'
 

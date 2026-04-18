@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!Array.isArray(userIds) || userIds.length === 0) {
     throw createError({
       statusCode: 400,
-      message: 'User IDs array is required',
+      statusMessage: 'Bad Request. A non-empty array of user IDs is required.',
     })
   }
   await userSchema.bulkDelete(userIds)

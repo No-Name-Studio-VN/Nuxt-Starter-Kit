@@ -1,9 +1,7 @@
 <template>
-  <AppLayout>
-    <div class="space-y-6">
-      <AdminUsersManager />
-    </div>
-  </AppLayout>
+  <div class="space-y-6">
+    <AdminUsersManager />
+  </div>
 </template>
 
 <script setup lang="ts">

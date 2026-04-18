@@ -9,14 +9,14 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'User not found',
+      statusMessage: 'User not found.',
     })
   }
 
   if (!user.isAdmin) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'Admin access required to access this resource',
+      statusMessage: 'Forbidden. Administrator privileges are required to access this resource.',
     })
   }
 })
