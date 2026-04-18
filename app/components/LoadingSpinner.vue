@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2 } from '@lucide/vue'
 import { computed } from 'vue'
 
 const props = withDefaults(defineProps<{

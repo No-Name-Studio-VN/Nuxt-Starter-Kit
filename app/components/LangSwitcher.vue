@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { LanguagesIcon } from 'lucide-vue-next'
+import { LanguagesIcon } from '@lucide/vue'
 import { breakpointsTailwind, useBreakpoints } from '@vueuse/core'
 
 const { locale, locales } = useI18n()

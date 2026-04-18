@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { Sheet, SheetTrigger, SheetContent } from '../ui/sheet'
-import { MenuIcon } from 'lucide-vue-next'
+import { MenuIcon } from '@lucide/vue'
 
 const open = ref(false)
 

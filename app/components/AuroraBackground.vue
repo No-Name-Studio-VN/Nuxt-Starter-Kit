@@ -1,10 +1,10 @@
 <template>
-  <main>
+  <div>
     <div
       v-bind="props"
       :class="
         cn(
-          'transition-bg relative flex h-full flex-col items-center justify-center bg-zinc-50 text-slate-950 dark:bg-zinc-900',
+          'transition-bg relative flex h-full flex-col items-center justify-center bg-zinc-50 text-slate-950 dark:bg-zinc-900 dark:text-slate-50',
           props.class,
         )
       "
@@ -25,7 +25,7 @@
       </div>
       <slot />
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup lang="ts">

@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { PaintbrushIcon } from 'lucide-vue-next'
+import { PaintbrushIcon } from '@lucide/vue'
 import { breakpointsTailwind, useBreakpoints } from '@vueuse/core'
 
 const breakpoints = useBreakpoints(breakpointsTailwind)

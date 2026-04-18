@@ -70,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowUpRightIcon } from 'lucide-vue-next'
+import { ArrowUpRightIcon } from '@lucide/vue'
 import { navigationMenuTriggerStyle, NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu'
 
 import CtIcon from '@/components/content/CtIcon.vue'

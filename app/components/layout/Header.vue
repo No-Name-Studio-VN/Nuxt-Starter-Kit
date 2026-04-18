@@ -92,7 +92,7 @@
 
 <script setup lang="ts">
 import CtIcon from '@/components/content/CtIcon.vue'
-import { SunIcon, MoonIcon } from 'lucide-vue-next'
+import { SunIcon, MoonIcon } from '@lucide/vue'
 
 const config = useConfig()
 const { i18nEnabled } = useI18nDocs()

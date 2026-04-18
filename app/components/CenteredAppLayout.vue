@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import type { VueElement } from 'vue'
-
-import { APP_MANIFEST } from '@/constants/manifest'
-
+import { APP_MANIFEST } from '#shared/constants/manifest'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,50 +9,33 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { Separator } from '@/components/ui/separator'
-import { SidebarTrigger } from '@/components/ui/sidebar'
+import { HomeIcon } from '@lucide/vue'
 import { cn } from '@/lib/utils'
-
-import MaxWidthWrapper from './MaxWidthWrapper.vue'
-import { HomeIcon } from 'lucide-vue-next'
 
 withDefaults(defineProps<{
   title: string
-  titleBackButtonLink?: string
-  titleControls?: VueElement
   className?: string
-  hideSidebarTrigger?: boolean
-  centerContent?: boolean
-  fullWidth?: boolean
-}>(), {
-  hideSidebarTrigger: false,
-  centerContent: false,
-  fullWidth: false,
-})
+}>(), {})
 </script>
 
 <template>
-  <div :class="cn('flex flex-col min-h-screen', className)">
+  <div :class="cn('flex flex-col min-h-dvh', className)">
     <header
-      class="sticky top-0 z-10 border-b md:rounded-t-xl flex h-(--header-height) shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)"
+      class="shrink-0 border-b bg-muted/10 backdrop-blur-md flex h-(--header-height) items-center gap-2 transition-[width,height] ease-linear"
     >
       <div class="flex items-center gap-2 px-4">
-        <SidebarTrigger
-          v-if="!hideSidebarTrigger"
-          class="-ml-1"
-        />
         <Button
-          v-else
           variant="ghost"
           size="icon"
           class="h-7 w-7 -ml-1"
           @click="navigateTo('/')"
         >
           <HomeIcon />
-          <span class="sr-only">Toggle Sidebar</span>
+          <span class="sr-only">Go Home</span>
         </Button>
         <Separator
           orientation="vertical"
-          class="mr-2 h-4"
+          class="mr-2 data-[orientation=vertical]:h-4"
         />
         <Breadcrumb>
           <BreadcrumbList>
@@ -70,33 +50,16 @@ withDefaults(defineProps<{
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <div
-          v-if="titleControls"
-          class="ml-auto"
-        >
-          <component :is="titleControls" />
-        </div>
       </div>
     </header>
 
-    <div :class="cn('flex-1', centerContent ? 'flex items-center justify-center' : '')">
-      <MaxWidthWrapper
-        v-if="!fullWidth"
-        :class-name="centerContent ? 'flex items-center justify-center min-h-full' : ''"
-      >
-        <slot />
-      </MaxWidthWrapper>
-      <div
-        v-else
-        :class="cn('w-full h-full', centerContent ? 'flex items-center justify-center min-h-full px-4' : 'px-4')"
-      >
-        <slot />
-      </div>
+    <div class="flex-1 flex items-center justify-center px-4 py-6">
+      <slot />
     </div>
 
-    <footer class="border-t">
+    <footer class="shrink-0 border-t bg-muted/10 backdrop-blur-md">
       <div class="px-4 py-6">
-        <p class="text-center text-sm text-muted-foreground">
+        <p class="text-center text-sm">
           © {{ new Date().getFullYear() }} Developed by <strong>No Name Studio</strong> All rights reserved.
         </p>
       </div>

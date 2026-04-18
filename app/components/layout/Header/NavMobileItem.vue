@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ArrowUpRightIcon, ChevronsDownUpIcon, ChevronsUpDownIcon } from 'lucide-vue-next'
+import { ArrowUpRightIcon, ChevronsDownUpIcon, ChevronsUpDownIcon } from '@lucide/vue'
 import CtIcon from '@/components/content/CtIcon.vue'
 
 const props = defineProps<{

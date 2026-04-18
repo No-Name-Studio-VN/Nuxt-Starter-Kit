@@ -100,7 +100,7 @@
 
 <script setup lang="ts">
 import { themes } from '@/lib/themes'
-import { CheckIcon, SunIcon, MoonIcon, MonitorIcon } from 'lucide-vue-next'
+import { CheckIcon, SunIcon, MoonIcon, MonitorIcon } from '@lucide/vue'
 import type { Color } from '~~/types'
 
 const { setClassTheme, theme, radius, setTheme, setRadius, allColors } = useThemes()

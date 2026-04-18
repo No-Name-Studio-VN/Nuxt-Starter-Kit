@@ -3,11 +3,10 @@
     ref="container"
     :class="props.class"
   >
-    <Motion
+    <motion.div
       v-for="(child, index) in children"
       :key="index"
       ref="childElements"
-      as="div"
       :initial="getInitial()"
       :while-in-view="getAnimate()"
       :transition="{
@@ -17,23 +16,21 @@
       }"
     >
       <component :is="child" />
-    </Motion>
+    </motion.div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Motion } from 'motion-v'
+import { motion } from 'motion-v'
 import { ref, onMounted, watchEffect, useSlots } from 'vue'
 
-interface Props {
+const props = withDefaults(defineProps<{
   duration?: number
   delay?: number
   blur?: string
   yOffset?: number
   class?: string
-}
-
-const props = withDefaults(defineProps<Props>(), {
+}>(), {
   duration: 1,
   delay: 2,
   blur: '20px',

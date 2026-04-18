@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Motion } from 'motion-v'
-import { ArrowLeft } from 'lucide-vue-next'
+import { motion } from 'motion-v'
+import { ArrowLeft } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 
 const error = useError()
@@ -14,7 +14,7 @@ const handleError = () => {
 
 <template>
   <AuroraBackground>
-    <Motion
+    <motion.div
       as="div"
       :initial="{ opacity: 0, filter: 'blur(10px)' }"
       :while-in-view="{
@@ -46,11 +46,11 @@ const handleError = () => {
           <Button
             @click="handleError"
           >
-            <ArrowLeft class="mr-2 h-4 w-4" />
+            <ArrowLeft class="h-4 w-4" />
             Go Back Home
           </Button>
         </div>
       </MaxWidthWrapper>
-    </Motion>
+    </motion.div>
   </AuroraBackground>
 </template>
