@@ -86,7 +86,7 @@
 
 <script setup lang="ts">
 import type { BuiltinLanguage } from 'shiki'
-import { ChevronUpIcon, ChevronDownIcon } from 'lucide-vue-next'
+import { ChevronUpIcon, ChevronDownIcon } from '@lucide/vue'
 import CtIcon from './CtIcon.vue'
 
 const props = withDefaults(defineProps<{

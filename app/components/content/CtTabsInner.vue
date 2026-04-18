@@ -184,7 +184,7 @@
 import CtIcon from '@/components/content/CtIcon.vue'
 import { cn } from '@/lib/utils'
 import { ScrollBar } from '../ui/scroll-area'
-import { ChevronsUpDownIcon, CheckIcon } from 'lucide-vue-next'
+import { ChevronsUpDownIcon, CheckIcon } from '@lucide/vue'
 
 const props = defineProps<{
   slotsData: { label: string, index: number }[]

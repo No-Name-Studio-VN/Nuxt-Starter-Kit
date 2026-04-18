@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { FileTreeItem } from '~~/types'
-import { ChevronDownIcon } from 'lucide-vue-next'
+import { ChevronDownIcon } from '@lucide/vue'
 import CtIcon from './CtIcon.vue'
 
 const props = defineProps<{

@@ -15,7 +15,7 @@ sitemap:
 ::ct-alert
 ---
 target: _blank
-to: https://lucide.dev/guide/packages/lucide-vue-next
+to: https://lucide.dev/guide/packages/@lucide/vue
 ---
 The icon component uses **Lucide Vue** under the hood for string icon names. Check out the full icon list from Lucide.
 ::

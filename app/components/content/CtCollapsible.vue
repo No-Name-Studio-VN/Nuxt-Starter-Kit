@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDownIcon, ChevronsUpDownIcon } from 'lucide-vue-next'
+import { ChevronDownIcon, ChevronsUpDownIcon } from '@lucide/vue'
 
 const props = withDefaults(defineProps<{
   variant?: 'simple' | 'card'

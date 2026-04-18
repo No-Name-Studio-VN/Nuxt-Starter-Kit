@@ -17,7 +17,7 @@ import type { HTMLAttributes } from 'vue';
 import { ListboxFilter, useForwardProps } from 'reka-ui';
 import { computed } from 'vue';
 import { cn } from '@/lib/utils';
-import { SearchIcon, LoaderIcon } from 'lucide-vue-next';
+import { SearchIcon, LoaderIcon } from '@lucide/vue';
 
 defineOptions({
   inheritAttrs: false,

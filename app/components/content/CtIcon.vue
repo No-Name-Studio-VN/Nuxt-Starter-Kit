@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { computed, type Component } from 'vue'
-import * as lucideIcons from 'lucide-vue-next'
+import * as lucideIcons from '@lucide/vue'
 import { cn } from '~/lib/utils'
 import { useFileIcon } from '~/composables/useFileIcon'
 

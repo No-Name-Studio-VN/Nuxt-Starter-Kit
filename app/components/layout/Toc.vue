@@ -95,7 +95,7 @@
 
 <script setup lang="ts">
 import CtIcon from '@/components/content/CtIcon.vue'
-import { ArrowUpRightIcon, ChevronRightIcon } from 'lucide-vue-next'
+import { ArrowUpRightIcon, ChevronRightIcon } from '@lucide/vue'
 import { usePageData } from '@/composables/usePageData'
 import type { Toc } from '@nuxt/content'
 

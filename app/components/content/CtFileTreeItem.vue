@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDownIcon } from 'lucide-vue-next'
+import { ChevronDownIcon } from '@lucide/vue'
 import type { FileTreeItem } from '~~/types'
 import CtIcon from './CtIcon.vue'
 

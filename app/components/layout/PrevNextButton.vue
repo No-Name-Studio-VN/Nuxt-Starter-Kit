@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import type { ContentNavigationItem } from '@nuxt/content'
-import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-vue-next'
+import { ArrowLeftIcon, ArrowRightIcon } from '@lucide/vue'
 
 defineProps<{
   prevNext: ContentNavigationItem

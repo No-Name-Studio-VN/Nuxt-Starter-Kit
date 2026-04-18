@@ -1,4 +1,4 @@
-import { Bell, Shield, Wifi, Zap } from 'lucide-vue-next'
+import { Bell, Shield, Wifi, Zap } from '@lucide/vue'
 
 export const INSTALL_PROMPTER_FEATURES = [
   {
@@ -25,4 +25,4 @@ export const INSTALL_PROMPTER_FEATURES = [
     description: 'Your data stays safe with enhanced security features',
     colorClass: 'orange',
   },
-]
+] as const

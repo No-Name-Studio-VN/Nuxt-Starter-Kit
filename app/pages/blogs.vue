@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Newspaper, SearchXIcon } from 'lucide-vue-next'
+import { Newspaper, SearchXIcon } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { isEmpty } from 'es-toolkit/compat'

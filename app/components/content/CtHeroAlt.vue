@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 import CtIcon from '@/components/content/CtIcon.vue'
-import { ArrowRightIcon } from 'lucide-vue-next'
+import { ArrowRightIcon } from '@lucide/vue'
 import type { Target } from '~~/types'
 
 defineProps<{

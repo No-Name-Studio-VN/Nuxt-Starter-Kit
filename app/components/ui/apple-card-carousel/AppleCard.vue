@@ -3,7 +3,7 @@ import { onClickOutside } from "@vueuse/core";
 import { AnimatePresence, Motion } from "motion-v";
 import { inject, onMounted, onUnmounted, ref, watch } from "vue";
 import { CarouselKey } from "./AppleCarouselContext";
-import { XIcon } from "lucide-vue-next";
+import { XIcon } from "@lucide/vue";
 import AppleBlurImage from "./AppleBlurImage.vue";
 
 interface Card {

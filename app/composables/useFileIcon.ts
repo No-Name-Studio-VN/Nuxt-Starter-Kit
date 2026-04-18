@@ -1,5 +1,5 @@
 import { JsonIcon, TypeScriptIcon, NpmIcon, NuxtIcon, EsLintIcon, VueDotjsIcon, TailwindCssIcon, DotEnvIcon, JavaScriptIcon, MarkdownIcon, PythonIcon, BunIcon, CssIcon, YarnIcon, PnpmIcon, GnuBashIcon, DenoIcon, GitignoreDotioIcon, EditorConfigIcon, YamlIcon } from 'vue3-simple-icons'
-import { FolderIcon, FileIcon } from 'lucide-vue-next'
+import { FolderIcon, FileIcon } from '@lucide/vue'
 import { isEmpty } from 'es-toolkit/compat'
 
 export const codeIcon = {

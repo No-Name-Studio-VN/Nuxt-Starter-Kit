@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, provide, ref, watch } from "vue";
 import { CarouselKey } from "./AppleCarouselContext";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-vue-next";
+import { ChevronLeftIcon, ChevronRightIcon } from "@lucide/vue";
 import { Button } from "../button";
 
 interface Props {

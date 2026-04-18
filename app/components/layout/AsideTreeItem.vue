@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDownIcon } from 'lucide-vue-next'
+import { ChevronDownIcon } from '@lucide/vue'
 import type { ContentNavigationItem } from '@nuxt/content'
 
 const props = defineProps<{

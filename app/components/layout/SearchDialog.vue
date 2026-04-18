@@ -157,7 +157,7 @@ import { nextTick } from 'vue'
 import MiniSearch, { type SearchResult } from 'minisearch'
 import { useContentHelpers } from '@/composables/useContentHelpers'
 import { isEmpty } from 'es-toolkit/compat'
-import { ChevronRightIcon, FileIcon, SearchXIcon } from 'lucide-vue-next'
+import { ChevronRightIcon, FileIcon, SearchXIcon } from '@lucide/vue'
 import CtIcon from '@/components/content/CtIcon.vue'
 
 const store = useSearchDialogStore()

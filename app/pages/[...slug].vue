@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 // import { findPageHeadline } from '@nuxt/content/utils'
-import { CircleXIcon, SearchIcon } from 'lucide-vue-next'
+import { CircleXIcon, SearchIcon } from '@lucide/vue'
 import { usePageData } from '@/composables/usePageData'
 
 const route = useRoute()
@@ -121,14 +121,15 @@ watch(pageData, (val) => {
   page.value = val ?? null
 }, { immediate: true })
 
-// Step 2: Only fetch navigation + surroundings if page exists (lazy — non-blocking)
-const { data: navData } = useLazyAsyncData('navigation', () => {
+// Step 2: Fetch navigation server-side so docs layout is stable on first render
+const { data: navData } = await useAsyncData('navigation', () => {
   return queryCollectionNavigation('content', ['title', 'description', 'path', 'icon', 'navBadges'])
 })
 watch(navData, (val) => {
   navigation.value = val ?? null
 }, { immediate: true })
 
+// Step 3: Keep surroundings lazy to avoid extra SSR work on every content request
 const { data: surroundingsData } = useLazyAsyncData(`surroundings-${routePath.value}`, () => {
   return queryCollectionItemSurroundings('content', routePath.value, {
     fields: ['title', 'description', 'path', 'icon', 'navBadges'],

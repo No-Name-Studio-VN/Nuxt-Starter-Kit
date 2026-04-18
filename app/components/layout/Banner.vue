@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { XIcon } from 'lucide-vue-next'
+import { XIcon } from '@lucide/vue'
 
 const open = useCookie<boolean>('banner-open', { default: () => true })
 const { showClose, content, to, target, border } = useConfig().value.banner

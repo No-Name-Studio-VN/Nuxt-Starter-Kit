@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRightIcon } from 'lucide-vue-next'
+import { ArrowRightIcon } from '@lucide/vue'
 import type { Target } from '~~/types'
 import CtIcon from './CtIcon.vue'
 

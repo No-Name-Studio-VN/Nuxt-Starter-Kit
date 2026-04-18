@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowUpRightIcon, AlertTriangleIcon } from 'lucide-vue-next'
+import { ArrowUpRightIcon, AlertTriangleIcon } from '@lucide/vue'
 import type { Target } from '~~/types'
 
 const props = withDefaults(defineProps<{

@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { toast } from 'vue-sonner'
-import { ClipboardCopyIcon, CheckIcon } from 'lucide-vue-next'
+import { ClipboardCopyIcon, CheckIcon } from '@lucide/vue'
 
 const { code } = defineProps<{
   code: string
