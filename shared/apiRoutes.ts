@@ -5,6 +5,9 @@ export const apiRoutes = {
   AUTH_REGISTER: '/auth/register',
 
   MY_PROFILE: '/api/users/me',
+  AUTH_GOOGLE: '/api/auth/google',
+  AUTH_OAUTH_URL: '/api/auth/oauth/url',
+  AUTH_OAUTH_UNLINK: '/api/auth/oauth/unlink',
 }
 
 const apiRules: NuxtSecurityRouteRules = {
@@ -17,17 +20,36 @@ const apiRules: NuxtSecurityRouteRules = {
 }
 
 export const routeRules = {
-  '/api/admin/seed': {
-    security: {
-      rateLimiter: {
-        tokensPerInterval: 5,
-        interval: 3 * 60 * 60 * 24 * 1000, // 3 days
-        headers: true,
-        throwError: true,
-      },
-    },
-  },
   '/api/**': {
     security: apiRules,
   },
+  '/admin/**': {
+    ssr: false,
+    prerender: false,
+  },
+  '/pwa': {
+    ssr: false,
+  },
+  '/docs/**': {
+    swr: 3600,
+  },
+  '/blogs/**': {
+    swr: 3600,
+  },
+  '/_studio/**': {
+    ssr: true,
+  },
+  '/__nuxt_studio/**': {
+    ssr: true,
+  },
+  '/admin/studio/login': {
+    ssr: true,
+    index: false, // Prevent index.html generation
+  },
+  '/admin/studio/login/**': {
+    ssr: true,
+    index: false,
+  },
+  // Directory-level redirects are auto-generated from .navigation.yml files
+  // by the ~/modules/navigation-redirects module at build time
 } as const

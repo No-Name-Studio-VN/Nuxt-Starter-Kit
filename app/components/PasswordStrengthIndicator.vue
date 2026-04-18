@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Progress } from '@/components/ui/progress'
-import { Check, X } from 'lucide-vue-next'
+import { Check, X } from '@lucide/vue'
 import type { PasswordStrength } from '@/utils/passwordValidation'
 
 const props = withDefaults(defineProps<{
@@ -80,11 +80,11 @@ const checkItems = computed(() => [
         >
           <Check
             v-if="item.passed"
-            class="h-3.5 w-3.5 flex-shrink-0"
+            class="h-3.5 w-3.5 shrink-0"
           />
           <X
             v-else
-            class="h-3.5 w-3.5 flex-shrink-0"
+            class="h-3.5 w-3.5 shrink-0"
           />
           <span>{{ item.label }}</span>
         </li>

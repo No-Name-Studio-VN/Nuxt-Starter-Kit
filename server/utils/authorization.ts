@@ -20,7 +20,7 @@ export async function getAuthorizedUserId(event: H3Event, paramName = 'id'): Pro
   if (!currentUser) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Current user not found',
+      statusMessage: 'Authenticated user account not found.',
     })
   }
 
@@ -29,7 +29,7 @@ export async function getAuthorizedUserId(event: H3Event, paramName = 'id'): Pro
   if (!targetId) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'User ID parameter is required',
+      statusMessage: 'Bad Request. User ID parameter is missing.',
     })
   }
 
@@ -40,7 +40,7 @@ export async function getAuthorizedUserId(event: H3Event, paramName = 'id'): Pro
   if (isNaN(resolvedTargetId)) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Invalid user ID format',
+      statusMessage: 'Bad Request. The provided user ID is not a valid number.',
     })
   }
 
@@ -53,7 +53,7 @@ export async function getAuthorizedUserId(event: H3Event, paramName = 'id'): Pro
   if (resolvedTargetId !== currentUserId) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'You do not have permission to access this user\'s data',
+      statusMessage: 'Forbidden. You do not have permission to access this user\'s data.',
     })
   }
 

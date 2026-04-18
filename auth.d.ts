@@ -10,10 +10,18 @@ declare module '#auth-utils' {
     loggedInAt?: Date
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface SecureSessionData {
-    // Add your own secure session fields here if needed
+    pending2faUserId?: number
   }
 }
 
-export { }
+/**
+ * Type for the authenticated user from session
+ * Use this when accessing session.user to get proper typing
+ */
+export type SessionUser = {
+  id: number
+  username: string
+  name: string
+  isAdmin: boolean
+}

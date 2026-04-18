@@ -3,4 +3,6 @@ export interface PasskeyModel {
   name: string
   transports: string[] | null
   backedUp: boolean | null
+  createdAt: Date
+  updatedAt: Date
 }

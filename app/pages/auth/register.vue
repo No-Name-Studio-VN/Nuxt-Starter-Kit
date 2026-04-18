@@ -1,23 +1,21 @@
 <script setup lang="ts">
 import CenteredAppLayout from '@/components/CenteredAppLayout.vue'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, UserIcon, Lock, Eye, EyeOff, Mail } from 'lucide-vue-next'
+import { UserIcon, Lock, Eye, EyeOff, Mail } from '@lucide/vue'
 import PasskeyRegistrationDialog from '@/components/PasskeyRegistrationDialog.vue'
 import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator.vue'
-import { registerUserSchema, type RegisterUserInput } from '#shared/schemas/userSchema'
+import { registerUserSchema } from '#shared/schemas/userSchema'
 import { calculatePasswordStrength } from '@/utils/passwordValidation'
 import { getAuthErrorMessage } from '#shared/constants/authMessages'
+import { AVAILABLE_PROVIDERS } from '#shared/constants/oauthProviders'
+import { apiRoutes } from '#shared/apiRoutes'
+import { Field as VeeField, useForm } from 'vee-validate'
+import { Field, FieldLabel, FieldError } from '@/components/ui/field'
+import type { ApiResponse } from '~~/server/utils/apiResponse'
 
 const route = useRoute()
-const username = ref('')
-const name = ref('')
-const email = ref('')
-const password = ref('')
-const confirmPassword = ref('')
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const isLoading = ref(false)
@@ -25,73 +23,104 @@ const error = ref('')
 const showPasskeyDialog = ref(false)
 const registeredUsername = ref('')
 const turnstileToken = ref('')
-const fieldErrors = ref<Partial<Record<keyof RegisterUserInput, string>>>({})
+const oauthLoadingProvider = ref<string | null>(null)
+const oauthPopup = ref<Window | null>(null)
+const oauthPopupTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
+const oauthPopupCloseMonitor = ref<ReturnType<typeof setInterval> | null>(null)
 
-// Check for error in URL query parameter
-onMounted(() => {
-  const errorCode = route.query.error as string
-  if (errorCode) {
-    error.value = getAuthErrorMessage(errorCode) || 'An error occurred during registration'
-  }
-})
+type OAuthPopupCompleteMessage = {
+  type: 'oauth:complete'
+  url: string
+}
 
-const passwordStrength = computed(() => calculatePasswordStrength(password.value))
-
-// Check if form is valid for submission
-const isFormValid = computed(() => {
-  const result = registerUserSchema.safeParse({
-    'username': username.value,
-    'name': name.value,
-    'email': email.value,
-    'password': password.value,
-    'confirm-password': confirmPassword.value,
-    'cf-turnstile-response': turnstileToken.value,
-  })
-  return result.success && passwordStrength.value.score >= 80
-})
-
-async function onSubmit(event: Event) {
-  event.preventDefault()
-  fieldErrors.value = {}
-  error.value = ''
-
-  const formData: RegisterUserInput = {
-    'username': username.value,
-    'name': name.value,
-    'email': email.value,
-    'password': password.value,
-    'confirm-password': confirmPassword.value,
-    'cf-turnstile-response': turnstileToken.value,
+function getQueryString(value: string | string[] | null | undefined) {
+  if (typeof value === 'string') {
+    return value
   }
 
-  const result = registerUserSchema.safeParse(formData)
+  if (Array.isArray(value)) {
+    return value[0] || ''
+  }
 
-  if (!result.success) {
-    // Map Zod errors to field errors
-    result.error.issues.forEach((err) => {
-      const field = err.path[0] as keyof RegisterUserInput
-      if (field) {
-        fieldErrors.value[field] = err.message
-      }
-    })
+  return ''
+}
+
+function stopOAuthPopupTimeout() {
+  if (oauthPopupTimeout.value) {
+    clearTimeout(oauthPopupTimeout.value)
+    oauthPopupTimeout.value = null
+  }
+}
+
+function stopOAuthPopupCloseMonitor() {
+  if (oauthPopupCloseMonitor.value) {
+    clearInterval(oauthPopupCloseMonitor.value)
+    oauthPopupCloseMonitor.value = null
+  }
+}
+
+function onOAuthPopupComplete(event: MessageEvent<OAuthPopupCompleteMessage>) {
+  if (event.origin !== window.location.origin) return
+  if (event.data?.type !== 'oauth:complete') return
+  if (!oauthPopup.value || event.source !== oauthPopup.value) return
+
+  stopOAuthPopupCloseMonitor()
+  stopOAuthPopupTimeout()
+  oauthPopup.value = null
+  oauthLoadingProvider.value = null
+
+  let target: URL
+  try {
+    target = new URL(event.data.url)
+  }
+  catch {
+    error.value = 'Authentication completed but response URL was invalid. Please try again.'
     return
   }
 
-  // Form is valid, proceed with submission
-  isLoading.value = true
-  try {
-    // Your submit logic here
-    const form = event.target as HTMLFormElement
-    form.submit()
-  }
-  catch (err) {
-    error.value = 'An error occurred during registration'
-    console.error(err)
-  }
-  finally {
-    isLoading.value = false
-  }
+  window.location.assign(`${target.pathname}${target.search}${target.hash}`)
 }
+
+const form = useForm({
+  initialValues: {
+    'username': '',
+    'name': '',
+    'email': '',
+    'password': '',
+    'confirm-password': '',
+    'cf-turnstile-response': '',
+  },
+  validationSchema: registerUserSchema,
+})
+
+const { handleSubmit, values, meta, setFieldValue } = form
+
+const onSubmit = handleSubmit(async () => {
+  const formEl = document.querySelector('form[action="/api/auth/register-password"]') as HTMLFormElement
+  if (formEl) formEl.submit()
+})
+
+watch(turnstileToken, (val) => {
+  setFieldValue('cf-turnstile-response', val)
+})
+
+const passwordStrength = computed(() => calculatePasswordStrength(values.password || ''))
+
+// Check if form is valid for submission
+const isFormValid = computed(() => {
+  return meta.value.valid && passwordStrength.value.score >= 80
+})
+
+watch(() => route.query.error, (queryValue) => {
+  const errorCode = getQueryString(queryValue)
+  if (errorCode) {
+    error.value = getAuthErrorMessage(errorCode) || 'An error occurred during registration'
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  window.addEventListener('message', onOAuthPopupComplete)
+})
 
 function onPasskeyCreated() {
   window.location.href = '/'
@@ -101,6 +130,87 @@ function onPasskeySkipped() {
   window.location.href = '/'
 }
 
+async function signUpWithProvider(provider: string) {
+  if (oauthLoadingProvider.value) return
+
+  oauthLoadingProvider.value = provider
+  error.value = ''
+
+  try {
+    const response = await $fetch<ApiResponse<{ url: string }>>(apiRoutes.AUTH_OAUTH_URL, {
+      method: 'POST',
+      body: { provider, action: 'login' },
+    })
+    if (!response.success) {
+      throw new Error(response.error.message)
+    }
+
+    const popupWidth = Math.min(560, window.outerWidth - 40)
+    const popupHeight = Math.min(720, window.outerHeight - 80)
+    const popupLeft = window.screenX + Math.max(0, (window.outerWidth - popupWidth) / 2)
+    const popupTop = window.screenY + Math.max(0, (window.outerHeight - popupHeight) / 2)
+    const popup = window.open(
+      response.data.url,
+      `oauth-${provider}`,
+      `width=${popupWidth},height=${popupHeight},left=${popupLeft},top=${popupTop},location=0,resizable,scrollbars,toolbar=0,menubar=0,popup=true`,
+    )
+
+    if (!popup) {
+      throw new Error('Popup blocked')
+    }
+
+    popup.focus()
+    oauthPopup.value = popup
+    stopOAuthPopupCloseMonitor()
+    stopOAuthPopupTimeout()
+
+    oauthPopupCloseMonitor.value = setInterval(() => {
+      if (!oauthPopup.value) {
+        stopOAuthPopupCloseMonitor()
+        return
+      }
+
+      let isClosed = false
+      try {
+        isClosed = oauthPopup.value.closed
+      }
+      catch {
+        return
+      }
+
+      if (!isClosed) {
+        return
+      }
+
+      stopOAuthPopupCloseMonitor()
+      stopOAuthPopupTimeout()
+      oauthPopup.value = null
+      oauthLoadingProvider.value = null
+    }, 500)
+
+    oauthPopupTimeout.value = setTimeout(() => {
+      stopOAuthPopupCloseMonitor()
+      stopOAuthPopupTimeout()
+      oauthPopup.value = null
+      oauthLoadingProvider.value = null
+      error.value = 'OAuth session timed out or popup was closed. Please try again.'
+    }, 120000)
+  }
+  catch {
+    stopOAuthPopupCloseMonitor()
+    stopOAuthPopupTimeout()
+    oauthPopup.value = null
+    error.value = 'Unable to continue with provider right now. Please try again.'
+    oauthLoadingProvider.value = null
+  }
+}
+
+onBeforeUnmount(() => {
+  stopOAuthPopupCloseMonitor()
+  stopOAuthPopupTimeout()
+  window.removeEventListener('message', onOAuthPopupComplete)
+})
+
 definePageMeta({
   layout: 'empty',
   title: 'Sign Up',
@@ -109,20 +219,12 @@ definePageMeta({
 </script>
 
 <template>
-  <CenteredAppLayout
-    :center-content="true"
-    :full-width="true"
-    :hide-sidebar-trigger="true"
-    title="Register"
-  >
+  <CenteredAppLayout title="Register">
     <Card class="w-full max-w-md mx-4">
       <CardHeader class="text-center relative">
         <CardTitle>
           Create Account
         </CardTitle>
-        <CardDescription>
-          Join Gromet Reader and start your reading journey
-        </CardDescription>
       </CardHeader>
 
       <CardContent>
@@ -134,208 +236,260 @@ definePageMeta({
           <AlertDescription>{{ error }}</AlertDescription>
         </Alert>
 
+        <!-- OAuth Sign Up -->
+        <div class="space-y-3 mb-6">
+          <template
+            v-for="provider in AVAILABLE_PROVIDERS"
+            :key="provider.id"
+          >
+            <Button
+              type="button"
+              variant="outline"
+              class="w-full"
+              :is-loading="oauthLoadingProvider === provider.id"
+              :disabled="isLoading || oauthLoadingProvider !== null"
+              @click="signUpWithProvider(provider.id)"
+            >
+              <div class="h-4 w-4 flex items-center justify-center">
+                <OAuthIcon :provider="provider.id" />
+              </div>
+              Sign up with {{ provider.name }}
+            </Button>
+          </template>
+
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <span class="w-full border-t border-gray-200 dark:border-gray-700" />
+            </div>
+            <div class="relative flex justify-center text-xs uppercase">
+              <span class="bg-card/60 px-2 text-gray-500 dark:text-gray-400 rounded-xl">Or sign up with email</span>
+            </div>
+          </div>
+        </div>
+
         <form
           action="/api/auth/register-password"
           method="POST"
           class="space-y-4"
-          @submit="onSubmit"
+          @submit.prevent="onSubmit"
         >
-          <div class="space-y-2">
-            <Label
-              for="username"
-              class="text-sm font-medium"
+          <VeeField
+            v-slot="{ field, errors }"
+            name="username"
+          >
+            <Field
+              :data-invalid="!!errors.length"
+              class="space-y-2"
             >
-              Username
-            </Label>
-            <div class="relative">
-              <UserIcon class="absolute left-3 top-3 h-4 w-4" />
-              <Input
-                id="username"
-                v-model="username"
-                name="username"
-                type="text"
-                placeholder="Enter your username"
-                class="pl-9 h-11"
-                :class="{ 'border-destructive': fieldErrors.username }"
-                :disabled="isLoading"
-              />
-            </div>
-            <p
-              v-if="fieldErrors.username"
-              class="text-xs text-destructive"
-            >
-              {{ fieldErrors.username }}
-            </p>
-          </div>
-
-          <div class="space-y-2">
-            <Label
-              for="name"
-              class="text-sm font-medium"
-            >
-              Display Name
-            </Label>
-            <div class="relative">
-              <UserIcon class="absolute left-3 top-3 h-4 w-4" />
-              <Input
-                id="name"
-                v-model="name"
-                name="name"
-                type="text"
-                placeholder="Enter your display name"
-                class="pl-9 h-11"
-                :class="{ 'border-destructive': fieldErrors.name }"
-                :disabled="isLoading"
-              />
-            </div>
-            <p
-              v-if="fieldErrors.name"
-              class="text-xs text-destructive"
-            >
-              {{ fieldErrors.name }}
-            </p>
-          </div>
-
-          <div class="space-y-2">
-            <Label
-              for="email"
-              class="text-sm font-medium"
-            >
-              Email
-            </Label>
-            <div class="relative">
-              <Mail class="absolute left-3 top-3 h-4 w-4" />
-              <Input
-                id="email"
-                v-model="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                class="pl-9 h-11"
-                :class="{ 'border-destructive': fieldErrors.email }"
-                :disabled="isLoading"
-              />
-            </div>
-            <p
-              v-if="fieldErrors.email"
-              class="text-xs text-destructive"
-            >
-              {{ fieldErrors.email }}
-            </p>
-          </div>
-
-          <div class="space-y-2">
-            <Label
-              for="password"
-              class="text-sm font-medium"
-            >
-              Password
-            </Label>
-            <div class="relative">
-              <Lock class="absolute left-3 top-3 h-4 w-4" />
-              <Input
-                id="password"
-                v-model="password"
-                name="password"
-                :type="showPassword ? 'text' : 'password'"
-                placeholder="Enter your password"
-                class="pl-9 pr-9 h-11"
-                :class="{ 'border-destructive': fieldErrors.password }"
-                :disabled="isLoading"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                class="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
-                @click="showPassword = !showPassword"
+              <FieldLabel
+                for="username"
+                class="text-sm font-medium"
               >
-                <Eye
-                  v-if="!showPassword"
-                  class="h-4 w-4"
+                Username
+              </FieldLabel>
+              <div class="relative">
+                <UserIcon class="absolute left-3 top-3 h-4 w-4" />
+                <Input
+                  id="username"
+                  v-bind="field"
+                  type="text"
+                  placeholder="Enter your username"
+                  class="pl-9 h-11"
+                  :aria-invalid="!!errors.length"
+                  :disabled="isLoading"
                 />
-                <EyeOff
-                  v-else
-                  class="h-4 w-4"
-                />
-              </Button>
-            </div>
-            <p
-              v-if="fieldErrors.password"
-              class="text-xs text-destructive"
-            >
-              {{ fieldErrors.password }}
-            </p>
-            <!-- Password Strength Indicator -->
-            <PasswordStrengthIndicator
-              :password="password"
-              :strength="passwordStrength"
-            />
-          </div>
-
-          <div class="space-y-2">
-            <Label
-              for="confirmPassword"
-              class="text-sm font-medium"
-            >
-              Confirm Password
-            </Label>
-            <div class="relative">
-              <Lock class="absolute left-3 top-3 h-4 w-4" />
-              <Input
-                id="confirmPassword"
-                v-model="confirmPassword"
-                name="confirm-password"
-                :type="showConfirmPassword ? 'text' : 'password'"
-                placeholder="Confirm your password"
-                class="pl-9 pr-9 h-11"
-                :class="{ 'border-destructive': fieldErrors['confirm-password'] }"
-                :disabled="isLoading"
+              </div>
+              <FieldError
+                v-if="errors.length"
+                :errors="errors"
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                class="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
-                @click="showConfirmPassword = !showConfirmPassword"
-              >
-                <Eye
-                  v-if="!showConfirmPassword"
-                  class="h-4 w-4"
-                />
-                <EyeOff
-                  v-else
-                  class="h-4 w-4"
-                />
-              </Button>
-            </div>
-            <p
-              v-if="fieldErrors['confirm-password']"
-              class="text-xs text-destructive"
+            </Field>
+          </VeeField>
+
+          <VeeField
+            v-slot="{ field, errors }"
+            name="name"
+          >
+            <Field
+              :data-invalid="!!errors.length"
+              class="space-y-2"
             >
-              {{ fieldErrors['confirm-password'] }}
-            </p>
-          </div>
+              <FieldLabel
+                for="name"
+                class="text-sm font-medium"
+              >
+                Display Name
+              </FieldLabel>
+              <div class="relative">
+                <UserIcon class="absolute left-3 top-3 h-4 w-4" />
+                <Input
+                  id="name"
+                  v-bind="field"
+                  type="text"
+                  placeholder="Enter your display name"
+                  class="pl-9 h-11"
+                  :aria-invalid="!!errors.length"
+                  :disabled="isLoading"
+                />
+              </div>
+              <FieldError
+                v-if="errors.length"
+                :errors="errors"
+              />
+            </Field>
+          </VeeField>
+
+          <VeeField
+            v-slot="{ field, errors }"
+            name="email"
+          >
+            <Field
+              :data-invalid="!!errors.length"
+              class="space-y-2"
+            >
+              <FieldLabel
+                for="email"
+                class="text-sm font-medium"
+              >
+                Email
+              </FieldLabel>
+              <div class="relative">
+                <Mail class="absolute left-3 top-3 h-4 w-4" />
+                <Input
+                  id="email"
+                  v-bind="field"
+                  type="email"
+                  placeholder="Enter your email"
+                  class="pl-9 h-11"
+                  :aria-invalid="!!errors.length"
+                  :disabled="isLoading"
+                />
+              </div>
+              <FieldError
+                v-if="errors.length"
+                :errors="errors"
+              />
+            </Field>
+          </VeeField>
+
+          <VeeField
+            v-slot="{ field, errors }"
+            name="password"
+          >
+            <Field
+              :data-invalid="!!errors.length"
+              class="space-y-2"
+            >
+              <FieldLabel
+                for="password"
+                class="text-sm font-medium"
+              >
+                Password
+              </FieldLabel>
+              <div class="relative">
+                <Lock class="absolute left-3 top-3 h-4 w-4" />
+                <Input
+                  id="password"
+                  v-bind="field"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="Enter your password"
+                  class="pl-9 pr-9 h-11"
+                  :aria-invalid="!!errors.length"
+                  :disabled="isLoading"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  class="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
+                  @click="showPassword = !showPassword"
+                >
+                  <Eye
+                    v-if="!showPassword"
+                    class="h-4 w-4"
+                  />
+                  <EyeOff
+                    v-else
+                    class="h-4 w-4"
+                  />
+                </Button>
+              </div>
+              <FieldError
+                v-if="errors.length"
+                :errors="errors"
+              />
+              <!-- Password Strength Indicator -->
+              <PasswordStrengthIndicator
+                :password="values.password || ''"
+                :strength="passwordStrength"
+              />
+            </Field>
+          </VeeField>
+
+          <VeeField
+            v-slot="{ field, errors }"
+            name="confirm-password"
+          >
+            <Field
+              :data-invalid="!!errors.length"
+              class="space-y-2"
+            >
+              <FieldLabel
+                for="confirmPassword"
+                class="text-sm font-medium"
+              >
+                Confirm Password
+              </FieldLabel>
+              <div class="relative">
+                <Lock class="absolute left-3 top-3 h-4 w-4" />
+                <Input
+                  id="confirmPassword"
+                  v-bind="field"
+                  :type="showConfirmPassword ? 'text' : 'password'"
+                  placeholder="Confirm your password"
+                  class="pl-9 pr-9 h-11"
+                  :aria-invalid="!!errors.length"
+                  :disabled="isLoading"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  class="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
+                  <Eye
+                    v-if="!showConfirmPassword"
+                    class="h-4 w-4"
+                  />
+                  <EyeOff
+                    v-else
+                    class="h-4 w-4"
+                  />
+                </Button>
+              </div>
+              <FieldError
+                v-if="errors.length"
+                :errors="errors"
+              />
+            </Field>
+          </VeeField>
 
           <NuxtTurnstile v-model="turnstileToken" />
           <Button
             type="submit"
             class="w-full h-11"
-            :disabled="isLoading || !isFormValid"
+            :disabled="!isFormValid"
+            :is-loading="isLoading"
           >
-            <Loader2
-              v-if="isLoading"
-              class="mr-2 h-4 w-4 animate-spin"
-            />
             <Lock
-              v-else
-              class="mr-2 h-4 w-4"
+              class="h-4 w-4"
             />
             Create Account
           </Button>
           <p
-            v-if="password && passwordStrength.score < 80"
-            class="text-xs text-center text-muted-foreground"
+            v-if="values.password && passwordStrength.score < 80"
+            class="text-xs text-center"
           >
             Password must be strong to create an account
           </p>
@@ -349,24 +503,28 @@ definePageMeta({
               class="underline"
               target="_blank"
               rel="noopener noreferrer"
-            >Terms of Service</NuxtLink>
+            >
+              Terms of Service
+            </NuxtLink>
             and
             <NuxtLink
               to="https://nnsvn.me/privacy"
               class="underline"
               target="_blank"
               rel="noopener noreferrer"
-            >Privacy Policy</NuxtLink>
+            >
+              Privacy Policy
+            </NuxtLink>
           </div>
 
           <div class="text-sm text-gray-600 dark:text-gray-300">
             Already have an account?
-            <nuxt-link
+            <NuxtLink
               to="/auth/login"
               class="text-primary hover:underline font-medium"
             >
               Sign In
-            </nuxt-link>
+            </NuxtLink>
           </div>
         </div>
       </CardContent>

@@ -9,6 +9,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const { username, password, 'cf-turnstile-response': token } = result.data
+  const redirectToStr = result.data['redirect-to'] || '/'
+
   if (!token) {
     return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha')
   }
@@ -42,10 +44,5 @@ export default defineEventHandler(async (event) => {
     },
   })
 
-  if (result.data['redirect-to']) {
-    return sendRedirect(event, result.data['redirect-to'])
-  }
-  else {
-    return sendRedirect(event, '/')
-  }
+  return sendRedirect(event, redirectToStr)
 })
