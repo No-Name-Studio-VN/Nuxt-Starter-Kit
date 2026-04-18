@@ -2,7 +2,7 @@ import { Feed } from 'feed'
 import { queryCollection } from '@nuxt/content/server'
 import { withoutTrailingSlash } from 'ufo'
 import { defaultLocale } from '../../i18n-constants'
-import { APP_MANIFEST } from '@/constants/manifest'
+import { APP_MANIFEST } from '#shared/constants/manifest'
 
 export default defineEventHandler(async (event) => {
   const runtimeConfig = useRuntimeConfig()

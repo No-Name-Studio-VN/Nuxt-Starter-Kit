@@ -395,7 +395,7 @@
                     rel="noopener noreferrer"
                     class="text-[13px] text-muted-foreground transition-colors duration-200 hover:text-foreground"
                   >
-                    <GithubIcon class="mr-2 inline-block size-4" />
+                    <GitHubIcon class="mr-2 inline-block size-4" />
                     GitHub
                   </a>
                 </li>
@@ -406,7 +406,7 @@
                     rel="noopener noreferrer"
                     class="text-[13px] text-muted-foreground transition-colors duration-200 hover:text-foreground"
                   >
-                    <TwitterIcon class="mr-2 inline-block size-4" />
+                    <XIcon class="mr-2 inline-block size-4" />
                     X (Twitter)
                   </a>
                 </li>
@@ -466,11 +466,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import CtIcon from '@/components/content/CtIcon.vue'
-import { Menu, X, ChevronLeft, ChevronRight, ArrowRight, SunIcon, MoonIcon, MailIcon, GithubIcon, TwitterIcon } from 'lucide-vue-next'
+import { GitHubIcon, XIcon } from 'vue3-simple-icons'
+import { Menu, X, ChevronLeft, ChevronRight, ArrowRight, SunIcon, MoonIcon, MailIcon } from '@lucide/vue'
 import { cn } from '@/lib/utils'
 import { Motion } from 'motion-v'
 import { defaultLocale } from '~~/i18n-constants'
-import { APP_MANIFEST } from '@/constants/manifest'
+import { APP_MANIFEST } from '#shared/constants/manifest'
 
 const config = useConfig()
 

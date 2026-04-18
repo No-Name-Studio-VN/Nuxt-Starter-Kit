@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { isEmpty } from 'es-toolkit/compat'
 import { defaultLocale } from '~~/i18n-constants'
-import { APP_MANIFEST } from '@/constants/manifest'
+import { APP_MANIFEST } from '#shared/constants/manifest'
 
 definePageMeta({
   breadcrumb: 'Home',

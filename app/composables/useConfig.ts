@@ -3,7 +3,7 @@ import type { ContentNavigationItem } from '@nuxt/content'
 import type { DefaultConfig } from '~~/types'
 import { navPageOverrides } from './useContentHelpers'
 import { usePageData } from '@/composables/usePageData'
-import { APP_MANIFEST } from '@/constants/manifest'
+import { APP_MANIFEST } from '#shared/constants/manifest'
 
 const customDefu = createDefu((obj, key, value) => {
   if (Array.isArray(value) && value.every((x: unknown) => typeof x === 'string')) {

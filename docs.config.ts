@@ -1,4 +1,4 @@
-import { APP_MANIFEST } from './app/constants/manifest'
+import { APP_MANIFEST } from './shared/constants/manifest'
 
 export const DOCS_CONFIG = {
   site: {

@@ -1,5 +1,4 @@
-import pwaConfig from './pwa.config'
-import { APP_MANIFEST, SEO_CONFIG } from './app/constants/manifest'
+import { APP_MANIFEST, SEO_CONFIG } from './shared/constants/manifest'
 import { routeRules } from './shared/apiRoutes'
 import { defaultLocale, browserFallbackLocale, lanugageNames, locales } from './i18n-constants'
 import { DOCS_CONFIG } from './docs.config'
@@ -28,11 +27,28 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt',
     'nuxt-component-meta',
     '@/modules/navigation-redirects', // Auto-generate redirects from .navigation.yml files
-    '@/modules/content-prerender', // Pre-render all content pages as static HTML
   ],
 
   $production: {
-    pwa: pwaConfig,
+    image: {
+      provider: 'cloudflare',
+      cloudflare: { baseURL: '/' },
+    },
+    pwa: {
+      // Use injectManifest for full control over the service worker.
+      // This is required for SSR apps to properly handle offline fallbacks
+      // (generateSW cannot add a setCatchHandler for navigation requests).
+      strategies: 'injectManifest',
+      registerType: 'autoUpdate',
+      minify: true,
+      manifest: APP_MANIFEST,
+      srcDir: 'service-worker',
+      filename: 'sw.ts',
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 4000000,
+        globPatterns: ['**/*.{js,css,html,svg,ico,woff2}'],
+      },
+    },
   },
 
   devtools: {
@@ -125,6 +141,9 @@ export default defineNuxtConfig({
     compressPublicAssets: true,
     minify: true,
     preset: 'cloudflare-module',
+    rollupConfig: {
+      external: ['sharp', /^@img\/sharp.*/],
+    },
     experimental: {
       tasks: true,
       wasm: true,
@@ -136,13 +155,15 @@ export default defineNuxtConfig({
     prerender: {
       // Pre-render the homepage
       routes: ['/'],
-      // Then crawl all the links on the page
-      crawlLinks: true,
       ignore: [
         '/admin',
         '/admin/**',
         '/settings',
         '/settings/**',
+        '/docs',
+        '/docs/**',
+        '/blogs',
+        '/blogs/**',
         '/pwa',
         '/__og-image__/static/pwa',
         '/_studio',
@@ -171,6 +192,19 @@ export default defineNuxtConfig({
     cache: true,
     // R2 bucket (binding defaults to 'BLOB')
     blob: false,
+  },
+
+  vite: {
+    optimizeDeps: {
+      include: ['disable-devtool'],
+    },
+    build: {
+      rollupOptions: {
+        external: [
+          'sharp',
+        ],
+      },
+    },
   },
 
   hooks: {
@@ -308,7 +342,7 @@ export default defineNuxtConfig({
       mobileWebAppCapable: 'yes',
       msapplicationTileColor: APP_MANIFEST.background_color,
       charset: 'utf-8',
-      viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no',
+      viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
       ogImage: '/pwa-512x512.png',
       twitterTitle: APP_MANIFEST.name,
       twitterDescription: APP_MANIFEST.description,
