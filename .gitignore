@@ -38,3 +38,5 @@ db.sqlite-*
 actions-runner
 public/content
 /.VSCodeCounter
+AGENTS.MD
+.serena
