@@ -195,9 +195,6 @@ export default defineNuxtConfig({
   },
 
   vite: {
-    optimizeDeps: {
-      include: ['disable-devtool'],
-    },
     build: {
       rollupOptions: {
         external: [
