@@ -105,6 +105,7 @@
         </DialogHeader>
 
         <form
+          class="space-y-6"
           @submit.prevent="onSubmit"
         >
           <FieldGroup>
