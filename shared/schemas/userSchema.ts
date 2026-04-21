@@ -75,7 +75,6 @@ export const userUpdateSchema = createUpdateSchema(users, {
   email: emailSchema.optional(),
   name: z.string().min(1).optional(),
   password: z.string().min(1).optional(),
-  dodoCustomerId: z.string().max(255).optional(),
   isAdmin: z.boolean().optional(),
 })
 
