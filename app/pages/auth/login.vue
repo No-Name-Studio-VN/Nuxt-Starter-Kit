@@ -264,13 +264,14 @@ definePageMeta({
                 <User class="absolute left-3 top-3 h-4 w-4" />
                 <Input
                   id="username"
-                  v-bind="field"
+                  :model-value="field.value"
                   name="username"
                   type="text"
                   placeholder="Enter your username"
                   class="pl-9 h-11"
                   :disabled="isLoading"
                   :aria-invalid="!!errors.length"
+                  @update:model-value="field.onChange"
                 />
               </div>
               <FieldError
@@ -298,13 +299,14 @@ definePageMeta({
                 <Lock class="absolute left-3 top-3 h-4 w-4" />
                 <Input
                   id="password"
-                  v-bind="field"
+                  :model-value="field.value"
                   name="password"
                   :type="showPassword ? 'text' : 'password'"
                   placeholder="Enter your password"
                   class="pl-9 pr-9 h-11"
                   :disabled="isLoading"
                   :aria-invalid="!!errors.length"
+                  @update:model-value="field.onChange"
                 />
                 <Button
                   type="button"
