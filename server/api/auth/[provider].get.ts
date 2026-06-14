@@ -1,4 +1,4 @@
-import { handleOAuthSuccess } from '~~/server/utils/oauth'
+import { handleOAuthSuccess, sendOAuthRedirect } from '~~/server/utils/oauth'
 
 const googleHandler = defineOAuthGoogleEventHandler({
   config: {
@@ -14,7 +14,7 @@ const googleHandler = defineOAuthGoogleEventHandler({
   },
   onError(event, error) {
     console.error('[Google OAuth] Error:', error)
-    return sendRedirect(event, '/auth/login?error=oauth-error')
+    return sendOAuthRedirect(event, '/auth/login?error=oauth-error')
   },
 })
 
@@ -32,7 +32,7 @@ const githubHandler = defineOAuthGitHubEventHandler({
   },
   onError(event, error) {
     console.error('[GitHub OAuth] Error:', error)
-    return sendRedirect(event, '/auth/login?error=oauth-error')
+    return sendOAuthRedirect(event, '/auth/login?error=oauth-error')
   },
 })
 

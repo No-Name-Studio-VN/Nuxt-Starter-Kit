@@ -1,50 +1,58 @@
-import { z } from 'zod'
+import { oauthUnlinkBodySchema } from '#shared/schemas/userSchema'
+import { apiError, success, zodErrorToFieldErrors } from '~~/server/utils/apiResponse'
 import oauthAccountService from '~~/server/utils/database/oauthAccount'
 import userService from '~~/server/utils/database/user'
 
-const unlinkBodySchema = z.object({
-  provider: z.string().min(1, 'Provider is required'),
-})
-
 export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event)
-  const { provider } = await readValidatedBody(event, body => unlinkBodySchema.parse(body))
+  const result = await readValidatedBody(event, body => oauthUnlinkBodySchema.safeParse(body))
 
-  const userId = session.user.id
-
-  // Verify this provider is actually linked
-  const linkedAccount = await oauthAccountService.getByUserAndProvider(userId, provider)
-  if (!linkedAccount) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'This provider is not linked to your account.',
+  if (!result.success) {
+    throw apiError({
+      status: 400,
+      statusText: 'Bad Request',
+      message: 'Bad Request. Invalid OAuth unlink request.',
+      code: 'VALIDATION_ERROR',
+      fieldErrors: zodErrorToFieldErrors(result.error),
     })
   }
 
-  // Check if user has a password
+  const { provider } = result.data
+  const userId = session.user.id
+
+  const linkedAccount = await oauthAccountService.getByUserAndProvider(userId, provider)
+  if (!linkedAccount) {
+    throw apiError({
+      status: 404,
+      statusText: 'Not Found',
+      message: 'This provider is not linked to your account.',
+      code: 'OAUTH_PROVIDER_NOT_LINKED',
+    })
+  }
+
   const dbUser = await userService.getById(userId)
   if (!dbUser) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'User not found.',
+    throw apiError({
+      status: 404,
+      statusText: 'Not Found',
+      message: 'User not found.',
+      code: 'USER_NOT_FOUND',
     })
   }
 
   const hasPassword = !!dbUser.password && dbUser.password.trim().length > 0
-
-  // Count other linked providers
   const linkedCount = await oauthAccountService.countByUserId(userId)
 
-  // User must have at least one other auth method (password or another provider)
   if (!hasPassword && linkedCount <= 1) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'You can\'t unlink your only sign-in method. Set a password first.',
+    throw apiError({
+      status: 400,
+      statusText: 'Bad Request',
+      message: 'You can\'t unlink your only sign-in method. Set a password first.',
+      code: 'UNLINK_LAST_AUTH_METHOD',
     })
   }
 
-  // Unlink the provider
   await oauthAccountService.unlink(userId, provider)
 
-  return { success: true }
+  return success({ unlinked: true })
 })

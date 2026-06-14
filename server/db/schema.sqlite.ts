@@ -1,6 +1,7 @@
 import { sqliteTable, text, integer, unique, index } from 'drizzle-orm/sqlite-core'
 import { relations } from 'drizzle-orm'
 import type { WebAuthnCredential } from '#auth-utils'
+import type { AuthTokenType } from '#shared/commonEnums'
 
 const timestampColumns = {
   createdAt: integer('created_at', { mode: 'timestamp' })
@@ -15,10 +16,38 @@ export const users = sqliteTable('users', {
   name: text('name').notNull(),
   password: text('password').notNull(),
   email: text('email').notNull().unique(),
+  emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(true),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
   lastLoginAt: integer('last_login_at', { mode: 'timestamp' }), // Can be null if never logged in
   ...timestampColumns,
 })
+
+export const authTokens = sqliteTable('auth_tokens', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  type: text('type').$type<AuthTokenType>().notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  usedAt: integer('used_at', { mode: 'timestamp' }),
+  ...timestampColumns,
+}, table => [
+  index('auth_tokens_user_idx').on(table.userId),
+  index('auth_tokens_token_idx').on(table.token),
+  index('auth_tokens_type_idx').on(table.type),
+  index('auth_tokens_expires_idx').on(table.expiresAt),
+])
+
+export const userTwoFactor = sqliteTable('user_two_factor', {
+  userId: integer('user_id').primaryKey().notNull().references(() => users.id, { onDelete: 'cascade' }),
+  totpSecret: text('totp_secret'),
+  totpEnabled: integer('totp_enabled', { mode: 'boolean' }).notNull().default(false),
+  backupCodes: text('backup_codes', { mode: 'json' }).$type<string[]>(),
+  failedAttempts: integer('failed_attempts').notNull().default(0),
+  lastFailedAttempt: integer('last_failed_attempt', { mode: 'timestamp' }),
+  ...timestampColumns,
+}, table => [
+  index('user_two_factor_user_idx').on(table.userId),
+])
 
 export const credentials = sqliteTable('credentials', {
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
@@ -57,9 +86,25 @@ export const oauthAccountsRelations = relations(oauthAccounts, ({ one }) => ({
   }),
 }))
 
+export const authTokensRelations = relations(authTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [authTokens.userId],
+    references: [users.id],
+  }),
+}))
+
+export const userTwoFactorRelations = relations(userTwoFactor, ({ one }) => ({
+  user: one(users, {
+    fields: [userTwoFactor.userId],
+    references: [users.id],
+  }),
+}))
+
 export const usersRelations = relations(users, ({ many, one }) => ({
   credentials: many(credentials),
   oauthAccounts: many(oauthAccounts),
+  authTokens: many(authTokens),
+  twoFactor: one(userTwoFactor),
 }))
 
 export const credentialsRelations = relations(credentials, ({ one }) => ({

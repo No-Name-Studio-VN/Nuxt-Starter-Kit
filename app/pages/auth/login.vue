@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import AuthPageLayout from '@/components/auth/AuthPageLayout.vue'
+import { useOAuthPopup } from '@/composables/useOAuthPopup'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { User, Lock, Eye, EyeOff, Fingerprint } from '@lucide/vue'
-import { getAuthErrorMessage } from '#shared/constants/authMessages'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+import { getAuthErrorMessage, getAuthSuccessMessage } from '#shared/constants/authMessages'
 import { AVAILABLE_PROVIDERS } from '#shared/constants/oauthProviders'
 import { apiRoutes } from '#shared/apiRoutes'
-import { Field as VeeField, useForm } from 'vee-validate'
 import { loginSchema } from '#shared/schemas/userSchema'
-import { Field, FieldLabel, FieldError } from '@/components/ui/field'
-import type { ApiResponse } from '~~/server/utils/apiResponse'
+import { loginTwoFactorSchema } from '#shared/schemas/userSecuritySchema'
+import { apiRequest } from '@/utils/apiRequest'
+import { parseApiError } from '@/utils/apiError'
+import { getQueryString, safeRedirectPath } from '@/utils/safeRedirect'
+import { Field as VeeField, useForm } from 'vee-validate'
+import { Eye, EyeOff, Fingerprint, Lock, ShieldCheck, User } from '@lucide/vue'
+import type { ApiResponse } from '~~/types/api'
+import type { LoginTwoFactorValidationPayload } from '~~/types/userSecurity'
 
 const formSchema = loginSchema.pick({ username: true, password: true })
 
@@ -19,66 +26,14 @@ const route = useRoute()
 const showPassword = ref(false)
 const isLoading = ref(false)
 const error = ref('')
+const successMessage = ref('')
 const turnstileToken = ref('')
-const oauthLoadingProvider = ref<string | null>(null)
-const oauthPopup = ref<Window | null>(null)
-const oauthPopupTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
-const oauthPopupCloseMonitor = ref<ReturnType<typeof setInterval> | null>(null)
+const passwordForm = ref<HTMLFormElement | null>(null)
 
-type OAuthPopupCompleteMessage = {
-  type: 'oauth:complete'
-  url: string
-}
+const redirectTo = computed(() => safeRedirectPath(route.query.redirectTo))
+const isTwoFactorStep = computed(() => getQueryString(route.query.step) === '2fa')
 
-function getQueryString(value: string | string[] | null | undefined) {
-  if (typeof value === 'string') {
-    return value
-  }
-
-  if (Array.isArray(value)) {
-    return value[0] || ''
-  }
-
-  return ''
-}
-
-function stopOAuthPopupTimeout() {
-  if (oauthPopupTimeout.value) {
-    clearTimeout(oauthPopupTimeout.value)
-    oauthPopupTimeout.value = null
-  }
-}
-
-function stopOAuthPopupCloseMonitor() {
-  if (oauthPopupCloseMonitor.value) {
-    clearInterval(oauthPopupCloseMonitor.value)
-    oauthPopupCloseMonitor.value = null
-  }
-}
-
-function onOAuthPopupComplete(event: MessageEvent<OAuthPopupCompleteMessage>) {
-  if (event.origin !== window.location.origin) return
-  if (event.data?.type !== 'oauth:complete') return
-  if (!oauthPopup.value || event.source !== oauthPopup.value) return
-
-  stopOAuthPopupCloseMonitor()
-  stopOAuthPopupTimeout()
-  oauthPopup.value = null
-  oauthLoadingProvider.value = null
-
-  let target: URL
-  try {
-    target = new URL(event.data.url)
-  }
-  catch {
-    error.value = 'Authentication completed but response URL was invalid. Please try again.'
-    return
-  }
-
-  window.location.assign(`${target.pathname}${target.search}${target.hash}`)
-}
-
-const { handleSubmit, values } = useForm({
+const loginForm = useForm({
   initialValues: {
     username: '',
     password: '',
@@ -86,24 +41,61 @@ const { handleSubmit, values } = useForm({
   validationSchema: formSchema,
 })
 
-const onSubmit = handleSubmit(async () => {
-  // Native form submission for server-side auth
-  const formEl = document.querySelector('form[action="/api/auth/login-password"]') as HTMLFormElement
-  if (formEl) formEl.submit()
+const { handleSubmit: handlePasswordSubmit, values } = loginForm
+
+const twoFactorForm = useForm({
+  initialValues: {
+    code: '',
+  },
+  validationSchema: loginTwoFactorSchema,
 })
 
-const redirectTo = computed(() => getQueryString(route.query.redirectTo) || '/')
+const { handleSubmit: handleTwoFactorSubmit, setFieldError: setTwoFactorFieldError } = twoFactorForm
+
+const { oauthLoadingProvider, startOAuth } = useOAuthPopup({
+  onError(message) {
+    error.value = message
+  },
+})
+
+const onPasswordSubmit = handlePasswordSubmit(async () => {
+  isLoading.value = true
+  passwordForm.value?.submit()
+})
+
+const onTwoFactorSubmit = handleTwoFactorSubmit(async (formValues) => {
+  isLoading.value = true
+  error.value = ''
+
+  try {
+    const response = await apiRequest<ApiResponse<LoginTwoFactorValidationPayload>>(apiRoutes.AUTH_LOGIN_2FA, {
+      method: 'POST',
+      body: formValues,
+    })
+
+    if (!response.success) {
+      throw response.error
+    }
+
+    await navigateTo(redirectTo.value)
+  }
+  catch (err: unknown) {
+    const parsedError = parseApiError(err, 'Unable to verify your code. Please try again.')
+    setTwoFactorFieldError('code', parsedError.message)
+    error.value = parsedError.message
+    isLoading.value = false
+  }
+})
 
 watch(() => route.query.error, (queryValue) => {
   const errorCode = getQueryString(queryValue)
-  if (errorCode) {
-    error.value = getAuthErrorMessage(errorCode) || 'An error occurred during login'
-  }
+  error.value = getAuthErrorMessage(errorCode) || ''
 }, { immediate: true })
 
-onMounted(() => {
-  window.addEventListener('message', onOAuthPopupComplete)
-})
+watch(() => route.query.success, (queryValue) => {
+  const successCode = getQueryString(queryValue)
+  successMessage.value = getAuthSuccessMessage(successCode) || ''
+}, { immediate: true })
 
 async function signInWithPasskey() {
   if (!values.username?.trim()) {
@@ -116,95 +108,18 @@ async function signInWithPasskey() {
 
   try {
     await authenticate(values.username)
-    window.location.href = redirectTo.value
+    await navigateTo(redirectTo.value)
   }
-  catch (err) {
-    createError({ statusCode: 401, statusMessage: 'Unauthorized. Passkey authentication failed. Please ensure your passkey is set up correctly.', data: err })
+  catch {
     error.value = 'Authentication failed. Please ensure your passkey is set up correctly, or sign in with your password.'
     isLoading.value = false
   }
 }
 
-async function signInWithProvider(provider: string) {
-  if (oauthLoadingProvider.value) return
-
-  oauthLoadingProvider.value = provider
+function signInWithProvider(provider: string) {
   error.value = ''
-
-  try {
-    const response = await $fetch<ApiResponse<{ url: string }>>(apiRoutes.AUTH_OAUTH_URL, {
-      method: 'POST',
-      body: { provider, action: 'login' },
-    })
-    if (!response.success) {
-      throw new Error(response.error.message)
-    }
-
-    const popupWidth = Math.min(560, window.outerWidth - 40)
-    const popupHeight = Math.min(720, window.outerHeight - 80)
-    const popupLeft = window.screenX + Math.max(0, (window.outerWidth - popupWidth) / 2)
-    const popupTop = window.screenY + Math.max(0, (window.outerHeight - popupHeight) / 2)
-    const popup = window.open(
-      response.data.url,
-      `oauth-${provider}`,
-      `width=${popupWidth},height=${popupHeight},left=${popupLeft},top=${popupTop},location=0,resizable,scrollbars,toolbar=0,menubar=0,popup=true`,
-    )
-
-    if (!popup) {
-      throw new Error('Popup blocked')
-    }
-
-    popup.focus()
-    oauthPopup.value = popup
-    stopOAuthPopupCloseMonitor()
-    stopOAuthPopupTimeout()
-
-    oauthPopupCloseMonitor.value = setInterval(() => {
-      if (!oauthPopup.value) {
-        stopOAuthPopupCloseMonitor()
-        return
-      }
-
-      let isClosed = false
-      try {
-        isClosed = oauthPopup.value.closed
-      }
-      catch {
-        return
-      }
-
-      if (!isClosed) {
-        return
-      }
-
-      stopOAuthPopupCloseMonitor()
-      stopOAuthPopupTimeout()
-      oauthPopup.value = null
-      oauthLoadingProvider.value = null
-    }, 500)
-
-    oauthPopupTimeout.value = setTimeout(() => {
-      stopOAuthPopupCloseMonitor()
-      stopOAuthPopupTimeout()
-      oauthPopup.value = null
-      oauthLoadingProvider.value = null
-      error.value = 'OAuth session timed out or popup was closed. Please try again.'
-    }, 120000)
-  }
-  catch {
-    stopOAuthPopupCloseMonitor()
-    stopOAuthPopupTimeout()
-    oauthPopup.value = null
-    error.value = 'Unable to continue with provider right now. Please try again.'
-    oauthLoadingProvider.value = null
-  }
+  startOAuth(provider, 'login', redirectTo.value)
 }
-
-onBeforeUnmount(() => {
-  stopOAuthPopupCloseMonitor()
-  stopOAuthPopupTimeout()
-  window.removeEventListener('message', onOAuthPopupComplete)
-})
 
 definePageMeta({
   layout: 'empty',
@@ -214,143 +129,223 @@ definePageMeta({
 </script>
 
 <template>
-  <CenteredAppLayout title="Login">
-    <Card class="w-full max-w-md mx-4">
-      <CardHeader class="text-center relative">
-        <template v-if="route.query.step === '2fa'">
-          <CardTitle>Two-Factor Authentication</CardTitle>
-          <CardDescription>Enter the code from your authenticator app</CardDescription>
-        </template>
-        <template v-else>
-          <CardTitle>Welcome Back</CardTitle>
-          <CardDescription>Sign in to your account to continue</CardDescription>
-        </template>
+  <AuthPageLayout>
+    <Card class="w-full">
+      <CardHeader class="text-center">
+        <CardTitle>
+          {{ isTwoFactorStep ? 'Two-Factor Authentication' : 'Welcome Back' }}
+        </CardTitle>
+        <CardDescription>
+          {{ isTwoFactorStep ? 'Enter the code from your authenticator app' : 'Sign in to your account to continue' }}
+        </CardDescription>
       </CardHeader>
 
-      <CardContent>
+      <CardContent class="flex flex-col gap-4">
         <Alert
           v-if="error"
           variant="destructive"
-          class="mb-4"
         >
           <AlertDescription>{{ error }}</AlertDescription>
         </Alert>
+
+        <Alert v-if="successMessage">
+          <AlertDescription>{{ successMessage }}</AlertDescription>
+        </Alert>
+
         <form
+          v-if="isTwoFactorStep"
+          class="flex flex-col gap-4"
+          @submit.prevent="onTwoFactorSubmit"
+        >
+          <FieldGroup>
+            <VeeField
+              v-slot="{ field, errors }"
+              name="code"
+            >
+              <Field :data-invalid="!!errors.length">
+                <FieldLabel for="code">
+                  Authentication code
+                </FieldLabel>
+                <div class="relative">
+                  <ShieldCheck
+                    aria-hidden="true"
+                    class="absolute left-3 top-3 size-4"
+                  />
+                  <Input
+                    id="code"
+                    :model-value="field.value"
+                    name="code"
+                    autocomplete="one-time-code"
+                    maxlength="8"
+                    placeholder="Code or backup code"
+                    class="h-11 pl-9"
+                    :aria-invalid="!!errors.length"
+                    :disabled="isLoading"
+                    @update:model-value="field.onChange"
+                  />
+                </div>
+                <FieldDescription>
+                  Enter a 6-digit authenticator code or an 8-character backup code.
+                </FieldDescription>
+                <FieldError
+                  v-if="errors.length"
+                  :errors="errors"
+                />
+              </Field>
+            </VeeField>
+          </FieldGroup>
+
+          <Button
+            type="submit"
+            class="h-11 w-full"
+            :is-loading="isLoading"
+          >
+            Verify code
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            class="w-full"
+            @click="navigateTo(apiRoutes.AUTH_LOGIN)"
+          >
+            Sign in as another user
+          </Button>
+        </form>
+
+        <form
+          v-else
+          ref="passwordForm"
           action="/api/auth/login-password"
           method="POST"
-          class="space-y-4"
-          @submit.prevent="onSubmit"
+          class="flex flex-col gap-4"
+          @submit.prevent="onPasswordSubmit"
         >
           <input
             type="hidden"
-            name="redirectTo"
+            name="redirect-to"
             :value="redirectTo"
           >
-          <VeeField
-            v-slot="{ field, errors }"
-            name="username"
+          <input
+            type="hidden"
+            name="cf-turnstile-response"
+            :value="turnstileToken"
           >
-            <Field
-              :data-invalid="!!errors.length"
-              class="space-y-2"
-            >
-              <FieldLabel
-                for="username"
-                class="text-sm font-medium"
-              >
-                Username
-              </FieldLabel>
-              <div class="relative">
-                <User class="absolute left-3 top-3 h-4 w-4" />
-                <Input
-                  id="username"
-                  :model-value="field.value"
-                  name="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  class="pl-9 h-11"
-                  :disabled="isLoading"
-                  :aria-invalid="!!errors.length"
-                  @update:model-value="field.onChange"
-                />
-              </div>
-              <FieldError
-                v-if="errors.length"
-                :errors="errors"
-              />
-            </Field>
-          </VeeField>
 
-          <VeeField
-            v-slot="{ field, errors }"
-            name="password"
-          >
-            <Field
-              :data-invalid="!!errors.length"
-              class="space-y-2"
+          <FieldGroup>
+            <VeeField
+              v-slot="{ field, errors }"
+              name="username"
             >
-              <FieldLabel
-                for="password"
-                class="text-sm font-medium"
-              >
-                Password
-              </FieldLabel>
-              <div class="relative">
-                <Lock class="absolute left-3 top-3 h-4 w-4" />
-                <Input
-                  id="password"
-                  :model-value="field.value"
-                  name="password"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="Enter your password"
-                  class="pl-9 pr-9 h-11"
-                  :disabled="isLoading"
-                  :aria-invalid="!!errors.length"
-                  @update:model-value="field.onChange"
+              <Field :data-invalid="!!errors.length">
+                <FieldLabel for="username">
+                  Username
+                </FieldLabel>
+                <div class="relative">
+                  <User
+                    aria-hidden="true"
+                    class="absolute left-3 top-3 size-4"
+                  />
+                  <Input
+                    id="username"
+                    :model-value="field.value"
+                    name="username"
+                    type="text"
+                    autocomplete="username"
+                    placeholder="Enter your username"
+                    class="h-11 pl-9"
+                    :disabled="isLoading"
+                    :aria-invalid="!!errors.length"
+                    @update:model-value="field.onChange"
+                  />
+                </div>
+                <FieldError
+                  v-if="errors.length"
+                  :errors="errors"
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  class="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
-                  @click="showPassword = !showPassword"
-                >
-                  <Eye
-                    v-if="!showPassword"
-                    class="h-4 w-4"
-                  />
-                  <EyeOff
-                    v-else
-                    class="h-4 w-4"
-                  />
-                </Button>
-              </div>
-              <FieldError
-                v-if="errors.length"
-                :errors="errors"
-              />
-            </Field>
-          </VeeField>
+              </Field>
+            </VeeField>
 
-          <div class="space-y-3">
+            <VeeField
+              v-slot="{ field, errors }"
+              name="password"
+            >
+              <Field :data-invalid="!!errors.length">
+                <div class="flex items-center justify-between gap-3">
+                  <FieldLabel for="password">
+                    Password
+                  </FieldLabel>
+                  <NuxtLink
+                    :to="apiRoutes.AUTH_FORGOT_PASSWORD"
+                    class="text-xs font-medium text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </NuxtLink>
+                </div>
+                <div class="relative">
+                  <Lock
+                    aria-hidden="true"
+                    class="absolute left-3 top-3 size-4"
+                  />
+                  <Input
+                    id="password"
+                    :model-value="field.value"
+                    name="password"
+                    :type="showPassword ? 'text' : 'password'"
+                    autocomplete="current-password"
+                    placeholder="Enter your password"
+                    class="h-11 pl-9 pr-9"
+                    :disabled="isLoading"
+                    :aria-invalid="!!errors.length"
+                    @update:model-value="field.onChange"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
+                    :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                    @click="showPassword = !showPassword"
+                  >
+                    <Eye
+                      v-if="!showPassword"
+                      aria-hidden="true"
+                      class="size-4"
+                    />
+                    <EyeOff
+                      v-else
+                      aria-hidden="true"
+                      class="size-4"
+                    />
+                  </Button>
+                </div>
+                <FieldError
+                  v-if="errors.length"
+                  :errors="errors"
+                />
+              </Field>
+            </VeeField>
+          </FieldGroup>
+
+          <div class="flex flex-col gap-3">
             <NuxtTurnstile v-model="turnstileToken" />
             <Button
               type="submit"
-              class="w-full h-11"
+              class="h-11 w-full"
               :is-loading="isLoading"
             >
               <Lock
-                class="h-4 w-4"
+                aria-hidden="true"
+                class="size-4"
               />
               Sign In with Password
             </Button>
 
             <div class="relative">
               <div class="absolute inset-0 flex items-center">
-                <span class="w-full border-t border-gray-200 dark:border-gray-700" />
+                <span class="w-full border-t" />
               </div>
               <div class="relative flex justify-center text-xs uppercase">
-                <span class="bg-card/60 px-2 text-gray-500 dark:text-gray-400 rounded-xl">Or</span>
+                <span class="rounded-xl bg-card px-2 text-muted-foreground">Or</span>
               </div>
             </div>
 
@@ -363,19 +358,11 @@ definePageMeta({
               @click="signInWithPasskey"
             >
               <Fingerprint
-                class="h-4 w-4"
+                aria-hidden="true"
+                class="size-4"
               />
               Sign In with a Passkey
             </Button>
-
-            <div class="relative">
-              <div class="absolute inset-0 flex items-center">
-                <span class="w-full border-t border-gray-200 dark:border-gray-700" />
-              </div>
-              <div class="relative flex justify-center text-xs uppercase">
-                <span class="bg-card/60 px-2 text-gray-500 dark:text-gray-400 rounded-xl">Or</span>
-              </div>
-            </div>
 
             <template
               v-for="provider in AVAILABLE_PROVIDERS"
@@ -389,7 +376,7 @@ definePageMeta({
                 :disabled="isLoading || oauthLoadingProvider !== null"
                 @click="signInWithProvider(provider.id)"
               >
-                <div class="h-4 w-4 flex items-center justify-center">
+                <div class="flex size-4 items-center justify-center">
                   <OAuthIcon :provider="provider.id" />
                 </div>
                 Continue with {{ provider.name }}
@@ -397,43 +384,43 @@ definePageMeta({
             </template>
           </div>
         </form>
-
-        <div
-          v-if="route.query.step !== '2fa'"
-          class="text-center mt-6 space-y-3"
-        >
-          <div class="text-xs text-gray-500 dark:text-gray-400">
-            By signing in, you agree to our
-            <NuxtLink
-              to="https://nnsvn.me/terms"
-              class="underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Terms of Service
-            </NuxtLink>
-            and
-            <NuxtLink
-              to="https://nnsvn.me/privacy"
-              class="underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Privacy Policy
-            </NuxtLink>
-          </div>
-
-          <div class="text-sm text-gray-600 dark:text-gray-300">
-            Don't have an account?
-            <NuxtLink
-              to="/auth/register"
-              class="text-primary hover:underline font-medium"
-            >
-              Sign Up
-            </NuxtLink>
-          </div>
-        </div>
       </CardContent>
+
+      <CardFooter
+        v-if="!isTwoFactorStep"
+        class="flex flex-col gap-3 text-center"
+      >
+        <p class="text-xs text-muted-foreground">
+          By signing in, you agree to our
+          <NuxtLink
+            to="https://nnsvn.me/terms"
+            class="underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Terms of Service
+          </NuxtLink>
+          and
+          <NuxtLink
+            to="https://nnsvn.me/privacy"
+            class="underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Privacy Policy
+          </NuxtLink>
+        </p>
+
+        <p class="text-sm text-muted-foreground">
+          Don't have an account?
+          <NuxtLink
+            :to="apiRoutes.AUTH_REGISTER"
+            class="font-medium text-primary hover:underline"
+          >
+            Sign Up
+          </NuxtLink>
+        </p>
+      </CardFooter>
     </Card>
-  </CenteredAppLayout>
+  </AuthPageLayout>
 </template>

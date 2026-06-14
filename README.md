@@ -65,7 +65,6 @@ A comprehensive, production-ready SaaS starter kit built with Nuxt 4, featuring 
 - **Styling**: Tailwind CSS v4 + shadcn-vue
 - **Database**: Sqlite + Drizzle ORM
 - **Authentication**: nuxt-auth-utils + SimpleWebAuthn
-- **Payments**: dodopayment
 - **Storage**: Cloudflare R2
 - **Analytics**: Sentry
 - **Deployment**: Nuxthub -> Cloudflare (recommended) / Vercel / Netlify ...

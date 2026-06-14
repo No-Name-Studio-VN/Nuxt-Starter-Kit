@@ -1,7 +1,6 @@
-import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import type { SessionUser } from '~~/auth'
 import { useKV } from '~~/server/utils/kv'
+import { webauthnRegisterUserSchema } from '#shared/schemas/userSecuritySchema'
 
 export default defineWebAuthnRegisterEventHandler({
   async storeChallenge(event, challenge, attemptId) {
@@ -18,10 +17,7 @@ export default defineWebAuthnRegisterEventHandler({
     await useKV().del(`auth:challenge:${attemptId}`)
     return challenge
   },
-  validateUser: user => z.object({
-    userName: z.string().min(1).toLowerCase().trim(),
-    displayName: z.string().min(1).trim(),
-  }).parseAsync(user),
+  validateUser: user => webauthnRegisterUserSchema.parseAsync(user),
   async onSuccess(event, { user, credential }) {
     const db = useDB()
 
@@ -30,7 +26,7 @@ export default defineWebAuthnRegisterEventHandler({
 
     if (session?.user) {
       // User is logged in, add passkey to existing account
-      const sessionUser = session.user as SessionUser
+      const sessionUser = session.user
 
       // Verify the username matches the logged-in user
       if (sessionUser.username !== user.userName) {

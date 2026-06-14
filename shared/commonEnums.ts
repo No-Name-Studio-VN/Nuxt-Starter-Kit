@@ -13,3 +13,8 @@ export enum CACHE_TTL {
   ONE_WEEK = 604800,
   ONE_YEAR = 31536000,
 }
+
+export enum AuthTokenType {
+  EmailVerification = 'email_verification',
+  PasswordReset = 'password_reset',
+}

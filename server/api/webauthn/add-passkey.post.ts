@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm'
-import { z } from 'zod'
 import { useKV } from '~~/server/utils/kv'
-import type { SessionUser } from '~~/auth'
+import { webauthnAddPasskeyUserSchema } from '#shared/schemas/userSecuritySchema'
 
 export default defineWebAuthnRegisterEventHandler({
   async storeChallenge(event, challenge, attemptId) {
@@ -18,10 +17,7 @@ export default defineWebAuthnRegisterEventHandler({
     await useKV().del(`auth:challenge:${attemptId}`)
     return challenge
   },
-  validateUser: user => z.object({
-    userName: z.string().min(1).toLowerCase().trim(),
-    displayName: z.string().min(1).trim().optional(),
-  }).parseAsync(user),
+  validateUser: user => webauthnAddPasskeyUserSchema.parseAsync(user),
   async onSuccess(event, { user, credential }) {
     const db = useDB()
     const session = await getUserSession(event)
@@ -34,7 +30,7 @@ export default defineWebAuthnRegisterEventHandler({
     }
 
     // Verify the username matches the logged-in user
-    const sessionUser = session.user as SessionUser
+    const sessionUser = session.user
     if (sessionUser.username !== user.userName) {
       throw createError({
         statusCode: 403,
@@ -71,7 +67,7 @@ export default defineWebAuthnRegisterEventHandler({
       return []
     }
 
-    const sessionUser = session.user as SessionUser
+    const sessionUser = session.user
     return useDB()
       .select({
         id: tables.credentials.id,

@@ -1,7 +1,20 @@
+import { AuthTokenType } from '#shared/commonEnums'
 import { registerUserSchema } from '#shared/schemas/userSchema'
 import userService from '~~/server/utils/database/user'
+import authTokenService from '~~/server/utils/database/authToken'
+import { sendVerificationEmail } from '~~/server/utils/email'
+import { safeRedirectPath } from '~~/server/utils/safeRedirect'
 import { apiRoutes } from '#shared/apiRoutes'
 import type { User } from '#shared/db'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function readStringField(record: Record<string, unknown>, key: string): string | undefined {
+  const value = record[key]
+  return typeof value === 'string' ? value : undefined
+}
 
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, body => registerUserSchema.safeParse(body))
@@ -16,7 +29,8 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=captcha')
   }
 
-  // 1. CHEAP PRE-CHECK: Prevent CPU Exhaustion (DoS) by checking constraints before hashing
+  const redirectTo = safeRedirectPath(event, result.data['redirect-to'])
+
   const [existingUsername, existingEmail] = await Promise.all([
     userService.getByUsername(username),
     userService.getByEmail(result.data.email),
@@ -29,24 +43,36 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=email-existed')
   }
 
-  // 2. EXPENSIVE OPERATION: Hash only when pre-checks pass
   const hashedPassword = await hashPassword(password)
 
-  // 3. ATOMIC INSERT: Protect against Time-Of-Check to Time-Of-Use (TOCTOU) race conditions
   let newUser: User
   try {
     newUser = await userService.create({
-      ...result.data,
+      username: result.data.username,
+      email: result.data.email,
+      name: result.data.name,
       password: hashedPassword,
+      emailVerified: false,
       isAdmin: false,
     })
   }
   catch (err: unknown) {
-    const maybeErr = err as { code?: string, message?: string, cause?: { message?: string } }
-    // Fallback for strict concurrency races relying on standard SQLite constraint codes
-    const isUniqueConstraint = maybeErr.code === 'SQLITE_CONSTRAINT' || maybeErr.code === 'SQLITE_CONSTRAINT_UNIQUE' || maybeErr.message?.includes('UNIQUE')
+    let errorCode: string | undefined
+    let errorMessage: string | undefined
+    let causeMessage: string | undefined
+
+    if (isRecord(err)) {
+      errorCode = readStringField(err, 'code')
+      errorMessage = readStringField(err, 'message')
+      const cause = err.cause
+      if (isRecord(cause)) {
+        causeMessage = readStringField(cause, 'message')
+      }
+    }
+
+    const isUniqueConstraint = errorCode === 'SQLITE_CONSTRAINT' || errorCode === 'SQLITE_CONSTRAINT_UNIQUE' || errorMessage?.includes('UNIQUE')
     if (isUniqueConstraint) {
-      if (maybeErr.message?.includes('email') || maybeErr.cause?.message?.includes('email')) {
+      if (errorMessage?.includes('email') || causeMessage?.includes('email')) {
         return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=email-existed')
       }
       return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=existed')
@@ -54,20 +80,17 @@ export default defineEventHandler(async (event) => {
     throw err
   }
 
-  // we only set necessary properties from user object
-  await setUserSession(event, {
-    user: {
-      id: newUser.id,
-      username: newUser.username,
-      name: newUser.name,
-      isAdmin: newUser.isAdmin,
-    },
-  })
+  const verificationToken = await authTokenService.createToken(newUser.id, AuthTokenType.EmailVerification)
+  const verificationEmail = await sendVerificationEmail(event, newUser.email, newUser.username, verificationToken)
 
-  if (result.data['redirect-to']) {
-    return sendRedirect(event, result.data['redirect-to'])
+  if (!verificationEmail.configured) {
+    await userService.update({ id: newUser.id, emailVerified: true })
+    return sendRedirect(event, `${apiRoutes.AUTH_LOGIN}?success=account-ready&redirectTo=${encodeURIComponent(redirectTo)}`)
   }
-  else {
-    return sendRedirect(event, '/')
+
+  if (!verificationEmail.sent) {
+    return sendRedirect(event, `${apiRoutes.AUTH_VERIFY_EMAIL}?email=${encodeURIComponent(newUser.email)}&redirectTo=${encodeURIComponent(redirectTo)}&error=email-send-failed`)
   }
+
+  return sendRedirect(event, `${apiRoutes.AUTH_VERIFY_EMAIL}?email=${encodeURIComponent(newUser.email)}&redirectTo=${encodeURIComponent(redirectTo)}`)
 })

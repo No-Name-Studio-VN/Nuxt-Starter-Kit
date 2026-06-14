@@ -11,6 +11,7 @@ export interface UserProfileModel {
   username: string
   name: string
   email: string
+  emailVerified: boolean
   createdAt: Date
   lastLoginAt: Date
   hasPassword: boolean

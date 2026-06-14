@@ -1,4 +1,6 @@
 import userService from '~~/server/utils/database/user'
+import userTwoFactorService from '~~/server/utils/database/userTwoFactor'
+import { safeRedirectPath } from '~~/server/utils/safeRedirect'
 import { apiRoutes } from '#shared/apiRoutes'
 import { loginSchema } from '#shared/schemas/userSchema'
 
@@ -9,7 +11,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { username, password, 'cf-turnstile-response': token } = result.data
-  const redirectToStr = result.data['redirect-to'] || '/'
+  const redirectToStr = safeRedirectPath(event, result.data['redirect-to'])
 
   if (!token) {
     return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha')
@@ -20,20 +22,32 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha')
   }
 
-  // Find user by username
   const user = await userService.getByUsername(username)
   if (!user) {
     return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials')
   }
 
-  // Verify password using nuxt-auth-utils
   const isValidPassword = await verifyPassword(user.password, password)
 
   if (!isValidPassword) {
     return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials')
   }
 
-  // Update last login
+  if (!user.emailVerified) {
+    return sendRedirect(event, `${apiRoutes.AUTH_VERIFY_EMAIL}?email=${encodeURIComponent(user.email)}&redirectTo=${encodeURIComponent(redirectToStr)}`)
+  }
+
+  const twoFactor = await userTwoFactorService.getByUserId(user.id)
+
+  if (twoFactor?.totpEnabled && twoFactor.totpSecret) {
+    await setUserSession(event, {
+      secure: {
+        pending2faUserId: user.id,
+      },
+    })
+    return sendRedirect(event, `${apiRoutes.AUTH_LOGIN}?step=2fa&redirectTo=${encodeURIComponent(redirectToStr)}`)
+  }
+
   await userService.update({ id: user.id, lastLoginAt: new Date() })
   await setUserSession(event, {
     user: {

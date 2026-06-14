@@ -1,12 +1,27 @@
 import type { H3Event } from 'h3'
 import userService from '~~/server/utils/database/user'
 import oauthAccountService from '~~/server/utils/database/oauthAccount'
+import type { OAuthProfile } from '~~/types/auth'
+import { safeRedirectPath } from '~~/server/utils/safeRedirect'
 
-export interface OAuthProfile {
-  id: string
-  email: string
-  name: string
-  avatarUrl?: string
+function getPopupRedirectTarget(event: H3Event, fallback: string) {
+  if (getCookie(event, 'oauth_popup') !== '1') {
+    return fallback
+  }
+
+  const redirectTo = getCookie(event, 'oauth_redirect_to') || fallback
+  return `/auth/oauth/popup?redirectTo=${encodeURIComponent(safeRedirectPath(event, redirectTo))}`
+}
+
+function clearPopupOAuthCookies(event: H3Event) {
+  deleteCookie(event, 'oauth_popup', { path: '/' })
+  deleteCookie(event, 'oauth_redirect_to', { path: '/' })
+}
+
+export function sendOAuthRedirect(event: H3Event, fallback: string) {
+  const target = getPopupRedirectTarget(event, fallback)
+  clearPopupOAuthCookies(event)
+  return sendRedirect(event, target)
 }
 
 /**
@@ -48,28 +63,27 @@ async function generateUniqueUsername(email: string): Promise<string> {
  */
 export async function handleOAuthSuccess(event: H3Event, provider: string, profile: OAuthProfile) {
   const session = await getUserSession(event)
-  const isLoggedIn = !!session?.user?.id
 
   // ── MODE 1: Link Provider to existing logged-in account ──
-  if (isLoggedIn) {
-    const currentUserId = session.user!.id
+  if (session.user) {
+    const currentUserId = session.user.id
 
-    // Check if this provider account is already linked to someone
+    // Check if this provider account is already linked to someone.
     const existingLink = await oauthAccountService.getByProviderAccount(provider, profile.id)
     if (existingLink) {
       if (existingLink.userId === currentUserId) {
-        return sendRedirect(event, `/settings/security?error=oauth-already-connected&provider=${provider}`)
+        return sendOAuthRedirect(event, `/settings/security?error=oauth-already-connected&provider=${provider}`)
       }
-      return sendRedirect(event, `/settings/security?error=oauth-already-linked&provider=${provider}`)
+      return sendOAuthRedirect(event, `/settings/security?error=oauth-already-linked&provider=${provider}`)
     }
 
-    // Check if user already has a different account for this provider linked
+    // Check if user already has a different account for this provider linked.
     const userProviderLink = await oauthAccountService.getByUserAndProvider(currentUserId, provider)
     if (userProviderLink) {
-      return sendRedirect(event, `/settings/security?error=oauth-already-connected&provider=${provider}`)
+      return sendOAuthRedirect(event, `/settings/security?error=oauth-already-connected&provider=${provider}`)
     }
 
-    // Link the provider account
+    // Link the provider account.
     await oauthAccountService.link({
       userId: currentUserId,
       provider,
@@ -79,19 +93,16 @@ export async function handleOAuthSuccess(event: H3Event, provider: string, profi
       avatarUrl: profile.avatarUrl,
     })
 
-    return sendRedirect(event, `/settings/security?success=oauth-linked&provider=${provider}`)
+    return sendOAuthRedirect(event, `/settings/security?success=oauth-linked&provider=${provider}`)
   }
 
   // ── MODE 2: Sign in or sign up (user is NOT logged in) ──
-
-  // Check if this provider account is already linked to a user
   const linked = await oauthAccountService.getByProviderAccount(provider, profile.id)
 
   if (linked) {
-    // User already exists, sign them in
     const dbUser = await userService.getById(linked.userId)
     if (!dbUser) {
-      return sendRedirect(event, '/auth/login?error=unknown')
+      return sendOAuthRedirect(event, '/auth/login?error=unknown')
     }
 
     await userService.update({ id: dbUser.id, lastLoginAt: new Date() })
@@ -105,10 +116,9 @@ export async function handleOAuthSuccess(event: H3Event, provider: string, profi
       },
     })
 
-    return sendRedirect(event, '/')
+    return sendOAuthRedirect(event, '/')
   }
 
-  // Sign up: Create new user account + link provider
   const username = await generateUniqueUsername(profile.email)
 
   const newUser = await userService.create({
@@ -116,6 +126,7 @@ export async function handleOAuthSuccess(event: H3Event, provider: string, profi
     name: profile.name || username,
     email: profile.email,
     password: '',
+    emailVerified: true,
     isAdmin: false,
   })
 
@@ -137,5 +148,5 @@ export async function handleOAuthSuccess(event: H3Event, provider: string, profi
     },
   })
 
-  return sendRedirect(event, '/')
+  return sendOAuthRedirect(event, '/')
 }
