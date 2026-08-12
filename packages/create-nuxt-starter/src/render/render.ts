@@ -71,8 +71,9 @@ export async function renderKit(options: RenderOptions): Promise<RenderedFile[]>
   const owners = await resolveOwnership(kitRoot, modules);
   const rendered: RenderedFile[] = [];
 
-  for (const path of [...owners.keys()].sort()) {
-    const moduleId = owners.get(path)!;
+  const ownedPaths = [...owners.entries()].sort(([left], [right]) => left.localeCompare(right));
+
+  for (const [path, moduleId] of ownedPaths) {
     const source = resolveInside(kitRoot, path, 'Kit file');
     const destination = resolveInside(destinationRoot, path, 'Generated file');
     await mkdir(dirname(destination), { recursive: true });

@@ -28,7 +28,8 @@ export function assertKnownPlaceholders(placeholders: Placeholders): void {
  * three-way upgrades would diff against the wrong base.
  */
 export function applyPlaceholders(contents: string, placeholders: Placeholders): string {
-  return contents.replaceAll(/\{\{([A-Z0-9_]+)\}\}/g, (token, key: string) =>
-    Object.hasOwn(placeholders, key) ? placeholders[key]! : token,
-  );
+  return contents.replaceAll(/\{\{([A-Z0-9_]+)\}\}/g, (token: string, key: string) => {
+    const value = placeholders[key];
+    return value === undefined ? token : value;
+  });
 }

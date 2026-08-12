@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CliError } from '../../src/errors';
 import { getModule, parseRegistry } from '../../src/registry/schema';
+import { must } from '../support/must';
 
 function registry(modules: unknown[]) {
   return {
@@ -22,7 +23,7 @@ const base = {
 describe('parseRegistry', () => {
   it('applies defaults for optional collections', () => {
     const parsed = parseRegistry(registry([base]), 'test');
-    const parsedModule = parsed.modules[0]!;
+    const parsedModule = must(parsed.modules[0]);
     expect(parsedModule.requires).toEqual([]);
     expect(parsedModule.conflicts).toEqual([]);
     expect(parsedModule.env).toEqual([]);
@@ -47,8 +48,8 @@ describe('parseRegistry', () => {
       ]),
       'test',
     );
-    expect(parsed.modules[1]!.requires).toEqual(['base']);
-    expect(parsed.modules[1]!.structured['package.json']).toEqual({
+    expect(must(parsed.modules[1]).requires).toEqual(['base']);
+    expect(must(parsed.modules[1]).structured['package.json']).toEqual({
       dependencies: { 'nuxt-auth-utils': '^0.5.29' },
     });
   });

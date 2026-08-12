@@ -16,12 +16,12 @@ export function parseMarkers(contents: string, label: string): MarkerBlock[] {
   const blocks: MarkerBlock[] = [];
   let open: { moduleId: string; startLine: number } | null = null;
 
-  contents.split('\n').forEach((line, index) => {
+  for (const [index, line] of contents.split('\n').entries()) {
     const match = MARKER_PATTERN.exec(line);
-    if (!match) return;
+    const moduleId = match?.[2];
+    if (!match || moduleId === undefined) continue;
 
     const isClosing = match[1] === '/';
-    const moduleId = match[2]!;
     const location = `${label}:${index + 1}`;
 
     if (!isClosing) {
@@ -31,7 +31,7 @@ export function parseMarkers(contents: string, label: string): MarkerBlock[] {
         );
       }
       open = { moduleId, startLine: index };
-      return;
+      continue;
     }
 
     if (!open) {
@@ -44,12 +44,11 @@ export function parseMarkers(contents: string, label: string): MarkerBlock[] {
     }
     blocks.push({ moduleId, startLine: open.startLine, endLine: index });
     open = null;
-  });
+  }
 
   if (open) {
-    const unclosed = open as { moduleId: string; startLine: number };
     throw new CliError(
-      `Marker block "${unclosed.moduleId}" opened at ${label}:${unclosed.startLine + 1} is never closed.`,
+      `Marker block "${open.moduleId}" opened at ${label}:${open.startLine + 1} is never closed.`,
     );
   }
 

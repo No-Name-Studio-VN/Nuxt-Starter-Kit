@@ -54,9 +54,11 @@ export type Registry = z.infer<typeof registrySchema>;
 export function parseRegistry(value: unknown, sourceLabel: string): Registry {
   const result = registrySchema.safeParse(value);
   if (!result.success) {
-    const issue = result.error.issues[0]!;
-    const path = issue.path.join('.') || '(root)';
-    throw new CliError(`Invalid registry at ${sourceLabel}: ${path} ${issue.message}`);
+    const issue = result.error.issues[0];
+    const path = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
+    throw new CliError(
+      `Invalid registry at ${sourceLabel}: ${path} ${issue?.message ?? 'is invalid'}`,
+    );
   }
 
   const registry = result.data;

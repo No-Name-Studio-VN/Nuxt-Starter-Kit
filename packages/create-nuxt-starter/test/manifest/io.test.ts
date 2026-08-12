@@ -5,6 +5,7 @@ import { buildManifest, MANIFEST_PATH, readManifest, writeManifest } from '../..
 import { resolveModules } from '../../src/registry/resolve';
 import { writeJsonAtomically, writeTextFile } from '../../src/util/fs';
 import { loadFixtureRegistry, makeTempDir } from '../support/fixtureKit';
+import { must } from '../support/must';
 
 async function sampleManifest() {
   const registry = await loadFixtureRegistry();
@@ -24,9 +25,9 @@ describe('buildManifest', () => {
   it('groups rendered files under their owning module', async () => {
     const manifest = await sampleManifest();
     expect(manifest.modules.map((module) => module.id)).toEqual(['base', 'content']);
-    expect(manifest.modules[0]!.files).toEqual({ 'nuxt.config.ts': 'sha256:aaa' });
-    expect(manifest.modules[1]!.files).toEqual({ 'content.config.ts': 'sha256:bbb' });
-    expect(manifest.modules[0]!.orphaned).toEqual([]);
+    expect(must(manifest.modules[0]).files).toEqual({ 'nuxt.config.ts': 'sha256:aaa' });
+    expect(must(manifest.modules[1]).files).toEqual({ 'content.config.ts': 'sha256:bbb' });
+    expect(must(manifest.modules[0]).orphaned).toEqual([]);
   });
 
   it('records the kit revision, placeholders, and versions', async () => {

@@ -26,9 +26,11 @@ export type ProjectManifest = z.infer<typeof manifestSchema>;
 export function parseManifest(value: unknown, sourceLabel: string): ProjectManifest {
   const result = manifestSchema.safeParse(value);
   if (!result.success) {
-    const issue = result.error.issues[0]!;
-    const path = issue.path.join('.') || '(root)';
-    throw new CliError(`Invalid project manifest at ${sourceLabel}: ${path} ${issue.message}`);
+    const issue = result.error.issues[0];
+    const path = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
+    throw new CliError(
+      `Invalid project manifest at ${sourceLabel}: ${path} ${issue?.message ?? 'is invalid'}`,
+    );
   }
   return result.data;
 }

@@ -5,6 +5,7 @@ import { runInit } from '../../src/commands/init';
 import { readManifest } from '../../src/manifest/io';
 import { hashContent, listFiles, writeTextFile } from '../../src/util/fs';
 import { FIXTURE_KIT_V1_ROOT, loadFixtureRegistry, makeTempDir } from '../support/fixtureKit';
+import { must } from '../support/must';
 
 async function init(moduleIds: string[], targetDir?: string) {
   const registry = await loadFixtureRegistry();
@@ -37,7 +38,7 @@ describe('runInit', () => {
     expect(manifest.modules.map((module) => module.id)).toEqual(['base', 'content']);
     expect(manifest.kit.revision).toBe('v1');
     expect(manifest.placeholders.PROJECT_NAME).toBe('my-app');
-    expect(Object.keys(manifest.modules[1]!.files)).toEqual(['content.config.ts']);
+    expect(Object.keys(must(manifest.modules[1]).files)).toEqual(['content.config.ts']);
   });
 
   it('merges structured fragments of installed modules into package.json', async () => {
@@ -74,7 +75,9 @@ describe('manifest hashes', () => {
   it('records the post-merge hash of structured targets', async () => {
     const result = await init(['content']);
     const manifest = await readManifest(result.projectRoot);
-    const recorded = manifest.modules.find((module) => module.id === 'base')!.files['package.json'];
+    const recorded = must(manifest.modules.find((module) => module.id === 'base')).files[
+      'package.json'
+    ];
     const onDisk = hashContent(await readFile(join(result.projectRoot, 'package.json'), 'utf8'));
     expect(recorded).toBe(onDisk);
   });
@@ -82,7 +85,7 @@ describe('manifest hashes', () => {
   it('records the render hash of untouched files', async () => {
     const result = await init(['content']);
     const manifest = await readManifest(result.projectRoot);
-    const recorded = manifest.modules.find((module) => module.id === 'base')!.files[
+    const recorded = must(manifest.modules.find((module) => module.id === 'base')).files[
       'nuxt.config.ts'
     ];
     const onDisk = hashContent(await readFile(join(result.projectRoot, 'nuxt.config.ts'), 'utf8'));
