@@ -146,6 +146,16 @@ Fetch the project's current revision A (manifest) and the registry's revision B 
 3. **Registry↔kit consistency check in CI**: the union of every module's declared package.json entries must equal the kit's real package.json (minus a kit-tooling allowlist). The build matrix catches _missing_ declarations; this catches _stale_ ones.
 4. **Upgrade fixtures**: a miniature fixture kit with two committed revisions (not real starter-kit history — fast and hermetic); generate at rev 1, apply scripted "user edits", upgrade to rev 2; assert exact per-file classification.
 
+## Implementation tooling
+
+The package is written in **TypeScript under strict typechecking**. Its core is invariant-carrying data — registry entries, project manifests, merge classifications, dependency resolution — and its failure mode is corrupting a user's source files, so static guarantees are worth the build step. V1's `.mjs` sources are ported rather than extended.
+
+- **Standalone package**: `packages/create-nuxt-starter` owns its `tsconfig.json` and scripts. The root tsconfig is Nuxt-managed (project references, `files: []`) and does not compile this package; the package's own `typecheck` script does.
+- **Strictness**: `strict: true` plus `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`, `verbatimModuleSyntax`. `noUncheckedIndexedAccess` matters here specifically — this program indexes maps of paths and lines constantly, and it turns "file not in map" into a compile error instead of an `undefined` write.
+- **Build**: `unbuild` → ESM in `dist/`, matching the UnJS ecosystem the deps already come from (citty, giget). `bin` points at the built entry; `files` ships `dist` + `registry`.
+- **Runtime validation at trust boundaries**: types vanish at runtime, and the project manifest is a JSON file on a user's disk that they can hand-edit or corrupt. The registry JSON and the project manifest are parsed with **zod** schemas (already the kit's validation library) and the inferred types are the source of truth for the internal ones. A malformed manifest fails with a readable error, never a mid-upgrade crash.
+- **Tests**: **vitest**, matching the repo's existing standard, replacing V1's `node --test`.
+
 ## Distribution
 
 CLI on npm (`@no-name-studio/create-nuxt-starter`) with the registry bundled. A release = bump changed module versions, pin the new kit revision, publish. Users get updates via `npx @no-name-studio/create-nuxt-starter@latest`.
