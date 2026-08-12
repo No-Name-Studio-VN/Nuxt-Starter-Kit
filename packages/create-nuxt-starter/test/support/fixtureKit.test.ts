@@ -7,6 +7,7 @@ describe('fixture kit', () => {
     expect(await listFiles(FIXTURE_KIT_V1_ROOT)).toEqual([
       'app/app.vue',
       'app/components/InstallPrompter.vue',
+      'app/legacy.ts',
       'app/pages/index.vue',
       'content.config.ts',
       'nuxt.config.ts',

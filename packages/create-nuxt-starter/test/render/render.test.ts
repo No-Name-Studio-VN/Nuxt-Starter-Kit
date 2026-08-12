@@ -23,6 +23,7 @@ describe('renderKit', () => {
     const { destinationRoot } = await render(['base']);
     expect(await listFiles(destinationRoot)).toEqual([
       'app/app.vue',
+      'app/legacy.ts',
       'app/pages/index.vue',
       'nuxt.config.ts',
       'package.json',

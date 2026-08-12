@@ -26,6 +26,7 @@ describe('runInit', () => {
       '.nuxt-starter/manifest.json',
       'app/app.vue',
       'app/components/InstallPrompter.vue',
+      'app/legacy.ts',
       'app/pages/index.vue',
       'nuxt.config.ts',
       'package.json',
