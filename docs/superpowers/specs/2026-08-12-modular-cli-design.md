@@ -155,6 +155,7 @@ The package is written in **TypeScript under strict typechecking**. Its core is 
 - **Build**: `unbuild` → ESM in `dist/`, matching the UnJS ecosystem the deps already come from (citty, giget). `bin` points at the built entry; `files` ships `dist` + `registry`.
 - **Runtime validation at trust boundaries**: types vanish at runtime, and the project manifest is a JSON file on a user's disk that they can hand-edit or corrupt. The registry JSON and the project manifest are parsed with **zod** schemas (already the kit's validation library) and the inferred types are the source of truth for the internal ones. A malformed manifest fails with a readable error, never a mid-upgrade crash.
 - **Tests**: **vitest**, matching the repo's existing standard, replacing V1's `node --test`.
+- **Three-way merge is `git merge-file`**, not a bundled algorithm. jsdiff v8 dropped its `merge` export, and git is already a hard requirement (clean-tree checks, `git init`). The engine already materializes pristine base and target trees on disk, so `git merge-file -p --diff3 <project file> <base> <target>` needs no temp files: exit code 0 means a clean merge, ≥1 is the conflict count, and the markers are exactly what editors expect. Binary files (detected by a NUL byte) never reach it — they are overwritten when unmodified and reported otherwise.
 
 ## Distribution
 
