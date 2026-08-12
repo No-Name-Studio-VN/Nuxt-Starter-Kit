@@ -37,6 +37,8 @@ export interface UpgradePlan {
   /** Owning module id for every path in the target render. */
   targetOwners: Record<string, string>;
   structuredTargets: string[];
+  /** Resolved module ids the project should have after this transition. */
+  targetModuleIds: string[];
   droppedModuleIds: string[];
   addedModuleIds: string[];
   renderVersionChanged: boolean;
@@ -47,6 +49,20 @@ export interface PlanUpgradeOptions {
   projectRoot: string;
   registry: Registry;
   /** Maps a revision to a local checkout instead of downloading it. */
+  resolveLocalKit?: (revision: string) => string | undefined;
+}
+
+/** One end of a transition: a kit revision plus the modules installed at it. */
+export interface TransitionEndpoint {
+  revision: string;
+  moduleIds: string[];
+}
+
+export interface PlanTransitionOptions {
+  projectRoot: string;
+  registry: Registry;
+  from: TransitionEndpoint;
+  to: TransitionEndpoint;
   resolveLocalKit?: (revision: string) => string | undefined;
 }
 
@@ -79,13 +95,18 @@ function selectModules(registry: Registry, ids: string[]): RegistryModule[] {
   return ids.length === 0 ? [] : resolveModules(registry, ids);
 }
 
-export async function planUpgrade(options: PlanUpgradeOptions): Promise<UpgradePlan> {
-  const { projectRoot, registry } = options;
+/**
+ * Plans the move from one (revision, module set) to another. Upgrading, adding a
+ * module, and removing one are all the same operation with different endpoints,
+ * so they share one merge and one apply path.
+ */
+export async function planTransition(options: PlanTransitionOptions): Promise<UpgradePlan> {
+  const { projectRoot, registry, from, to } = options;
   const manifest = await readManifest(projectRoot);
 
   const installedIds = manifest.modules.map((module) => module.id);
   const availableIds = new Set(registry.modules.map((module) => module.id));
-  const keptIds = installedIds.filter((id) => availableIds.has(id));
+  const keptIds = to.moduleIds.filter((id) => availableIds.has(id));
   const droppedModuleIds = installedIds.filter((id) => !availableIds.has(id));
 
   const workspace = await makeRenderWorkspace();
@@ -96,18 +117,18 @@ export async function planUpgrade(options: PlanUpgradeOptions): Promise<UpgradeP
   };
 
   try {
-    const oldLocalKit = options.resolveLocalKit?.(manifest.kit.revision);
+    const oldLocalKit = options.resolveLocalKit?.(from.revision);
     const oldKit = await fetchKit({
       template: manifest.kit.template,
-      revision: manifest.kit.revision,
+      revision: from.revision,
       ...(oldLocalKit === undefined ? {} : { localKitRoot: oldLocalKit }),
     });
     fetched.push(oldKit);
 
-    const newLocalKit = options.resolveLocalKit?.(registry.kit.revision);
+    const newLocalKit = options.resolveLocalKit?.(to.revision);
     const newKit = await fetchKit({
       template: registry.kit.template,
-      revision: registry.kit.revision,
+      revision: to.revision,
       ...(newLocalKit === undefined ? {} : { localKitRoot: newLocalKit }),
     });
     fetched.push(newKit);
@@ -116,7 +137,9 @@ export async function planUpgrade(options: PlanUpgradeOptions): Promise<UpgradeP
     // paths may have changed since, and rendering the base with today's paths
     // would diff against a tree that never existed.
     const oldRegistry = (await loadRegistryFromKit(oldKit.root)) ?? registry;
-    const oldIds = keptIds.filter((id) => oldRegistry.modules.some((module) => module.id === id));
+    const oldIds = from.moduleIds.filter((id) =>
+      oldRegistry.modules.some((module) => module.id === id),
+    );
 
     const targetModules = selectModules(registry, keptIds);
     const base = await renderRevision({
@@ -231,8 +254,8 @@ export async function planUpgrade(options: PlanUpgradeOptions): Promise<UpgradeP
         theirsPath: join(target.root, path),
         labels: {
           ours: 'local',
-          base: `base (${manifest.kit.revision})`,
-          theirs: `upstream (${registry.kit.revision})`,
+          base: `base (${from.revision})`,
+          theirs: `upstream (${to.revision})`,
         },
       });
       actions.push(
@@ -257,13 +280,14 @@ export async function planUpgrade(options: PlanUpgradeOptions): Promise<UpgradeP
     return {
       projectRoot,
       manifest,
-      fromRevision: manifest.kit.revision,
-      toRevision: registry.kit.revision,
+      fromRevision: from.revision,
+      toRevision: to.revision,
       moduleUpdates,
       actions,
       targetHashes,
       targetOwners,
       structuredTargets: [...structuredTargets].sort(),
+      targetModuleIds: targetModules.map((module) => module.id),
       droppedModuleIds,
       addedModuleIds,
       renderVersionChanged: manifest.renderVersion !== RENDER_VERSION,
@@ -273,6 +297,24 @@ export async function planUpgrade(options: PlanUpgradeOptions): Promise<UpgradeP
     await cleanup();
     throw error;
   }
+}
+
+/** Moves the whole project to the registry's revision, keeping its module set. */
+export async function planUpgrade(options: PlanUpgradeOptions): Promise<UpgradePlan> {
+  const manifest = await readManifest(options.projectRoot);
+  const available = new Set(options.registry.modules.map((module) => module.id));
+  const installedIds = manifest.modules.map((module) => module.id);
+
+  return planTransition({
+    projectRoot: options.projectRoot,
+    registry: options.registry,
+    from: { revision: manifest.kit.revision, moduleIds: installedIds },
+    to: {
+      revision: options.registry.kit.revision,
+      moduleIds: installedIds.filter((id) => available.has(id)),
+    },
+    ...(options.resolveLocalKit === undefined ? {} : { resolveLocalKit: options.resolveLocalKit }),
+  });
 }
 
 export function summarizePlan(plan: UpgradePlan): Record<ActionType, number> {
