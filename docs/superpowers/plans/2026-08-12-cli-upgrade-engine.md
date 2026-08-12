@@ -2599,3 +2599,38 @@ git commit -m "feat(cli): add status and diff commands"
 **Placeholder scan:** none. Every code step is complete and runnable; every test step asserts real behaviour.
 
 **Type consistency:** `FileAction` carries `moduleId` on every variant (Task 5) because Task 7 groups orphans and hashes by module. `ApplyResult` is produced in Task 7 and consumed in Task 8's `UpgradeReport`. `StructuredChange` is produced in Task 6 and surfaced through `ApplyResult.structured`. `makeRenderWorkspace` (Task 9 Step 6) is the shared temp-dir helper; Task 5 creates its own workspace inline and is not refactored to use it.
+
+---
+
+## Self-review corrections (binding — applied during execution)
+
+A careful re-read before execution found nine defects. Where these contradict a task above, **these win**.
+
+1. **Kit resolution must be per revision.** `localKitRoot` / `localOldKitRoot` are replaced everywhere by
+   `resolveLocalKit?: (revision: string) => string | undefined`. Without this, Task 7's idempotency test is
+   meaningless: the base would keep rendering from `kit-v1` even after the project moved to `v2`, so a second
+   upgrade would re-plan the same changes forever. Tests pass
+   `resolveLocalKit: revision => (revision === 'v2' ? FIXTURE_KIT_V2_ROOT : FIXTURE_KIT_V1_ROOT)`.
+   The CLI exposes `--kit` (target revision) and `--base-kit` (base revision, dev/testing only):
+   `revision => (revision === registry.kit.revision ? args.kit : args.baseKit) || undefined`.
+2. **The planner exposes `targetOwners: Record<string, string>`** (path → owning module id) and records
+   `targetHashes` / `targetOwners` for _every_ path in the target render — protected and structured paths
+   included. Only the _text action_ is skipped for those. Task 7 then looks ownership up directly instead of
+   scanning `plan.actions` for each path.
+3. **Manifest `files` rebuild rule, stated explicitly.** For each kept module: protected paths keep their
+   previous hash (the upgrade did not rewrite them, so the old hash still describes what is on disk);
+   structured targets take their post-merge on-disk hash; every other target-owned path takes the pristine
+   target-render hash; paths absent from the target render are dropped (deleted or orphaned).
+4. **Modules newly required by the target registry need manifest entries.** If the new registry gives an
+   installed module a new `requires`, the dependency is rendered and its files land on disk — without an entry
+   they would be unowned. Append them to the manifest and list them in the report's notes.
+5. **No `'unknown'` module id.** Derive the owner as `targetEntry?.moduleId ?? baseEntry?.moduleId` and
+   `continue` when it is `undefined` (unreachable — the path came from one of the two maps).
+6. **`makeRenderWorkspace` belongs to Task 5**, in `src/upgrade/workspace.ts`, and is reused by `runDiff`.
+   Task 9 does not define it a second time.
+7. **The `diff` "missing" test actually deletes the file** and asserts `status === 'missing'`, instead of
+   writing an empty file and asserting `changed`.
+8. **Import lists are exact.** `noUnusedLocals` is on: `plan.ts` does not import `CliError`, `hashContent`,
+   or `listFiles`; `status.ts` does not import `join`.
+9. **`UpgradeReport.summary` is `Record<FileAction['type'], number>`**, not `Record<string, number>`, so
+   `report.summary.overwrite` types as `number` rather than `number | undefined`.
