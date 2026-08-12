@@ -15,5 +15,7 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "test", "build.config.ts", "vitest.config.ts"]
+  "include": ["src", "test", "build.config.ts", "vitest.config.ts"],
+  // Fixture kits are Nuxt sources for a fake project, not package code.
+  "exclude": ["test/fixtures"]
 }
