@@ -9,6 +9,9 @@ const manifestModuleSchema = z.object({
   id: z.string().min(1),
   version: z.string().min(1),
   files: z.record(z.string(), z.string()),
+  // What this module contributed to shared JSON files, so upgrades can tell a
+  // stale declaration from a value the user changed.
+  structured: z.record(z.string(), z.record(z.string(), z.unknown())).default({}),
   orphaned: z.array(z.string()).default([]),
 });
 

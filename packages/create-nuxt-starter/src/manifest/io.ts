@@ -37,6 +37,7 @@ export function buildManifest(options: BuildManifestOptions): ProjectManifest {
           .filter((file) => file.moduleId === module.id)
           .map((file) => [file.path, file.hash]),
       ),
+      structured: module.structured,
       orphaned: [],
     })),
   };

@@ -93,3 +93,19 @@ describe('manifest hashes', () => {
     expect(recorded).toBe(onDisk);
   });
 });
+
+describe('structured provenance', () => {
+  it('records what each module contributed to shared JSON files', async () => {
+    const result = await init(['content', 'pwa']);
+    const manifest = await readManifest(result.projectRoot);
+    const content = must(manifest.modules.find((module) => module.id === 'content'));
+    const pwa = must(manifest.modules.find((module) => module.id === 'pwa'));
+    expect(content.structured['package.json']).toEqual({
+      dependencies: { '@nuxt/content': '^3.0.0' },
+    });
+    expect(pwa.structured['package.json']).toEqual({
+      dependencies: { '@vite-pwa/nuxt': '^1.0.0' },
+    });
+    expect(must(manifest.modules.find((module) => module.id === 'base')).structured).toEqual({});
+  });
+});

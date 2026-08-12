@@ -37,7 +37,9 @@ function mergeFragment(target: Record<string, unknown>, fragment: Record<string,
       mergeFragment(existing, value);
       continue;
     }
-    target[key] = value;
+    // Cloned, not aliased: assigning the fragment itself would let a later
+    // module's merge mutate this module's registry data in place.
+    target[key] = structuredClone(value);
   }
 }
 
