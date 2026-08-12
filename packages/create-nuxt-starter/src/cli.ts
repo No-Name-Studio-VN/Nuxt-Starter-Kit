@@ -1,6 +1,7 @@
 import { intro, isCancel, multiselect, outro, text } from '@clack/prompts';
 import { defineCommand, runCommand } from 'citty';
 import { runInit } from './commands/init';
+import { runUpgrade } from './commands/upgrade';
 import { CliError } from './errors';
 import { loadRegistry } from './registry/load';
 import type { Registry } from './registry/schema';
@@ -103,9 +104,58 @@ const modulesCommand = defineCommand({
   },
 });
 
+const upgradeCommand = defineCommand({
+  meta: { name: 'upgrade', description: 'Pull upstream kit changes into this project.' },
+  args: {
+    dir: { type: 'string', description: 'Project directory', default: '.' },
+    check: { type: 'boolean', description: 'Preview without writing', default: false },
+    force: { type: 'boolean', description: 'Allow a dirty working tree', default: false },
+    registry: { type: 'string', description: 'Path to an alternative registry.json' },
+    kit: { type: 'string', description: 'Local checkout of the target revision' },
+    'base-kit': { type: 'string', description: 'Local checkout of the current revision' },
+  },
+  async run({ args }) {
+    const registry = await loadRegistry(args.registry || undefined);
+    const report = await runUpgrade({
+      projectRoot: args.dir,
+      registry,
+      check: args.check,
+      force: args.force,
+      resolveLocalKit: (revision) =>
+        (revision === registry.kit.revision ? args.kit : args['base-kit']) || undefined,
+    });
+
+    if (report.upToDate) {
+      console.log('Already up to date.');
+      return;
+    }
+
+    console.log(`${report.fromRevision} -> ${report.toRevision}`);
+    for (const update of report.moduleUpdates) {
+      console.log(`  ${update.id}: ${update.from} -> ${update.to}`);
+    }
+    const counts = Object.entries(report.summary)
+      .filter(([, count]) => count > 0)
+      .map(([type, count]) => `${count} ${type}`)
+      .join(', ');
+    console.log(counts.length > 0 ? `  ${counts}` : '  no file changes');
+
+    if (report.applied === null) {
+      console.log('Preview only — run without --check to apply.');
+    }
+    for (const path of report.conflicted) console.log(`conflict: ${path}`);
+    if (report.conflicted.length > 0) {
+      console.log(
+        'Resolve the conflict markers, then commit. "git diff" shows everything that changed.',
+      );
+    }
+    for (const note of report.notes) console.log(`note: ${note}`);
+  },
+});
+
 const rootCommand = defineCommand({
   meta: { name: 'nuxt-starter', description: 'Create and upgrade Nuxt Starter Kit projects.' },
-  subCommands: { init: initCommand, modules: modulesCommand },
+  subCommands: { init: initCommand, modules: modulesCommand, upgrade: upgradeCommand },
 });
 
 export async function main(argv: string[]): Promise<number> {
