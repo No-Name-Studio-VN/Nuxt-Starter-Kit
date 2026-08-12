@@ -22,6 +22,7 @@
   "dependencies": {
     "@clack/prompts": "^1.7.0",
     "citty": "^0.1.6",
+    "diff": "^8.0.4",
     "giget": "^2.0.0",
     "tinyglobby": "^0.2.15",
     "zod": "^4.4.3"

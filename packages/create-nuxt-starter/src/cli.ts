@@ -1,6 +1,8 @@
 import { intro, isCancel, multiselect, outro, text } from '@clack/prompts';
 import { defineCommand, runCommand } from 'citty';
+import { runDiff } from './commands/diff';
 import { runInit } from './commands/init';
+import { runStatus } from './commands/status';
 import { runUpgrade } from './commands/upgrade';
 import { CliError } from './errors';
 import { loadRegistry } from './registry/load';
@@ -153,9 +155,71 @@ const upgradeCommand = defineCommand({
   },
 });
 
+const statusCommand = defineCommand({
+  meta: { name: 'status', description: 'Show installed modules and local changes.' },
+  args: {
+    dir: { type: 'string', description: 'Project directory', default: '.' },
+    registry: { type: 'string', description: 'Path to an alternative registry.json' },
+  },
+  async run({ args }) {
+    const registry = await loadRegistry(args.registry || undefined).catch(() => null);
+    const report = await runStatus({ projectRoot: args.dir, registry });
+
+    console.log(`kit revision: ${report.revision}`);
+    if (report.updateAvailable) {
+      console.log(
+        `update available: ${report.registryRevision} (run "nuxt-starter upgrade --check")`,
+      );
+    }
+    for (const module of report.modules) {
+      const version =
+        module.registryVersion && module.registryVersion !== module.version
+          ? `${module.version} -> ${module.registryVersion}`
+          : module.version;
+      console.log(`${module.id}@${version}`);
+      for (const path of module.modified) console.log(`  modified: ${path}`);
+      for (const path of module.missing) console.log(`  missing:  ${path}`);
+      for (const path of module.orphaned) console.log(`  orphaned: ${path}`);
+    }
+    for (const path of report.damagedMarkers) console.log(`damaged markers: ${path}`);
+  },
+});
+
+const diffCommand = defineCommand({
+  meta: { name: 'diff', description: 'Show what upstream changed compared to this project.' },
+  args: {
+    dir: { type: 'string', description: 'Project directory', default: '.' },
+    file: { type: 'string', description: 'Limit the diff to one path' },
+    registry: { type: 'string', description: 'Path to an alternative registry.json' },
+    kit: { type: 'string', description: 'Path to a local kit checkout instead of downloading' },
+  },
+  async run({ args }) {
+    const registry = await loadRegistry(args.registry || undefined);
+    const entries = await runDiff({
+      projectRoot: args.dir,
+      registry,
+      ...(args.file ? { paths: [args.file] } : {}),
+      ...(args.kit ? { localKitRoot: args.kit } : {}),
+    });
+
+    const changed = entries.filter((entry) => entry.status === 'changed');
+    if (changed.length === 0) {
+      console.log('No upstream differences.');
+      return;
+    }
+    for (const entry of changed) console.log(entry.patch);
+  },
+});
+
 const rootCommand = defineCommand({
   meta: { name: 'nuxt-starter', description: 'Create and upgrade Nuxt Starter Kit projects.' },
-  subCommands: { init: initCommand, modules: modulesCommand, upgrade: upgradeCommand },
+  subCommands: {
+    init: initCommand,
+    modules: modulesCommand,
+    upgrade: upgradeCommand,
+    status: statusCommand,
+    diff: diffCommand,
+  },
 });
 
 export async function main(argv: string[]): Promise<number> {
