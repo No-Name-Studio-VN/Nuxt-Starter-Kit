@@ -1,7 +1,10 @@
 import { intro, isCancel, multiselect, outro, text } from '@clack/prompts';
 import { defineCommand, runCommand } from 'citty';
+import type { ChangeReport } from './commands/add';
+import { runAdd } from './commands/add';
 import { runDiff } from './commands/diff';
 import { runInit } from './commands/init';
+import { runRemove } from './commands/remove';
 import { runStatus } from './commands/status';
 import { runUpgrade } from './commands/upgrade';
 import { CliError } from './errors';
@@ -155,6 +158,80 @@ const upgradeCommand = defineCommand({
   },
 });
 
+function reportChange(verb: string, report: ChangeReport): void {
+  if (report.moduleIds.length === 0) {
+    for (const note of report.notes) console.log(note);
+    return;
+  }
+
+  console.log(`${verb}: ${report.moduleIds.join(', ')}`);
+  const counts = Object.entries(report.summary)
+    .filter(([, count]) => count > 0)
+    .map(([type, count]) => `${count} ${type}`)
+    .join(', ');
+  if (counts.length > 0) console.log(`  ${counts}`);
+
+  if (report.applied === null) console.log('Preview only — run without --check to apply.');
+  for (const path of report.conflicted) console.log(`conflict: ${path}`);
+  for (const note of report.notes) console.log(`note: ${note}`);
+  if (report.env.length > 0) {
+    console.log(`Set these environment variables: ${report.env.join(', ')}`);
+  }
+}
+
+const moduleChangeArgs = {
+  modules: {
+    type: 'positional',
+    required: true,
+    description: 'Comma-separated module ids',
+  },
+  dir: { type: 'string', description: 'Project directory', default: '.' },
+  check: { type: 'boolean', description: 'Preview without writing', default: false },
+  force: { type: 'boolean', description: 'Allow a dirty working tree', default: false },
+  registry: { type: 'string', description: 'Path to an alternative registry.json' },
+  kit: { type: 'string', description: 'Path to a local kit checkout instead of downloading' },
+} as const;
+
+const addCommand = defineCommand({
+  meta: { name: 'add', description: 'Install modules into this project.' },
+  args: moduleChangeArgs,
+  async run({ args }) {
+    const registry = await loadRegistry(args.registry || undefined);
+    const report = await runAdd({
+      projectRoot: args.dir,
+      registry,
+      moduleIds: args.modules
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+      check: args.check,
+      force: args.force,
+      resolveLocalKit: () => args.kit || undefined,
+    });
+    reportChange('Added', report);
+  },
+});
+
+const removeCommand = defineCommand({
+  meta: { name: 'remove', description: 'Uninstall modules from this project.' },
+  args: moduleChangeArgs,
+  async run({ args }) {
+    const registry = await loadRegistry(args.registry || undefined);
+    const report = await runRemove({
+      projectRoot: args.dir,
+      registry,
+      moduleIds: args.modules
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+      check: args.check,
+      force: args.force,
+      resolveLocalKit: () => args.kit || undefined,
+    });
+    reportChange('Removed', report);
+  },
+});
+
 const statusCommand = defineCommand({
   meta: { name: 'status', description: 'Show installed modules and local changes.' },
   args: {
@@ -216,6 +293,8 @@ const rootCommand = defineCommand({
   subCommands: {
     init: initCommand,
     modules: modulesCommand,
+    add: addCommand,
+    remove: removeCommand,
     upgrade: upgradeCommand,
     status: statusCommand,
     diff: diffCommand,

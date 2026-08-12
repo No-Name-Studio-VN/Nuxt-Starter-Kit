@@ -22,22 +22,30 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** What each module declared for a shared JSON file, last time and this time. */
+/**
+ * What each module under management declared for a shared JSON file, last time
+ * and this time. A module removed by this transition appears in `previous` only,
+ * so its entries are dropped; a module the registry dropped appears in neither,
+ * so its entries are left alone along with its files.
+ */
 function fragmentsFor(
   file: string,
   manifest: ProjectManifest,
   registry: Registry,
-  keptIds: Set<string>,
+  plan: UpgradePlan,
 ): { previous: Record<string, unknown>[]; next: Record<string, unknown>[] } {
+  const targetIds = new Set(plan.targetModuleIds);
+
   const previous: Record<string, unknown>[] = [];
   for (const module of manifest.modules) {
+    if (plan.droppedModuleIds.includes(module.id)) continue;
     const fragment = module.structured[file];
     if (fragment) previous.push(fragment);
   }
 
   const next: Record<string, unknown>[] = [];
   for (const module of registry.modules) {
-    if (!keptIds.has(module.id)) continue;
+    if (!targetIds.has(module.id)) continue;
     const fragment = module.structured[file];
     if (fragment) next.push(fragment);
   }
@@ -50,7 +58,7 @@ async function applyStructuredFile(options: {
   file: string;
   manifest: ProjectManifest;
   registry: Registry;
-  keptIds: Set<string>;
+  plan: UpgradePlan;
 }): Promise<{ changes: StructuredChange[]; hash: string | null }> {
   const path = resolveInside(options.projectRoot, options.file, 'Structured target');
   if (!(await pathExists(path))) return { changes: [], hash: null };
@@ -64,7 +72,7 @@ async function applyStructuredFile(options: {
     options.file,
     options.manifest,
     options.registry,
-    options.keptIds,
+    options.plan,
   );
   const changes = planStructuredChanges({
     file: options.file,
@@ -141,13 +149,6 @@ export async function applyUpgrade(plan: UpgradePlan, registry: Registry): Promi
     }
   }
 
-  const keptIds = new Set(
-    plan.manifest.modules
-      .map((module) => module.id)
-      .filter((id) => !plan.droppedModuleIds.includes(id))
-      .concat(plan.addedModuleIds),
-  );
-
   const structuredHashes: Record<string, string> = {};
   for (const file of plan.structuredTargets) {
     const { changes, hash } = await applyStructuredFile({
@@ -155,7 +156,7 @@ export async function applyUpgrade(plan: UpgradePlan, registry: Registry): Promi
       file,
       manifest: plan.manifest,
       registry,
-      keptIds,
+      plan,
     });
     result.structured.push(...changes);
     if (hash !== null) structuredHashes[file] = hash;
@@ -170,19 +171,26 @@ export async function applyUpgrade(plan: UpgradePlan, registry: Registry): Promi
     ]);
   }
 
-  const existingModules: ManifestModule[] = plan.manifest.modules.map((module) => {
-    const updated = registry.modules.find((candidate) => candidate.id === module.id);
-    if (plan.droppedModuleIds.includes(module.id) || updated === undefined) return module;
+  const existingModules: ManifestModule[] = plan.manifest.modules.flatMap((module) => {
+    // Modules the registry dropped keep their entry untouched, so their files stay
+    // accounted for. Modules this transition removed lose theirs entirely.
+    if (plan.droppedModuleIds.includes(module.id)) return [module];
+    if (!plan.targetModuleIds.includes(module.id)) return [];
 
-    return {
-      ...module,
-      version: updated.version,
-      files: rebuildFiles(module, plan, structuredHashes),
-      structured: updated.structured,
-      orphaned: [
-        ...new Set([...module.orphaned, ...(orphanedByModule.get(module.id) ?? [])]),
-      ].sort(),
-    };
+    const updated = registry.modules.find((candidate) => candidate.id === module.id);
+    if (updated === undefined) return [module];
+
+    return [
+      {
+        ...module,
+        version: updated.version,
+        files: rebuildFiles(module, plan, structuredHashes),
+        structured: updated.structured,
+        orphaned: [
+          ...new Set([...module.orphaned, ...(orphanedByModule.get(module.id) ?? [])]),
+        ].sort(),
+      },
+    ];
   });
 
   // A module the new registry pulled in as a dependency owns files on disk now,

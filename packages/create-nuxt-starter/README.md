@@ -11,6 +11,12 @@ npx @no-name-studio/create-nuxt-starter@latest init my-app
 
 - `init [--dir <path>] [--modules a,b] [--yes]` — generate a project from selected modules.
   Dependencies come along automatically, so `--modules admin-users` also installs what it needs.
+- `add <modules>` — install more modules. Their files are written, their marker blocks are inserted
+  into shared files, and their `package.json` entries are merged in. Requires the project to be on
+  the registry's revision, so upgrade first if it has moved on.
+- `remove <modules>` — uninstall modules: files deleted, marker blocks stripped, `package.json`
+  entries removed (entries another installed module still declares are kept). Refused if a surviving
+  module requires what you are removing. Files you have edited are kept and flagged as orphans.
 - `upgrade [--check] [--force]` — move the project to the registry's kit revision (see below).
 - `status` — installed modules, files you have modified, damaged markers, and whether an update exists.
   Reads only local state, so it is instant and works offline.
@@ -76,9 +82,13 @@ npm run build     # unbuild -> dist/
 Tests run against miniature fixture kits in `test/fixtures/` (`kit-v1` and `kit-v2`), so nothing is
 downloaded and upgrade behaviour is verified against two real revisions.
 
+All three mutating commands (`add`, `remove`, `upgrade`) share one planner: each is a transition
+between two (revision, module set) pairs, three-way merged against your project. That is why adding a
+module merges cleanly into config files you have edited.
+
 ## Roadmap
 
-`add` and `remove` for individual modules, and splitting the real kit into `base`, `pwa`, `content`,
-`database`, `auth`, and `admin-users`, are specified in
-`docs/superpowers/specs/2026-08-12-modular-cli-design.md` and land in the next plan. The registry
-currently ships a single `full-starter` module until that split happens.
+Splitting the real kit into `base`, `pwa`, `content`, `database`, `auth`, and `admin-users` — marker
+annotations, the multi-module registry, and a CI matrix that builds every module combination — is
+specified in `docs/superpowers/specs/2026-08-12-modular-cli-design.md`. The registry ships a single
+`full-starter` module until that lands.
