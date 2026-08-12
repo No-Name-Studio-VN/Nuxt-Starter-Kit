@@ -1,5 +1,5 @@
 import { intro, isCancel, multiselect, outro, text } from '@clack/prompts';
-import { defineCommand, runCommand } from 'citty';
+import { defineCommand, runCommand, showUsage } from 'citty';
 import type { ChangeReport } from './commands/add';
 import { runAdd } from './commands/add';
 import { runDiff } from './commands/diff';
@@ -301,6 +301,13 @@ const rootCommand = defineCommand({
   },
 });
 
+/** citty throws this when invoked with no subcommand; it means "show help". */
+function isMissingCommand(error: unknown): boolean {
+  return (
+    typeof error === 'object' && error !== null && 'code' in error && error.code === 'E_NO_COMMAND'
+  );
+}
+
 export async function main(argv: string[]): Promise<number> {
   try {
     await runCommand(rootCommand, { rawArgs: argv });
@@ -308,6 +315,10 @@ export async function main(argv: string[]): Promise<number> {
   } catch (error) {
     if (error instanceof CliError) {
       console.error(error.message);
+      return 1;
+    }
+    if (isMissingCommand(error)) {
+      await showUsage(rootCommand);
       return 1;
     }
     throw error;

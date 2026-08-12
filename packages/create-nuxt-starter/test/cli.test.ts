@@ -26,3 +26,13 @@ describe('main', () => {
     logSpy.mockRestore();
   });
 });
+
+describe('usage', () => {
+  // citty renders usage through its own writer, so this asserts the behaviour
+  // that matters: no unhandled crash, and a non-zero exit code.
+  it('shows help instead of crashing when no command is given', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await expect(main([])).resolves.toBe(1);
+    logSpy.mockRestore();
+  });
+});
