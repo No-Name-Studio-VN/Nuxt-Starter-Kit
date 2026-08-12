@@ -1,0 +1,38 @@
+{
+  "name": "@no-name-studio/create-nuxt-starter",
+  "version": "0.2.0",
+  "description": "Create and upgrade modular Nuxt Starter Kit projects.",
+  "license": "MIT",
+  "bin": {
+    "nuxt-starter": "./bin/nuxt-starter.mjs"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "registry",
+    "README.md"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "unbuild",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0",
+    "citty": "^0.1.6",
+    "giget": "^2.0.0",
+    "tinyglobby": "^0.2.15",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0",
+    "unbuild": "^3.5.0",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
