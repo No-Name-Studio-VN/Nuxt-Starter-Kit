@@ -1,13 +1,31 @@
 import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { dirname, parse, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CliError } from '../errors';
+import { pathExists } from '../util/fs';
 import { parseRegistry, type Registry } from './schema';
 
-const bundledRegistryPath = fileURLToPath(new URL('../registry/registry.json', import.meta.url));
+/**
+ * Walks up from this module to the package root holding `registry/registry.json`.
+ * The depth differs between running from `src/` (tests) and the bundled `dist/`,
+ * so the location is discovered rather than hard-coded.
+ */
+async function findBundledRegistry(): Promise<string> {
+  let directory = dirname(fileURLToPath(import.meta.url));
+  const { root } = parse(directory);
+  while (true) {
+    const candidate = resolve(directory, 'registry/registry.json');
+    if (await pathExists(candidate)) return candidate;
+    if (directory === root) {
+      throw new CliError('The bundled registry is missing from this installation.');
+    }
+    directory = dirname(directory);
+  }
+}
 
-export async function loadRegistry(registryPath: string = bundledRegistryPath): Promise<Registry> {
-  const absolutePath = resolve(registryPath);
+export async function loadRegistry(registryPath?: string): Promise<Registry> {
+  const absolutePath =
+    registryPath === undefined ? await findBundledRegistry() : resolve(registryPath);
   let parsed: unknown;
   try {
     parsed = JSON.parse(await readFile(absolutePath, 'utf8'));

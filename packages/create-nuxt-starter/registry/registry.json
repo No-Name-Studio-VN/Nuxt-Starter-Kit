@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 2,
+  "version": "0.2.0",
+  "kit": {
+    "template": "github:No-Name-Studio-VN/Nuxt-Starter-Kit",
+    "revision": "2f7f65d"
+  },
+  "modules": [
+    {
+      "id": "full-starter",
+      "title": "Full Nuxt Starter Kit",
+      "description": "The complete starter kit. Plan 3 splits this into individual modules.",
+      "version": "0.2.0",
+      "paths": ["**/*"],
+      "notes": [
+        "Configure Cloudflare D1 and KV bindings before deploying.",
+        "Replace the Sentry, OAuth, Turnstile, and Studio placeholders with your own settings."
+      ]
+    }
+  ]
+}

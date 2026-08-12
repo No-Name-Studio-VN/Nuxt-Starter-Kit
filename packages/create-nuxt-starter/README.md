@@ -1,24 +1,57 @@
-# Create Nuxt Starter Kit
+# create-nuxt-starter
 
-Create a Nuxt starter project from the bundled registry.
-
-```bash
-npx @no-name-studio/create-nuxt-starter@latest my-app
-```
-
-V1 offers two audited profiles:
-
-- `minimal` creates a small Nuxt application.
-- `full-starter` downloads the full starter from its pinned source revision and replaces upstream deployment and branding defaults with neutral placeholders.
-
-The registry engine supports feature dependencies and conflicts, but the current full starter is still an integrated application. Individual auth, content, PWA, and observability items will only be exposed after they can be generated independently.
-
-## Safe upgrades
+Create and upgrade modular Nuxt Starter Kit projects.
 
 ```bash
-npx @no-name-studio/create-nuxt-starter@latest upgrade --check
-npx @no-name-studio/create-nuxt-starter@latest diff full-starter --file app/app.vue
-npx @no-name-studio/create-nuxt-starter@latest upgrade --apply
+npx @no-name-studio/create-nuxt-starter@latest init my-app
 ```
 
-V1 upgrades are add-only. Existing files, deleted generated files, package/configuration files, environment files, schemas, and database migrations are always skipped. The command never overwrites, merges, deletes, installs dependencies, or changes configuration during an upgrade.
+## Commands
+
+- `init [--dir <path>] [--modules a,b] [--yes]` — generate a project from selected modules.
+  Dependencies are pulled in automatically, so `--modules admin-users` also installs what it needs.
+- `modules` — list the modules in the registry.
+
+Useful flags for both: `--registry <path>` to use an alternative registry, and (for `init`)
+`--kit <path>` to render from a local kit checkout instead of downloading one.
+
+Generated projects carry `.nuxt-starter/manifest.json`, recording the modules installed and the kit
+revision they came from. Do not delete it — upgrades depend on it.
+
+## Authoring markers
+
+Shared kit files delimit module fragments with markers, in whatever comment syntax the file uses:
+
+```ts
+// <nsk:content>
+content: {},
+// </nsk:content>
+```
+
+```html
+<!-- <nsk:pwa> -->
+<meta name="theme-color" content="#000000" />
+<!-- </nsk:pwa> -->
+```
+
+Every block needs a matching close, blocks cannot nest, and each block belongs to exactly one
+module. Generating a project deletes the blocks of modules that were not selected and keeps the
+rest untouched, markers included.
+
+## Development
+
+```bash
+npm install
+npm test          # vitest
+npm run typecheck # tsc --noEmit, strict
+npm run build     # unbuild -> dist/
+```
+
+Tests render a miniature fixture kit in `test/fixtures/`, so they never download the real kit.
+
+## Roadmap
+
+`upgrade` (three-way merge of upstream changes into projects, including files you have edited) and
+`add` / `remove` are specified in `docs/superpowers/specs/2026-08-12-modular-cli-design.md` and land
+in the next plans. The registry currently ships a single `full-starter` module; splitting the kit
+into `base`, `pwa`, `content`, `database`, `auth`, and `admin-users` is Plan 3.
