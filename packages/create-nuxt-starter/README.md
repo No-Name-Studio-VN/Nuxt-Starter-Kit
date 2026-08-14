@@ -50,6 +50,41 @@ A clean git working tree is required before applying (`--force` overrides), beca
 mechanism: review with `git diff`, revert with `git restore`. `--check` previews without writing and
 works on a dirty tree. Never touched: `.env*`, `content/`, database migrations, and lockfiles.
 
+## Modules
+
+| Module        | Owns                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `base`        | Nuxt foundation, shadcn UI, theming, i18n, SEO, security, the public site shell        |
+| `pwa`         | Service worker, install prompt, offline page, `pwa-assets.config.ts`                   |
+| `content`     | Nuxt Content, docs site, blog, MDC components, Studio                                  |
+| `admin-users` | Admin screens and APIs for listing, editing, locking and deleting users                |
+
+`database`, `auth`, and `kit-extras` (feature flags, KV admin) are still part of `base`. They have to
+be peeled in reverse dependency order — `database` cannot become optional while `auth` still requires
+it — so they come out as `kit-extras`, then `auth`, then `database`.
+
+### Adding a module: peel, do not shard
+
+A new module takes files _out of_ an existing one rather than being built alongside it, one module per
+commit, with `test/registry/` green at each step:
+
+1. Move its paths out of the owner's `paths` into the new module. A pattern that names an existing
+   file claims it out of any directory glob that also covers it, so `base` keeps `app/components/**`
+   while `pwa` names `app/components/InstallPrompter.vue` — no enumeration of hundreds of files, and
+   Nuxt's `[...slug].vue` route files are claimable at all.
+2. Wrap its fragments of shared files in `<nsk:id>` markers, including now-conditional imports: an
+   import left behind ships an unused symbol to every project without the module.
+3. Declare its `package.json` entries in `structured`. The kit's own `package.json` is the union of
+   every module, so entries are _subtracted_ when a module is left out — an entry no module declares
+   can never be subtracted and would ship everywhere.
+4. Add the combination to `.github/workflows/cli-matrix.yml`. Generating and typechecking each
+   combination is the only guard against undeclared coupling: a `base` file importing the module's
+   symbols compiles fine in the kit, where everything is present.
+
+`test/registry/kitCoverage.test.ts` fails when a kit file belongs to no module and is not in the
+registry's `exclude` list; `packageJsonCoverage.test.ts` holds the registry and the kit's real
+`package.json` to each other in both directions.
+
 ## Authoring markers
 
 Shared kit files delimit module fragments with markers, in whatever comment syntax the file uses:
@@ -88,7 +123,6 @@ module merges cleanly into config files you have edited.
 
 ## Roadmap
 
-Splitting the real kit into `base`, `pwa`, `content`, `database`, `auth`, and `admin-users` — marker
-annotations, the multi-module registry, and a CI matrix that builds every module combination — is
-specified in `docs/superpowers/specs/2026-08-12-modular-cli-design.md`. The registry ships a single
-`full-starter` module until that lands.
+`kit-extras`, `auth`, and `database` are still to be peeled out of `base`, in that order. The design
+is in `docs/superpowers/specs/2026-08-12-modular-cli-design.md` and the plan in
+`docs/superpowers/plans/2026-08-14-cli-kit-modularisation.md`.

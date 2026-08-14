@@ -50,9 +50,9 @@ The subtraction reuses `planStructuredChanges` rather than adding a second merge
 
 Reference counting falls out: `flatten` collapses all fragments into one map keyed by leaf path, so a dependency declared by both `auth` and `admin-users` survives when only one of them is installed.
 
-- [ ] **Step 1: Make the fixture kits mirror the real one** — move each module's dependencies into the fixture `package.json` so it is the union, exactly as the real kit is. The existing `structured` declarations stay as they are; they now describe entries the file already contains.
+- [x] **Step 1: Make the fixture kits mirror the real one** — move each module's dependencies into the fixture `package.json` so it is the union, exactly as the real kit is. The existing `structured` declarations stay as they are; they now describe entries the file already contains.
 
-- [ ] **Step 2: Write the failing test** (`test/commands/init.test.ts`)
+- [x] **Step 2: Write the failing test** (`test/commands/init.test.ts`)
 
 ```ts
 it('drops unselected modules’ dependencies from package.json', async () => {
@@ -70,10 +70,10 @@ it('keeps a dependency a selected module still declares', async () => {
 });
 ```
 
-- [ ] **Step 3: Run to verify it fails** — `npx vitest run test/commands/init.test.ts`
-- [ ] **Step 4: Implement** the `exclude` field and the subtraction in `runInit`.
-- [ ] **Step 5: Verify** — `npx vitest run && npm run typecheck` (all Plan 1–3 tests still green).
-- [ ] **Step 6: Commit** — `feat(cli): subtract unselected modules from structured files`
+- [x] **Step 3: Run to verify it fails** — `npx vitest run test/commands/init.test.ts`
+- [x] **Step 4: Implement** the `exclude` field and the subtraction in `runInit`.
+- [x] **Step 5: Verify** — `npx vitest run && npm run typecheck` (all Plan 1–3 tests still green).
+- [x] **Step 6: Commit** — `feat(cli): subtract unselected modules from structured files`
 
 ---
 
@@ -90,9 +90,9 @@ A test that fails when a kit file belongs to no module and is not excluded. This
 - Enumerates the kit with `git ls-files` at the repo root — the git tree is what `giget` ships, so it is the correct definition of "every kit file".
 - Asserts: every tracked path is claimed by exactly one module or matched by `exclude`; every module path pattern matches at least one file; no `exclude` pattern is dead.
 
-- [ ] **Step 1: Write the test** against the current single-module registry (it passes trivially once `exclude` covers the CLI package and the superpowers docs).
-- [ ] **Step 2: Verify it fails** by temporarily removing a path from the registry.
-- [ ] **Step 3: Commit** — `test(cli): check every kit file belongs to a module`
+- [x] **Step 1: Write the test** against the current single-module registry (it passes trivially once `exclude` covers the CLI package and the superpowers docs).
+- [x] **Step 2: Verify it fails** by temporarily removing a path from the registry.
+- [x] **Step 3: Commit** — `test(cli): check every kit file belongs to a module`
 
 ---
 
@@ -112,8 +112,17 @@ The bulk of the work, done as one peel per commit so coverage and the generation
 | `admin-users`  | Admin users panel and its APIs (needs `auth`)                                               |
 | `kit-extras`   | Feature flags, KV admin, Sentry, Turnstile, analytics                                       |
 
-- [ ] **Step 1: Registry skeleton** — replace `full-starter` with `base` owning every non-excluded path, positively enumerated. Coverage green, `init` output byte-identical to today's.
-- [ ] **Step 2..N: Peel one module per commit**, in dependency order (`pwa`, `content`, `database`, `auth`, `admin-users`, `kit-extras`). For each:
+**Order correction found while executing:** the peels must run in _reverse_ dependency order, not dependency order. `database` cannot become optional while `auth` still requires it, so every dependent has to come out first: `pwa`, `content`, `admin-users`, `kit-extras`, `auth`, `database`.
+
+- [x] **Step 1: Registry skeleton** — replace `full-starter` with `base` owning every non-excluded path, positively enumerated. (Output is not byte-identical after all: the CLI package, planning docs, `CLAUDE.MD`, lockfile and release workflow stop being copied into generated projects, which is the point of `exclude`.)
+- [x] **Step 2: `pwa`** — service worker, install prompt, offline page, pwa-assets config.
+- [x] **Step 3: `content`** — Nuxt Content, docs site, blog, MDC components, Studio. Base keeps the public site shell.
+- [x] **Step 4: `admin-users`** — admin user screens and APIs.
+- [ ] **Step 5: `kit-extras`** — feature flags, KV admin, OpenFeature provider.
+- [ ] **Step 6: `auth`** — sessions, OAuth, 2FA, passkeys, email verification.
+- [ ] **Step 7: `database`** — NuxtHub D1, drizzle schema and migrations.
+
+For each:
   - move its paths out of `base` into the new module
   - wrap its fragments of `nuxt.config.ts`, `wrangler.jsonc`, and any shared file in `<nsk:id>` markers
   - declare its `package.json` entries in `structured`
@@ -121,12 +130,17 @@ The bulk of the work, done as one peel per commit so coverage and the generation
 
 **Positive enumeration, not negation.** `paths` has no exclude syntax and `resolveOwnership` errors on a pattern matching nothing, so `base` lists its directories explicitly rather than `**/*`. This is more verbose and much easier to review.
 
+**Two ownership rules added while executing, both forced by the real kit:**
+
+- **Ownership resolves over the whole registry, not the selection.** Otherwise `base`'s `app/components/**` swallows `InstallPrompter.vue` whenever `pwa` is left out, and renders it into projects that never asked for a PWA.
+- **A pattern naming an existing file is a literal claim**, checked against the filesystem rather than scanned for glob metacharacters, and it beats any directory glob covering the same file. Without it `base` would have to enumerate several hundred files to let a module claim one of them — and `app/pages/[...slug].vue` could not be claimed at all, since every globber reads it as a bracket expression.
+
 ---
 
 ### Task 4: package.json consistency check
 
-- [ ] **Step 1:** Assert the union of every module's `structured['package.json']` equals the kit's real `package.json` dependencies and devDependencies, minus a kit-tooling allowlist (husky, commitlint, lint-staged, oxlint, oxfmt, eslint, vitest, the CLI's own build deps).
-- [ ] **Step 2:** Commit — `test(cli): check the registry declares every kit dependency`
+- [x] **Step 1:** Assert the union of every module's `structured['package.json']` equals the kit's real `package.json` dependencies and devDependencies, minus a kit-tooling allowlist (husky, commitlint, lint-staged, oxlint, oxfmt, eslint, vitest, the CLI's own build deps).
+- [x] **Step 2:** Commit — `test(cli): check the registry declares every kit dependency`
 
 This is the invariant Task 1's subtraction depends on: if the kit gains a dependency nobody declares, subtraction cannot know which module owns it, and the check fails loudly instead of shipping it to every project.
 
@@ -134,8 +148,8 @@ This is the invariant Task 1's subtraction depends on: if the kit gains a depend
 
 ### Task 5: CI generation matrix
 
-- [ ] **Step 1:** Add `.github/workflows/cli-matrix.yml` generating `{base}`, `{base,pwa}`, `{base,content}`, `{base,database,auth}`, `{base,database,auth,admin-users}`, and all modules, then running `npm install`, `nuxt prepare`, and `nuxt typecheck` on each.
-- [ ] **Step 2:** Commit — `ci: typecheck every module combination`
+- [x] **Step 1:** Add `.github/workflows/cli-matrix.yml` generating `{base}`, `{base,pwa}`, `{base,content}`, `{base,database,auth}`, `{base,database,auth,admin-users}`, and all modules, then running `npm install`, `nuxt prepare`, and `nuxt typecheck` on each.
+- [x] **Step 2:** Commit — `ci: typecheck every module combination`
 
 This is the only real guard against undeclared coupling: a `base` file importing an `auth` composable compiles fine in the kit and fails here.
 
@@ -143,7 +157,7 @@ This is the only real guard against undeclared coupling: a `base` file importing
 
 ### Task 6: Document the module set
 
-- [ ] Update `packages/create-nuxt-starter/README.md` with the module table, what each owns, and the peel-don't-shard rule for adding a module later.
+- [x] Update `packages/create-nuxt-starter/README.md` with the module table, what each owns, and the peel-don't-shard rule for adding a module later.
 
 ## Self-Review
 
