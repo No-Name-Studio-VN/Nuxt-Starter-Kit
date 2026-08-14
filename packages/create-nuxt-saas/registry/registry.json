@@ -12,7 +12,6 @@
     ".whitesource",
     ".github/workflows/release.yml",
     ".github/workflows/cli-matrix.yml",
-    ".github/workflows/cli-release.yml",
     "package-lock.json"
   ],
   "modules": [
