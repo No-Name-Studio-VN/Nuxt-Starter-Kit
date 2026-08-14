@@ -103,6 +103,7 @@ const parsedMeta = computed(() => {
 
   for (const param of split) {
     const [key, val] = param.split("=");
+    if (key === undefined) continue;
     params.set(key, val);
   }
 

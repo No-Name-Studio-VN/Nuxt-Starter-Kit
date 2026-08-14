@@ -303,7 +303,9 @@ const flags = ref<DBFeatureFlag[]>([]);
 const isDialogOpen = ref(false);
 const isEditMode = ref(false);
 const hasExpiry = ref(false);
-const expiryDate = ref<DateValue>(fromDate(new Date(), getLocalTimeZone()));
+// shallowRef: a plain ref unwraps through UnwrapRef, which strips the private
+// brand off @internationalized/date's classes and stops matching DateValue.
+const expiryDate = shallowRef<DateValue>(fromDate(new Date(), getLocalTimeZone()));
 
 // Create columns with callbacks
 const columns = computed(() =>

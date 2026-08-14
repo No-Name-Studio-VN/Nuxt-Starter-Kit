@@ -232,13 +232,13 @@
                     class="size-5 transition-transform duration-300 group-hover:-translate-x-1"
                   />
                   <span class="text-lg font-medium">
-                    {{ $t(headerNav[activeSubmenu].title) }}
+                    {{ $t(activeSubmenuNav?.title ?? '') }}
                   </span>
                 </button>
 
                 <div class="mt-2 flex flex-col gap-1">
                   <NuxtLinkLocale
-                    v-for="link in headerNav[activeSubmenu].links"
+                    v-for="link in activeSubmenuNav?.links ?? []"
                     :key="link.title"
                     :to="link.to"
                     :target="link.target"
@@ -478,6 +478,11 @@ const headerNav = computed(() => config.value.header.nav);
 const headerSearch = computed(() => config.value.search);
 
 const activeSubmenu = ref<number | null>(null);
+
+/** The open submenu, if the index still points at one. */
+const activeSubmenuNav = computed(() =>
+  activeSubmenu.value === null ? undefined : headerNav.value[activeSubmenu.value],
+);
 
 function openSubmenu(index: number) {
   activeSubmenu.value = index;

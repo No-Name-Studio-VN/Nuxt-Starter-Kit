@@ -84,5 +84,13 @@ function normalizePath(p: string) {
 }
 const isActive = computed(() => normalizePath(props.link.path) === normalizePath(route.path));
 
-const folderStyle = computed(() => props.link.sidebar?.style ?? defaultFolderStyle);
+/** `sidebar` is frontmatter, so its shape is checked rather than assumed. */
+const folderStyle = computed(() => {
+  const sidebar = props.link.sidebar;
+  if (typeof sidebar === 'object' && sidebar !== null && 'style' in sidebar) {
+    const style = sidebar.style;
+    if (typeof style === 'string') return style;
+  }
+  return defaultFolderStyle;
+});
 </script>

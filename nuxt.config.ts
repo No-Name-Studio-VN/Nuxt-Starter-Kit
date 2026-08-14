@@ -3,7 +3,6 @@ import { routeRules } from './shared/apiRoutes';
 import {
   defaultLocale,
   browserFallbackLocale,
-  fallbackLocales,
   languageNames,
   locales,
 } from './i18n-constants';
@@ -332,16 +331,6 @@ export default defineNuxtConfig({
   },
   // </nsk:content>
 
-  eslint: {
-    config: {
-      stylistic: {
-        semi: false,
-        quotes: 'single',
-        indent: 2,
-      },
-    },
-  },
-
   fonts: {
     families: [
       {
@@ -362,7 +351,7 @@ export default defineNuxtConfig({
   i18n: {
     strategy: 'prefix_except_default',
     defaultLocale,
-    fallbackLocale: fallbackLocales,
+    vueI18n: './i18n.config.ts',
     detectBrowserLanguage: {
       fallbackLocale: browserFallbackLocale,
     },

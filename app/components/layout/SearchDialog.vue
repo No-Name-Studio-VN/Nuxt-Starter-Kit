@@ -204,9 +204,9 @@ function highlightMatches(text: string) {
 const { navKeyFromPath } = useContentHelpers();
 const { navigation } = usePageData();
 
-function getItemIcon(path: string) {
+function getItemIcon(path: string): string | undefined {
   const navKey = navKeyFromPath(path, 'icon', navigation.value);
-  return !isEmpty(navKey) ? navKey : undefined;
+  return typeof navKey === 'string' && !isEmpty(navKey) ? navKey : undefined;
 }
 
 watch(activeSelect, (value) => {

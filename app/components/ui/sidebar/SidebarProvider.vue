@@ -22,14 +22,15 @@ const emits = defineEmits<{
 const isMobile = useMediaQuery('(max-width: 768px)')
 const openMobile = ref(false)
 
-const openModel = useVModel(props, 'open', emits, {
-  defaultValue: props.defaultOpen ?? false,
-  passive: props.open === undefined,
-})
+// useVModel picks its overload from a literal `passive`, so the controlled and
+// uncontrolled cases are chosen here rather than through a computed boolean.
+const openModel = props.open === undefined
+  ? useVModel(props, 'open', emits, { defaultValue: props.defaultOpen ?? false, passive: true })
+  : useVModel(props, 'open', emits, { defaultValue: props.defaultOpen ?? false, passive: false })
 
 const open = computed<boolean>({
   get: () => openModel.value ?? false,
-  set: value => {
+  set: (value: boolean) => {
     openModel.value = value
   },
 })

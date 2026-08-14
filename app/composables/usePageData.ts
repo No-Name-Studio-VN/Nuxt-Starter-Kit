@@ -10,7 +10,7 @@ import type { ContentNavigationItem, ContentCollectionItem } from '@nuxt/content
 export function usePageData() {
   const page = useState<ContentCollectionItem | null>('docs-page', () => null);
   const navigation = useState<ContentNavigationItem[] | null>('docs-navigation', () => null);
-  const surroundings = useState<Record<string, unknown>[] | null>('docs-surroundings', () => null);
+  const surroundings = useState<ContentNavigationItem[] | null>('docs-surroundings', () => null);
 
   return { page, navigation, surroundings };
 }

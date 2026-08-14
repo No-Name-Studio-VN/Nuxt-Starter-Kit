@@ -285,7 +285,8 @@ const onSubmit = handleSubmit(async (values) => {
         username: values.username,
         email: values.email,
         name: values.name,
-        password: values.password.trim() ? values.password : undefined,
+        // The endpoint ignores a blank password, so there is nothing to strip here.
+        password: values.password,
         emailVerified: values.emailVerified,
         isAdmin: values.isAdmin,
       };

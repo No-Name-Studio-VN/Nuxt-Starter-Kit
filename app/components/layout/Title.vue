@@ -7,7 +7,11 @@
 
     <div v-if="badges" class="flex gap-2 pt-4">
       <NuxtLinkLocale v-for="(badge, i) in badges" :key="i" :to="badge.to" :target="badge.target">
-        <Badge :variant="badge.variant || 'secondary'" :type="badge.type" class="gap-1 rounded-md">
+        <Badge
+          :variant="badgeVariant(badge.variant) ?? 'secondary'"
+          :type="badge.type"
+          class="gap-1 rounded-md"
+        >
           {{ badge.value }}
           <CtIcon
             v-if="badge.to || badge.icon"

@@ -9,7 +9,8 @@ const BADGE_VARIANTS = [
   'outline',
 ] as const;
 
-function badgeVariant(value: unknown): NavigationBadge['variant'] {
+/** Narrows arbitrary frontmatter to a variant the Badge component accepts. */
+export function badgeVariant(value: unknown): NavigationBadge['variant'] {
   return BADGE_VARIANTS.find((variant) => variant === value);
 }
 

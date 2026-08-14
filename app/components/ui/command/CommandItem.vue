@@ -36,13 +36,15 @@ const isRender = computed(() => {
   }
 })
 
+// The template binds this directly to the element, so there is no component
+// instance for useCurrentElement to resolve.
 const itemRef = ref<HTMLElement>()
-const currentElement = useCurrentElement(itemRef)
 onMounted(() => {
-  if (!(currentElement.value instanceof HTMLElement)) return
+  const element = itemRef.value
+  if (!element) return
 
   // textValue to perform filter
-  allItems.value.set(id, currentElement.value.textContent ?? props.value?.toString() ?? '')
+  allItems.value.set(id, element.textContent ?? props.value?.toString() ?? '')
 
   const groupId = groupContext?.id
   if (groupId) {

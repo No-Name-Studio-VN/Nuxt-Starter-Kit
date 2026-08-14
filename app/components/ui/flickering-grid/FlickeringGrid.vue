@@ -146,6 +146,7 @@ onMounted(() => {
   });
   intersectionObserver = new IntersectionObserver(
     ([entry]) => {
+      if (!entry) return;
       isInView.value = entry.isIntersecting;
       animationFrameId = requestAnimationFrame(animate);
     },
