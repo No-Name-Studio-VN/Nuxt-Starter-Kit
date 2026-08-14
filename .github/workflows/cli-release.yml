@@ -63,11 +63,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           # Trusted publishing needs Node >= 22.14.0.
-          node-version: '25'
+          node-version: '26'
           cache: 'npm'
           cache-dependency-path: packages/create-nuxt-saas/package-lock.json
 
-      # Node 25 already ships a new enough npm, but the runner image decides that,
+      # Node 26 already ships a new enough npm, but the runner image decides that,
       # not us. Upgrade only when it is too old, and stay on 11: npm 12 disables
       # install scripts and git dependencies by default, which would change how
       # `npm ci` behaves here.

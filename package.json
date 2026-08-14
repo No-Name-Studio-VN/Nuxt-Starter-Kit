@@ -96,7 +96,7 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/luxon": "^3.7.3",
-    "@types/node": "^25.5.2",
+    "@types/node": "^26.2.0",
     "@vite-pwa/assets-generator": "^1.0.2",
     "@vue/test-utils": "^2.4.11",
     "drizzle-kit": "^0.31.10",
