@@ -188,6 +188,7 @@ export class KVFeatureFlagProvider implements Provider {
 
   private deterministicBucket(flagKey: string, userId: number): number {
     const input = `${flagKey}:${userId}`;
+    // eslint-disable-next-line unicorn/number-literal-case
     let hash = 0x811c9dc5;
     for (let i = 0; i < input.length; i++) {
       hash ^= input.charCodeAt(i);

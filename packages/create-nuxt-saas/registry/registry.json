@@ -12,7 +12,6 @@
     ".whitesource",
     ".github/workflows/release.yml",
     ".github/workflows/cli-matrix.yml",
-    ".github/workflows/cli-release.yml",
     "package-lock.json"
   ],
   "modules": [
@@ -210,9 +209,7 @@
       "title": "Content",
       "description": "Nuxt Content: documentation site, blog, MDC components, and Studio.",
       "version": "0.3.0",
-      "requires": [
-        "base"
-      ],
+      "requires": ["base"],
       "paths": [
         "content.config.ts",
         "content/**",
@@ -247,10 +244,7 @@
           }
         }
       },
-      "env": [
-        "STUDIO_GITHUB_CLIENT_ID",
-        "STUDIO_GITHUB_CLIENT_SECRET"
-      ],
+      "env": ["STUDIO_GITHUB_CLIENT_ID", "STUDIO_GITHUB_CLIENT_SECRET"],
       "notes": [
         "Nuxt Studio is configured for this kit\u2019s repository \u2014 point studio.repository at your own."
       ]
@@ -260,9 +254,7 @@
       "title": "PWA",
       "description": "Installable app: service worker, offline fallback, and install prompt.",
       "version": "0.3.0",
-      "requires": [
-        "base"
-      ],
+      "requires": ["base"],
       "paths": [
         "pwa-assets.config.ts",
         "app/service-worker/**",
@@ -291,9 +283,7 @@
       "title": "Admin users panel",
       "description": "Admin screens and APIs for listing, editing, locking and deleting users.",
       "version": "0.3.0",
-      "requires": [
-        "base"
-      ],
+      "requires": ["base"],
       "paths": [
         "app/components/admin/users/**",
         "app/pages/admin/users.vue",
@@ -306,9 +296,7 @@
       "title": "Feature flags",
       "description": "OpenFeature flags backed by KV, with an admin panel and an edge evaluation endpoint.",
       "version": "0.3.0",
-      "requires": [
-        "base"
-      ],
+      "requires": ["base"],
       "paths": [
         "app/components/admin/feature-flags/**",
         "app/composables/useFeatureFlags.ts",
@@ -339,9 +327,7 @@
       "title": "Two-factor authentication",
       "description": "TOTP second factor at sign-in, with setup, verification and disable endpoints.",
       "version": "0.3.0",
-      "requires": [
-        "base"
-      ],
+      "requires": ["base"],
       "paths": [
         "app/components/ui/input-otp/InputOTP.vue",
         "app/components/ui/input-otp/InputOTPGroup.vue",
@@ -367,9 +353,7 @@
       "title": "Passkeys",
       "description": "WebAuthn sign-in and passkey registration, listing and removal.",
       "version": "0.3.0",
-      "requires": [
-        "base"
-      ],
+      "requires": ["base"],
       "paths": [
         "app/components/PasskeyRegistrationDialog.vue",
         "server/api/users/[id]/passkeys/index.delete.ts",
@@ -394,9 +378,7 @@
       "title": "Email verification",
       "description": "Verification notice, confirmation link and resend endpoint for new accounts.",
       "version": "0.3.0",
-      "requires": [
-        "base"
-      ],
+      "requires": ["base"],
       "paths": [
         "app/pages/auth/verify-email.vue",
         "server/api/auth/resend-verification.post.ts",

@@ -121,6 +121,7 @@ export default defineEventHandler(async (event) => {
    * the verification notice; without that module registration goes straight to
    * sign-in.
    */
+  // eslint-disable-next-line no-useless-assignment
   let postRegisterRedirect = apiRoutes.AUTH_LOGIN + '?redirectTo=' + encodeURIComponent(redirectTo);
 
   // <nsk:auth-email-verification>

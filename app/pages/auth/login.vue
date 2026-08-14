@@ -1,6 +1,8 @@
 <script setup lang="ts">
+// eslint-disable-next-line import/no-duplicates
 import { User, Lock, Eye, EyeOff } from '@lucide/vue';
 // <nsk:auth-passkeys>
+// eslint-disable-next-line import/no-duplicates
 import { Fingerprint } from '@lucide/vue';
 // </nsk:auth-passkeys>
 import { getAuthErrorMessage, AUTH_SUCCESS_MESSAGES } from '#shared/constants/authMessages';
