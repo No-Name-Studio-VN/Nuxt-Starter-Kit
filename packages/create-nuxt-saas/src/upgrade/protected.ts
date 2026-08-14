@@ -19,6 +19,7 @@ const PROTECTED_PATTERNS: RegExp[] = [
  * so protecting them would mean a module could never tell an existing project
  * about a variable it started needing.
  */
+// eslint-disable-next-line regexp/no-unused-capturing-group
 const ENV_TEMPLATE = /^\.env\.(example|sample|template)$/;
 
 export function isProtectedPath(path: string): boolean {

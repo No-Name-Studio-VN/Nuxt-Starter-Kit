@@ -20,6 +20,7 @@ export async function getUserProfileById(userId: number): Promise<UserProfileMod
 
   const db = useDB();
   /** Registered passkeys, or none when the module that manages them is absent. */
+  // eslint-disable-next-line no-useless-assignment
   let credentials: unknown[] = [];
   // <nsk:auth-passkeys>
   credentials = await db
