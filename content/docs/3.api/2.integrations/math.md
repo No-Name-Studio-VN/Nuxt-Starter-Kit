@@ -5,10 +5,9 @@ description: Write LaTeX in Nuxt Starter Kit.
 ---
 
 ::ct-tabs{variant="line"}
-  ::div{label="KaTeX"}
-    ::ct-steps
-    ### Install Plugins
-    :ct-pm-install{name="remark-math rehype-katex" save-dev}
+::div{label="KaTeX"}
+::ct-steps ### Install Plugins
+:ct-pm-install{name="remark-math rehype-katex" save-dev}
 
     ### Add Plugins to Nuxt Config
     ```ts [nuxt.config.ts]
@@ -49,11 +48,11 @@ description: Write LaTeX in Nuxt Starter Kit.
     ```
     ````
     ::
-  ::
-  ::div{label="MathJax"}
-    ::ct-steps
-    ### Install Plugins
-    :ct-pm-install{name="remark-math rehype-mathjax" save-dev}
+
+::
+::div{label="MathJax"}
+::ct-steps ### Install Plugins
+:ct-pm-install{name="remark-math rehype-mathjax" save-dev}
 
     ### Add Plugins to Nuxt Config
     ```ts [nuxt.config.ts]
@@ -87,5 +86,6 @@ description: Write LaTeX in Nuxt Starter Kit.
     ```
     ````
     ::
-  ::
+
+::
 ::

@@ -1,4 +1,4 @@
-import { APP_MANIFEST } from './shared/constants/manifest'
+import { APP_MANIFEST } from './shared/constants/manifest';
 
 export const DOCS_CONFIG = {
   site: {
@@ -40,30 +40,38 @@ export const DOCS_CONFIG = {
       triggerType: 'icon',
       dropdownType: 'select',
     },
-    nav: [{
-      title: 'Docs',
-      to: '/docs',
-      target: '_self',
-      showLinkIcon: false,
-    }, {
-      title: 'Products',
-      links: [{
-        title: 'Bot No Name',
-        to: '/botnoname',
-        description: 'A multifunctional, user-friendly, and intuitive Discord Bot. Ticket, Giveaway, Music, Moderation, Games and more.',
-        icon: 'lucide:bot',
-      }, {
-        title: 'Nuxt Starter Kit',
-        to: '/products/nuxt-starter-kit/getting-started/introduction',
-        description: 'Fully equipped Technical Starter Pack for busy Nuxters.',
-        icon: 'lucide:rocket',
-      }],
-    }, {
-      title: 'Blog',
-      to: '/blogs',
-      target: '_self',
-      showLinkIcon: false,
-    }],
+    nav: [
+      {
+        title: 'Docs',
+        to: '/docs',
+        target: '_self',
+        showLinkIcon: false,
+      },
+      {
+        title: 'Products',
+        links: [
+          {
+            title: 'Bot No Name',
+            to: '/botnoname',
+            description:
+              'A multifunctional, user-friendly, and intuitive Discord Bot. Ticket, Giveaway, Music, Moderation, Games and more.',
+            icon: 'lucide:bot',
+          },
+          {
+            title: 'Nuxt Starter Kit',
+            to: '/products/nuxt-starter-kit/getting-started/introduction',
+            description: 'Fully equipped Technical Starter Pack for busy Nuxters.',
+            icon: 'lucide:rocket',
+          },
+        ],
+      },
+      {
+        title: 'Blog',
+        to: '/blogs',
+        target: '_self',
+        showLinkIcon: false,
+      },
+    ],
     links: [
       {
         icon: 'lucide:github',
@@ -172,4 +180,4 @@ export const DOCS_CONFIG = {
     style: 'input',
   },
   data: {},
-}
+};

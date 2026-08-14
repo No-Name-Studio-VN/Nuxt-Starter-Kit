@@ -21,13 +21,13 @@ aside: false
 navigation: false
 ---
 
-We've all been there — starting a new project, spending *days* setting up authentication, database schemas, deployment pipelines, and UI systems before writing a single line of business logic. That cycle ends today.
+We've all been there — starting a new project, spending _days_ setting up authentication, database schemas, deployment pipelines, and UI systems before writing a single line of business logic. That cycle ends today.
 
 We're thrilled to announce **Nuxt Starter Kit** — a fully equipped, production-ready SaaS starter pack for busy Nuxters. It's open source, it's opinionated where it matters, and it's designed to get you from zero to production in minutes, not weeks.
 
 ## Why We Built This
 
-At No Name Studio, we've shipped multiple products on the Nuxt ecosystem. Every time, we found ourselves solving the same foundational problems: wiring up OAuth, configuring Drizzle migrations, setting up SEO meta tags, integrating PWA support. These aren't interesting problems — they're *solved* problems. Yet they consume a disproportionate amount of project setup time.
+At No Name Studio, we've shipped multiple products on the Nuxt ecosystem. Every time, we found ourselves solving the same foundational problems: wiring up OAuth, configuring Drizzle migrations, setting up SEO meta tags, integrating PWA support. These aren't interesting problems — they're _solved_ problems. Yet they consume a disproportionate amount of project setup time.
 
 Nuxt Starter Kit is the distillation of everything we've learned. It's the template we wished existed when we started.
 
@@ -82,16 +82,16 @@ Need a blog, documentation, or changelog? It's already wired up:
 
 We chose every tool deliberately. Here's the full lineup:
 
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | Nuxt 4 + Vue 3 |
-| **Language** | TypeScript (strict mode) |
-| **Styling** | Tailwind CSS v4 + shadcn-vue |
-| **Database** | SQLite + Drizzle ORM |
-| **Auth** | nuxt-auth-utils + SimpleWebAuthn |
-| **Payments** | Dodo Payments |
-| **Storage** | Cloudflare R2 |
-| **Analytics** | Sentry |
+| Layer          | Technology                         |
+| -------------- | ---------------------------------- |
+| **Framework**  | Nuxt 4 + Vue 3                     |
+| **Language**   | TypeScript (strict mode)           |
+| **Styling**    | Tailwind CSS v4 + shadcn-vue       |
+| **Database**   | SQLite + Drizzle ORM               |
+| **Auth**       | nuxt-auth-utils + SimpleWebAuthn   |
+| **Payments**   | Dodo Payments                      |
+| **Storage**    | Cloudflare R2                      |
+| **Analytics**  | Sentry                             |
 | **Deployment** | NuxtHub → Cloudflare (recommended) |
 
 ## Getting Started in 5 Minutes
@@ -132,11 +132,13 @@ We believe the best tools are shared tools. If this kit saves you even a few hou
 
 ::ct-card
 ---
+
 icon: lucide:github
 target: _blank
 title: View on GitHub
 to: https://github.com/No-Name-Studio-VN/Nuxt-Starter-Kit
 ---
+
 ::
 
 ## What's Next
@@ -159,4 +161,4 @@ We welcome contributions from the community! Whether it's a bug fix, a new featu
 
 ---
 
-*Built with ❤️ by [No Name Studio](https://nnsvn.me). Stop setting up. Start shipping.*
+_Built with ❤️ by [No Name Studio](https://nnsvn.me). Stop setting up. Start shipping._

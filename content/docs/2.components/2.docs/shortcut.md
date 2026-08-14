@@ -12,15 +12,17 @@ badges:
 ## Usage
 
 ::ct-stack
-  ::div{class="p-4"}
-    :shortcut{value="meta"} :shortcut{value="K"} :br
-    :shortcut{value="xs" size="xs"} :shortcut{value="sm"} :shortcut{value="md" size="md"}
-  ::
-  ```mdc
-  :shortcut{value="meta"} :shortcut{value="K"}
+::div{class="p-4"}
+:shortcut{value="meta"} :shortcut{value="K"} :br
+:shortcut{value="xs" size="xs"} :shortcut{value="sm"} :shortcut{value="md" size="md"}
+::
 
-  :shortcut{value="xs" size="xs"} :shortcut{value="sm"} :shortcut{value="md" size="md"}
-  ```
+```mdc
+:shortcut{value="meta"} :shortcut{value="K"}
+
+:shortcut{value="xs" size="xs"} :shortcut{value="sm"} :shortcut{value="md" size="md"}
+```
+
 ::
 
 You can put `meta` in the `value` field to automatically display either :shortcut{value="⌘"} or :shortcut{value="Ctrl"} based on the platform.
@@ -28,6 +30,6 @@ You can put `meta` in the `value` field to automatically display either :shortcu
 ## Props
 
 ::ct-field-group
-  :ct-field{name="value" type="string"}[Text in the shortcut]
-  :ct-field{name="size" type="'xs' | 'sm' | 'md'" default-value="'sm'"}
+:ct-field{name="value" type="string"}[Text in the shortcut]
+:ct-field{name="size" type="'xs' | 'sm' | 'md'" default-value="'sm'"}
 ::

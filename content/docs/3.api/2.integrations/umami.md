@@ -11,8 +11,8 @@ export const DOCS_CONFIG = {
   site: {
     umami: {
       enable: true,
-      src: 'https://cloud.umami.is/script.js',
-      dataWebsiteId: 'your-data-website-id',
+      src: "https://cloud.umami.is/script.js",
+      dataWebsiteId: "your-data-website-id",
     },
   },
 };
@@ -21,13 +21,13 @@ export const DOCS_CONFIG = {
 ## Parameters
 
 ::ct-field-group
-  ::ct-field{name="enable" type="boolean" default-value="false"}
-  Whether to turn on the umami integration.
-  ::
-  ::ct-field{name="src" type="string" default-value="https://cloud.umami.is/script.js"}
-  The link src in the tracking code.
-  ::
-  ::ct-field{name="dataWebsiteId" type="string"}
-  The _Website ID_ from umami dashboard.
-  ::
+::ct-field{name="enable" type="boolean" default-value="false"}
+Whether to turn on the umami integration.
+::
+::ct-field{name="src" type="string" default-value="https://cloud.umami.is/script.js"}
+The link src in the tracking code.
+::
+::ct-field{name="dataWebsiteId" type="string"}
+The _Website ID_ from umami dashboard.
+::
 ::

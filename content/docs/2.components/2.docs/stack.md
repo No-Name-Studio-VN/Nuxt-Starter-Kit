@@ -12,11 +12,11 @@ badges:
 ## Usage
 
 ::ct-stack
-  ::div{class="p-4 md:p-8"}
-    ::ct-stack
-      ::div{class="p-6 text-3xl font-bold"}
-      ✨ Nuxt Starter Kit
-      ::
+::div{class="p-4 md:p-8"}
+::ct-stack
+::div{class="p-6 text-3xl font-bold"}
+✨ Nuxt Starter Kit
+::
 
       ```mdc
       ---
@@ -40,37 +40,39 @@ badges:
       See MDC components provided by **Nuxt Starter Kit**.
       ::
     ::
+
+::
+
+````mdc
+::ct-stack
+  ::div{class="p-6 text-3xl font-bold"}
+  ✨ Nuxt Starter Kit
   ::
 
   ```mdc
-  ::ct-stack
-    ::div{class="p-6 text-3xl font-bold"}
-    ✨ Nuxt Starter Kit
-    ::
+  ---
+  title: Installation
+  description: How to install Nuxt Starter Kit in your app.
+  icon: lucide:play
+  ---
 
-    ```mdc
-    ---
-    title: Installation
-    description: How to install Nuxt Starter Kit in your app.
-    icon: lucide:play
-    ---
-
-    ## Using the starter template
-    ```
-
-    :ct-pm-x{command="nuxi@latest init <project-name> -t github:No-Name-Studio-VN/Nuxt-Starter-Kit"}
-
-    :ct-read-more{title="Installation" to="/getting-started/installation"}
-
-    ::ct-card
-    ---
-    title: Components
-    icon: lucide:box
-    ---
-    See MDC components provided by **Nuxt Starter Kit**.
-    ::
-  ::
+  ## Using the starter template
   ```
+
+  :ct-pm-x{command="nuxi@latest init <project-name> -t github:No-Name-Studio-VN/Nuxt-Starter-Kit"}
+
+  :ct-read-more{title="Installation" to="/getting-started/installation"}
+
+  ::ct-card
+  ---
+  title: Components
+  icon: lucide:box
+  ---
+  See MDC components provided by **Nuxt Starter Kit**.
+  ::
+::
+````
+
 ::
 
 Stackable components:
