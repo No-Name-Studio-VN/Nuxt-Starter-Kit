@@ -1,11 +1,11 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { glob } from 'tinyglobby';
 import { CliError } from '../errors';
 import { stripUnselectedBlocks } from '../markers/strip';
 import type { RegistryModule } from '../registry/schema';
 import { hashContent, readTextFile, writeTextFile } from '../util/fs';
-import { resolveInside } from '../util/paths';
+import { resolveInside, toPosixPath } from '../util/paths';
 import { applyPlaceholders, assertKnownPlaceholders, type Placeholders } from './placeholders';
 
 /** Kit metadata that describes the kit but is never part of a generated project. */
@@ -32,9 +32,21 @@ export interface RenderOptions {
   destinationRoot: string;
 }
 
-/** A pattern that names one file, with nothing left for the globber to expand. */
-function isExactPath(pattern: string): boolean {
-  return !/[*?[\]{}]/.test(pattern);
+/**
+ * Whether a pattern names an existing file outright.
+ *
+ * Checking the filesystem rather than scanning for glob metacharacters is what
+ * makes Nuxt's route files claimable at all: `app/pages/[...slug].vue` reads as a
+ * bracket expression to any globber, matching a single character from `.slug`
+ * and never the file itself.
+ */
+async function namesAnExistingFile(kitRoot: string, pattern: string): Promise<boolean> {
+  try {
+    const stats = await lstat(resolveInside(kitRoot, pattern, 'Kit path'));
+    return stats.isFile();
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -57,18 +69,21 @@ export async function resolveOwnership(
 
   for (const module of modules) {
     for (const pattern of module.paths) {
-      const matches = await glob(pattern, {
-        cwd: kitRoot,
-        dot: true,
-        onlyFiles: true,
-        followSymbolicLinks: false,
-      });
+      const isLiteral = await namesAnExistingFile(kitRoot, pattern);
+      const matches = isLiteral
+        ? [toPosixPath(pattern)]
+        : await glob(pattern, {
+            cwd: kitRoot,
+            dot: true,
+            onlyFiles: true,
+            followSymbolicLinks: false,
+          });
       if (matches.length === 0) {
         throw new CliError(
           `Module "${module.id}" declares path "${pattern}", which matches no file in the kit.`,
         );
       }
-      const claims = isExactPath(pattern) ? byExactPath : byGlob;
+      const claims = isLiteral ? byExactPath : byGlob;
       for (const match of matches) {
         if (NEVER_RENDERED.has(match)) continue;
         const existingOwner = claims.get(match);

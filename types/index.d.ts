@@ -1,5 +1,22 @@
 import type { Component } from 'vue';
 
+/**
+ * A navigation tree node, declared structurally rather than imported from
+ * `@nuxt/content`.
+ *
+ * Helpers that only walk the tree need its shape, not the content module — so
+ * declaring it here is what lets them stay in place when the module is not
+ * installed. `ContentNavigationItem` is assignable to this.
+ */
+export interface NavigationItem {
+  title: string;
+  path: string;
+  stem?: string;
+  children?: NavigationItem[];
+  page?: false;
+  [key: string]: unknown;
+}
+
 export interface DefaultConfig {
   site: {
     name: string;

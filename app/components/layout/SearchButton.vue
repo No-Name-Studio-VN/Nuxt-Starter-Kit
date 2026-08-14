@@ -17,18 +17,22 @@
     </Button>
   </template>
 
+  <!-- <nsk:content> -->
   <ClientOnly>
     <LazyHydrationLayoutSearchDialog />
   </ClientOnly>
+  <!-- </nsk:content> -->
 </template>
 
 <script setup lang="ts">
 import { SearchIcon } from '@lucide/vue';
 
+// <nsk:content>
 const LazyHydrationLayoutSearchDialog = defineLazyHydrationComponent(
   'visible',
   () => import('./SearchDialog.vue'),
 );
+// </nsk:content>
 
 const { setOpen } = useSearchDialogStore();
 

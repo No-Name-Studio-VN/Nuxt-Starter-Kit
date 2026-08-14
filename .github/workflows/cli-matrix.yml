@@ -70,6 +70,10 @@ jobs:
             modules: base
           - name: base + pwa
             modules: pwa
+          - name: base + content
+            modules: content
+          - name: all modules
+            modules: content,pwa
     steps:
       - uses: actions/checkout@v4
 

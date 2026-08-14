@@ -24,35 +24,29 @@
         ".editorconfig",
         ".env.example",
         ".gitattributes",
+        ".github/workflows/lint-check.yml",
         ".gitignore",
+        ".husky/**",
         ".ignore",
         ".nuxtrc",
         ".oxfmtrc.jsonc",
         ".oxlintrc.jsonc",
-        ".github/workflows/lint-check.yml",
-        ".husky/**",
         ".vscode/**",
         "README.md",
-        "auth.d.ts",
-        "commitlint.config.js",
-        "components.json",
-        "content.config.ts",
-        "docs.config.ts",
-        "eslint.config.js",
-        "i18n-constants.ts",
-        "lint-staged.config.js",
-        "nuxt.config.ts",
-        "package.json",
-        "sentry.client.config.ts",
-        "tsconfig.json",
-        "vitest.config.ts",
-        "wrangler.jsonc",
         "app/app.vue",
-        "app/error.vue",
         "app/assets/**",
-        "app/components/**",
+        "app/components/*",
+        "app/components/OgImage/**",
+        "app/components/admin/**",
+        "app/components/auth/**",
+        "app/components/content/CtIcon.vue",
+        "app/components/layout/Header/Nav.vue",
+        "app/components/layout/SearchButton.vue",
+        "app/components/nav/**",
+        "app/components/ui/**",
         "app/composables/**",
         "app/constants/**",
+        "app/error.vue",
         "app/layouts/**",
         "app/lib/**",
         "app/middleware/**",
@@ -61,12 +55,24 @@
         "app/plugins/**",
         "app/stores/**",
         "app/utils/**",
-        "content/**",
+        "auth.d.ts",
+        "commitlint.config.js",
+        "components.json",
+        "docs.config.ts",
+        "eslint.config.js",
+        "i18n-constants.ts",
         "i18n/**",
+        "lint-staged.config.js",
+        "nuxt.config.ts",
+        "package.json",
         "public/**",
+        "sentry.client.config.ts",
         "server/**",
         "shared/**",
-        "types/**"
+        "tsconfig.json",
+        "types/**",
+        "vitest.config.ts",
+        "wrangler.jsonc"
       ],
       "structured": {
         "package.json": {
@@ -97,7 +103,6 @@
           "dependencies": {
             "@libsql/client": "^0.17.4",
             "@lucide/vue": "^1.28.0",
-            "@nuxt/content": "^3.15.2",
             "@nuxt/fonts": "^0.14.0",
             "@nuxt/image": "^2.1.0",
             "@nuxthub/core": "^0.10.8",
@@ -125,17 +130,12 @@
             "drizzle-orm": "^0.45.2",
             "drizzle-zod": "^0.8.3",
             "es-toolkit": "^1.50.0",
-            "feed": "^6.0.0",
             "jszip": "^3.10.1",
             "luxon": "^3.7.2",
-            "minisearch": "^7.2.0",
             "motion-v": "^2.3.0",
             "nuxt": "^4.4.5",
             "nuxt-auth-utils": "^0.5.29",
-            "nuxt-component-meta": "^0.18.0",
-            "nuxt-content-git": "^7.0.0",
             "nuxt-security": "^2.6.0",
-            "nuxt-studio": "^1.7.0",
             "pinia": "^4.0.2",
             "reka-ui": "^2.10.1",
             "tailwind-merge": "^3.6.0",
@@ -165,7 +165,6 @@
             "husky": "^9.1.7",
             "jiti": "^2.7.0",
             "lint-staged": "^17.3.0",
-            "nuxt-content-git": "^7.0.0",
             "oxfmt": "^0.62.0",
             "oxlint": "^1.77.0",
             "shadcn-nuxt": "^2.8.1",
@@ -178,6 +177,52 @@
       "notes": [
         "Configure Cloudflare D1 and KV bindings before deploying.",
         "Replace the Sentry, OAuth, Turnstile, and Studio placeholders with your own settings."
+      ]
+    },
+    {
+      "id": "content",
+      "title": "Content",
+      "description": "Nuxt Content: documentation site, blog, MDC components, and Studio.",
+      "version": "0.3.0",
+      "requires": [
+        "base"
+      ],
+      "paths": [
+        "content.config.ts",
+        "content/**",
+        "app/components/content/**",
+        "app/components/layout/**",
+        "app/layouts/docs.vue",
+        "app/pages/[...slug].vue",
+        "app/pages/blogs.vue",
+        "app/composables/useEditLink.ts",
+        "app/composables/useI18nDocs.ts",
+        "app/composables/usePageData.ts",
+        "app/composables/useScrollspy.ts",
+        "app/modules/content-prerender.ts",
+        "app/modules/navigation-redirects.ts",
+        "app/stores/codeTree.ts",
+        "app/stores/collapsedMap.ts",
+        "server/routes/rss.xml.ts",
+        "types/landing.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@nuxt/content": "^3.15.2",
+            "nuxt-studio": "^1.7.0",
+            "nuxt-content-git": "^7.0.0",
+            "nuxt-component-meta": "^0.18.0",
+            "feed": "^6.0.0",
+            "minisearch": "^7.2.0"
+          },
+          "devDependencies": {
+            "nuxt-content-git": "^7.0.0"
+          }
+        }
+      },
+      "notes": [
+        "Nuxt Studio is configured for this kit\u2019s repository \u2014 point studio.repository at your own."
       ]
     },
     {
@@ -208,7 +253,7 @@
         }
       },
       "notes": [
-        "Icons in public/ are generated by pwa-assets-generator — re-run \"npm run prepare\" after replacing public/favicon.svg."
+        "Icons in public/ are generated by pwa-assets-generator \u2014 re-run \"npm run prepare\" after replacing public/favicon.svg."
       ]
     }
   ]

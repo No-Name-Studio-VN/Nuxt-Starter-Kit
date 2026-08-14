@@ -16,8 +16,10 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxtjs/seo',
     '@nuxtjs/i18n',
+    // <nsk:content>
     'nuxt-studio',
     '@nuxt/content',
+    // </nsk:content>
     '@nuxt/fonts',
     '@nuxt/image',
     '@pinia/nuxt',
@@ -30,12 +32,16 @@ export default defineNuxtConfig({
     // <nsk:pwa>
     '@vite-pwa/nuxt',
     // </nsk:pwa>
+    // <nsk:content>
     'nuxt-content-git', // this adds createdAt and updatedAt dates based on the git history.
+    // </nsk:content>
     '@nuxtjs/turnstile',
     '@vee-validate/nuxt',
     'motion-v/nuxt',
+    // <nsk:content>
     'nuxt-component-meta',
     '@/modules/navigation-redirects', // Auto-generate redirects from .navigation.yml files
+    // </nsk:content>
   ],
 
   $production: {
@@ -97,6 +103,7 @@ export default defineNuxtConfig({
     disableTransition: true,
   },
 
+  // <nsk:content>
   content: {
     build: {
       markdown: {
@@ -125,7 +132,9 @@ export default defineNuxtConfig({
       },
     },
   },
+  // </nsk:content>
 
+  // <nsk:content>
   mdc: {
     highlight: {
       theme: {
@@ -150,6 +159,7 @@ export default defineNuxtConfig({
       ],
     },
   },
+  // </nsk:content>
 
   runtimeConfig: {
     public: {
@@ -275,6 +285,7 @@ export default defineNuxtConfig({
     client: false,
   },
 
+  // <nsk:content>
   hooks: {
     'content:file:afterParse': function (ctx) {
       // Add computed fields after parsing
@@ -282,11 +293,13 @@ export default defineNuxtConfig({
       ctx.content.readingTime = Math.ceil(wordCount / 180);
     },
   },
+  // </nsk:content>
 
   auth: {
     webAuthn: true,
   },
 
+  // <nsk:content>
   componentMeta: {
     // Exclude problematic paths that cause Windows path resolution issues
     exclude: [/node_modules/, /\.nuxt/, /\.output/, /dist/, /\.component-meta/],
@@ -298,6 +311,7 @@ export default defineNuxtConfig({
       },
     ],
   },
+  // </nsk:content>
 
   eslint: {
     config: {
@@ -420,6 +434,7 @@ export default defineNuxtConfig({
     exclude: ['/admin/**', '/settings/**'],
   },
 
+  // <nsk:content>
   studio: {
     route: '/admin/studio',
     repository: {
@@ -429,6 +444,7 @@ export default defineNuxtConfig({
       branch: 'main',
     },
   },
+  // </nsk:content>
 
   turnstile: {
     siteKey: process.env.NUXT_TURNSTILE_SITE_KEY,

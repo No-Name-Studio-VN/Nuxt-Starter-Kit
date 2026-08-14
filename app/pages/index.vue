@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { isEmpty } from 'es-toolkit/compat';
+// <nsk:content>
 import { defaultLocale } from '~~/i18n-constants';
+// </nsk:content>
 import { APP_MANIFEST } from '#shared/constants/manifest';
 
 definePageMeta({
@@ -13,6 +15,13 @@ useSeo({
   type: 'website',
 });
 
+/**
+ * The hero this page falls back to. The content module replaces it below with
+ * the landing collection; without that module this is the whole homepage.
+ */
+const hero = ref({ title: APP_MANIFEST.name, subtitle: APP_MANIFEST.description });
+
+// <nsk:content>
 const { locale } = useI18n();
 const contentId = computed(() =>
   locale.value === defaultLocale ? 'landing/landing.yml' : `landing/${locale.value}/landing.yml`,
@@ -25,6 +34,11 @@ const { data: page } = await useAsyncData(
   },
   { watch: [contentId] },
 );
+
+watchEffect(() => {
+  if (page.value?.hero) hero.value = page.value.hero;
+});
+// </nsk:content>
 
 const route = useRoute();
 if (!isEmpty(route.hash)) {
@@ -44,11 +58,11 @@ function scrollToSection(sectionId: string) {
 </script>
 
 <template>
-  <div v-if="page">
+  <div>
     <div class="container py-16">
       <div class="prose max-w-none">
-        <h1>{{ page.hero.title }}</h1>
-        <p>{{ page.hero.subtitle }}</p>
+        <h1>{{ hero.title }}</h1>
+        <p>{{ hero.subtitle }}</p>
       </div>
     </div>
   </div>

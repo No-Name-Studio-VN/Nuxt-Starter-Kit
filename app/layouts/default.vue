@@ -487,8 +487,10 @@ function closeSubmenu() {
   activeSubmenu.value = null;
 }
 
-const { locale } = useI18n();
-const { i18nEnabled } = useI18nDocs();
+const { locale, availableLocales } = useI18n();
+// Read straight from i18n rather than through useI18nDocs: this layout only wants
+// the flag, and useI18nDocs also reads the content navigation.
+const i18nEnabled = availableLocales.length > 1;
 const isMobileMenuOpen = ref(false);
 
 const { y: scrollY } = useWindowScroll();

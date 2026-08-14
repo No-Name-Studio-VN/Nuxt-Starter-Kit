@@ -1,12 +1,12 @@
-import type { ContentNavigationItem } from '@nuxt/content';
+import type { NavigationItem } from '~~/types';
 
 /**
  * Recursively find a navigation item matching the given path.
  */
 function findInNavigation(
-  items: ContentNavigationItem[],
+  items: NavigationItem[],
   path: string,
-): ContentNavigationItem | null {
+): NavigationItem | null {
   for (const item of items) {
     if (item.path === path) return item;
     if (item.children) {
@@ -23,7 +23,7 @@ function findInNavigation(
 export function navKeyFromPath(
   path: string,
   key: string,
-  navigation: ContentNavigationItem[] | null | undefined,
+  navigation: NavigationItem[] | null | undefined,
 ): unknown {
   if (!navigation?.length) return undefined;
   return findInNavigation(navigation, path)?.[key];
@@ -34,10 +34,10 @@ export function navKeyFromPath(
  */
 export function navDirFromPath(
   path: string,
-  navigation: ContentNavigationItem[] | null | undefined,
-): ContentNavigationItem[] | null {
+  navigation: NavigationItem[] | null | undefined,
+): NavigationItem[] | null {
   if (!navigation?.length) return null;
-  return (findInNavigation(navigation, path)?.children as ContentNavigationItem[]) ?? null;
+  return (findInNavigation(navigation, path)?.children as NavigationItem[]) ?? null;
 }
 
 /**
@@ -47,7 +47,7 @@ export function navDirFromPath(
 export function navPageOverrides(
   path: string,
   keys: readonly string[],
-  navigation: ContentNavigationItem[] | null | undefined,
+  navigation: NavigationItem[] | null | undefined,
 ): Record<string, unknown> {
   if (!navigation?.length) return {};
 

@@ -1,8 +1,9 @@
 import { createDefu } from 'defu';
-import type { ContentNavigationItem } from '@nuxt/content';
-import type { DefaultConfig } from '~~/types';
+import type { DefaultConfig, NavigationItem } from '~~/types';
 import { navPageOverrides } from './useContentHelpers';
+// <nsk:content>
 import { usePageData } from '@/composables/usePageData';
+// </nsk:content>
 import { APP_MANIFEST } from '#shared/constants/manifest';
 
 const customDefu = createDefu((obj, key, value) => {
@@ -134,8 +135,9 @@ export function useConfig() {
   // Safely attempt to get page data — may not be available in all contexts
   // (e.g., plugins, error pages, non-content pages)
   let page: Ref<Record<string, unknown> | null | undefined> = shallowRef(undefined);
-  let navigation: Ref<ContentNavigationItem[] | null | undefined> = shallowRef(undefined);
+  let navigation: Ref<NavigationItem[] | null | undefined> = shallowRef(undefined);
 
+  // <nsk:content>
   try {
     const pageData = usePageData();
     page = pageData.page as typeof page;
@@ -143,6 +145,7 @@ export function useConfig() {
   } catch {
     // usePageData() not available in this context — config will use defaults only
   }
+  // </nsk:content>
 
   return computed(() => {
     const processedConfig = customDefu(appConfig, defaultConfig);

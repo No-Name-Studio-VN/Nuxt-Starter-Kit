@@ -1,16 +1,16 @@
-import type { ContentNavigationItem } from '@nuxt/content';
+import type { NavigationItem } from '~~/types';
 
-export const flattenNavigation = (items?: ContentNavigationItem[]): ContentNavigationItem[] =>
+export const flattenNavigation = (items?: NavigationItem[]): NavigationItem[] =>
   items?.flatMap((item) => (item.children ? flattenNavigation(item.children) : [item])) || [];
 
 /**
  * Transform navigation data by stripping locale and docs levels
  */
 export function transformNavigation(
-  data: ContentNavigationItem[],
+  data: NavigationItem[],
   isI18nEnabled: boolean,
   locale?: string,
-): ContentNavigationItem[] {
+): NavigationItem[] {
   if (isI18nEnabled && locale) {
     // i18n: first strip locale level, then check for docs level
     const localeResult = data.find((item) => item.path === `/${locale}`)?.children || data;
@@ -30,7 +30,7 @@ export interface PageBreadcrumbItem {
  * Find breadcrumb path to a page in the navigation tree
  */
 export function findPageBreadcrumbs(
-  navigation: ContentNavigationItem[] | undefined,
+  navigation: NavigationItem[] | undefined,
   path: string,
   currentPath: PageBreadcrumbItem[] = [],
 ): PageBreadcrumbItem[] | undefined {
