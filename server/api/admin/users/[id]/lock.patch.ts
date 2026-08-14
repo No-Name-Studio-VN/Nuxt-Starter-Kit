@@ -53,6 +53,7 @@ export default defineEventHandler(async (event) => {
     email: updatedUser.email,
     isAdmin: updatedUser.isAdmin,
     isLocked: updatedUser.isLocked,
+    emailVerified: updatedUser.emailVerified,
   };
 
   return success({ user });

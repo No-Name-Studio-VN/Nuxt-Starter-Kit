@@ -79,11 +79,11 @@ async function generateUniqueUsername(email: string): Promise<string> {
  */
 export async function handleOAuthSuccess(event: H3Event, provider: string, profile: OAuthProfile) {
   const session = await getUserSession(event);
-  const isLoggedIn = !!session?.user?.id;
+  const currentUser = session?.user;
 
   // ── MODE 1: Link Provider to existing logged-in account ──
-  if (isLoggedIn) {
-    const currentUserId = session.user.id;
+  if (currentUser) {
+    const currentUserId = currentUser.id;
 
     // Check if this provider account is already linked to someone
     const existingLink = await oauthAccountService.getByProviderAccount(provider, profile.id);

@@ -117,12 +117,22 @@ async function defaultLoadJwks() {
   return keys;
 }
 
+function toBufferSource(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  const view = new Uint8Array(buffer);
+  view.set(bytes);
+  return view;
+}
+
 function decodeSignature(encodedSignature: string) {
   try {
     const normalized = encodedSignature.replace(/-/g, '+').replace(/_/g, '/');
     const padding = (4 - (normalized.length % 4)) % 4;
     const withPadding = `${normalized}${'='.repeat(padding)}`;
-    return Uint8Array.from(atob(withPadding), (char) => char.charCodeAt(0));
+    const bytes = Uint8Array.from(atob(withPadding), (char) => char.charCodeAt(0));
+    // Copied into an ArrayBuffer-backed view: SubtleCrypto's BufferSource
+    // excludes SharedArrayBuffer, which the default ArrayBufferLike allows.
+    return toBufferSource(bytes);
   } catch {
     throw new GoogleIdTokenVerificationError('Invalid Google ID token signature encoding');
   }
@@ -147,8 +157,8 @@ async function defaultVerifySignature(input: GoogleSignatureVerificationInput) {
   return crypto.subtle.verify(
     'RSASSA-PKCS1-v1_5',
     key,
-    input.signature,
-    new TextEncoder().encode(input.signingInput),
+    toBufferSource(input.signature),
+    toBufferSource(new TextEncoder().encode(input.signingInput)),
   );
 }
 
@@ -189,6 +199,14 @@ export async function verifyGoogleIdToken(
   }
 
   const [encodedHeader, encodedPayload, encodedSignature] = parts;
+  if (
+    encodedHeader === undefined ||
+    encodedPayload === undefined ||
+    encodedSignature === undefined
+  ) {
+    throw new GoogleIdTokenVerificationError('Invalid Google ID token format');
+  }
+
   const header = parseHeader(encodedHeader);
   const claims = readClaims(parseClaims(encodedPayload));
 

@@ -6,6 +6,8 @@ declare module '#auth-utils' {
     username: SessionUser['username'];
     name: SessionUser['name'];
     isAdmin: SessionUser['isAdmin'];
+    /** Set on a fresh sign-in so the lock screen does not challenge immediately. */
+    skipLockOnInit?: boolean;
   }
 
   interface UserSession {

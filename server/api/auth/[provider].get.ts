@@ -3,7 +3,8 @@ import { apiRoutes } from '#shared/apiRoutes';
 import { apiError } from '~~/server/utils/apiResponse';
 import { handleOAuthSuccess, sendOAuthRedirect } from '~~/server/utils/oauth';
 
-function getQueryString(value: string | string[] | undefined) {
+/** h3 models a query value as a string, a bare flag, or an array of either. */
+function getQueryString(value: unknown) {
   if (typeof value === 'string') {
     return value;
   }

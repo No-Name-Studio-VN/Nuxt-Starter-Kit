@@ -1,5 +1,6 @@
 import { apiError, success } from '~~/server/utils/apiResponse';
 import { evaluateFlag } from '~~/server/utils/featureFlags';
+import type { FlagContext } from '~~/types/featureFlags';
 import type { FeatureFlagEvaluatePayload } from '~~/types/admin';
 
 export default defineEventHandler(async (event) => {
@@ -16,7 +17,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Build context from query params (for admin testing)
-  const context = {
+  const context: FlagContext = {
     userId: query.userId ? Number(query.userId) : undefined,
     isAdmin: query.isAdmin === 'true',
     tier: query.tier === 'free' || query.tier === 'premium' ? query.tier : undefined,
@@ -24,6 +25,10 @@ export default defineEventHandler(async (event) => {
   };
 
   const result = await evaluateFlag(key, context);
-  const response: FeatureFlagEvaluatePayload = { key, enabled: result, context };
+  const response: FeatureFlagEvaluatePayload = {
+    key,
+    enabled: result,
+    context: { userId: context.userId, isAdmin: context.isAdmin ?? false, region: context.region },
+  };
   return success(response);
 });
