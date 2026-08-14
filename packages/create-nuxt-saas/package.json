@@ -2,29 +2,29 @@
   "name": "create-nuxt-saas",
   "version": "1.0.0",
   "description": "Create and upgrade modular Nuxt SaaS projects: auth, admin, PWA, docs, feature flags.",
+  "keywords": [
+    "cloudflare",
+    "create-nuxt-app",
+    "drizzle",
+    "nuxt",
+    "nuxthub",
+    "saas",
+    "scaffold",
+    "shadcn",
+    "starter",
+    "template"
+  ],
+  "homepage": "https://github.com/No-Name-Studio-VN/Nuxt-Starter-Kit/tree/main/packages/create-nuxt-saas#readme",
+  "bugs": {
+    "url": "https://github.com/No-Name-Studio-VN/Nuxt-Starter-Kit/issues"
+  },
   "license": "MIT",
   "author": "No Name Studio",
-  "homepage": "https://github.com/No-Name-Studio-VN/Nuxt-Starter-Kit/tree/main/packages/create-nuxt-saas#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/No-Name-Studio-VN/Nuxt-Starter-Kit.git",
     "directory": "packages/create-nuxt-saas"
   },
-  "bugs": {
-    "url": "https://github.com/No-Name-Studio-VN/Nuxt-Starter-Kit/issues"
-  },
-  "keywords": [
-    "nuxt",
-    "saas",
-    "starter",
-    "template",
-    "scaffold",
-    "create-nuxt-app",
-    "nuxthub",
-    "cloudflare",
-    "drizzle",
-    "shadcn"
-  ],
   "bin": {
     "nuxt-saas": "bin/nuxt-saas.mjs"
   },
@@ -53,12 +53,16 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.2.0",
     "typescript": "^5.9.0",
     "unbuild": "^3.5.0",
     "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=22.0.0"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "fsevents@2.3.3": true
   }
 }
