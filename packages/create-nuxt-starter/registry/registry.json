@@ -114,6 +114,7 @@
             "prepare": "husky"
           },
           "dependencies": {
+            "@codemirror/lang-json": "^6.0.2",
             "@libsql/client": "^0.17.4",
             "@lucide/vue": "^1.28.0",
             "@nuxt/fonts": "^0.14.0",
@@ -138,8 +139,10 @@
             "better-sqlite3": "^12.11.1",
             "class-variance-authority": "^0.7.1",
             "clsx": "^2.1.1",
+            "codemirror": "^6.0.2",
             "drizzle-orm": "^0.45.2",
             "drizzle-zod": "^0.8.3",
+            "embla-carousel-vue": "^8.6.0",
             "es-toolkit": "^1.50.0",
             "jszip": "^3.10.1",
             "luxon": "^3.7.2",

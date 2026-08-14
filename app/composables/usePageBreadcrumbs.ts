@@ -1,5 +1,7 @@
 import { onMounted, useId, type MaybeRefOrGetter } from 'vue';
+import type { NavigationItem } from '~~/types';
 import type { BreadcrumbItemType } from '~~/types/common';
+import { findPageBreadcrumbs } from '@/utils/navigation';
 
 interface PageBreadcrumbOverride {
   path: string;
@@ -15,6 +17,41 @@ function usePageBreadcrumbState() {
 
 export function useCurrentPageBreadcrumbs() {
   return usePageBreadcrumbState();
+}
+
+/**
+ * Reads the registered override without requiring a Nuxt context.
+ *
+ * `useBreadcrumb` is called from computeds that may evaluate lazily, outside the
+ * setup scope `useState` needs. There is simply no shared state to consult then,
+ * which is not an error — the navigation trail below covers it.
+ */
+function registeredBreadcrumbs(path: string): BreadcrumbItemType[] | null {
+  try {
+    const registered = usePageBreadcrumbState();
+    return registered.value?.path === path ? registered.value.items : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The breadcrumb trail for a path.
+ *
+ * A page that registered its own trail through `usePageBreadcrumbs` wins;
+ * otherwise the trail is derived from the navigation tree. Navigation is passed
+ * in rather than read here, so this stays usable without the module that
+ * produces it — and callers that already hold it avoid a second lookup.
+ */
+export function useBreadcrumb(
+  path: string,
+  navigation?: NavigationItem[] | null,
+): BreadcrumbItemType[] {
+  const registered = registeredBreadcrumbs(path);
+  if (registered) return registered;
+
+  const trail = findPageBreadcrumbs(navigation ?? undefined, path);
+  return trail?.map((item) => ({ title: item.title, href: item.path })) ?? [];
 }
 
 export function usePageBreadcrumbs(items: MaybeRefOrGetter<BreadcrumbItemType[] | undefined>) {

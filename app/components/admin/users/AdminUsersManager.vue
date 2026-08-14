@@ -324,7 +324,7 @@ const onSubmit = handleSubmit(async (values) => {
     closeDialog();
     await fetchUsers();
   } catch (error) {
-    const message = extractErrorMessage(error, 'Failed to save the user record');
+    const message = parseApiError(error, 'Failed to save the user record').message;
     setFieldError('email', message);
   } finally {
     loading.value = false;
