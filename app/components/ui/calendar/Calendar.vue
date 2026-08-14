@@ -2,7 +2,7 @@
 import type { CalendarRootEmits, CalendarRootProps, DateValue } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
 import type { LayoutTypes } from '.'
-import { getLocalTimeZone, today } from '@internationalized/date'
+import { CalendarDate, CalendarDateTime, ZonedDateTime, getLocalTimeZone, today } from '@internationalized/date'
 import { createReusableTemplate, reactiveOmit, useVModel } from '@vueuse/core'
 import { CalendarRoot, useDateFormatter, useForwardPropsEmits } from 'reka-ui'
 import { createYear, createYearRange, toDate } from 'reka-ui/date'
@@ -24,12 +24,47 @@ const placeholderModel = useVModel(props, 'placeholder', emits, {
   defaultValue: props.defaultPlaceholder ?? today(getLocalTimeZone()),
 })
 
+/**
+ * `useVModel` unwraps its value through `UnwrapRef`, which strips the private
+ * brands off `@internationalized/date`'s classes -- what comes back no longer
+ * matches `DateValue` structurally, even though it is one. The instance check
+ * recovers the type from the runtime value.
+ */
+function asDateValue(value: unknown): DateValue | undefined {
+  return value instanceof CalendarDate
+    || value instanceof CalendarDateTime
+    || value instanceof ZonedDateTime
+    ? value
+    : undefined
+}
+
 const placeholder = computed<DateValue>({
-  get: () => placeholderModel.value ?? props.defaultPlaceholder ?? today(getLocalTimeZone()),
-  set: value => {
+  get: () => asDateValue(placeholderModel.value) ?? props.defaultPlaceholder ?? today(getLocalTimeZone()),
+  set: (value: DateValue) => {
     placeholderModel.value = value
   },
 })
+
+/**
+ * The month and year selects change the placeholder date. These live here rather
+ * than inline in the template because a template expression resolves names
+ * against the setup scope, where `HTMLSelectElement` does not exist and
+ * `placeholder` is already unwrapped -- the inline handlers were reading
+ * `placeholder.value.set` off a `DateValue`, which is undefined at runtime.
+ */
+function setPlaceholderMonth(event: Event) {
+  const target = event.target
+  if (!(target instanceof HTMLSelectElement))
+    return
+  placeholder.value = placeholder.value.set({ month: Number(target.value) })
+}
+
+function setPlaceholderYear(event: Event) {
+  const target = event.target
+  if (!(target instanceof HTMLSelectElement))
+    return
+  placeholder.value = placeholder.value.set({ year: Number(target.value) })
+}
 
 const formatter = useDateFormatter(props.locale ?? 'en')
 
@@ -58,13 +93,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         </div>
         <NativeSelect
           class="text-xs h-8 pr-6 pl-2 text-transparent relative"
-          @change="(e: Event) => {
-            if (e.target instanceof HTMLSelectElement) {
-              placeholder.value = placeholder.value.set({
-                month: Number(e.target.value),
-              })
-            }
-          }"
+          @change="setPlaceholderMonth"
         >
           <NativeSelectOption
             v-for="(month) in createYear({ dateObj: date })"
@@ -87,13 +116,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         </div>
         <NativeSelect
           class="text-xs h-8 pr-6 pl-2 text-transparent relative"
-          @change="(e: Event) => {
-            if (e.target instanceof HTMLSelectElement) {
-              placeholder.value = placeholder.value.set({
-                year: Number(e.target.value),
-              })
-            }
-          }"
+          @change="setPlaceholderYear"
         >
           <NativeSelectOption
             v-for="(year) in yearRange"

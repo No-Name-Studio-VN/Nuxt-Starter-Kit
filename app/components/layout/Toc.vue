@@ -94,10 +94,32 @@ watch(
   },
 );
 
+/**
+ * Frontmatter types `toc` as `boolean | object`, so a page may set `toc: true`
+ * with no links at all. Anything that is not a list of links is treated as
+ * absent, and the DOM extraction below takes over.
+ */
+function readFrontmatterToc(value: unknown): TocLink[] {
+  if (typeof value !== 'object' || value === null || !('links' in value)) return [];
+  const links = value.links;
+  return Array.isArray(links) ? links.filter(isTocLink) : [];
+}
+
+function isTocLink(value: unknown): value is TocLink {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'text' in value &&
+    'depth' in value
+  );
+}
+
 function updateToc() {
   // Check if TOC exists on page data first
-  if (page.value?.toc && page.value.toc.links && page.value.toc.links.length > 0) {
-    toc.value = page.value.toc;
+  const frontmatterLinks = readFrontmatterToc(page.value?.toc);
+  if (frontmatterLinks.length > 0) {
+    toc.value = { links: frontmatterLinks };
     return;
   }
 
@@ -163,14 +185,16 @@ function updateToc() {
 
     headings.forEach((heading) => {
       // Pop stack until we find a parent
-      while (stack.length > 0 && stack[stack.length - 1].depth >= heading.depth) {
+      while (stack.length > 0) {
+        const top = stack[stack.length - 1];
+        if (!top || top.depth < heading.depth) break;
         stack.pop();
       }
 
-      if (stack.length === 0) {
+      const parent = stack[stack.length - 1];
+      if (!parent) {
         result.push(heading);
       } else {
-        const parent = stack[stack.length - 1];
         if (!parent.children) parent.children = [];
         parent.children.push(heading);
       }

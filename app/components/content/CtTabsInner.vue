@@ -2,7 +2,7 @@
   <Tabs v-if="variant === 'separate'" v-model="activeTabIndex" class="not-first:mt-5">
     <TabsList class="rounded-md p-1">
       <TabsTrigger
-        v-for="(slot, i) in $slots.default?.() ?? []"
+        v-for="(slot, i) in tabNodes"
         :key="`${i}${label(slot.props)}`"
         :value="i"
         class="rounded-sm px-3 py-1.5"
@@ -13,7 +13,7 @@
     </TabsList>
 
     <div
-      v-for="(slot, i) in $slots.default?.() ?? []"
+      v-for="(slot, i) in tabNodes"
       v-show="activeTabIndex === i"
       :key="`${i}${label(slot.props)}`"
       class="mt-2"
@@ -30,7 +30,7 @@
     <div class="flex items-center justify-between overflow-x-auto pb-3">
       <TabsList class="h-9 w-full justify-start rounded-none border-b bg-transparent p-0">
         <TabsTrigger
-          v-for="(slot, i) in $slots.default?.() ?? []"
+          v-for="(slot, i) in tabNodes"
           :key="`${i}${label(slot.props)}`"
           :value="i"
           class="text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:text-foreground relative h-9 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-2 font-semibold shadow-none transition-none data-[state=active]:shadow-none"
@@ -42,7 +42,7 @@
     </div>
 
     <div
-      v-for="(slot, i) in $slots.default?.() ?? []"
+      v-for="(slot, i) in tabNodes"
       v-show="activeTabIndex === i"
       :key="`${i}${label(slot.props)}`"
       class="relative mt-2 space-y-10"
@@ -60,7 +60,7 @@
       <div class="relative flex overflow-x-auto border-b p-0.5 text-sm">
         <div class="flex p-1">
           <div
-            v-for="(slot, i) in $slots.default?.() ?? []"
+            v-for="(slot, i) in tabNodes"
             :key="`${i}${label(slot.props)}`"
             :value="label(slot.props)"
             class="text-muted-foreground flex cursor-pointer rounded-md px-3 py-1.5 transition-all duration-75"
@@ -71,22 +71,18 @@
             {{ label(slot.props) }}
           </div>
         </div>
-        <CtCodeCopy
-          v-if="$slots.default?.()[activeTabIndex]?.props?.code"
-          class="ml-auto mr-2 self-center"
-          :code="$slots.default?.()[activeTabIndex]?.props?.code"
-        />
+        <CtCodeCopy v-if="activeTabCode" class="ml-auto mr-2 self-center" :code="activeTabCode" />
       </div>
       <ScrollBar orientation="horizontal" />
     </ScrollArea>
 
     <div
-      v-for="(slot, i) in $slots.default?.() ?? []"
+      v-for="(slot, i) in tabNodes"
       v-show="activeTabIndex === i"
       :key="`${i}${label(slot.props)}`"
       :value="label(slot.props)"
       class="mt-0"
-      :class="[padded && ($slots.default?.()[activeTabIndex]?.type as any).tag !== 'pre' && 'p-3']"
+      :class="[padded && !isPreTab(activeTab) && 'p-3']"
     >
       <component :is="slot" :in-group="true" />
     </div>
@@ -102,12 +98,9 @@
           class="h-10 w-50 justify-between"
         >
           <div class="flex items-center">
-            <CtIcon
-              :name="icon(($slots.default?.() ?? [])[activeTabIndex].props)!"
-              class="mr-1.5"
-            />
+            <CtIcon :name="icon(activeTab?.props)" class="mr-1.5" />
             <span>
-              {{ label(($slots.default?.() ?? [])[activeTabIndex].props) }}
+              {{ label(activeTab?.props) }}
             </span>
           </div>
           <ChevronsUpDownIcon />
@@ -120,7 +113,7 @@
           <CommandList>
             <CommandGroup>
               <CommandItem
-                v-for="(slot, i) in $slots.default?.() ?? []"
+                v-for="(slot, i) in tabNodes"
                 :key="`${i}${label(slot.props)}`"
                 :value="label(slot.props)"
                 @select="
@@ -143,7 +136,7 @@
     </Popover>
 
     <div
-      v-for="(slot, i) in $slots.default?.() ?? []"
+      v-for="(slot, i) in tabNodes"
       v-show="activeTabIndex === i"
       :key="`${i}${label(slot.props)}`"
       :value="label(slot.props)"
@@ -159,6 +152,11 @@ import CtIcon from "@/components/content/CtIcon.vue";
 import { cn } from "@/lib/utils";
 import { ScrollBar } from "../ui/scroll-area";
 import { ChevronsUpDownIcon, CheckIcon } from "@lucide/vue";
+
+const slots = useSlots();
+
+/** The tab nodes, and the one currently shown. */
+const tabNodes = computed(() => slots.default?.() ?? []);
 
 const props = defineProps<{
   slotsData: { label: string; index: number }[];
@@ -196,7 +194,8 @@ const activeTabIndex = computed<number>({
 
     if (syncScopeIndex.value === -1) syncState.value.push({ scope: props.sync, value: undefined });
 
-    syncState.value[syncScopeIndex.value].value = props.slotsData[index].label;
+    const scope = syncState.value[syncScopeIndex.value];
+    if (scope) scope.value = props.slotsData[index]?.label;
     activeTabIndexData.value = index;
   },
 });
@@ -207,15 +206,49 @@ interface TabSlotProps {
   filename?: string;
   icon?: string;
   language?: string;
+  code?: string;
 }
 
-function label(props?: TabSlotProps) {
-  return props?.label || props?.filename;
+/**
+ * Reads a tab's props off its VNode. Vue types slot props as a nullable index
+ * signature, so the fields this component needs are picked out once here rather
+ * than re-narrowed at each of the dozen call sites in the template.
+ */
+function tabProps(props?: Record<string, unknown> | null): TabSlotProps {
+  if (!props) return {};
+
+  const text = (key: keyof TabSlotProps) => {
+    const value = props[key];
+    return typeof value === 'string' ? value : undefined;
+  };
+
+  return {
+    label: text('label'),
+    filename: text('filename'),
+    icon: text('icon'),
+    language: text('language'),
+    code: text('code'),
+  };
 }
 
-function icon(props?: TabSlotProps) {
-  return props?.icon || props?.language || props?.filename?.toLowerCase();
+function label(props?: Record<string, unknown> | null): string {
+  const { label: title, filename } = tabProps(props);
+  return title || filename || '';
 }
+
+function icon(props?: Record<string, unknown> | null): string {
+  const { icon: name, language, filename } = tabProps(props);
+  return name || language || filename?.toLowerCase() || '';
+}
+
+/** MDC renders fenced code as a `pre` element; those tabs supply their own padding. */
+function isPreTab(node?: VNode): boolean {
+  const type = node?.type;
+  return typeof type === 'object' && type !== null && 'tag' in type && type.tag === 'pre';
+}
+
+const activeTab = computed(() => tabNodes.value[activeTabIndex.value]);
+const activeTabCode = computed(() => tabProps(activeTab.value?.props).code);
 
 const dropDownOpen = ref(false);
 </script>

@@ -29,11 +29,13 @@ withDefaults(
   },
 );
 
-const isItemActive = (itemUrl: string) => {
-  return route.path === itemUrl;
+// `SidebarItem.url` is optional -- a group heading has children but no link of
+// its own -- so both helpers take the same optional shape as the data.
+const isItemActive = (itemUrl?: string) => {
+  return itemUrl !== undefined && route.path === itemUrl;
 };
 
-const hasActiveSubItem = (items?: { url: string }[]) => {
+const hasActiveSubItem = (items?: SidebarItem[]) => {
   return items?.some((subItem) => isItemActive(subItem.url)) ?? false;
 };
 
