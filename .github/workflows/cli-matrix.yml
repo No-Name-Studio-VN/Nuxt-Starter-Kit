@@ -42,7 +42,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '25'
           cache: 'npm'
           cache-dependency-path: packages/create-nuxt-saas/package-lock.json
 
@@ -89,7 +89,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '25'
 
       - name: Install CLI dependencies
         working-directory: packages/create-nuxt-saas
