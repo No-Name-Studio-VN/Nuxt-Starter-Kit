@@ -169,9 +169,22 @@ export default defineNuxtConfig({
       },
       url: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       docs: DOCS_CONFIG,
+      umami: {
+        src: '',
+        dataWebsiteId: '',
+      },
     },
     turnstile: {
       secretKey: '',
+    },
+    // Transactional email, read by server/utils/email.ts.
+    resend: {
+      apiKey: '',
+      fromEmail: '',
+    },
+    // Shared secret guarding the database seed endpoint.
+    seed: {
+      secret: '',
     },
     defaultAdminPassword: '',
     session: {

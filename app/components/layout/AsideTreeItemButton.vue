@@ -5,7 +5,7 @@
     {{ link.title }}
   </span>
 
-  <span v-for="(badge, i) in link.navBadges" :key="i">
+  <span v-for="(badge, i) in navigationBadges(link)" :key="i">
     <Badge :variant="badge.variant" :type="badge.type" :size="badge.size ?? 'sm'">
       {{ badge.value }}
     </Badge>

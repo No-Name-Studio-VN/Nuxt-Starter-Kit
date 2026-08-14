@@ -1,4 +1,10 @@
-function readQueryString(value: string | string[] | null | undefined) {
+/**
+ * A route query value as vue-router models it: a string, `null` for a bare flag,
+ * or an array of either when the key repeats.
+ */
+type QueryString = string | null | undefined | readonly (string | null)[];
+
+function readQueryString(value: QueryString) {
   if (typeof value === 'string') {
     return value;
   }
@@ -10,11 +16,11 @@ function readQueryString(value: string | string[] | null | undefined) {
   return '';
 }
 
-export function getQueryString(value: string | string[] | null | undefined) {
+export function getQueryString(value: QueryString) {
   return readQueryString(value);
 }
 
-export function safeRedirectPath(value: string | string[] | null | undefined, fallback = '/') {
+export function safeRedirectPath(value: QueryString, fallback = '/') {
   const rawValue = readQueryString(value);
 
   if (!rawValue) {

@@ -1,4 +1,47 @@
-import type { NavigationItem } from '~~/types';
+import type { NavigationBadge, NavigationItem } from '~~/types';
+
+const BADGE_VARIANTS = [
+  'default',
+  'secondary',
+  'destructive',
+  'success',
+  'warning',
+  'outline',
+] as const;
+
+function badgeVariant(value: unknown): NavigationBadge['variant'] {
+  return BADGE_VARIANTS.find((variant) => variant === value);
+}
+
+function text(source: Record<string, unknown>, key: string): string | undefined {
+  const value = source[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+/**
+ * Badges declared on a navigation entry. Navigation nodes carry arbitrary
+ * frontmatter under an `unknown` index signature, so the shape is checked here
+ * rather than assumed at each template that renders them.
+ */
+export function navigationBadges(item?: NavigationItem | null): NavigationBadge[] {
+  const badges = item?.navBadges;
+  if (!Array.isArray(badges)) return [];
+
+  return badges.flatMap((badge) => {
+    if (typeof badge !== 'object' || badge === null || Array.isArray(badge)) return [];
+    const source: Record<string, unknown> = { ...badge };
+    const value = text(source, 'value');
+    if (value === undefined) return [];
+    return [
+      {
+        value,
+        variant: badgeVariant(source.variant),
+        type: text(source, 'type'),
+        size: text(source, 'size'),
+      },
+    ];
+  });
+}
 
 export const flattenNavigation = (items?: NavigationItem[]): NavigationItem[] =>
   items?.flatMap((item) => (item.children ? flattenNavigation(item.children) : [item])) || [];

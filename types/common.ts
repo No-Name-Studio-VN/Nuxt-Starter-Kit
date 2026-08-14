@@ -1,5 +1,7 @@
 import type { Component } from 'vue';
-import type { User } from '~~/shared/db';
+// The session user, not the database row: sidebar guards run in the browser
+// against whatever `useUserSession()` exposes.
+import type { User } from '#auth-utils';
 
 export type SidebarItem = {
   title: string;

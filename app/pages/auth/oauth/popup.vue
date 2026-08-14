@@ -22,18 +22,6 @@ useSeo({
 
 const route = useRoute();
 
-function getQueryString(value: string | string[] | null | undefined) {
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    return value[0] || '';
-  }
-
-  return '';
-}
-
 const oauthPopupCompleteStorage = useLocalStorage<OAuthPopupCompleteMessage | null>(
   OAUTH_POPUP_COMPLETE_STORAGE_KEY,
   null,

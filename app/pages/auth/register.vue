@@ -30,18 +30,6 @@ const oauthPopupTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
 const oauthPopupCloseMonitor = ref<ReturnType<typeof setInterval> | null>(null);
 const { t } = useI18n();
 
-function getQueryString(value: string | string[] | null | undefined) {
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    return value[0] || '';
-  }
-
-  return '';
-}
-
 const redirectTo = computed(() => {
   const value = getQueryString(route.query.redirectTo);
   if (!value) {

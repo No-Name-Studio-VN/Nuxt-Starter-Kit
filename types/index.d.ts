@@ -17,6 +17,17 @@ export interface NavigationItem {
   [key: string]: unknown;
 }
 
+/**
+ * A badge declared on a navigation entry's frontmatter. `variant` is narrowed to
+ * what the Badge component accepts; anything else is dropped when read.
+ */
+export interface NavigationBadge {
+  value: string;
+  variant?: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'outline';
+  type?: string;
+  size?: string;
+}
+
 export interface DefaultConfig {
   site: {
     name: string;
