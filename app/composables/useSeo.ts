@@ -82,7 +82,13 @@ export function useSeo(options: UseSeoOptions) {
   // Set canonical link
   useHead({
     link: computed(() => {
-      const links: Array<{ rel: string; href?: string; hreflang?: string }> = [];
+      // `rel` stays a literal rather than widening to `string`: unhead types link
+      // tags as a union discriminated on it, and a widened `rel` matches no member,
+      // so every entry is checked against the wrong one.
+      const links: Array<
+        | { rel: 'canonical'; href: string }
+        | { rel: 'alternate'; hreflang: string; href: string }
+      > = [];
 
       // Canonical URL
       if (canonicalUrl.value) {
@@ -129,7 +135,8 @@ export function useSeo(options: UseSeoOptions) {
   // JSON-LD structured data
   useHead({
     script: computed(() => {
-      const scripts: Array<{ type: string; innerHTML: string }> = [];
+      // Same reason as the link tags above: unhead discriminates scripts on `type`.
+      const scripts: Array<{ type: 'application/ld+json'; innerHTML: string }> = [];
 
       if (!baseUrl.value || !title.value) return scripts;
 
