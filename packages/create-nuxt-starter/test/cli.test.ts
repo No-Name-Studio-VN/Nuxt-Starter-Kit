@@ -22,7 +22,7 @@ describe('main', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const exitCode = await main(['modules']);
     expect(exitCode).toBe(0);
-    expect(logSpy.mock.calls.flat().join(' ')).toMatch(/full-starter/);
+    expect(logSpy.mock.calls.flat().join(' ')).toMatch(/^base@/);
     logSpy.mockRestore();
   });
 });
