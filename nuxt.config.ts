@@ -1,7 +1,13 @@
-import { APP_MANIFEST, SEO_CONFIG } from './shared/constants/manifest'
-import { routeRules } from './shared/apiRoutes'
-import { defaultLocale, browserFallbackLocale, lanugageNames, locales } from './i18n-constants'
-import { DOCS_CONFIG } from './docs.config'
+import { APP_MANIFEST, SEO_CONFIG } from './shared/constants/manifest';
+import { routeRules } from './shared/apiRoutes';
+import {
+  defaultLocale,
+  browserFallbackLocale,
+  fallbackLocales,
+  languageNames,
+  locales,
+} from './i18n-constants';
+import { DOCS_CONFIG } from './docs.config';
 
 export default defineNuxtConfig({
   modules: [
@@ -12,8 +18,6 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
     'nuxt-studio',
     '@nuxt/content',
-    'nuxt-content-git', // this adds createdAt and updatedAt dates based on the git history.
-    '@nuxt/eslint',
     '@nuxt/fonts',
     '@nuxt/image',
     '@pinia/nuxt',
@@ -22,9 +26,12 @@ export default defineNuxtConfig({
     '@nuxthub/core',
     'nuxt-auth-utils',
     '@nuxtjs/color-mode',
-    '@nuxtjs/turnstile',
     '@sentry/nuxt/module',
     '@vite-pwa/nuxt',
+    'nuxt-content-git', // this adds createdAt and updatedAt dates based on the git history.
+    '@nuxtjs/turnstile',
+    '@vee-validate/nuxt',
+    'motion-v/nuxt',
     'nuxt-component-meta',
     '@/modules/navigation-redirects', // Auto-generate redirects from .navigation.yml files
   ],
@@ -60,19 +67,18 @@ export default defineNuxtConfig({
   },
 
   app: {
+    // pageTransition: { name: 'page', mode: 'out-in' }, currently disabled because sometimes page transitions can cause issues with the page not loading properly, especially when navigating between pages with different layouts.
     head: {
       title: APP_MANIFEST.name,
       link: [
         { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
         { rel: 'icon', href: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
-        { rel: 'apple-touch-icon', href: '/apple-touch-icon-180x180.png' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       ],
     },
   },
 
-  css: [
-    '~/assets/css/tailwind.css',
-  ],
+  css: ['~/assets/css/tailwind.css'],
 
   site: {
     url: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
@@ -95,7 +101,22 @@ export default defineNuxtConfig({
             default: 'github-light',
             dark: 'github-dark',
           },
-          preload: ['json', 'js', 'ts', 'html', 'css', 'vue', 'diff', 'shell', 'markdown', 'mdc', 'yaml', 'bash', 'ini', 'dotenv'],
+          preload: [
+            'json',
+            'js',
+            'ts',
+            'html',
+            'css',
+            'vue',
+            'diff',
+            'shell',
+            'markdown',
+            'mdc',
+            'yaml',
+            'bash',
+            'ini',
+            'dotenv',
+          ],
         },
       },
     },
@@ -107,7 +128,22 @@ export default defineNuxtConfig({
         default: 'github-light',
         dark: 'github-dark',
       },
-      langs: ['json', 'js', 'ts', 'html', 'css', 'vue', 'diff', 'shell', 'markdown', 'mdc', 'yaml', 'bash', 'ini', 'dotenv'],
+      langs: [
+        'json',
+        'js',
+        'ts',
+        'html',
+        'css',
+        'vue',
+        'diff',
+        'shell',
+        'markdown',
+        'mdc',
+        'yaml',
+        'bash',
+        'ini',
+        'dotenv',
+      ],
     },
   },
 
@@ -126,31 +162,55 @@ export default defineNuxtConfig({
     defaultAdminPassword: '',
     session: {
       password: '',
+      // Without maxAge the session cookie is written with no Expires, so it only
+      // lives as long as the browsing session. Desktop browsers keep (and restore)
+      // that, but mobile browsers and the standalone PWA drop it every time the OS
+      // kills the process, logging mobile users out constantly.
+      // Counted from login, not from last activity: h3 never refreshes createdAt,
+      // so this is an absolute lifetime rather than a sliding window.
+      maxAge: 60 * 60 * 24 * 30, // 30 days
     },
   },
 
   routeRules: routeRules,
-
-  experimental: {
-    emitRouteChunkError: 'automatic-immediate',
-  },
-
   compatibilityDate: '2026-01-30',
-
   nitro: {
     compressPublicAssets: true,
     minify: true,
     preset: 'cloudflare-module',
+    experimental: {
+      openAPI: true,
+      wasm: true,
+      tasks: true,
+    },
+    wasm: {
+      esmImport: true,
+      lazy: true,
+      silent: true,
+    },
     rollupConfig: {
       external: ['sharp', /^@img\/sharp.*/],
-    },
-    experimental: {
-      tasks: true,
-      wasm: true,
+      output: {
+        generatedCode: {
+          constBindings: true,
+        },
+      },
     },
     cloudflare: {
+      // deployConfig writes the merged binding spec to
+      // .output/server/wrangler.json at build time — the SINGLE source of
+      // truth for the Worker config; there is no hand-maintained
+      // wrangler.json. Deploy: wrangler deploy --config .output/server/wrangler.json
       deployConfig: true,
       nodeCompat: true,
+      wrangler: {
+        compatibility_date: '2026-06-16',
+        compatibility_flags: ['nodejs_compat'],
+        workers_dev: false,
+        observability: {
+          logs: { enabled: true, invocation_logs: true },
+        },
+      },
     },
     prerender: {
       // Pre-render the homepage
@@ -195,26 +255,27 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    optimizeDeps: {
+      include: ['clsx', 'reka-ui', 'tailwind-merge'],
+    },
     build: {
+      chunkSizeWarningLimit: 1500,
       rollupOptions: {
-        external: [
-          'sharp',
-        ],
+        external: ['sharp'],
       },
     },
   },
 
+  sourcemap: {
+    server: true,
+    client: false,
+  },
+
   hooks: {
-    'content:file:beforeParse': function (ctx) {
-      // Modify raw content before parsing
-      if (ctx.file.id.endsWith('.md')) {
-        ctx.file.body = ctx.file.body.replace(/oldTerm/gi, 'newTerm')
-      }
-    },
     'content:file:afterParse': function (ctx) {
       // Add computed fields after parsing
-      const wordCount = ctx.file.body?.split(/\s+/).length || 0
-      ctx.content.readingTime = Math.ceil(wordCount / 180)
+      const wordCount = ctx.file.body?.split(/\s+/).length || 0;
+      ctx.content.readingTime = Math.ceil(wordCount / 180);
     },
   },
 
@@ -224,13 +285,7 @@ export default defineNuxtConfig({
 
   componentMeta: {
     // Exclude problematic paths that cause Windows path resolution issues
-    exclude: [
-      /node_modules/,
-      /\.nuxt/,
-      /\.output/,
-      /dist/,
-      /\.component-meta/,
-    ],
+    exclude: [/node_modules/, /\.nuxt/, /\.output/, /dist/, /\.component-meta/],
     // Only scan components from our local directories
     // Components in /components/content are automatically available in Nuxt Studio
     componentDirs: [
@@ -270,23 +325,26 @@ export default defineNuxtConfig({
   i18n: {
     strategy: 'prefix_except_default',
     defaultLocale,
+    fallbackLocale: fallbackLocales,
     detectBrowserLanguage: {
       fallbackLocale: browserFallbackLocale,
     },
-    locales: locales.map(locale => ({
-      name: lanugageNames[locale],
+    locales: locales.map((locale) => ({
+      name: languageNames[locale],
       code: locale,
       file: `${locale}.json`,
     })),
   },
 
-  ogImage: false, // currently we are disabling this since it makes server build file size very large due to the sharp dependency. You can re-enable it if you need dynamic OG image generation.
+  // currently we are disabling this since it makes server build file size very large due to the sharp dependency. You can re-enable it if you need dynamic OG image generation.
+  ogImage: false,
 
   schemaOrg: {
     identity: 'Organization',
   },
 
-  security: { // we have to disable some of the security features in order to allow prerender work. If enabled, headers file will contain a lot of nonce and when deploy will cause Cloudflare to reject the worker due to header line limit exceeded
+  security: {
+    // we have to disable some of the security features in order to allow prerender work. If enabled, headers file will contain a lot of nonce and when deploy will cause Cloudflare to reject the worker due to header line limit exceeded
     strict: true,
     rateLimiter: false,
     nonce: false,
@@ -296,20 +354,20 @@ export default defineNuxtConfig({
       crossOriginOpenerPolicy: 'same-origin-allow-popups',
       crossOriginEmbedderPolicy: 'unsafe-none',
       contentSecurityPolicy: {
-        'script-src': ['\'self\'', 'https:', '\'unsafe-inline\'', '\'wasm-unsafe-eval\''],
-        'style-src': ['\'self\'', 'https:', '\'unsafe-inline\'', 'https://challenges.cloudflare.com'],
-        'img-src': ['\'self\'', 'data:', 'https:'],
-        'media-src': ['\'self\'', 'blob:', 'https:'],
-        'connect-src': ['\'self\'', 'https:'],
-        'font-src': ['\'self\'', 'https://*.gstatic.com'],
-        'worker-src': ['\'self\'', 'blob:'],
-        'frame-src': ['\'self\'', 'https:'],
+        'script-src': ["'self'", 'https:', "'unsafe-inline'", "'wasm-unsafe-eval'"],
+        'style-src': ["'self'", 'https:', "'unsafe-inline'", 'https://challenges.cloudflare.com'],
+        'img-src': ["'self'", 'data:', 'https:'],
+        'media-src': ["'self'", 'blob:', 'https:'],
+        'connect-src': ["'self'", 'https:'],
+        'font-src': ["'self'", 'https://*.gstatic.com'],
+        'worker-src': ["'self'", 'blob:'],
+        'frame-src': ["'self'", 'https:'],
       },
       permissionsPolicy: {
-        'fullscreen': ['self'],
+        fullscreen: ['self'],
         'picture-in-picture': ['self'],
         'web-share': ['self'],
-        'autoplay': ['self'],
+        autoplay: ['self'],
       },
     },
   },
@@ -339,7 +397,8 @@ export default defineNuxtConfig({
       mobileWebAppCapable: 'yes',
       msapplicationTileColor: APP_MANIFEST.background_color,
       charset: 'utf-8',
-      viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
+      viewport:
+        'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
       ogImage: '/pwa-512x512.png',
       twitterTitle: APP_MANIFEST.name,
       twitterDescription: APP_MANIFEST.description,
@@ -370,4 +429,4 @@ export default defineNuxtConfig({
   turnstile: {
     siteKey: process.env.NUXT_TURNSTILE_SITE_KEY,
   },
-})
+});
