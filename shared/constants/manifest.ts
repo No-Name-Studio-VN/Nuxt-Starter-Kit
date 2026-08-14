@@ -1,17 +1,23 @@
-import { defaultLocale } from '../../i18n-constants'
+import { defaultLocale } from '../../i18n-constants';
+
+/** Annotated rather than inferred: the manifest schema expects these literals. */
+const DISPLAY_OVERRIDE: ('window-controls-overlay' | 'standalone')[] = [
+  'window-controls-overlay',
+  'standalone',
+];
 
 export const APP_MANIFEST = {
   name: 'Nuxt Starter Kit',
   short_name: 'Nuxt Template',
   description: 'A Nuxt 4 starter template with NuxtHub, Auth, and PWA support',
   start_url: '/pwa',
-  display: 'standalone',
-  display_override: ['window-controls-overlay', 'standalone'],
+  display: 'standalone' as const,
+  display_override: DISPLAY_OVERRIDE,
   background_color: '#ffffff',
   theme_color: '#8b5cf6',
-  dir: 'ltr',
+  dir: 'ltr' as const,
   lang: defaultLocale,
-  orientation: 'any',
+  orientation: 'any' as const,
   scope: '/',
   categories: ['education', 'productivity', 'technology', 'business'],
   iarc_rating_id: '',
@@ -44,13 +50,13 @@ export const APP_MANIFEST = {
       src: 'pwa-512x512.png',
       sizes: '512x512',
       type: 'image/png',
-      form_factor: 'wide',
+      form_factor: 'wide' as const,
     },
     {
       src: 'pwa-192x192.png',
       sizes: '192x192',
       type: 'image/png',
-      form_factor: 'narrow',
+      form_factor: 'narrow' as const,
     },
   ],
   shortcuts: [
@@ -79,7 +85,7 @@ export const APP_MANIFEST = {
       origin: '*',
     },
   ],
-}
+};
 
 // SEO-related constants
 export const SEO_CONFIG = {
@@ -89,4 +95,4 @@ export const SEO_CONFIG = {
   twitterCard: 'summary_large_image' as const,
   robots: 'index, follow',
   colorScheme: 'light dark',
-} as const
+} as const;

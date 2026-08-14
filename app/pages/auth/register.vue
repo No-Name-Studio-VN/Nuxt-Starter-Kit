@@ -1,415 +1,454 @@
 <script setup lang="ts">
-import AuthPageLayout from '@/components/auth/AuthPageLayout.vue'
-import { useOAuthPopup } from '@/composables/useOAuthPopup'
-import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator.vue'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { apiRoutes } from '#shared/apiRoutes'
-import { getAuthErrorMessage } from '#shared/constants/authMessages'
-import { AVAILABLE_PROVIDERS } from '#shared/constants/oauthProviders'
-import { registerUserSchema } from '#shared/schemas/userSchema'
-import { calculatePasswordStrength } from '@/utils/passwordValidation'
-import { getQueryString, safeRedirectPath } from '@/utils/safeRedirect'
-import { Field as VeeField, useForm } from 'vee-validate'
-import { Eye, EyeOff, Lock, Mail, UserIcon } from '@lucide/vue'
+import AuthPageLayout from '@/components/auth/AuthPageLayout.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Eye, EyeOff, Lock, Mail, UserIcon } from '@lucide/vue';
+import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator.vue';
+import { registerUserSchema } from '#shared/schemas/userSchema';
+import { calculatePasswordStrength } from '@/utils/passwordValidation';
+import { getAuthErrorMessage } from '#shared/constants/authMessages';
+import { AVAILABLE_PROVIDERS } from '#shared/constants/oauthProviders';
+import { apiRoutes } from '#shared/apiRoutes';
+import { apiRequest } from '@/utils/apiRequest';
+import { parseApiError } from '@/utils/apiError';
+import { Field as VeeField, useForm } from 'vee-validate';
+import { Field, FieldLabel, FieldError } from '@/components/ui/field';
+import type { ApiResponse } from '~~/types/api';
+import type { OAuthUrlPayload } from '~~/types/auth';
 
-const route = useRoute()
-const showPassword = ref(false)
-const showConfirmPassword = ref(false)
-const isLoading = ref(false)
-const error = ref('')
-const turnstileToken = ref('')
-const registerForm = ref<HTMLFormElement | null>(null)
+const route = useRoute();
+const requestUrl = useRequestURL();
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+const isLoading = ref(false);
+const error = ref('');
+const turnstileToken = ref('');
+const oauthLoadingProvider = ref<string | null>(null);
+const oauthPopup = ref<Window | null>(null);
+const oauthPopupTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
+const oauthPopupCloseMonitor = ref<ReturnType<typeof setInterval> | null>(null);
+const { t } = useI18n();
 
-const redirectTo = computed(() => safeRedirectPath(route.query.redirectTo))
+const redirectTo = computed(() => {
+  const value = getQueryString(route.query.redirectTo);
+  if (!value) {
+    return '/';
+  }
+
+  try {
+    const parsed = new URL(value, requestUrl.origin);
+    if (parsed.origin !== requestUrl.origin) {
+      return '/';
+    }
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return '/';
+  }
+});
+
+function stopOAuthPopupTimeout() {
+  if (oauthPopupTimeout.value) {
+    clearTimeout(oauthPopupTimeout.value);
+    oauthPopupTimeout.value = null;
+  }
+}
+
+function stopOAuthPopupCloseMonitor() {
+  if (oauthPopupCloseMonitor.value) {
+    clearInterval(oauthPopupCloseMonitor.value);
+    oauthPopupCloseMonitor.value = null;
+  }
+}
+
+function onOAuthPopupComplete(message: { url: string }) {
+  stopOAuthPopupCloseMonitor();
+  stopOAuthPopupTimeout();
+  oauthPopup.value = null;
+  oauthLoadingProvider.value = null;
+
+  let target: URL;
+  try {
+    target = new URL(message.url);
+  } catch {
+    error.value = 'Authentication completed but response URL was invalid. Please try again.';
+    return;
+  }
+
+  window.location.assign(`${target.pathname}${target.search}${target.hash}`);
+}
+
+const oauthPopupListener = useOAuthPopupListener(onOAuthPopupComplete);
 
 const form = useForm({
   initialValues: {
-    'username': '',
-    'name': '',
-    'email': '',
-    'password': '',
+    username: '',
+    name: '',
+    email: '',
+    password: '',
     'confirm-password': '',
     'cf-turnstile-response': '',
-    'redirect-to': '',
   },
   validationSchema: registerUserSchema,
-})
+});
 
-const { handleSubmit, values, meta, setFieldValue } = form
-
-const { oauthLoadingProvider, startOAuth } = useOAuthPopup({
-  onError(message) {
-    error.value = message
-  },
-})
-
-const onSubmit = handleSubmit(async () => {
-  isLoading.value = true
-  registerForm.value?.submit()
-})
-
-watch(turnstileToken, (val) => {
-  setFieldValue('cf-turnstile-response', val)
-})
-
-watch(redirectTo, (val) => {
-  setFieldValue('redirect-to', val)
-}, { immediate: true })
-
-const passwordStrength = computed(() => calculatePasswordStrength(values.password || ''))
-
-const isFormValid = computed(() => meta.value.valid && passwordStrength.value.score >= 80)
-
-watch(() => route.query.error, (queryValue) => {
-  const errorCode = getQueryString(queryValue)
-  error.value = getAuthErrorMessage(errorCode) || ''
-}, { immediate: true })
-
-function signUpWithProvider(provider: string) {
-  error.value = ''
-  startOAuth(provider, 'login', redirectTo.value)
-}
+const { handleSubmit, values, meta, setFieldValue } = form;
 
 definePageMeta({
+  title: 'auth.register_title',
+  breadcrumb: 'auth.register_breadcrumb',
   layout: 'empty',
-  title: 'Sign Up',
-  breadcrumb: 'Register',
-})
+});
+
+useSeo({
+  title: computed(() => t('auth.register_title')),
+  description: computed(() => t('auth.register_description')),
+  type: 'website',
+});
+
+const onSubmit = handleSubmit(async () => {
+  const formEl = document.querySelector(`form[action="${apiRoutes.AUTH_REGISTER_PASSWORD}"]`);
+  if (formEl instanceof HTMLFormElement) formEl.submit();
+});
+
+watch(turnstileToken, (val) => {
+  setFieldValue('cf-turnstile-response', val);
+});
+
+const passwordStrength = computed(() => calculatePasswordStrength(values.password || ''));
+
+// Check if form is valid for submission
+const isFormValid = computed(() => {
+  return meta.value.valid && passwordStrength.value.score >= 80;
+});
+
+watch(
+  () => route.query.error,
+  (queryValue) => {
+    const errorCode = getQueryString(queryValue);
+    if (errorCode) {
+      error.value = getAuthErrorMessage(errorCode) || 'An error occurred during registration';
+    }
+  },
+  { immediate: true },
+);
+
+onMounted(() => {
+  oauthPopupListener.start();
+});
+
+async function signUpWithProvider(provider: string) {
+  if (oauthLoadingProvider.value) return;
+
+  oauthLoadingProvider.value = provider;
+  error.value = '';
+
+  try {
+    const response = await apiRequest<ApiResponse<OAuthUrlPayload>>(apiRoutes.AUTH_OAUTH_URL, {
+      method: 'POST',
+      body: { provider, action: 'login', redirectTo: redirectTo.value },
+    });
+    if (!response.success) {
+      throw response;
+    }
+
+    const popupWidth = Math.min(560, window.outerWidth - 40);
+    const popupHeight = Math.min(720, window.outerHeight - 80);
+    const popupLeft = window.screenX + Math.max(0, (window.outerWidth - popupWidth) / 2);
+    const popupTop = window.screenY + Math.max(0, (window.outerHeight - popupHeight) / 2);
+    const popup = window.open(
+      response.data.url,
+      `oauth-${provider}`,
+      `width=${popupWidth},height=${popupHeight},left=${popupLeft},top=${popupTop},location=0,resizable,scrollbars,toolbar=0,menubar=0,popup=true`,
+    );
+
+    if (!popup) {
+      throw new Error('Popup blocked');
+    }
+
+    popup.focus();
+    oauthPopup.value = popup;
+    stopOAuthPopupCloseMonitor();
+    stopOAuthPopupTimeout();
+
+    oauthPopupCloseMonitor.value = setInterval(() => {
+      if (!oauthPopup.value) {
+        stopOAuthPopupCloseMonitor();
+        return;
+      }
+
+      let isClosed = false;
+      try {
+        isClosed = oauthPopup.value.closed;
+      } catch {
+        return;
+      }
+
+      if (!isClosed) {
+        return;
+      }
+
+      stopOAuthPopupCloseMonitor();
+      stopOAuthPopupTimeout();
+      oauthPopup.value = null;
+      oauthLoadingProvider.value = null;
+    }, 500);
+
+    oauthPopupTimeout.value = setTimeout(() => {
+      stopOAuthPopupCloseMonitor();
+      stopOAuthPopupTimeout();
+      oauthPopup.value = null;
+      oauthLoadingProvider.value = null;
+      error.value = 'OAuth session timed out or popup was closed. Please try again.';
+    }, 120000);
+  } catch (err) {
+    stopOAuthPopupCloseMonitor();
+    stopOAuthPopupTimeout();
+    oauthPopup.value = null;
+    error.value = parseApiError(
+      err,
+      'Unable to continue with provider right now. Please try again.',
+    ).message;
+    oauthLoadingProvider.value = null;
+  }
+}
+
+onBeforeUnmount(() => {
+  stopOAuthPopupCloseMonitor();
+  stopOAuthPopupTimeout();
+  oauthPopupListener.stop();
+});
 </script>
 
 <template>
-  <AuthPageLayout quote="Start with security defaults that are explicit, typed, and easy to replace.">
-    <Card class="w-full">
-      <CardHeader class="text-center">
-        <CardTitle>Create Account</CardTitle>
-        <CardDescription>
-          Create your account and verify your email to continue.
-        </CardDescription>
-      </CardHeader>
+  <AuthPageLayout quote="Build a library that feels like yours from the first page.">
+    <div class="space-y-1">
+      <h1 class="text-2xl font-bold tracking-tight">Create account</h1>
+      <p class="text-base text-muted-foreground">
+        Join Gromet Reader and start your reading journey.
+      </p>
+    </div>
 
-      <CardContent class="flex flex-col gap-5">
-        <Alert
-          v-if="error"
-          variant="destructive"
+    <Alert v-if="error" variant="destructive">
+      <AlertDescription>{{ error }}</AlertDescription>
+    </Alert>
+
+    <!-- OAuth Sign Up -->
+    <div class="space-y-3">
+      <template v-for="provider in AVAILABLE_PROVIDERS" :key="provider.id">
+        <Button
+          type="button"
+          variant="outline"
+          class="w-full active:scale-[0.98]"
+          :is-loading="oauthLoadingProvider === provider.id"
+          :disabled="isLoading || oauthLoadingProvider !== null"
+          @click="signUpWithProvider(provider.id)"
         >
-          <AlertDescription>{{ error }}</AlertDescription>
-        </Alert>
+          <div class="size-4 flex items-center justify-center">
+            <OAuthIcon :provider="provider.id" />
+          </div>
+          Sign up with {{ provider.name }}
+        </Button>
+      </template>
 
-        <div class="flex flex-col gap-3">
-          <template
-            v-for="provider in AVAILABLE_PROVIDERS"
-            :key="provider.id"
-          >
+      <div class="flex items-center gap-2 py-1">
+        <div class="h-px flex-1 bg-border" />
+        <span class="text-xs uppercase text-muted-foreground">Or sign up with email</span>
+        <div class="h-px flex-1 bg-border" />
+      </div>
+    </div>
+
+    <form
+      :action="apiRoutes.AUTH_REGISTER_PASSWORD"
+      method="POST"
+      class="space-y-4"
+      @submit.prevent="onSubmit"
+    >
+      <VeeField v-slot="{ field, errors }" name="username">
+        <Field :data-invalid="!!errors.length" class="space-y-2">
+          <FieldLabel for="username" class="text-sm font-medium"> Username </FieldLabel>
+          <div class="relative">
+            <UserIcon class="absolute left-3 top-3 size-4 text-muted-foreground" />
+            <Input
+              id="username"
+              :model-value="field.value"
+              name="username"
+              type="text"
+              placeholder="Enter your username"
+              class="h-11 pl-9"
+              :aria-invalid="!!errors.length"
+              :disabled="isLoading"
+              @update:model-value="field.onChange"
+            />
+          </div>
+          <FieldError v-if="errors.length" :errors="errors" />
+        </Field>
+      </VeeField>
+
+      <VeeField v-slot="{ field, errors }" name="name">
+        <Field :data-invalid="!!errors.length" class="space-y-2">
+          <FieldLabel for="name" class="text-sm font-medium"> Display Name </FieldLabel>
+          <div class="relative">
+            <UserIcon class="absolute left-3 top-3 size-4 text-muted-foreground" />
+            <Input
+              id="name"
+              :model-value="field.value"
+              name="name"
+              type="text"
+              placeholder="Enter your display name"
+              class="h-11 pl-9"
+              :aria-invalid="!!errors.length"
+              :disabled="isLoading"
+              @update:model-value="field.onChange"
+            />
+          </div>
+          <FieldError v-if="errors.length" :errors="errors" />
+        </Field>
+      </VeeField>
+
+      <VeeField v-slot="{ field, errors }" name="email">
+        <Field :data-invalid="!!errors.length" class="space-y-2">
+          <FieldLabel for="email" class="text-sm font-medium"> Email </FieldLabel>
+          <div class="relative">
+            <Mail class="absolute left-3 top-3 size-4 text-muted-foreground" />
+            <Input
+              id="email"
+              :model-value="field.value"
+              name="email"
+              type="email"
+              placeholder="Enter your email"
+              class="h-11 pl-9"
+              :aria-invalid="!!errors.length"
+              :disabled="isLoading"
+              @update:model-value="field.onChange"
+            />
+          </div>
+          <FieldError v-if="errors.length" :errors="errors" />
+        </Field>
+      </VeeField>
+
+      <VeeField v-slot="{ field, errors }" name="password">
+        <Field :data-invalid="!!errors.length" class="space-y-2">
+          <FieldLabel for="password" class="text-sm font-medium"> Password </FieldLabel>
+          <div class="relative">
+            <Lock class="absolute left-3 top-3 size-4 text-muted-foreground" />
+            <Input
+              id="password"
+              :model-value="field.value"
+              name="password"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="Enter your password"
+              class="h-11 px-9"
+              :aria-invalid="!!errors.length"
+              :disabled="isLoading"
+              @update:model-value="field.onChange"
+            />
             <Button
               type="button"
-              variant="outline"
-              class="w-full"
-              :is-loading="oauthLoadingProvider === provider.id"
-              :disabled="isLoading || oauthLoadingProvider !== null"
-              @click="signUpWithProvider(provider.id)"
+              variant="ghost"
+              size="sm"
+              class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
+              :aria-label="showPassword ? 'Hide password' : 'Show password'"
+              :aria-pressed="showPassword"
+              @click="showPassword = !showPassword"
             >
-              <div class="flex size-4 items-center justify-center">
-                <OAuthIcon :provider="provider.id" />
-              </div>
-              Sign up with {{ provider.name }}
+              <Eye v-if="!showPassword" class="size-4" aria-hidden="true" />
+              <EyeOff v-else class="size-4" aria-hidden="true" />
             </Button>
-          </template>
-
-          <div class="relative">
-            <div class="absolute inset-0 flex items-center">
-              <span class="w-full border-t" />
-            </div>
-            <div class="relative flex justify-center text-xs uppercase">
-              <span class="rounded-xl bg-card px-2 text-muted-foreground">Or sign up with email</span>
-            </div>
           </div>
-        </div>
+          <!-- Password Strength Indicator -->
+          <PasswordStrengthIndicator
+            :password="values.password || ''"
+            :strength="passwordStrength"
+          />
+        </Field>
+      </VeeField>
 
-        <form
-          ref="registerForm"
-          action="/api/auth/register-password"
-          method="POST"
-          class="flex flex-col gap-4"
-          @submit.prevent="onSubmit"
-        >
-          <input
-            type="hidden"
-            name="cf-turnstile-response"
-            :value="turnstileToken"
-          >
-          <input
-            type="hidden"
-            name="redirect-to"
-            :value="redirectTo"
-          >
-
-          <FieldGroup>
-            <VeeField
-              v-slot="{ field, errors }"
-              name="username"
-            >
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="username">
-                  Username
-                </FieldLabel>
-                <div class="relative">
-                  <UserIcon
-                    aria-hidden="true"
-                    class="absolute left-3 top-3 size-4"
-                  />
-                  <Input
-                    id="username"
-                    :model-value="field.value"
-                    name="username"
-                    type="text"
-                    autocomplete="username"
-                    placeholder="Enter your username"
-                    class="h-11 pl-9"
-                    :aria-invalid="!!errors.length"
-                    :disabled="isLoading"
-                    @update:model-value="field.onChange"
-                  />
-                </div>
-                <FieldError
-                  v-if="errors.length"
-                  :errors="errors"
-                />
-              </Field>
-            </VeeField>
-
-            <VeeField
-              v-slot="{ field, errors }"
-              name="name"
-            >
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="name">
-                  Display Name
-                </FieldLabel>
-                <div class="relative">
-                  <UserIcon
-                    aria-hidden="true"
-                    class="absolute left-3 top-3 size-4"
-                  />
-                  <Input
-                    id="name"
-                    :model-value="field.value"
-                    name="name"
-                    type="text"
-                    autocomplete="name"
-                    placeholder="Enter your display name"
-                    class="h-11 pl-9"
-                    :aria-invalid="!!errors.length"
-                    :disabled="isLoading"
-                    @update:model-value="field.onChange"
-                  />
-                </div>
-                <FieldError
-                  v-if="errors.length"
-                  :errors="errors"
-                />
-              </Field>
-            </VeeField>
-
-            <VeeField
-              v-slot="{ field, errors }"
-              name="email"
-            >
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="email">
-                  Email
-                </FieldLabel>
-                <div class="relative">
-                  <Mail
-                    aria-hidden="true"
-                    class="absolute left-3 top-3 size-4"
-                  />
-                  <Input
-                    id="email"
-                    :model-value="field.value"
-                    name="email"
-                    type="email"
-                    autocomplete="email"
-                    placeholder="Enter your email"
-                    class="h-11 pl-9"
-                    :aria-invalid="!!errors.length"
-                    :disabled="isLoading"
-                    @update:model-value="field.onChange"
-                  />
-                </div>
-                <FieldError
-                  v-if="errors.length"
-                  :errors="errors"
-                />
-              </Field>
-            </VeeField>
-
-            <VeeField
-              v-slot="{ field, errors }"
-              name="password"
-            >
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="password">
-                  Password
-                </FieldLabel>
-                <div class="relative">
-                  <Lock
-                    aria-hidden="true"
-                    class="absolute left-3 top-3 size-4"
-                  />
-                  <Input
-                    id="password"
-                    :model-value="field.value"
-                    name="password"
-                    :type="showPassword ? 'text' : 'password'"
-                    autocomplete="new-password"
-                    placeholder="Enter your password"
-                    class="h-11 pl-9 pr-9"
-                    :aria-invalid="!!errors.length"
-                    :disabled="isLoading"
-                    @update:model-value="field.onChange"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
-                    :aria-label="showPassword ? 'Hide password' : 'Show password'"
-                    @click="showPassword = !showPassword"
-                  >
-                    <Eye
-                      v-if="!showPassword"
-                      aria-hidden="true"
-                      class="size-4"
-                    />
-                    <EyeOff
-                      v-else
-                      aria-hidden="true"
-                      class="size-4"
-                    />
-                  </Button>
-                </div>
-                <FieldError
-                  v-if="errors.length"
-                  :errors="errors"
-                />
-                <PasswordStrengthIndicator
-                  :password="values.password || ''"
-                  :strength="passwordStrength"
-                />
-              </Field>
-            </VeeField>
-
-            <VeeField
-              v-slot="{ field, errors }"
+      <VeeField v-slot="{ field, errors }" name="confirm-password">
+        <Field :data-invalid="!!errors.length" class="space-y-2">
+          <FieldLabel for="confirmPassword" class="text-sm font-medium">
+            Confirm Password
+          </FieldLabel>
+          <div class="relative">
+            <Lock class="absolute left-3 top-3 size-4 text-muted-foreground" />
+            <Input
+              id="confirmPassword"
+              :model-value="field.value"
               name="confirm-password"
-            >
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="confirmPassword">
-                  Confirm Password
-                </FieldLabel>
-                <div class="relative">
-                  <Lock
-                    aria-hidden="true"
-                    class="absolute left-3 top-3 size-4"
-                  />
-                  <Input
-                    id="confirmPassword"
-                    :model-value="field.value"
-                    name="confirm-password"
-                    :type="showConfirmPassword ? 'text' : 'password'"
-                    autocomplete="new-password"
-                    placeholder="Confirm your password"
-                    class="h-11 pl-9 pr-9"
-                    :aria-invalid="!!errors.length"
-                    :disabled="isLoading"
-                    @update:model-value="field.onChange"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
-                    :aria-label="showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'"
-                    @click="showConfirmPassword = !showConfirmPassword"
-                  >
-                    <Eye
-                      v-if="!showConfirmPassword"
-                      aria-hidden="true"
-                      class="size-4"
-                    />
-                    <EyeOff
-                      v-else
-                      aria-hidden="true"
-                      class="size-4"
-                    />
-                  </Button>
-                </div>
-                <FieldError
-                  v-if="errors.length"
-                  :errors="errors"
-                />
-              </Field>
-            </VeeField>
-          </FieldGroup>
-
-          <NuxtTurnstile v-model="turnstileToken" />
-          <Button
-            type="submit"
-            class="h-11 w-full"
-            :disabled="!isFormValid"
-            :is-loading="isLoading"
-          >
-            <Lock
-              aria-hidden="true"
-              class="size-4"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              placeholder="Confirm your password"
+              class="h-11 px-9"
+              :aria-invalid="!!errors.length"
+              :disabled="isLoading"
+              @update:model-value="field.onChange"
             />
-            Create Account
-          </Button>
-          <p
-            v-if="values.password && passwordStrength.score < 80"
-            class="text-center text-xs text-muted-foreground"
-          >
-            Password must be strong to create an account.
-          </p>
-        </form>
-      </CardContent>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
+              :aria-label="
+                showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'
+              "
+              :aria-pressed="showConfirmPassword"
+              @click="showConfirmPassword = !showConfirmPassword"
+            >
+              <Eye v-if="!showConfirmPassword" class="size-4" aria-hidden="true" />
+              <EyeOff v-else class="size-4" aria-hidden="true" />
+            </Button>
+          </div>
+          <FieldError v-if="errors.length" :errors="errors" />
+        </Field>
+      </VeeField>
 
-      <CardFooter class="flex flex-col gap-3 text-center">
-        <p class="text-xs text-muted-foreground">
-          By creating an account, you agree to our
-          <NuxtLink
-            to="https://nnsvn.me/terms"
-            class="underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Terms of Service
-          </NuxtLink>
-          and
-          <NuxtLink
-            to="https://nnsvn.me/privacy"
-            class="underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Privacy Policy
-          </NuxtLink>
-        </p>
+      <NuxtTurnstile v-model="turnstileToken" />
+      <input type="hidden" name="redirect-to" :value="redirectTo" />
+      <Button
+        type="submit"
+        class="h-11 w-full active:scale-[0.98]"
+        :disabled="!isFormValid"
+        :is-loading="isLoading"
+      >
+        <Lock class="size-4" />
+        Create Account
+      </Button>
+      <p
+        v-if="values.password && passwordStrength.score < 80"
+        class="text-center text-xs text-muted-foreground"
+      >
+        Password must be strong to create an account
+      </p>
+    </form>
 
-        <p class="text-sm text-muted-foreground">
-          Already have an account?
-          <NuxtLink
-            :to="apiRoutes.AUTH_LOGIN"
-            class="font-medium text-primary hover:underline"
-          >
-            Sign In
-          </NuxtLink>
-        </p>
-      </CardFooter>
-    </Card>
+    <div class="space-y-3 text-center">
+      <div class="text-xs text-muted-foreground">
+        By creating an account, you agree to our
+        <NuxtLink
+          to="https://nnsvn.me/terms"
+          class="underline underline-offset-4 hover:text-primary"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Terms of Service
+        </NuxtLink>
+        and
+        <NuxtLink
+          to="https://nnsvn.me/privacy"
+          class="underline underline-offset-4 hover:text-primary"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Privacy Policy
+        </NuxtLink>
+      </div>
+
+      <div class="text-sm text-muted-foreground">
+        Already have an account?
+        <NuxtLink to="/auth/login" class="font-medium text-primary hover:underline">
+          Sign In
+        </NuxtLink>
+      </div>
+    </div>
   </AuthPageLayout>
 </template>

@@ -1,96 +1,146 @@
-import { AuthTokenType } from '#shared/commonEnums'
-import { registerUserSchema } from '#shared/schemas/userSchema'
-import userService from '~~/server/utils/database/user'
-import authTokenService from '~~/server/utils/database/authToken'
-import { sendVerificationEmail } from '~~/server/utils/email'
-import { safeRedirectPath } from '~~/server/utils/safeRedirect'
-import { apiRoutes } from '#shared/apiRoutes'
-import type { User } from '#shared/db'
+import { registerUserSchema } from '#shared/schemas/userSchema';
+import userService from '~~/server/utils/database/user';
+// <nsk:auth-email-verification>
+import authTokenService from '~~/server/utils/database/authToken';
+import { sendVerificationEmail } from '~~/server/utils/email';
+// </nsk:auth-email-verification>
+import { apiRoutes } from '#shared/apiRoutes';
+import type { User } from '#shared/db';
+import type { RegisterUserInput } from '#shared/schemas/userSchema';
+// <nsk:auth-email-verification>
+import { AuthTokenType } from '#shared/commonEnums';
+// </nsk:auth-email-verification>
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
+  return value !== null && typeof value === 'object';
 }
 
-function readStringField(record: Record<string, unknown>, key: string): string | undefined {
-  const value = record[key]
-  return typeof value === 'string' ? value : undefined
+function safeRedirectPath(value: string | undefined, origin: string): string {
+  if (!value) {
+    return '/';
+  }
+
+  try {
+    const parsed = new URL(value, origin);
+    if (parsed.origin !== origin) {
+      return '/';
+    }
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return '/';
+  }
 }
 
 export default defineEventHandler(async (event) => {
-  const result = await readValidatedBody(event, body => registerUserSchema.safeParse(body))
+  const result = await readValidatedBody(event, (body) => registerUserSchema.safeParse(body));
   if (!result.success) {
-    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=validation')
+    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=validation');
   }
 
-  const { username, password, 'cf-turnstile-response': token } = result.data
+  const { username, password, 'cf-turnstile-response': token } = result.data;
 
-  const tokenValidation = await verifyTurnstileToken(token)
+  const tokenValidation = await verifyTurnstileToken(token);
   if (!tokenValidation.success) {
-    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=captcha')
+    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=captcha');
   }
 
-  const redirectTo = safeRedirectPath(event, result.data['redirect-to'])
+  const redirectTo = safeRedirectPath(result.data['redirect-to'], getRequestURL(event).origin);
 
+  // 1. CHEAP PRE-CHECK: Prevent CPU Exhaustion (DoS) by checking constraints before hashing
   const [existingUsername, existingEmail] = await Promise.all([
     userService.getByUsername(username),
     userService.getByEmail(result.data.email),
-  ])
+  ]);
 
   if (existingUsername) {
-    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=existed')
+    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=existed');
   }
   if (existingEmail) {
-    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=email-existed')
+    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=email-existed');
   }
 
-  const hashedPassword = await hashPassword(password)
+  // 2. EXPENSIVE OPERATION: Hash only when pre-checks pass
+  const hashedPassword = await hashPassword(password);
 
-  let newUser: User
+  // 3. ATOMIC INSERT: Protect against Time-Of-Check to Time-Of-Use (TOCTOU) race conditions
+  let newUser: User;
   try {
-    newUser = await userService.create({
+    const createPayload: Pick<RegisterUserInput, 'username' | 'email' | 'name'> & {
+      password: string;
+      emailVerified: boolean;
+      isAdmin: boolean;
+    } = {
       username: result.data.username,
       email: result.data.email,
       name: result.data.name,
       password: hashedPassword,
       emailVerified: false,
       isAdmin: false,
-    })
-  }
-  catch (err: unknown) {
-    let errorCode: string | undefined
-    let errorMessage: string | undefined
-    let causeMessage: string | undefined
+    };
+
+    newUser = await userService.create({
+      ...createPayload,
+    });
+  } catch (err: unknown) {
+    let maybeErrCode: string | undefined;
+    let maybeErrMessage: string | undefined;
+    let maybeErrCauseMessage: string | undefined;
 
     if (isRecord(err)) {
-      errorCode = readStringField(err, 'code')
-      errorMessage = readStringField(err, 'message')
-      const cause = err.cause
-      if (isRecord(cause)) {
-        causeMessage = readStringField(cause, 'message')
+      const errorRecord = err;
+      if (typeof errorRecord.code === 'string') {
+        maybeErrCode = errorRecord.code;
+      }
+      if (typeof errorRecord.message === 'string') {
+        maybeErrMessage = errorRecord.message;
+      }
+      if (isRecord(errorRecord.cause)) {
+        const causeRecord = errorRecord.cause;
+        if (typeof causeRecord.message === 'string') {
+          maybeErrCauseMessage = causeRecord.message;
+        }
       }
     }
-
-    const isUniqueConstraint = errorCode === 'SQLITE_CONSTRAINT' || errorCode === 'SQLITE_CONSTRAINT_UNIQUE' || errorMessage?.includes('UNIQUE')
+    // Fallback for strict concurrency races relying on standard SQLite constraint codes
+    const isUniqueConstraint =
+      maybeErrCode === 'SQLITE_CONSTRAINT' ||
+      maybeErrCode === 'SQLITE_CONSTRAINT_UNIQUE' ||
+      maybeErrMessage?.includes('UNIQUE');
     if (isUniqueConstraint) {
-      if (errorMessage?.includes('email') || causeMessage?.includes('email')) {
-        return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=email-existed')
+      if (maybeErrMessage?.includes('email') || maybeErrCauseMessage?.includes('email')) {
+        return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=email-existed');
       }
-      return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=existed')
+      return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=existed');
     }
-    throw err
+    throw err;
   }
 
-  const verificationToken = await authTokenService.createToken(newUser.id, AuthTokenType.EmailVerification)
-  const verificationEmail = await sendVerificationEmail(event, newUser.email, newUser.username, verificationToken)
+  /**
+   * Where to send the new account. The email-verification module diverts it to
+   * the verification notice; without that module registration goes straight to
+   * sign-in.
+   */
+  // eslint-disable-next-line no-useless-assignment
+  let postRegisterRedirect = apiRoutes.AUTH_LOGIN + '?redirectTo=' + encodeURIComponent(redirectTo);
 
-  if (!verificationEmail.configured) {
-    await userService.update({ id: newUser.id, emailVerified: true })
-    return sendRedirect(event, `${apiRoutes.AUTH_LOGIN}?success=account-ready&redirectTo=${encodeURIComponent(redirectTo)}`)
-  }
+  // <nsk:auth-email-verification>
+  // Send verification email (non-blocking - don't fail registration if email fails)
+  const verificationToken = await authTokenService.createToken(
+    newUser.id,
+    AuthTokenType.EmailVerification,
+  );
+  sendVerificationEmail(newUser.email, newUser.username, verificationToken).catch((err) => {
+    console.error('[Register] Failed to send verification email:', err);
+  });
 
-  if (!verificationEmail.sent) {
-    return sendRedirect(event, `${apiRoutes.AUTH_VERIFY_EMAIL}?email=${encodeURIComponent(newUser.email)}&redirectTo=${encodeURIComponent(redirectTo)}&error=email-send-failed`)
-  }
+  postRegisterRedirect =
+    apiRoutes.AUTH_VERIFY_EMAIL +
+    '?email=' +
+    encodeURIComponent(newUser.email) +
+    '&redirectTo=' +
+    encodeURIComponent(redirectTo);
+  // </nsk:auth-email-verification>
 
-  return sendRedirect(event, `${apiRoutes.AUTH_VERIFY_EMAIL}?email=${encodeURIComponent(newUser.email)}&redirectTo=${encodeURIComponent(redirectTo)}`)
-})
+  return sendRedirect(event, postRegisterRedirect);
+});

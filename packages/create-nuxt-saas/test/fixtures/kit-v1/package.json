@@ -1,0 +1,10 @@
+{
+  "name": "nuxt-kit-fixture",
+  "private": true,
+  "description": "{{PROJECT_DESCRIPTION}}",
+  "type": "module",
+  "dependencies": {
+    "@nuxt/content": "^3.0.0",
+    "@vite-pwa/nuxt": "^1.0.0"
+  }
+}

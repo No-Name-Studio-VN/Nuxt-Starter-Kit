@@ -73,7 +73,7 @@ A comprehensive, production-ready SaaS starter kit built with Nuxt 4, featuring 
 
 ### Prerequisites
 
-- Node.js 18.x or higher
+- Node.js 26.x or higher
 - npm, pnpm, yarn or bun
 
 ### Installation

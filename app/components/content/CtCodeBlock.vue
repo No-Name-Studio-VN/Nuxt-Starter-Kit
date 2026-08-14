@@ -1,7 +1,7 @@
 <template>
   <ClientOnly>
     <Card
-      class="bg-[#FBFBFB] dark:bg-[#121215] relative overflow-hidden py-0 gap-0 rounded-lg shadow-xs [&:not(:first-child)]:mt-5 [&:not(:last-child)]:mb-5"
+      class="bg-[#FBFBFB] dark:bg-[#121215] relative overflow-hidden py-0 gap-0 rounded-lg shadow-xs not-first:mt-5 not-last:mb-5"
       :class="[
         (inGroup || inTree) && 'mb-0 rounded-t-none border-none shadow-none',
         inStack && 'mb-0 rounded-none border-none shadow-none',
@@ -11,28 +11,22 @@
         v-if="!inGroup && filename"
         class="bg-background flex items-center border-b py-2 pl-3 pr-2 font-mono text-sm"
       >
-        <CtIcon
-          v-if="icon"
-          :name="icon"
-          class="mr-1.5"
-        />
+        <CtIcon v-if="icon" :name="icon" class="mr-1.5" />
         <span>{{ filename }}</span>
-        <CtCodeCopy
-          :code
-          class="ml-auto"
-        />
+        <CtCodeCopy :code class="ml-auto" />
       </div>
 
-      <div
-        v-if="!filename"
-        class="absolute right-2 top-2 z-10"
-      >
+      <div v-if="!filename" class="absolute right-2 top-2 z-10">
         <CtCodeCopy :code />
       </div>
 
       <ScrollArea v-if="parsedMeta.has('collapse')">
         <div
-          :style="[((parsedMeta.has('height') || height) && !expanded) ? `height: ${height || parsedMeta.get('height')}px` : undefined]"
+          :style="[
+            (parsedMeta.has('height') || height) && !expanded
+              ? `height: ${height || parsedMeta.get('height')}px`
+              : undefined,
+          ]"
           class="overflow-x-auto overflow-y-hidden py-3 text-sm"
           :class="[
             !inGroup && !inTree && !filename && 'inline-copy',
@@ -47,7 +41,9 @@
       </ScrollArea>
       <ScrollArea
         v-else
-        :style="[(parsedMeta.has('height') || height) && `height: ${height || parsedMeta.get('height')}px`]"
+        :style="[
+          (parsedMeta.has('height') || height) && `height: ${height || parsedMeta.get('height')}px`,
+        ]"
       >
         <div
           class="overflow-x-auto py-3 text-sm"
@@ -65,19 +61,11 @@
       <div
         v-if="parsedMeta.has('collapse')"
         class="absolute inset-x-0 bottom-0 flex h-16 items-center justify-center rounded-b"
-        :class="[!expanded && 'from-muted bg-gradient-to-t dark:from-zinc-950']"
+        :class="[!expanded && 'from-muted bg-linear-to-t dark:from-zinc-950']"
       >
-        <Button
-          size="sm"
-          variant="outline"
-          class="h-9"
-          @click="expanded = !expanded"
-        >
-          <component
-            :is="expanded ? ChevronUpIcon : ChevronDownIcon"
-            :size="18"
-          />
-          {{ expanded ? $t('common.collapse') : $t('common.expand') }}
+        <Button size="sm" variant="outline" class="h-9" @click="expanded = !expanded">
+          <component :is="expanded ? ChevronUpIcon : ChevronDownIcon" :size="18" />
+          {{ expanded ? $t("common.collapse") : $t("common.expand") }}
         </Button>
       </div>
     </Card>
@@ -85,43 +73,47 @@
 </template>
 
 <script setup lang="ts">
-import type { BuiltinLanguage } from 'shiki'
-import { ChevronUpIcon, ChevronDownIcon } from '@lucide/vue'
-import CtIcon from './CtIcon.vue'
+import type { BuiltinLanguage } from "shiki";
+import { ChevronUpIcon, ChevronDownIcon } from "@lucide/vue";
+import CtIcon from "./CtIcon.vue";
 
-const props = withDefaults(defineProps<{
-  code?: string
-  language?: BuiltinLanguage
-  filename?: string
-  inGroup?: boolean
-  inTree?: boolean
-  inStack?: boolean
-  highlights?: number[]
-  meta?: string
-  height?: number
-}>(), {
-  code: '',
-  inGroup: false,
-  inTree: false,
-  inStack: false,
-})
+const props = withDefaults(
+  defineProps<{
+    code?: string;
+    language?: BuiltinLanguage;
+    filename?: string;
+    inGroup?: boolean;
+    inTree?: boolean;
+    inStack?: boolean;
+    highlights?: number[];
+    meta?: string;
+    height?: number;
+  }>(),
+  {
+    code: "",
+    inGroup: false,
+    inTree: false,
+    inStack: false,
+  },
+);
 
 const parsedMeta = computed(() => {
-  const split = props.meta?.split(' ') ?? []
-  const params = new Map<string, string | undefined>()
+  const split = props.meta?.split(" ") ?? [];
+  const params = new Map<string, string | undefined>();
 
   for (const param of split) {
-    const [key, val] = param.split('=')
-    params.set(key, val)
+    const [key, val] = param.split("=");
+    if (key === undefined) continue;
+    params.set(key, val);
   }
 
-  return params
-})
+  return params;
+});
 
-const expanded = ref(false)
+const expanded = ref(false);
 const icon = computed(() => {
-  return parsedMeta.value.get('icon') || props.language || props.filename?.toLowerCase()
-})
+  return parsedMeta.value.get("icon") || props.language || props.filename?.toLowerCase();
+});
 </script>
 
 <style>
@@ -164,43 +156,45 @@ const icon = computed(() => {
   content: attr(line);
 }
 
-.has-diff:not(.show-line-number>.has-diff) .line:not(.diff)::before {
+.has-diff:not(.show-line-number > .has-diff) .line:not(.diff)::before {
   font-size: var(--text-sm);
-  content: '';
+  content: "";
 }
 
 .diff.add {
-  background-color: color-mix(in oklab,var(--color-green-500)15%,transparent) !important;
+  background-color: color-mix(in oklab, var(--color-green-500) 15%, transparent) !important;
 }
 
 .diff.remove {
-  background-color: color-mix(in oklab,var(--color-red-500)15%,transparent) !important;
+  background-color: color-mix(in oklab, var(--color-red-500) 15%, transparent) !important;
 }
 
 .diff.add.line::before {
   font-size: var(--text-sm);
   color: var(--color-green-600);
-  content: '+';
+  content: "+";
 }
 
 .diff.remove.line::before {
   font-size: var(--text-sm);
   color: var(--color-red-600);
-  content: '-';
+  content: "-";
 }
 
 .highlighted.warning {
-  background-color: color-mix(in oklab,var(--color-yellow-500)15%,transparent) !important;
+  background-color: color-mix(in oklab, var(--color-yellow-500) 15%, transparent) !important;
 }
 
 .highlighted.error {
-  background-color: color-mix(in oklab,var(--color-red-500)15%,transparent) !important;
+  background-color: color-mix(in oklab, var(--color-red-500) 15%, transparent) !important;
 }
 
 .has-focused .line:not(.focused) {
   opacity: 0.5;
-  filter: blur(.095rem);
-  transition: filter .35s, opacity .35s;
+  filter: blur(0.095rem);
+  transition:
+    filter 0.35s,
+    opacity 0.35s;
 }
 
 .has-focused:hover .line:not(.focused) {

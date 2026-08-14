@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 2,
+  "version": "1.0.0",
+  "kit": {
+    "template": "fixture",
+    "revision": "v1"
+  },
+  "modules": [
+    {
+      "id": "base",
+      "title": "Base",
+      "description": "Nuxt foundation",
+      "version": "1.0.0",
+      "paths": [
+        "nuxt.config.ts",
+        "package.json",
+        "app/app.vue",
+        "app/components/**",
+        "app/pages/**",
+        "app/legacy.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "name": "{{PROJECT_NAME}}"
+        }
+      }
+    },
+    {
+      "id": "content",
+      "title": "Content",
+      "description": "Nuxt Content",
+      "version": "1.0.0",
+      "requires": [
+        "base"
+      ],
+      "paths": [
+        "content.config.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@nuxt/content": "^3.0.0"
+          }
+        }
+      }
+    },
+    {
+      "id": "pwa",
+      "title": "PWA",
+      "description": "Installable app",
+      "version": "1.0.0",
+      "requires": [
+        "base"
+      ],
+      "paths": [
+        "app/components/InstallPrompter.vue"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@vite-pwa/nuxt": "^1.0.0"
+          }
+        }
+      },
+      "notes": [
+        "Generate PWA icons before deploying."
+      ]
+    }
+  ]
+}

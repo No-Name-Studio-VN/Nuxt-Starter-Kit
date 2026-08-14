@@ -15,9 +15,9 @@ export const DOCS_CONFIG = {
       disableInDev: false,
       disableInMobile: false,
       fallback: false, // whether to show fallback message when blocked by ad blockers
-      code: 'your-carbon-code', // aka the 'serve' code
-      placement: 'your-carbon-placement',
-      format: 'your-carbon-format', // defaults to 'cover'
+      code: "your-carbon-code", // aka the 'serve' code
+      placement: "your-carbon-placement",
+      format: "your-carbon-format", // defaults to 'cover'
     },
   },
 };
@@ -41,28 +41,28 @@ toc:
 ## Parameters
 
 ::ct-field-group
-  ::ct-field{name="enable" type="boolean" default-value="false"}
-  Whether to turn on Carbon Ads.
-  ::
-  ::ct-field{name="disableInDev" type="boolean" default-value="false"}
-  Whether to disable Carbon Ads in dev environment.
-  ::
-  ::ct-field{name="disableInMobile" type="boolean" default-value="false"}
-  Whether to disable Carbon Ads on mobile.
-  ::
-  ::ct-field{name="fallback" type="boolean" default-value="false"}
-  Whether to show fallback message when blocked by ad blockers
-  ::
-  ::ct-field{name="fallbackMessage" type="string" default-value="'Please support us by disabling your ad blocker.'"}
-  Fallback message.
-  ::
-  ::ct-field{name="code" type="string"}
-  Carbon Ads serve code.
-  ::
-  ::ct-field{name="placement" type="string"}
-  Carbon Ads placement.
-  ::
-  ::ct-field{name="format" type="'cover' | 'responsive'" default-value="cover"}
-  Carbon Ads format.
-  ::
+::ct-field{name="enable" type="boolean" default-value="false"}
+Whether to turn on Carbon Ads.
+::
+::ct-field{name="disableInDev" type="boolean" default-value="false"}
+Whether to disable Carbon Ads in dev environment.
+::
+::ct-field{name="disableInMobile" type="boolean" default-value="false"}
+Whether to disable Carbon Ads on mobile.
+::
+::ct-field{name="fallback" type="boolean" default-value="false"}
+Whether to show fallback message when blocked by ad blockers
+::
+::ct-field{name="fallbackMessage" type="string" default-value="'Please support us by disabling your ad blocker.'"}
+Fallback message.
+::
+::ct-field{name="code" type="string"}
+Carbon Ads serve code.
+::
+::ct-field{name="placement" type="string"}
+Carbon Ads placement.
+::
+::ct-field{name="format" type="'cover' | 'responsive'" default-value="cover"}
+Carbon Ads format.
+::
 ::

@@ -14,45 +14,50 @@ badges:
 ### Simple
 
 ::ct-stack
-  ::div{class="p-4 md:p-6"}
-    ::ct-collapsible
-    #title
-    Show properties
+::div{class="p-4 md:p-6"}
+::ct-collapsible
+#title
+Show properties
 
     #content
     This is a **Simple** style collapsible.
     ::
-  ::
-  ```mdc
-  ::ct-collapsible
-  #title
-  Show properties
 
-  #content
-  This is a **Simple** style collapsible.
-  ::
-  ```
+::
+
+```mdc
+::ct-collapsible
+#title
+Show properties
+
+#content
+This is a **Simple** style collapsible.
+::
+```
+
 ::
 
 ### Card
 
 ::ct-stack
-  ::div{class="p-4 md:p-6"}
-    ::ct-collapsible{variant="card" title="@peduarte starred 3 repositories"}
-    @radix-ui/primitives
-    ::
-  ::
-  ```mdc
-  ::ct-collapsible{variant="card" title="@peduarte starred 3 repositories"}
-  @radix-ui/primitives
-  ::
-  ```
+::div{class="p-4 md:p-6"}
+::ct-collapsible{variant="card" title="@peduarte starred 3 repositories"}
+@radix-ui/primitives
+::
+::
+
+```mdc
+::ct-collapsible{variant="card" title="@peduarte starred 3 repositories"}
+@radix-ui/primitives
+::
+```
+
 ::
 
 ## Props
 
 ::ct-field-group
-  :ct-field{name="variant" type="'simple' | 'card'" default-value="'simple'"}
-  :ct-field{name="title" type="string"}[Collapsible title]
-  :ct-field{name="defaultOpen" type="boolean" default-value="false"}
+:ct-field{name="variant" type="'simple' | 'card'" default-value="'simple'"}
+:ct-field{name="title" type="string"}[Collapsible title]
+:ct-field{name="defaultOpen" type="boolean" default-value="false"}
 ::

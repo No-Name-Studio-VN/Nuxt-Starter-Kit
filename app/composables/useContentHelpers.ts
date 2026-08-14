@@ -1,17 +1,20 @@
-import type { ContentNavigationItem } from '@nuxt/content'
+import type { NavigationItem } from '~~/types';
 
 /**
  * Recursively find a navigation item matching the given path.
  */
-function findInNavigation(items: ContentNavigationItem[], path: string): ContentNavigationItem | null {
+function findInNavigation(
+  items: NavigationItem[],
+  path: string,
+): NavigationItem | null {
   for (const item of items) {
-    if (item.path === path) return item
+    if (item.path === path) return item;
     if (item.children) {
-      const found = findInNavigation(item.children, path)
-      if (found) return found
+      const found = findInNavigation(item.children, path);
+      if (found) return found;
     }
   }
-  return null
+  return null;
 }
 
 /**
@@ -20,10 +23,10 @@ function findInNavigation(items: ContentNavigationItem[], path: string): Content
 export function navKeyFromPath(
   path: string,
   key: string,
-  navigation: ContentNavigationItem[] | null | undefined,
+  navigation: NavigationItem[] | null | undefined,
 ): unknown {
-  if (!navigation?.length) return undefined
-  return findInNavigation(navigation, path)?.[key]
+  if (!navigation?.length) return undefined;
+  return findInNavigation(navigation, path)?.[key];
 }
 
 /**
@@ -31,10 +34,10 @@ export function navKeyFromPath(
  */
 export function navDirFromPath(
   path: string,
-  navigation: ContentNavigationItem[] | null | undefined,
-): ContentNavigationItem[] | null {
-  if (!navigation?.length) return null
-  return (findInNavigation(navigation, path)?.children as ContentNavigationItem[]) ?? null
+  navigation: NavigationItem[] | null | undefined,
+): NavigationItem[] | null {
+  if (!navigation?.length) return null;
+  return (findInNavigation(navigation, path)?.children as NavigationItem[]) ?? null;
 }
 
 /**
@@ -44,20 +47,20 @@ export function navDirFromPath(
 export function navPageOverrides(
   path: string,
   keys: readonly string[],
-  navigation: ContentNavigationItem[] | null | undefined,
+  navigation: NavigationItem[] | null | undefined,
 ): Record<string, unknown> {
-  if (!navigation?.length) return {}
+  if (!navigation?.length) return {};
 
-  const found = findInNavigation(navigation, path)
-  if (!found) return {}
+  const found = findInNavigation(navigation, path);
+  if (!found) return {};
 
-  const result: Record<string, unknown> = {}
+  const result: Record<string, unknown> = {};
   for (const key of keys) {
     if (found[key] !== undefined) {
-      result[key] = found[key]
+      result[key] = found[key];
     }
   }
-  return result
+  return result;
 }
 
 /**
@@ -69,5 +72,5 @@ export function useContentHelpers() {
     navKeyFromPath,
     navDirFromPath,
     navPageOverrides,
-  }
+  };
 }

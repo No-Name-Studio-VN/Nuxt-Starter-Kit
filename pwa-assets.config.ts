@@ -2,7 +2,7 @@ import {
   combinePresetAndAppleSplashScreens,
   defineConfig,
   minimal2023Preset,
-} from '@vite-pwa/assets-generator/config'
+} from '@vite-pwa/assets-generator/config';
 
 export default defineConfig({
   headLinkOptions: {
@@ -41,10 +41,10 @@ export default defineConfig({
         quality: 60,
       },
       name: (landscape, size, dark) => {
-        return `apple-splash-${landscape ? 'landscape' : 'portrait'}-${typeof dark === 'boolean' ? (dark ? 'dark-' : 'light-') : ''}${size.width}x${size.height}.png`
+        return `apple-splash-${landscape ? 'landscape' : 'portrait'}-${typeof dark === 'boolean' ? (dark ? 'dark-' : 'light-') : ''}${size.width}x${size.height}.png`;
       },
     },
     ['iPad Air 9.7"'],
   ),
   images: ['public/favicon.svg'],
-})
+});

@@ -16,7 +16,7 @@ const delegatedProps = reactiveOmit(props, 'class')
 const forwarded = useForwardPropsEmits(delegatedProps, emits)
 
 const id = useId()
-const { filterState, allItems, allGroups } = useCommand()
+const { filterState, allItems, allGroups, filterItems } = useCommand()
 const groupContext = useCommandGroup()
 
 const isRender = computed(() => {
@@ -36,13 +36,15 @@ const isRender = computed(() => {
   }
 })
 
-const itemRef = ref()
-const currentElement = useCurrentElement(itemRef)
+// The template binds this directly to the element, so there is no component
+// instance for useCurrentElement to resolve.
+const itemRef = ref<HTMLElement>()
 onMounted(() => {
-  if (!(currentElement.value instanceof HTMLElement)) return
+  const element = itemRef.value
+  if (!element) return
 
   // textValue to perform filter
-  allItems.value.set(id, currentElement.value.textContent ?? props.value?.toString() ?? '')
+  allItems.value.set(id, element.textContent ?? props.value?.toString() ?? '')
 
   const groupId = groupContext?.id
   if (groupId) {
@@ -53,9 +55,19 @@ onMounted(() => {
       allGroups.value.get(groupId)?.add(id)
     }
   }
+
+  filterItems()
 })
 onUnmounted(() => {
   allItems.value.delete(id)
+
+  const groupId = groupContext?.id
+  if (groupId) {
+    const group = allGroups.value.get(groupId)
+    group?.delete(id)
+  }
+
+  filterItems()
 })
 </script>
 

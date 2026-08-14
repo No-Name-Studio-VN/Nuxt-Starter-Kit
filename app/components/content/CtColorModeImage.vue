@@ -1,5 +1,5 @@
 <template>
-  <div class="[&:not(:first-child)]:mt-6">
+  <div class="not-first:mt-6">
     <div class="dark:hidden">
       <ProseImg
         v-bind="{
@@ -28,17 +28,20 @@
 </template>
 
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  srcLight: string
-  srcDark: string
-  alt?: string
-  width?: string | number
-  height?: string | number
-  lifted: boolean
-  noZoom: boolean
-}>(), {
-  alt: '',
-  lifted: false,
-  noZoom: false,
-})
+const props = withDefaults(
+  defineProps<{
+    srcLight: string;
+    srcDark: string;
+    alt?: string;
+    width?: string | number;
+    height?: string | number;
+    lifted: boolean;
+    noZoom: boolean;
+  }>(),
+  {
+    alt: "",
+    lifted: false,
+    noZoom: false,
+  },
+);
 </script>

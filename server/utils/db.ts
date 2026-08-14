@@ -1,7 +1,7 @@
-import { db, schema } from 'hub:db'
+import { db, schema } from 'hub:db';
 
-export const tables = schema
+export const tables = schema;
 
 export function useDB() {
-  return db
+  return db;
 }

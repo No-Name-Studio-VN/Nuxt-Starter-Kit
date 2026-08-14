@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 2,
+  "version": "0.3.0",
+  "kit": {
+    "template": "github:No-Name-Studio-VN/Nuxt-Starter-Kit",
+    "revision": "main"
+  },
+  "exclude": [
+    "packages/**",
+    "docs/superpowers/**",
+    "CLAUDE.MD",
+    ".whitesource",
+    ".github/workflows/release.yml",
+    ".github/workflows/cli-matrix.yml",
+    ".github/workflows/cli-release.yml",
+    "package-lock.json"
+  ],
+  "modules": [
+    {
+      "id": "base",
+      "title": "Base",
+      "description": "Nuxt 4 foundation: UI kit, theming, i18n, SEO, and security.",
+      "version": "0.3.0",
+      "paths": [
+        ".editorconfig",
+        ".env.example",
+        ".gitattributes",
+        ".github/workflows/lint-check.yml",
+        ".gitignore",
+        ".husky/**",
+        ".ignore",
+        ".nuxtrc",
+        ".oxfmtrc.jsonc",
+        ".oxlintrc.jsonc",
+        ".vscode/**",
+        "README.md",
+        "app/app.vue",
+        "app/assets/**",
+        "app/components/*",
+        "app/components/OgImage/**",
+        "app/components/admin/kv/**",
+        "app/components/auth/**",
+        "app/components/content/CtIcon.vue",
+        "app/components/layout/Header/Nav.vue",
+        "app/components/layout/SearchButton.vue",
+        "app/components/nav/**",
+        "app/components/ui/**",
+        "app/composables/**",
+        "app/constants/**",
+        "app/error.vue",
+        "app/layouts/**",
+        "app/lib/**",
+        "app/middleware/**",
+        "app/modules/**",
+        "app/pages/**",
+        "app/plugins/**",
+        "app/stores/**",
+        "app/utils/**",
+        "auth.d.ts",
+        "commitlint.config.js",
+        "components.json",
+        "docs.config.ts",
+        "eslint.config.js",
+        "i18n-constants.ts",
+        "i18n/**",
+        "lint-staged.config.js",
+        "nuxt.config.ts",
+        "package.json",
+        "public/**",
+        "sentry.client.config.ts",
+        "server/api/*",
+        "server/api/admin/*",
+        "server/api/admin/kv/**",
+        "server/api/auth/**",
+        "server/api/users/**",
+        "server/db/**",
+        "server/middleware/**",
+        "server/plugins/**",
+        "server/routes/**",
+        "server/tasks/**",
+        "server/tsconfig.json",
+        "server/utils/*",
+        "server/utils/constants/**",
+        "server/utils/database/**",
+        "shared/**",
+        "tsconfig.json",
+        "types/**",
+        "vitest.config.ts",
+        "wrangler.jsonc"
+      ],
+      "structured": {
+        "package.json": {
+          "name": "{{PROJECT_NAME}}",
+          "description": "{{PROJECT_DESCRIPTION}}",
+          "version": "0.1.0",
+          "scripts": {
+            "build": "npm run prepare && npm run prepare && NODE_OPTIONS=--max-old-space-size=12288 nuxt build",
+            "clean": "rm -r .nuxt && rm -r .output",
+            "db:generate": "npx nuxt db generate",
+            "db:seed": "nitro task run db:admin-creation",
+            "deploy": "npx wrangler deploy && npx wrangler d1 migrations apply DB --remote",
+            "dev": "npm run prepare && nuxt dev",
+            "format": "oxfmt --write .",
+            "format:check": "oxfmt --check .",
+            "lint": "oxlint && eslint .",
+            "lint:fix": "oxlint --fix && eslint . --fix",
+            "postinstall": "nuxt prepare",
+            "preview": "nuxt preview",
+            "test": "vitest run",
+            "test:nuxt": "vitest run --project nuxt",
+            "test:unit": "vitest run --project unit",
+            "test:watch": "vitest",
+            "typecheck": "nuxt typecheck",
+            "typecheck:test": "tsc --noEmit -p test/tsconfig.json",
+            "prepare": "husky"
+          },
+          "dependencies": {
+            "@codemirror/lang-json": "^6.0.2",
+            "@libsql/client": "^0.17.4",
+            "@lucide/vue": "^1.28.0",
+            "@nuxt/fonts": "^0.14.0",
+            "@nuxt/image": "^2.1.0",
+            "@nuxthub/core": "^0.10.8",
+            "@nuxtjs/color-mode": "^4.0.1",
+            "@nuxtjs/device": "^4.0.0",
+            "@nuxtjs/i18n": "^10.6.0",
+            "@nuxtjs/seo": "^5.3.10",
+            "@nuxtjs/tailwindcss": "^7.0.0-beta.1",
+            "@nuxtjs/turnstile": "^1.1.3",
+            "@pinia/nuxt": "^1.0.1",
+            "@sentry/nuxt": "^10.69.0",
+            "@tanstack/vue-table": "^9.0.0",
+            "@tanstack/vue-virtual": "^3.13.35",
+            "@unhead/vue": "^2.1.13",
+            "@vee-validate/nuxt": "^5.0.0-beta.1",
+            "@vueuse/core": "^14.4.0",
+            "@vueuse/nuxt": "^14.4.0",
+            "@vueuse/router": "^14.4.0",
+            "bcryptjs": "^3.0.3",
+            "better-sqlite3": "^12.11.1",
+            "class-variance-authority": "^0.7.1",
+            "clsx": "^2.1.1",
+            "codemirror": "^6.0.2",
+            "drizzle-orm": "^0.45.2",
+            "drizzle-zod": "^0.8.3",
+            "embla-carousel-vue": "^8.6.0",
+            "es-toolkit": "^1.50.0",
+            "jszip": "^3.10.1",
+            "luxon": "^3.7.2",
+            "motion-v": "^2.3.0",
+            "nuxt": "^4.4.5",
+            "nuxt-auth-utils": "^0.5.29",
+            "nuxt-security": "^2.6.0",
+            "otpauth": "^9.5.1",
+            "pinia": "^4.0.2",
+            "reka-ui": "^2.10.1",
+            "tailwind-merge": "^3.6.0",
+            "tailwindcss": "^4.3.2",
+            "vaul-vue": "^0.4.1",
+            "vue": "^3.5.39",
+            "vue-sonner": "^2.0.9",
+            "vue3-simple-icons": "^16.10.0",
+            "zod": "^4.4.3"
+          },
+          "devDependencies": {
+            "@commitlint/cli": "^21.2.1",
+            "@commitlint/config-conventional": "^21.2.0",
+            "@nuxt/eslint-config": "^1.16.0",
+            "@nuxt/test-utils": "^4.1.0",
+            "@stylistic/eslint-plugin": "^5.10.0",
+            "@types/better-sqlite3": "^7.6.13",
+            "@types/luxon": "^3.7.3",
+            "@types/node": "^26.2.0",
+            "@vue/test-utils": "^2.4.11",
+            "drizzle-kit": "^0.31.10",
+            "eslint": "^10.8.0",
+            "eslint-plugin-better-tailwindcss": "^4.7.0",
+            "eslint-plugin-oxlint": "^1.77.0",
+            "happy-dom": "^20.11.1",
+            "husky": "^9.1.7",
+            "jiti": "^2.7.0",
+            "lint-staged": "^17.3.0",
+            "oxfmt": "^0.62.0",
+            "oxlint": "^1.77.0",
+            "shadcn-nuxt": "^2.8.1",
+            "tw-animate-css": "^1.4.0",
+            "vitest": "^4.1.10",
+            "vue-tsc": "^3.3.9",
+            "wrangler": "^4.118.0"
+          }
+        }
+      },
+      "env": [
+        "NUXT_SESSION_PASSWORD",
+        "CSRF_SECRET",
+        "NUXT_PUBLIC_SITE_URL",
+        "NUXT_DEFAULT_ADMIN_PASSWORD",
+        "NUXT_SEED_SECRET",
+        "NUXT_RESEND_API_KEY",
+        "NUXT_RESEND_FROM_EMAIL"
+      ],
+      "notes": [
+        "Set \"name\" and \"routes\" in wrangler.jsonc — they still name the kit's own worker and domain — then configure the D1 and KV bindings.",
+        "Your app's name, short name and description come from shared/constants/manifest.ts.",
+        "nuxt.config.ts carries the kit's Sentry org and project; replace them along with the OAuth and Turnstile credentials."
+      ]
+    },
+    {
+      "id": "content",
+      "title": "Content",
+      "description": "Nuxt Content: documentation site, blog, MDC components, and Studio.",
+      "version": "0.3.0",
+      "requires": ["base"],
+      "paths": [
+        "content.config.ts",
+        "content/**",
+        "app/components/content/**",
+        "app/components/layout/**",
+        "app/layouts/docs.vue",
+        "app/pages/[...slug].vue",
+        "app/pages/blogs.vue",
+        "app/composables/useEditLink.ts",
+        "app/composables/useI18nDocs.ts",
+        "app/composables/usePageData.ts",
+        "app/composables/useScrollspy.ts",
+        "app/modules/content-prerender.ts",
+        "app/modules/navigation-redirects.ts",
+        "app/stores/codeTree.ts",
+        "app/stores/collapsedMap.ts",
+        "server/routes/rss.xml.ts",
+        "types/landing.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@nuxt/content": "^3.15.2",
+            "nuxt-studio": "^1.7.0",
+            "nuxt-content-git": "^7.0.0",
+            "nuxt-component-meta": "^0.18.0",
+            "feed": "^6.0.0",
+            "minisearch": "^7.2.0"
+          },
+          "devDependencies": {
+            "nuxt-content-git": "^7.0.0"
+          }
+        }
+      },
+      "env": ["STUDIO_GITHUB_CLIENT_ID", "STUDIO_GITHUB_CLIENT_SECRET"],
+      "notes": [
+        "Nuxt Studio is configured for this kit\u2019s repository \u2014 point studio.repository at your own."
+      ]
+    },
+    {
+      "id": "pwa",
+      "title": "PWA",
+      "description": "Installable app: service worker, offline fallback, and install prompt.",
+      "version": "0.3.0",
+      "requires": ["base"],
+      "paths": [
+        "pwa-assets.config.ts",
+        "app/service-worker/**",
+        "app/components/InstallPrompter.vue",
+        "app/pages/~offline.vue"
+      ],
+      "structured": {
+        "package.json": {
+          "scripts": {
+            "prepare": "pwa-assets-generator && husky"
+          },
+          "dependencies": {
+            "@vite-pwa/nuxt": "^1.1.1"
+          },
+          "devDependencies": {
+            "@vite-pwa/assets-generator": "^1.0.2"
+          }
+        }
+      },
+      "notes": [
+        "Icons in public/ are generated by pwa-assets-generator \u2014 re-run \"npm run prepare\" after replacing public/favicon.svg."
+      ]
+    },
+    {
+      "id": "admin-users",
+      "title": "Admin users panel",
+      "description": "Admin screens and APIs for listing, editing, locking and deleting users.",
+      "version": "0.3.0",
+      "requires": ["base"],
+      "paths": [
+        "app/components/admin/users/**",
+        "app/pages/admin/users.vue",
+        "server/api/admin/users/**"
+      ],
+      "notes": []
+    },
+    {
+      "id": "feature-flags",
+      "title": "Feature flags",
+      "description": "OpenFeature flags backed by KV, with an admin panel and an edge evaluation endpoint.",
+      "version": "0.3.0",
+      "requires": ["base"],
+      "paths": [
+        "app/components/admin/feature-flags/**",
+        "app/composables/useFeatureFlags.ts",
+        "app/pages/admin/feature-flags.vue",
+        "server/api/admin/feature-flags/**",
+        "server/api/flags/**",
+        "server/plugins/0-openfeature.ts",
+        "server/utils/database/featureFlag.ts",
+        "server/utils/featureFlags.ts",
+        "server/utils/openfeature/**",
+        "shared/constants/flags.ts",
+        "shared/schemas/featureFlagSchema.ts",
+        "types/featureFlags.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@openfeature/server-sdk": "^1.23.0"
+          }
+        }
+      },
+      "notes": [
+        "The feature_flags tables leave the drizzle schema with this module, but the migration that created them stays. Run \"npm run db:generate\" to record the change."
+      ]
+    },
+    {
+      "id": "auth-2fa",
+      "title": "Two-factor authentication",
+      "description": "TOTP second factor at sign-in, with setup, verification and disable endpoints.",
+      "version": "0.3.0",
+      "requires": ["base"],
+      "paths": [
+        "app/components/ui/input-otp/InputOTP.vue",
+        "app/components/ui/input-otp/InputOTPGroup.vue",
+        "app/components/ui/input-otp/InputOTPSeparator.vue",
+        "app/components/ui/input-otp/InputOTPSlot.vue",
+        "app/components/ui/input-otp/index.ts",
+        "server/api/auth/login-2fa.post.ts",
+        "server/api/users/[id]/2fa/disable.delete.ts",
+        "server/api/users/[id]/2fa/setup.post.ts",
+        "server/api/users/[id]/2fa/verify.post.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "vue-input-otp": "^0.3.2"
+          }
+        }
+      },
+      "notes": []
+    },
+    {
+      "id": "auth-passkeys",
+      "title": "Passkeys",
+      "description": "WebAuthn sign-in and passkey registration, listing and removal.",
+      "version": "0.3.0",
+      "requires": ["base"],
+      "paths": [
+        "app/components/PasskeyRegistrationDialog.vue",
+        "server/api/users/[id]/passkeys/index.delete.ts",
+        "server/api/users/[id]/passkeys/index.get.ts",
+        "server/api/webauthn/add-passkey.post.ts",
+        "server/api/webauthn/authenticate.post.ts",
+        "server/api/webauthn/register.post.ts",
+        "types/models/passkey.d.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@simplewebauthn/browser": "^11.0.0",
+            "@simplewebauthn/server": "^11.0.0"
+          }
+        }
+      },
+      "notes": []
+    },
+    {
+      "id": "auth-email-verification",
+      "title": "Email verification",
+      "description": "Verification notice, confirmation link and resend endpoint for new accounts.",
+      "version": "0.3.0",
+      "requires": ["base"],
+      "paths": [
+        "app/pages/auth/verify-email.vue",
+        "server/api/auth/resend-verification.post.ts",
+        "server/api/auth/verify-email.get.ts"
+      ],
+      "structured": {},
+      "notes": []
+    }
+  ]
+}

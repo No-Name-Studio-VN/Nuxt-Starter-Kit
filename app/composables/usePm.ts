@@ -1,11 +1,11 @@
 const packageManagersCode: {
-  name: 'npm' | 'pnpm' | 'bun' | 'yarn'
-  command: string
-  install: string
-  installEmpty: string
-  run: string
-  x: string
-  saveDev: string
+  name: 'npm' | 'pnpm' | 'bun' | 'yarn';
+  command: string;
+  install: string;
+  installEmpty: string;
+  run: string;
+  x: string;
+  saveDev: string;
 }[] = [
   {
     name: 'npm',
@@ -43,16 +43,14 @@ const packageManagersCode: {
     x: 'yarn dlx ',
     saveDev: '-D ',
   },
-]
+];
 
 export function usePm() {
-  const { pm } = useConfig().value.main
+  const { pm } = useConfig().value.main;
 
-  const packageManagers = computed(
-    () => packageManagersCode.filter(x => pm.includes(x.name)),
-  )
+  const packageManagers = computed(() => packageManagersCode.filter((x) => pm.includes(x.name)));
 
   return {
     packageManagers,
-  }
+  };
 }

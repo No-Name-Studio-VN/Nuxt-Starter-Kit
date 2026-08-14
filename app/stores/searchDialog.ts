@@ -1,13 +1,13 @@
 export const useSearchDialogStore = defineStore('searchDialog', () => {
-  const open = ref<boolean>(false)
+  const open = ref<boolean>(false);
 
   function toggle() {
-    open.value = !open.value
+    open.value = !open.value;
   }
 
   function setOpen(value: boolean) {
-    open.value = value
+    open.value = value;
   }
 
-  return { open, toggle, setOpen }
-})
+  return { open, toggle, setOpen };
+});

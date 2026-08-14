@@ -1,8 +1,5 @@
 <template>
-  <div
-    ref="container"
-    :class="props.class"
-  >
+  <div ref="container" :class="props.class">
     <motion.div
       v-for="(child, index) in children"
       :key="index"
@@ -11,7 +8,7 @@
       :while-in-view="getAnimate()"
       :transition="{
         duration: props.duration,
-        easing: 'easeInOut',
+        ease: 'easeInOut',
         delay: props.delay * index,
       }"
     >
@@ -21,42 +18,44 @@
 </template>
 
 <script setup lang="ts">
-import { motion } from 'motion-v'
-import { ref, onMounted, watchEffect, useSlots } from 'vue'
+import { motion } from 'motion-v';
+import { ref, onMounted, watchEffect, useSlots, type VNode } from 'vue';
 
-const props = withDefaults(defineProps<{
-  duration?: number
-  delay?: number
-  blur?: string
-  yOffset?: number
-  class?: string
-}>(), {
-  duration: 1,
-  delay: 2,
-  blur: '20px',
-  yOffset: 20,
-})
+const props = withDefaults(
+  defineProps<{
+    duration?: number;
+    delay?: number;
+    blur?: string;
+    yOffset?: number;
+    class?: string;
+  }>(),
+  {
+    duration: 1,
+    delay: 2,
+    blur: '20px',
+    yOffset: 20,
+  },
+);
 
-const container = ref(null)
-const childElements = ref([])
-const slots = useSlots()
+const container = ref(null);
+const childElements = ref([]);
+const slots = useSlots();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const children = ref<any>([])
+const children = ref<VNode[]>([]);
 
 onMounted(() => {
   // This will reactively capture all content provided in the default slot
   watchEffect(() => {
-    children.value = slots.default ? slots.default() : []
-  })
-})
+    children.value = slots.default ? slots.default() : [];
+  });
+});
 
 function getInitial() {
   return {
     opacity: 0,
     filter: `blur(${props.blur})`,
     y: props.yOffset,
-  }
+  };
 }
 
 function getAnimate() {
@@ -64,6 +63,6 @@ function getAnimate() {
     opacity: 1,
     filter: `blur(0px)`,
     y: 0,
-  }
+  };
 }
 </script>

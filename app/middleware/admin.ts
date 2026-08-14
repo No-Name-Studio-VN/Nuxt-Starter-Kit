@@ -1,5 +1,5 @@
 export default defineNuxtRouteMiddleware((to) => {
-  const { user } = useUserSession()
+  const { user } = useUserSession();
 
   if (!user.value) {
     return navigateTo({
@@ -7,13 +7,13 @@ export default defineNuxtRouteMiddleware((to) => {
       query: {
         redirectTo: to.fullPath,
       },
-    })
+    });
   }
 
   if (!user.value.isAdmin) {
     return createError({
       statusCode: 403,
       statusMessage: 'Forbidden',
-    })
+    });
   }
-})
+});

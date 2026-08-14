@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { motion } from 'motion-v'
-import { ArrowLeft } from '@lucide/vue'
-import { Button } from '@/components/ui/button'
+import { motion } from 'motion-v';
+import { ArrowLeft } from '@lucide/vue';
 
-const error = useError()
+const error = useError();
 
 const handleError = () => {
   clearError({
     redirect: '/',
-  })
-}
+  });
+};
 </script>
 
 <template>
@@ -26,7 +25,9 @@ const handleError = () => {
         ease: 'easeInOut',
       }"
     >
-      <MaxWidthWrapper class="h-screen relative flex flex-col items-center justify-center gap-4 px-4">
+      <MaxWidthWrapper
+        class="h-screen relative flex flex-col items-center justify-center gap-4 px-4"
+      >
         <h1
           v-if="error"
           class="text-8xl font-bold tracking-tighter text-foreground/10 md:text-[180px] lg:text-[250px] leading-none text-center"
@@ -43,10 +44,8 @@ const handleError = () => {
           Whoops, you've ventured off the map. The page you're looking for doesn't exist.
         </p>
         <div class="mt-4 flex items-center justify-center gap-4">
-          <Button
-            @click="handleError"
-          >
-            <ArrowLeft class="h-4 w-4" />
+          <Button @click="handleError">
+            <ArrowLeft class="size-4" />
             Go Back Home
           </Button>
         </div>

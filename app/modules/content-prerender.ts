@@ -7,41 +7,38 @@
  * where SSR is too expensive.
  */
 
-import { defineNuxtModule } from '@nuxt/kit'
-import { readdirSync, statSync, existsSync } from 'fs'
-import { join } from 'path'
+import { defineNuxtModule } from '@nuxt/kit';
+import { readdirSync, statSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * Recursively find all .md files in a directory
  */
 function findMarkdownFiles(dir: string, files: string[] = []): string[] {
-  if (!existsSync(dir)) return files
+  if (!existsSync(dir)) return files;
 
   try {
-    const entries = readdirSync(dir)
+    const entries = readdirSync(dir);
 
     for (const entry of entries) {
-      const fullPath = join(dir, entry)
+      const fullPath = join(dir, entry);
       try {
-        const stat = statSync(fullPath)
+        const stat = statSync(fullPath);
 
         if (stat.isDirectory()) {
-          findMarkdownFiles(fullPath, files)
+          findMarkdownFiles(fullPath, files);
+        } else if (entry.endsWith('.md')) {
+          files.push(fullPath);
         }
-        else if (entry.endsWith('.md')) {
-          files.push(fullPath)
-        }
-      }
-      catch {
+      } catch {
         // Skip files we can't access
       }
     }
-  }
-  catch {
+  } catch {
     // Skip directories we can't access
   }
 
-  return files
+  return files;
 }
 
 /**
@@ -50,26 +47,24 @@ function findMarkdownFiles(dir: string, files: string[] = []): string[] {
  *   -> /products/nuxt-starter-kit/getting-started/introduction
  */
 function contentFileToUrlPath(filePath: string, contentDir: string): string {
-  let relativePath = filePath
-    .replace(contentDir, '')
-    .replace(/\\/g, '/')
+  let relativePath = filePath.replace(contentDir, '').replace(/\\/g, '/');
 
   // Remove .md extension
-  relativePath = relativePath.replace(/\.md$/, '')
+  relativePath = relativePath.replace(/\.md$/, '');
 
   // Split into segments and clean each one
-  const segments = relativePath.split('/').filter(Boolean)
+  const segments = relativePath.split('/').filter(Boolean);
   const cleanSegments = segments.map((segment) => {
     // Remove numeric prefix (e.g., "1.products" -> "products")
-    return segment.replace(/^\d+\./, '')
-  })
+    return segment.replace(/^\d+\./, '');
+  });
 
   // Handle index files — remove "index" from the path
   if (cleanSegments.length > 0 && cleanSegments[cleanSegments.length - 1] === 'index') {
-    cleanSegments.pop()
+    cleanSegments.pop();
   }
 
-  return '/' + cleanSegments.join('/')
+  return '/' + cleanSegments.join('/');
 }
 
 export default defineNuxtModule({
@@ -83,33 +78,35 @@ export default defineNuxtModule({
   },
 
   setup(options, nuxt) {
-    if (!options.enabled) return
+    if (!options.enabled) return;
 
-    const contentDir = join(nuxt.options.rootDir, 'content')
+    const contentDir = join(nuxt.options.rootDir, 'content');
 
     // Add content routes to prerender list
     nuxt.hook('nitro:config', (nitroConfig) => {
-      const markdownFiles = findMarkdownFiles(contentDir)
-      const routes: string[] = []
+      const markdownFiles = findMarkdownFiles(contentDir);
+      const routes: string[] = [];
 
       for (const file of markdownFiles) {
-        const urlPath = contentFileToUrlPath(file, contentDir)
+        const urlPath = contentFileToUrlPath(file, contentDir);
 
         // Skip empty paths
-        if (!urlPath || urlPath === '/') continue
+        if (!urlPath || urlPath === '/') continue;
 
-        routes.push(urlPath)
+        routes.push(urlPath);
       }
 
       // Merge with existing prerender routes
-      nitroConfig.prerender = nitroConfig.prerender || {}
-      nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
-      nitroConfig.prerender.routes.push(...routes)
+      nitroConfig.prerender = nitroConfig.prerender || {};
+      nitroConfig.prerender.routes = nitroConfig.prerender.routes || [];
+      nitroConfig.prerender.routes.push(...routes);
 
-      console.log(`[content-prerender] Registered ${routes.length} content routes for prerendering`)
+      console.log(
+        `[content-prerender] Registered ${routes.length} content routes for prerendering`,
+      );
       for (const route of routes) {
-        console.log(`[content-prerender]   ${route}`)
+        console.log(`[content-prerender]   ${route}`);
       }
-    })
+    });
   },
-})
+});

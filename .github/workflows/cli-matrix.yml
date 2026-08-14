@@ -1,0 +1,123 @@
+name: CLI matrix
+
+# Generates a project for each module combination the registry supports and
+# typechecks it. This is the only guard against undeclared coupling: a base file
+# importing a module's symbol compiles fine in the kit, where every module is
+# present, and fails here.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/create-nuxt-saas/**'
+      - '.github/workflows/cli-matrix.yml'
+      - 'package.json'
+      - 'nuxt.config.ts'
+      - 'app/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'types/**'
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: cli-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: CLI unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        # The coverage checks read the kit with `git ls-files`, so they need the
+        # tree rather than an export.
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: 'npm'
+          cache-dependency-path: packages/create-nuxt-saas/package-lock.json
+
+      - name: Install CLI dependencies
+        working-directory: packages/create-nuxt-saas
+        run: npm ci
+
+      - name: Test
+        working-directory: packages/create-nuxt-saas
+        run: npm test
+
+      - name: Typecheck
+        working-directory: packages/create-nuxt-saas
+        run: npm run typecheck
+
+  generate:
+    name: ${{ matrix.name }}
+    needs: unit
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: base
+            modules: base
+          - name: base + pwa
+            modules: pwa
+          - name: base + content
+            modules: content
+          - name: base + admin users
+            modules: admin-users
+          - name: base + feature flags
+            modules: feature-flags
+          - name: base + 2fa
+            modules: auth-2fa
+          - name: base + passkeys
+            modules: auth-passkeys
+          - name: base + email verification
+            modules: auth-email-verification
+          - name: all modules
+            modules: content,pwa,admin-users,feature-flags,auth-2fa,auth-passkeys,auth-email-verification
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+
+      - name: Install CLI dependencies
+        working-directory: packages/create-nuxt-saas
+        run: npm ci
+
+      - name: Build the CLI
+        working-directory: packages/create-nuxt-saas
+        run: npm run build
+
+      - name: Generate the project
+        run: |
+          node packages/create-nuxt-saas/bin/nuxt-saas.mjs init \
+            "$RUNNER_TEMP/generated" \
+            --yes \
+            --kit . \
+            --modules '${{ matrix.modules }}'
+
+      # husky's install step expects a repository, and npm runs it during install.
+      - name: Initialise a repository
+        working-directory: ${{ runner.temp }}/generated
+        run: git init --quiet
+
+      - name: Install the generated project
+        working-directory: ${{ runner.temp }}/generated
+        run: |
+          cp .env.example .env
+          npm install --no-audit --no-fund
+
+      - name: Typecheck the generated project
+        working-directory: ${{ runner.temp }}/generated
+        run: npm run typecheck

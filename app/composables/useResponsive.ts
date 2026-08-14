@@ -1,3 +1,3 @@
-import { useMediaQuery } from '@vueuse/core'
+import { useMediaQuery } from '@vueuse/core';
 
-export const isMobile = useMediaQuery('(max-width: 768px)')
+export const isMobile = useMediaQuery('(max-width: 768px)');

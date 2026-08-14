@@ -1,13 +1,26 @@
-import type { SidebarContext, SidebarGuardUser, SidebarItem } from '~~/types/common'
+import type {
+  SidebarContext,
+  SidebarGuardContext,
+  SidebarGuardUser,
+  SidebarItem,
+} from '~~/types/common';
 import {
+  // <nsk:feature-flags>
   FlagIcon,
+  // </nsk:feature-flags>
   Home,
+  Info,
   LayoutDashboardIcon,
+  Search,
+  Settings,
   Shield,
+  TicketIcon,
+  User,
   UserCog2Icon,
-  UserIcon,
+  // <nsk:admin-users>
   UsersIcon,
-} from '@lucide/vue'
+  // </nsk:admin-users>
+} from '@lucide/vue';
 
 export const SIDEBAR_CONTEXTS: SidebarContext[] = [
   {
@@ -19,9 +32,13 @@ export const SIDEBAR_CONTEXTS: SidebarContext[] = [
       {
         title: 'Account',
         items: [
-          { title: 'Profile', url: '/settings/profile', icon: UserIcon },
+          { title: 'Profile', url: '/settings/profile', icon: User },
           { title: 'Security', url: '/settings/security', icon: Shield },
         ],
+      },
+      {
+        title: 'About',
+        items: [{ title: 'About Nuxt Starter Kit', url: '/settings/about', icon: Info }],
       },
     ],
   },
@@ -30,24 +47,28 @@ export const SIDEBAR_CONTEXTS: SidebarContext[] = [
     match: '/admin',
     variant: 'inset',
     showBack: true,
-    guard: (user: SidebarGuardUser) => user?.isAdmin === true,
+    guard: (user) => user?.isAdmin === true,
     sections: [
       {
         title: 'Overview',
-        items: [
-          { title: 'Dashboard', url: '/admin', icon: LayoutDashboardIcon },
-        ],
+        items: [{ title: 'Dashboard', url: '/admin', icon: LayoutDashboardIcon }],
       },
       {
-        title: 'Users',
+        title: 'Users & Sales',
         items: [
+          // <nsk:admin-users>
           { title: 'Users', url: '/admin/users', icon: UsersIcon },
+          // </nsk:admin-users>
+          { title: 'Coupons', url: '/admin/coupons', icon: TicketIcon },
+          { title: 'Subscriptions', url: '/admin/subscriptions', icon: TicketIcon },
         ],
       },
       {
         title: 'System',
         items: [
+          // <nsk:feature-flags>
           { title: 'Feature Flags', url: '/admin/feature-flags', icon: FlagIcon },
+          // </nsk:feature-flags>
         ],
       },
     ],
@@ -60,28 +81,42 @@ export const SIDEBAR_CONTEXTS: SidebarContext[] = [
         title: 'Discover',
         items: [
           { title: 'Home', url: '/', icon: Home },
+          { title: 'Search', url: '/search', icon: Search },
         ],
       },
       {
+        title: 'App',
+        items: [{ title: 'Settings', url: '/settings/profile', icon: Settings }],
+      },
+      {
         title: 'Admin',
-        guard: (user: SidebarGuardUser) => user?.isAdmin === true,
-        items: [
-          { title: 'Admin Dashboard', url: '/admin', icon: LayoutDashboardIcon },
-        ],
+        guard: (user) => user?.isAdmin === true,
+        items: [{ title: 'Admin Dashboard', url: '/admin', icon: LayoutDashboardIcon }],
       },
       {
         title: 'Support',
         secondary: true,
-        items: [
-          { title: 'Help & Support', url: '/support', icon: UserCog2Icon },
-        ],
+        items: [{ title: 'Help & Support', url: '/support', icon: UserCog2Icon }],
       },
     ],
   },
-]
+];
 
-export function getAllSidebarItems(): SidebarItem[] {
-  return SIDEBAR_CONTEXTS.flatMap(ctx =>
-    ctx.sections.flatMap(section => section.items),
-  )
+export function getAllSidebarItems(
+  user?: SidebarGuardUser,
+  context?: SidebarGuardContext,
+): SidebarItem[] {
+  return SIDEBAR_CONTEXTS.flatMap((ctx) => {
+    if (context && ctx.guard && !ctx.guard(user, context)) {
+      return [];
+    }
+
+    return ctx.sections.flatMap((section) => {
+      if (context && section.guard && !section.guard(user, context)) {
+        return [];
+      }
+
+      return section.items;
+    });
+  });
 }

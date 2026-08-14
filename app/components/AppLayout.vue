@@ -1,134 +1,130 @@
 <script setup lang="ts">
-import type { VueElement } from 'vue'
+import type { VueElement } from 'vue';
+import { cn } from '@/lib/utils';
+import MaxWidthWrapper from './MaxWidthWrapper.vue';
+import { ChevronLeft, HomeIcon, LogInIcon } from '@lucide/vue';
+import type { BreadcrumbItemType } from '~~/types/common';
 
-import {
-  Breadcrumb,
-  BreadcrumbEllipsis,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Separator } from '@/components/ui/separator'
-import { SidebarTrigger } from '@/components/ui/sidebar'
-import { cn } from '@/lib/utils'
+const router = useRouter();
+const route = useRoute();
+const { t } = useI18n();
+const pageBreadcrumbs = useCurrentPageBreadcrumbs();
 
-import MaxWidthWrapper from './MaxWidthWrapper.vue'
-import { ChevronLeft, HomeIcon, LogInIcon, MessageSquare } from '@lucide/vue'
-import type { BreadcrumbItemType } from '~~/types/common'
+function resolveTitle(title: string) {
+  return title.includes('.') ? t(title) : title;
+}
 
-const router = useRouter()
-const route = useRoute()
+// get fullWidth from page meta, default to true
+const fullWidth = computed(() => {
+  if (typeof route.meta.fullWidth === 'boolean') {
+    return route.meta.fullWidth;
+  }
+  return true;
+});
 
-const routeTransitionKey = computed(() => route.fullPath || route.path)
+function getRouteTitle(meta: Record<string, unknown> | undefined) {
+  if (!meta) return null;
+  if (typeof meta.breadcrumb === 'string' && meta.breadcrumb.length > 0)
+    return resolveTitle(meta.breadcrumb);
+  if (typeof meta.title === 'string' && meta.title.length > 0) return resolveTitle(meta.title);
 
-function getRouteTitle(meta: { breadcrumb?: unknown, title?: unknown } | undefined) {
-  if (!meta) return null
-  if (typeof meta.breadcrumb === 'string' && meta.breadcrumb.length > 0) return meta.breadcrumb
-  if (typeof meta.title === 'string' && meta.title.length > 0) return meta.title
-
-  return null
+  return null;
 }
 
 const breadcrumbs = computed<BreadcrumbItemType[]>(() => {
-  const path = route.path
-  const crumbs: BreadcrumbItemType[] = [{ title: 'Home', href: '/' }]
+  const pageBreadcrumbOverride = pageBreadcrumbs.value;
+  if (
+    pageBreadcrumbOverride &&
+    pageBreadcrumbOverride.path === route.path &&
+    pageBreadcrumbOverride.items.length > 0
+  ) {
+    return pageBreadcrumbOverride.items;
+  }
 
-  if (path === '/') return crumbs
+  const path = route.path;
+  const crumbs: BreadcrumbItemType[] = [{ title: t('common.home'), href: '/' }];
 
-  const segments = path.split('/').filter(Boolean)
-  let currentPath = ''
+  if (path === '/') return crumbs;
+
+  const segments = path.split('/').filter(Boolean);
+  let currentPath = '';
 
   segments.forEach((segment, index) => {
-    currentPath += `/${segment}`
+    currentPath += `/${segment}`;
 
     // Try to find a matching route record to get meta
-    const match = router.resolve(currentPath)
+    const match = router.resolve(currentPath);
 
-    let title = segment
-    const matchedRouteTitle = getRouteTitle(match?.meta)
+    let title = segment;
+    const matchedRouteTitle = getRouteTitle(match?.meta);
     if (matchedRouteTitle) {
-      title = matchedRouteTitle
-    }
-    else {
+      title = matchedRouteTitle;
+    } else {
       // Capitalize
-      title = segment.charAt(0).toUpperCase() + segment.slice(1)
+      title = segment.charAt(0).toUpperCase() + segment.slice(1);
     }
 
     // If it's the last segment, it matches the current route
     // We can check if the current route has specific meta that overrides the segment name
     if (index === segments.length - 1) {
-      const currentRouteTitle = getRouteTitle(route.meta)
+      const currentRouteTitle = getRouteTitle(route.meta);
       if (currentRouteTitle) {
-        title = currentRouteTitle
+        title = currentRouteTitle;
       }
     }
 
     crumbs.push({
       title,
       href: currentPath,
-    })
-  })
+    });
+  });
 
-  return crumbs
-})
+  return crumbs;
+});
 
-const currentBreadcrumb = computed(() => breadcrumbs.value[breadcrumbs.value.length - 1] ?? null)
+const currentBreadcrumb = computed(() => breadcrumbs.value[breadcrumbs.value.length - 1] ?? null);
 
 const parentBreadcrumb = computed(() => {
-  if (breadcrumbs.value.length < 2) return null
+  if (breadcrumbs.value.length < 2) return null;
 
-  return breadcrumbs.value[breadcrumbs.value.length - 2]
-})
+  return breadcrumbs.value[breadcrumbs.value.length - 2];
+});
 
 const mobileOverflowBreadcrumbs = computed(() => {
-  if (breadcrumbs.value.length <= 2) return []
+  if (breadcrumbs.value.length <= 2) return [];
 
-  return breadcrumbs.value.slice(0, -1)
-})
+  return breadcrumbs.value.slice(0, -1);
+});
 
-withDefaults(defineProps<{
-  titleControls?: VueElement
-  className?: string
-  hideSidebarTrigger?: boolean
-}>(), {
-  hideSidebarTrigger: false,
-})
+withDefaults(
+  defineProps<{
+    titleControls?: VueElement;
+    className?: string;
+    hideSidebarTrigger?: boolean;
+    hideHeader?: boolean;
+  }>(),
+  {
+    hideSidebarTrigger: false,
+    hideHeader: false,
+  },
+);
 
-const { loggedIn, user } = useUserSession()
+const { loggedIn, user } = useUserSession();
 </script>
 
 <template>
   <div>
     <header
+      v-if="!hideHeader"
       class="sticky top-0 z-10 bg-muted/10 backdrop-blur-md border-b border-b-muted/10 md:rounded-t-xl flex h-[calc(var(--header-height,3.5rem)+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-[calc(var(--header-height,3.5rem)+env(safe-area-inset-top,0px))]"
     >
       <div class="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-        <SidebarTrigger
-          v-if="!hideSidebarTrigger"
-          class="-ml-1"
-        />
-        <Button
-          v-else
-          variant="ghost"
-          size="icon"
-          class="h-7 w-7 -ml-1"
-          @click="navigateTo('/')"
-        >
+        <SidebarTrigger v-if="!hideSidebarTrigger" class="-ml-1" />
+        <Button v-else variant="ghost" size="icon" class="size-7 -ml-1" @click="navigateTo('/')">
           <HomeIcon />
-          <span class="sr-only">Toggle Sidebar</span>
+          <span class="sr-only">{{ $t('common.toggle_sidebar') }}</span>
         </Button>
-        <Separator
-          orientation="vertical"
-          class="mr-2 data-[orientation=vertical]:h-4"
-        />
+        <Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
         <Breadcrumb>
           <BreadcrumbList class="flex-nowrap">
             <BreadcrumbItem
@@ -139,14 +135,9 @@ const { loggedIn, user } = useUserSession()
                 {{ breadcrumbs[0].title }}
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator
-              v-if="breadcrumbs.length > 1"
-              class="hidden md:block"
-            />
+            <BreadcrumbSeparator v-if="breadcrumbs.length > 1" class="hidden md:block" />
             <template v-if="parentBreadcrumb">
-              <BreadcrumbItem
-                class="md:hidden"
-              >
+              <BreadcrumbItem class="md:hidden">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -157,29 +148,19 @@ const { loggedIn, user } = useUserSession()
                   <span class="text-xs font-medium">Back</span>
                 </Button>
               </BreadcrumbItem>
-              <BreadcrumbSeparator
-                class="md:hidden"
-              />
+              <BreadcrumbSeparator class="md:hidden" />
             </template>
 
             <template v-if="mobileOverflowBreadcrumbs.length > 0">
               <BreadcrumbItem class="md:hidden">
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="size-8"
-                    >
+                    <Button variant="ghost" size="icon" class="size-8">
                       <BreadcrumbEllipsis class="size-4" />
-                      <span class="sr-only">Open breadcrumb path</span>
+                      <span class="sr-only">{{ $t('nav.open_breadcrumb') }}</span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    side="bottom"
-                    :side-offset="8"
-                  >
+                  <DropdownMenuContent align="start" side="bottom" :side-offset="8">
                     <DropdownMenuItem
                       v-for="crumb in mobileOverflowBreadcrumbs"
                       :key="`mobile-breadcrumb-${crumb.href}`"
@@ -193,10 +174,7 @@ const { loggedIn, user } = useUserSession()
               </BreadcrumbItem>
               <BreadcrumbSeparator class="md:hidden" />
             </template>
-            <template
-              v-for="crumb in breadcrumbs.slice(1, -1)"
-              :key="crumb.href"
-            >
+            <template v-for="crumb in breadcrumbs.slice(1, -1)" :key="crumb.href">
               <BreadcrumbItem class="hidden md:inline-flex">
                 <BreadcrumbLink :href="crumb.href">
                   {{ crumb.title }}
@@ -204,18 +182,12 @@ const { loggedIn, user } = useUserSession()
               </BreadcrumbItem>
               <BreadcrumbSeparator class="hidden md:block" />
             </template>
-            <BreadcrumbItem
-              v-if="currentBreadcrumb"
-              class="hidden md:inline-flex"
-            >
+            <BreadcrumbItem v-if="currentBreadcrumb" class="hidden md:inline-flex">
               <BreadcrumbPage>
                 {{ currentBreadcrumb.title }}
               </BreadcrumbPage>
             </BreadcrumbItem>
-            <BreadcrumbItem
-              v-if="currentBreadcrumb"
-              class="md:hidden"
-            >
+            <BreadcrumbItem v-if="currentBreadcrumb" class="md:hidden">
               <BreadcrumbPage class="max-w-28 truncate">
                 {{ currentBreadcrumb.title }}
               </BreadcrumbPage>
@@ -230,36 +202,29 @@ const { loggedIn, user } = useUserSession()
             @click="navigateTo('/auth/login')"
           >
             <LogInIcon />
-            <span
-              class="hidden sm:flex"
-            >Sign In</span>
+            <span class="hidden sm:flex">Sign In</span>
           </Button>
-          <component
-            :is="titleControls"
-            v-if="titleControls"
-          />
+          <component :is="titleControls" v-if="titleControls" />
+          <slot name="title-controls" />
         </div>
       </div>
     </header>
     <div class="flex flex-1 flex-col">
-      <div class="@container/main flex flex-1 flex-col gap-2 min-h-dvh pb-[env(safe-area-inset-bottom,0px)]">
+      <div
+        class="@container/main flex flex-1 flex-col gap-2 min-h-dvh pb-[env(safe-area-inset-bottom,0px)]"
+      >
         <MaxWidthWrapper
-          :class="cn(
-            'flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6',
-            className,
-          )"
+          :class="
+            cn(
+              'flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6',
+              className,
+              !fullWidth && 'max-w-screen-2xl',
+            )
+          "
         >
-          <Transition
-            name="page"
-            mode="out-in"
-          >
-            <div
-              :key="routeTransitionKey"
-              class="flex flex-1 flex-col min-h-full"
-            >
-              <slot />
-            </div>
-          </Transition>
+          <div class="flex flex-1 flex-col min-h-full">
+            <slot />
+          </div>
         </MaxWidthWrapper>
       </div>
     </div>

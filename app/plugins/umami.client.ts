@@ -1,13 +1,11 @@
 export default defineNuxtPlugin(() => {
-  const { enable, dataWebsiteId, src } = useConfig().value.site.umami
+  const { dataWebsiteId, src } = useRuntimeConfig().public.umami;
 
-  if (enable && !import.meta.dev) {
+  if (!import.meta.dev) {
+    const scriptInput = { src, defer: true };
     useScriptUmamiAnalytics({
-      scriptInput: {
-        src,
-        defer: true,
-      },
+      scriptInput,
       websiteId: dataWebsiteId,
-    })
+    });
   }
-})
+});

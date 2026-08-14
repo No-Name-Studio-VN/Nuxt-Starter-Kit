@@ -12,26 +12,19 @@
           v-for="link in navigation"
           :key="link.path"
           :value="link.path"
-          class="text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:text-foreground relative h-9 rounded-none border-b-2 border-b-transparent !bg-transparent px-4 pb-3 pt-2 font-semibold shadow-none transition-none data-[state=active]:shadow-none cursor-pointer"
+          class="text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:text-foreground relative h-9 rounded-none border-b-2 border-b-transparent bg-transparent! px-4 pb-3 pt-2 font-semibold shadow-none transition-none data-[state=active]:shadow-none cursor-pointer"
           @click="navigateTo(link.redirect ?? link.path)"
         >
           <CtIcon
             v-if="!isEmpty(link.icon)"
             :name="link.icon as string"
-            class="mr-1.5 self-center -mb-[3px]"
+            class="mr-1.5 self-center -mb-0.75"
           />
 
           {{ link.title }}
 
-          <span
-            v-for="(badge, i) in link.navBadges"
-            :key="i"
-          >
-            <Badge
-              :variant="badge.variant"
-              :type="badge.type"
-              :size="badge.size ?? 'sm'"
-            >
+          <span v-for="(badge, i) in navigationBadges(link)" :key="i">
+            <Badge :variant="badge.variant" :type="badge.type" :size="badge.size ?? 'sm'">
               {{ badge.value }}
             </Badge>
           </span>
@@ -42,21 +35,21 @@
 </template>
 
 <script setup lang="ts">
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import CtIcon from '@/components/content/CtIcon.vue'
-import { isEmpty } from 'es-toolkit/compat'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CtIcon from '@/components/content/CtIcon.vue';
+import { isEmpty } from 'es-toolkit/compat';
 
-const { navigation } = useI18nDocs()
-const config = useConfig()
+const { navigation } = useI18nDocs();
+const config = useConfig();
 
-const route = useRoute()
-const path = computed(() => route.path)
+const route = useRoute();
+const path = computed(() => route.path);
 
 const justifyContent = computed(() => {
   return config.value.aside.headerLevelNavAlign === 'start'
     ? 'md:justify-start'
     : config.value.aside.headerLevelNavAlign === 'center'
       ? 'md:justify-center'
-      : 'md:justify-end'
-})
+      : 'md:justify-end';
+});
 </script>

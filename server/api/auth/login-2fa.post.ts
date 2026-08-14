@@ -1,13 +1,13 @@
-import { MAX_TOTP_ATTEMPTS, TOTP_ATTEMPT_RESET_MS } from '#shared/constants/totp'
-import { loginTwoFactorSchema } from '#shared/schemas/userSecuritySchema'
-import type { LoginTwoFactorValidationPayload } from '~~/types/userSecurity'
-import { apiError, success, zodErrorToFieldErrors } from '~~/server/utils/apiResponse'
-import userService from '~~/server/utils/database/user'
-import userTwoFactorService from '~~/server/utils/database/userTwoFactor'
-import { verifyTotpCode } from '~~/server/utils/totp'
+import * as OTPAuth from 'otpauth';
+import { apiError, success, zodErrorToFieldErrors } from '~~/server/utils/apiResponse';
+import userLockScreenService from '~~/server/utils/database/userLockScreen';
+import userService from '~~/server/utils/database/user';
+import { MAX_TOTP_ATTEMPTS } from '#shared/constants/totp';
+import type { LockScreenValidationPayload } from '~~/types/userSecurity';
+import { loginTwoFactorSchema } from '#shared/schemas/userSecuritySchema';
 
 export default defineEventHandler(async (event) => {
-  const result = await readValidatedBody(event, body => loginTwoFactorSchema.safeParse(body))
+  const result = await readValidatedBody(event, (body) => loginTwoFactorSchema.safeParse(body));
   if (!result.success) {
     throw apiError({
       status: 400,
@@ -15,109 +15,125 @@ export default defineEventHandler(async (event) => {
       message: 'Bad Request. Invalid code format.',
       code: 'VALIDATION_ERROR',
       fieldErrors: zodErrorToFieldErrors(result.error),
-    })
+    });
   }
 
-  const session = await getUserSession(event)
-  const userId = session.secure?.pending2faUserId
+  // Get temporary login session
+  const session = await getUserSession(event);
+  if (!session.secure?.pending2faUserId) {
+    throw apiError({
+      status: 401,
+      statusText: 'Unauthorized',
+      message: 'Session expired or invalid. Please log in again.',
+      code: 'SESSION_INVALID',
+    });
+  }
+
+  const userId = session.secure.pending2faUserId;
   if (typeof userId !== 'number') {
     throw apiError({
       status: 401,
       statusText: 'Unauthorized',
       message: 'Session expired or invalid. Please log in again.',
       code: 'SESSION_INVALID',
-    })
+    });
   }
+  const { code } = result.data;
 
-  const twoFactor = await userTwoFactorService.getByUserId(userId)
-  if (!twoFactor || !twoFactor.totpEnabled || !twoFactor.totpSecret) {
+  const lockScreen = await userLockScreenService.getById(userId);
+  if (!lockScreen || !lockScreen.totpEnabled || !lockScreen.totpSecret) {
     throw apiError({
       status: 400,
       statusText: 'Bad Request',
       message: '2FA is not enabled for this account.',
       code: 'TWO_FACTOR_NOT_ENABLED',
-    })
+    });
   }
 
-  const lastFailedAttempt = twoFactor.lastFailedAttempt
-  const attemptsAreFresh = !!lastFailedAttempt && Date.now() - lastFailedAttempt.getTime() < TOTP_ATTEMPT_RESET_MS
-  const failedAttempts = attemptsAreFresh ? twoFactor.failedAttempts : 0
-
-  if (failedAttempts >= MAX_TOTP_ATTEMPTS) {
+  if (lockScreen.failedAttempts >= MAX_TOTP_ATTEMPTS) {
     throw apiError({
       status: 429,
       statusText: 'Too Many Requests',
       message: 'Too Many Requests. Maximum authenticator code verification attempts exceeded.',
       code: 'TOTP_ATTEMPT_LIMIT_EXCEEDED',
-    })
+    });
   }
 
-  const { code } = result.data
-  let isCorrect = await verifyTotpCode(twoFactor.totpSecret, code)
-  let backupCodes = twoFactor.backupCodes ?? []
+  const totp = new OTPAuth.TOTP({
+    issuer: 'Gromet Reader',
+    algorithm: 'SHA1',
+    digits: 6,
+    period: 30,
+    secret: OTPAuth.Secret.fromBase32(lockScreen.totpSecret),
+  });
 
-  if (!isCorrect && backupCodes.length > 0) {
-    const backupIndex = await findMatchingBackupCodeIndex(backupCodes, code)
+  const delta = totp.validate({ token: code, window: 1 });
+  let isCorrect = delta !== null;
+  const now = new Date();
+
+  // Also check if it's a backup code if regular TOTP fails
+  if (!isCorrect && lockScreen.backupCodes && lockScreen.backupCodes.length > 0) {
+    const backupIndex = lockScreen.backupCodes.indexOf(code);
     if (backupIndex !== -1) {
-      isCorrect = true
-      backupCodes = backupCodes.filter((_, index) => index !== backupIndex)
-      await userTwoFactorService.update({ userId, backupCodes })
+      isCorrect = true;
+      // Remove the used backup code
+      const newBackupCodes = [...lockScreen.backupCodes];
+      newBackupCodes.splice(backupIndex, 1);
+      await userLockScreenService.update({
+        userId,
+        backupCodes: newBackupCodes,
+      });
     }
   }
 
   if (!isCorrect) {
-    const nextFailedAttempts = failedAttempts + 1
-    await userTwoFactorService.update({
+    // Increment failed attempts
+    const newFailedAttempts = lockScreen.failedAttempts + 1;
+    await userLockScreenService.update({
       userId,
-      failedAttempts: nextFailedAttempts,
-      lastFailedAttempt: new Date(),
-    })
+      failedAttempts: newFailedAttempts,
+      lastFailedAttempt: now,
+      lastActivityTime: now,
+    });
 
     throw apiError({
       status: 401,
       statusText: 'Unauthorized',
       message: 'Unauthorized. The 2FA code you entered is incorrect.',
       code: 'INVALID_TWO_FACTOR_CODE',
-      details: { valid: false, remainingAttempts: MAX_TOTP_ATTEMPTS - nextFailedAttempts },
-    })
+      details: { valid: false, remainingAttempts: MAX_TOTP_ATTEMPTS - newFailedAttempts },
+    });
   }
 
-  await userTwoFactorService.update({
+  // Code is correct! We log them in securely.
+  // Reset failed attempts
+  await userLockScreenService.update({
     userId,
     failedAttempts: 0,
-    lastFailedAttempt: null,
-  })
+    lastActivityTime: now,
+  });
 
-  const user = await userService.getById(userId)
+  // Set the actual user session
+  const user = await userService.getById(userId);
   if (!user) {
     throw apiError({
       status: 404,
       statusText: 'Not Found',
       message: 'User not found.',
       code: 'USER_NOT_FOUND',
-    })
+    });
   }
 
-  await userService.update({ id: user.id, lastLoginAt: new Date() })
   await setUserSession(event, {
     user: {
       id: user.id,
       username: user.username,
       name: user.name,
       isAdmin: user.isAdmin,
+      skipLockOnInit: true, // Bypass lock screen post-login
     },
-    secure: {},
-  })
+  });
 
-  const response: LoginTwoFactorValidationPayload = { valid: true }
-  return success(response)
-})
-
-async function findMatchingBackupCodeIndex(backupCodes: string[], code: string): Promise<number> {
-  for (const [index, backupCodeHash] of backupCodes.entries()) {
-    const isMatch = await verifyPassword(backupCodeHash, code.toUpperCase())
-    if (isMatch) return index
-  }
-
-  return -1
-}
+  const response: LockScreenValidationPayload = { valid: true };
+  return success(response);
+});

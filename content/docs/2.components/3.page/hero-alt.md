@@ -13,20 +13,18 @@ toc: false
 ## Usage
 
 ::ct-stack
-  ::div{class="p-4"}
-    ::ct-hero-alt
-    ---
-    announcement:
-      title: 'Introducing Charts'
-      icon: 'lucide:pie-chart'
-      to: /getting-started
-    actions:
-      - name: Get Started
-        to: /getting-started
-      - name: GitHub
-        variant: ghost
-        to: https://github.com/No-Name-Studio-VN/Homepage
-    ---
+::div{class="p-4"}
+::ct-hero-alt
+\---
+announcement:
+title: 'Introducing Charts'
+icon: 'lucide:pie-chart'
+to: /getting-started
+actions: - name: Get Started
+to: /getting-started - name: GitHub
+variant: ghost
+to: https://github.com/No-Name-Studio-VN/Homepage
+\---
 
     #title
     Build your component library
@@ -34,7 +32,9 @@ toc: false
     #description
     Beautifully designed components that you can copy and paste into your apps.
     ::
-  ::
+
+::
+
 ```mdc
 ::ct-hero-alt
 ---
@@ -58,26 +58,25 @@ Build your component library
 Beautifully designed components that you can copy and paste into your apps.
 ::
 ```
+
 ::
 
 ### Right
 
 ::ct-stack
-  ::div{class="p-4"}
-    ::ct-hero-alt
-    ---
-    announcement:
-      title: 'Introducing Charts'
-      icon: 'lucide:pie-chart'
-      to: /getting-started
-    actions:
-      - name: Get Started
-        to: /getting-started
-      - name: GitHub
-        variant: ghost
-        to: https://github.com/No-Name-Studio-VN/Homepage
-    mobileRight: 'top' # 'top' | 'bottom'
-    ---
+::div{class="p-4"}
+::ct-hero-alt
+\---
+announcement:
+title: 'Introducing Charts'
+icon: 'lucide:pie-chart'
+to: /getting-started
+actions: - name: Get Started
+to: /getting-started - name: GitHub
+variant: ghost
+to: https://github.com/No-Name-Studio-VN/Homepage
+mobileRight: 'top' # 'top' | 'bottom'
+\---
 
     #title
     Build your component library
@@ -88,7 +87,9 @@ Beautifully designed components that you can copy and paste into your apps.
     #right
     ![logo](/favicon.svg)
     ::
-  ::
+
+::
+
 ```mdc
 ::ct-hero-alt
 ---
@@ -115,4 +116,5 @@ Beautifully designed components that you can copy and paste into your apps.
 ![logo](/favicon.svg)
 ::
 ```
+
 ::

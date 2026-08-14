@@ -6,7 +6,6 @@ export { default as CommandDialog } from './CommandDialog.vue'
 export { default as CommandEmpty } from './CommandEmpty.vue'
 export { default as CommandGroup } from './CommandGroup.vue'
 export { default as CommandInput } from './CommandInput.vue'
-export { default as CommandInputOnly } from './CommandInputOnly.vue'
 export { default as CommandItem } from './CommandItem.vue'
 export { default as CommandList } from './CommandList.vue'
 export { default as CommandSeparator } from './CommandSeparator.vue'
@@ -19,6 +18,7 @@ export const [useCommand, provideCommandContext] = createContext<{
     search: string
     filtered: { count: number, items: Map<string, number>, groups: Set<string> }
   }
+  filterItems: () => void
 }>('Command')
 
 export const [useCommandGroup, provideCommandGroupContext] = createContext<{

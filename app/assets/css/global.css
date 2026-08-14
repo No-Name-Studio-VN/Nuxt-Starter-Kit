@@ -1,7 +1,7 @@
 html {
   font-family: Manrope, sans-serif;
   scroll-behavior: smooth;
-  --header-height: calc(var(--spacing) * 12)
+  --header-height: calc(var(--spacing) * 12);
 }
 
 body {
@@ -9,7 +9,7 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 16px
+  width: 16px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -33,11 +33,15 @@ body {
 }
 
 .page-enter-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .page-leave-active {
-  transition: opacity 0.1s ease, transform 0.1s ease;
+  transition:
+    opacity 0.1s ease,
+    transform 0.1s ease;
 }
 
 .page-enter-from {
@@ -79,7 +83,6 @@ body {
 }
 
 @keyframes shake {
-
   10%,
   90% {
     transform: translate3d(-1px, 0, 0);

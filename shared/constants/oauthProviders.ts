@@ -1,20 +1,12 @@
-export interface OAuthProviderConfig {
-  id: string
-  name: string
-  route: string
-}
+import { apiRoutes } from '../apiRoutes';
+import type { OAuthProviderConfig } from '../../types/auth';
 
 export const OAUTH_PROVIDERS: Record<string, OAuthProviderConfig> = {
   google: {
     id: 'google',
     name: 'Google',
-    route: '/api/auth/google',
+    route: apiRoutes.AUTH_GOOGLE,
   },
-  github: {
-    id: 'github',
-    name: 'GitHub',
-    route: '/api/auth/github',
-  },
-}
+} as const;
 
-export const AVAILABLE_PROVIDERS = Object.values(OAUTH_PROVIDERS)
+export const AVAILABLE_PROVIDERS = Object.values(OAUTH_PROVIDERS);

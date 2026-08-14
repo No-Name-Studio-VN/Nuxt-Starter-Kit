@@ -1,26 +1,20 @@
 /// <reference lib="WebWorker" />
 /// <reference types="vite/client" />
-import { clientsClaim } from 'workbox-core'
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
-import { registerRoute, setCatchHandler } from 'workbox-routing'
-import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies'
-import { CacheableResponsePlugin } from 'workbox-cacheable-response'
-import { ExpirationPlugin } from 'workbox-expiration'
-import { BroadcastUpdatePlugin } from 'workbox-broadcast-update'
+import { clientsClaim } from 'workbox-core';
+import { cleanupOutdatedCaches, matchPrecache, precacheAndRoute } from 'workbox-precaching';
+import { registerRoute, setCatchHandler } from 'workbox-routing';
+import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheableResponsePlugin } from 'workbox-cacheable-response';
+import { ExpirationPlugin } from 'workbox-expiration';
+import { BroadcastUpdatePlugin } from 'workbox-broadcast-update';
 
-declare let self: ServiceWorkerGlobalScope
+declare let self: ServiceWorkerGlobalScope;
 
-precacheAndRoute(self.__WB_MANIFEST)
-cleanupOutdatedCaches()
+precacheAndRoute(self.__WB_MANIFEST);
+cleanupOutdatedCaches();
 
-const OFFLINE_PAGE = '/~offline'
-const OFFLINE_CACHE = 'offline-fallback-v1'
-
-self.addEventListener('install', (event: ExtendableEvent) => {
-  event.waitUntil(
-    caches.open(OFFLINE_CACHE).then(cache => cache.add(OFFLINE_PAGE)),
-  )
-})
+const OFFLINE_APP_SHELL = '/pwa';
+const OFFLINE_PAGE = '/~offline';
 
 registerRoute(
   ({ request }) => request.mode === 'navigate',
@@ -29,12 +23,11 @@ registerRoute(
     networkTimeoutSeconds: 10,
     plugins: [new CacheableResponsePlugin({ statuses: [200] })],
   }),
-)
+);
 
 registerRoute(
   ({ url }) =>
-    url.origin === 'https://fonts.googleapis.com'
-    || url.origin === 'https://fonts.gstatic.com',
+    url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
   new StaleWhileRevalidate({
     cacheName: 'google-fonts',
     plugins: [
@@ -42,7 +35,7 @@ registerRoute(
       new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 }),
     ],
   }),
-)
+);
 
 registerRoute(
   ({ request }) => request.destination === 'script' || request.destination === 'style',
@@ -54,7 +47,7 @@ registerRoute(
       new BroadcastUpdatePlugin(),
     ],
   }),
-)
+);
 
 registerRoute(
   ({ request }) => request.destination === 'image',
@@ -65,16 +58,23 @@ registerRoute(
       new ExpirationPlugin({ maxEntries: 150, maxAgeSeconds: 60 * 60 * 24 * 30 }),
     ],
   }),
-)
+);
 
 setCatchHandler(async ({ request }) => {
   if (request.mode === 'navigate') {
-    const cache = await caches.open(OFFLINE_CACHE)
-    const cached = await cache.match(OFFLINE_PAGE)
-    return cached ?? new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } })
-  }
-  return Response.error()
-})
+    const appShell = await matchPrecache(OFFLINE_APP_SHELL);
+    if (appShell) return appShell;
 
-self.skipWaiting()
-clientsClaim()
+    const offlinePage = await matchPrecache(OFFLINE_PAGE);
+    if (offlinePage) return offlinePage;
+
+    return new Response('Offline', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain' },
+    });
+  }
+  return Response.error();
+});
+
+self.skipWaiting();
+clientsClaim();

@@ -1,5 +1,5 @@
-import { kv } from 'hub:kv'
+import { kv } from 'hub:kv';
 
 export function useKV() {
-  return kv
+  return kv;
 }

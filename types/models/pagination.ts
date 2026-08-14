@@ -3,17 +3,17 @@
  */
 export interface PaginationMeta {
   /** Current page number (1-indexed) */
-  page: number
+  page: number;
   /** Number of items per page */
-  pageSize: number
+  pageSize: number;
   /** Total number of items across all pages */
-  totalItems: number
+  totalItems: number;
   /** Total number of pages */
-  totalPages: number
+  totalPages: number;
   /** Whether there is a next page available */
-  hasNextPage: boolean
+  hasNextPage: boolean;
   /** Whether there is a previous page available */
-  hasPreviousPage: boolean
+  hasPreviousPage: boolean;
 }
 
 /**
@@ -21,9 +21,9 @@ export interface PaginationMeta {
  */
 export interface PaginationParams {
   /** Page number (1-indexed, default: 1) */
-  page?: number
+  page?: number;
   /** Number of items per page (default: 10) */
-  pageSize?: number
+  pageSize?: number;
   /** Maximum allowed page size (default: 100) */
-  maxPageSize?: number
+  maxPageSize?: number;
 }

@@ -1,17 +1,23 @@
+import type { SessionUser } from '~~/types/auth';
+
 declare module '#auth-utils' {
   interface User {
-    id: number
-    username: string
-    name: string
-    isAdmin: boolean
+    id: SessionUser['id'];
+    username: SessionUser['username'];
+    name: SessionUser['name'];
+    isAdmin: SessionUser['isAdmin'];
+    /** Set on a fresh sign-in so the lock screen does not challenge immediately. */
+    skipLockOnInit?: boolean;
   }
 
   interface UserSession {
-    loggedInAt?: Date
+    loggedInAt?: Date;
   }
 
   interface SecureSessionData {
-    pending2faUserId?: number
+    // <nsk:auth-2fa>
+    pending2faUserId?: number;
+    // </nsk:auth-2fa>
   }
 }
 
@@ -19,9 +25,4 @@ declare module '#auth-utils' {
  * Type for the authenticated user from session
  * Use this when accessing session.user to get proper typing
  */
-export type SessionUser = {
-  id: number
-  username: string
-  name: string
-  isAdmin: boolean
-}
+export type { SessionUser } from '~~/types/auth';

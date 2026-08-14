@@ -21,12 +21,12 @@ sitemap:
 ## Usage
 
 ::ct-stack
-  :::div{.p-4}
-    ::::ct-code-tree{default-value="nuxt.config.ts" title="Sample Nuxt App"}
-    ```css [app/assets/main.css]
+:::div{.p-4}
+::::ct-code-tree{default-value="nuxt.config.ts" title="Sample Nuxt App"}
+`css [app/assets/main.css]
     @import "tailwindcss" theme(static);
     @import "@nuxt/ui-pro";
-    ```
+    `
 
     ```ts [app/app.config.ts]
     export default defineAppConfig({
@@ -168,7 +168,8 @@ sitemap:
     Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
     ````
     ::::
-  :::
+
+:::
 ::
 
 `````mdc
@@ -327,13 +328,13 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 ## Props
 
 ::ct-field-group
-  :::ct-field{name="defaultValue"}
-  Default open file
-  :::
+:::ct-field{name="defaultValue"}
+Default open file
+:::
 
-  :::ct-field{name="title" type="string"}
-  Code tree title
-  :::
+:::ct-field{name="title" type="string"}
+Code tree title
+:::
 
 :ct-field{default-value="400" name="height" type="number"}
 ::

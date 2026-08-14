@@ -40,3 +40,6 @@ public/content
 /.VSCodeCounter
 AGENTS.MD
 .serena
+
+# Local deepwork session state
+.slim/deepwork/

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HTMLAttributes, Ref } from 'vue'
+import type { HTMLAttributes } from 'vue'
 import { defaultDocument, useEventListener, useMediaQuery, useVModel } from '@vueuse/core'
 import { TooltipProvider } from 'reka-ui'
 import { computed, ref } from 'vue'
@@ -22,10 +22,18 @@ const emits = defineEmits<{
 const isMobile = useMediaQuery('(max-width: 768px)')
 const openMobile = ref(false)
 
-const open = useVModel(props, 'open', emits, {
-  defaultValue: props.defaultOpen ?? false,
-  passive: (props.open === undefined) as false,
-}) as Ref<boolean>
+// useVModel picks its overload from a literal `passive`, so the controlled and
+// uncontrolled cases are chosen here rather than through a computed boolean.
+const openModel = props.open === undefined
+  ? useVModel(props, 'open', emits, { defaultValue: props.defaultOpen ?? false, passive: true })
+  : useVModel(props, 'open', emits, { defaultValue: props.defaultOpen ?? false, passive: false })
+
+const open = computed<boolean>({
+  get: () => openModel.value ?? false,
+  set: (value: boolean) => {
+    openModel.value = value
+  },
+})
 
 function setOpen(value: boolean) {
   open.value = value // emits('update:open', value)

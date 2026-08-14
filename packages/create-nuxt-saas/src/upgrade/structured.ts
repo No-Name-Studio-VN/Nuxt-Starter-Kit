@@ -1,0 +1,186 @@
+export type StructuredChange =
+  | { file: string; keyPath: string[]; type: 'set'; value: unknown }
+  | { file: string; keyPath: string[]; type: 'remove' }
+  | { file: string; keyPath: string[]; type: 'skip'; reason: string };
+
+interface Leaf {
+  keyPath: string[];
+  value: unknown;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Joins a key path into a map key. A JSON key can contain any character except
+ * NUL, so this is the one separator that cannot collide with a real key.
+ */
+const KEY_SEPARATOR = '\u0000';
+
+/** Flattens a fragment to leaf key paths, so merging decides one value at a time. */
+function flatten(
+  fragment: Record<string, unknown>,
+  prefix: string[] = [],
+  into = new Map<string, Leaf>(),
+): Map<string, Leaf> {
+  for (const [key, value] of Object.entries(fragment)) {
+    const keyPath = [...prefix, key];
+    if (isPlainObject(value)) flatten(value, keyPath, into);
+    else into.set(keyPath.join(KEY_SEPARATOR), { keyPath, value });
+  }
+  return into;
+}
+
+function readAt(document: Record<string, unknown>, keyPath: string[]): unknown {
+  let current: unknown = document;
+  for (const key of keyPath) {
+    if (!isPlainObject(current)) return undefined;
+    current = current[key];
+  }
+  return current;
+}
+
+function isSameValue(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+export interface PlanInitialStructureOptions {
+  file: string;
+  /** The kit's committed file — the union of every module. */
+  document: Record<string, unknown>;
+  /** Fragments of the modules this project installs. */
+  installed: Record<string, unknown>[];
+  /** Fragments of the modules it does not. */
+  omitted: Record<string, unknown>[];
+}
+
+/**
+ * The generation-time counterpart to `planStructuredChanges`. Upgrading has to
+ * decide whether a value is the module's to change or the user's; generating does
+ * not — nobody has edited anything yet, so the installed modules' declarations win
+ * outright and the omitted modules' leaves come out.
+ *
+ * A leaf two modules declare survives as long as one of them is installed, which
+ * is where reference counting comes from.
+ */
+export function planInitialStructure(options: PlanInitialStructureOptions): StructuredChange[] {
+  const installed = new Map<string, Leaf>();
+  for (const fragment of options.installed) flatten(fragment, [], installed);
+  const omitted = new Map<string, Leaf>();
+  for (const fragment of options.omitted) flatten(fragment, [], omitted);
+
+  const changes: StructuredChange[] = [];
+  const file = options.file;
+
+  for (const leaf of installed.values()) {
+    if (isSameValue(readAt(options.document, leaf.keyPath), leaf.value)) continue;
+    changes.push({ file, keyPath: leaf.keyPath, type: 'set', value: leaf.value });
+  }
+
+  for (const [key, leaf] of omitted) {
+    if (installed.has(key)) continue;
+    if (readAt(options.document, leaf.keyPath) === undefined) continue;
+    changes.push({ file, keyPath: leaf.keyPath, type: 'remove' });
+  }
+
+  return changes;
+}
+
+export interface PlanStructuredOptions {
+  file: string;
+  document: Record<string, unknown>;
+  previous: Record<string, unknown>[];
+  next: Record<string, unknown>[];
+}
+
+/**
+ * Three-way merge for JSON, one leaf value at a time. A value is only touched when
+ * the document still holds exactly what the module put there last time; anything
+ * else means the user owns it now.
+ */
+export function planStructuredChanges(options: PlanStructuredOptions): StructuredChange[] {
+  const previous = new Map<string, Leaf>();
+  for (const fragment of options.previous) flatten(fragment, [], previous);
+  const next = new Map<string, Leaf>();
+  for (const fragment of options.next) flatten(fragment, [], next);
+
+  const changes: StructuredChange[] = [];
+
+  for (const key of new Set([...previous.keys(), ...next.keys()])) {
+    const before = previous.get(key);
+    const after = next.get(key);
+    const entry = after ?? before;
+    if (entry === undefined) continue;
+
+    const keyPath = entry.keyPath;
+    const current = readAt(options.document, keyPath);
+    const file = options.file;
+
+    if (before && after) {
+      if (isSameValue(before.value, after.value)) continue;
+      changes.push(
+        isSameValue(current, before.value)
+          ? { file, keyPath, type: 'set', value: after.value }
+          : { file, keyPath, type: 'skip', reason: 'changed locally' },
+      );
+      continue;
+    }
+
+    if (after) {
+      if (current === undefined) {
+        changes.push({ file, keyPath, type: 'set', value: after.value });
+      } else if (!isSameValue(current, after.value)) {
+        changes.push({ file, keyPath, type: 'skip', reason: 'changed locally' });
+      }
+      continue;
+    }
+
+    if (before) {
+      if (isSameValue(current, before.value)) {
+        changes.push({ file, keyPath, type: 'remove' });
+      } else if (current !== undefined) {
+        changes.push({ file, keyPath, type: 'skip', reason: 'changed locally' });
+      }
+    }
+  }
+
+  return changes;
+}
+
+export function applyStructuredChanges(
+  document: Record<string, unknown>,
+  changes: StructuredChange[],
+): Record<string, unknown> {
+  const result: Record<string, unknown> = structuredClone(document);
+
+  for (const change of changes) {
+    if (change.type === 'skip') continue;
+    const leaf = change.keyPath.at(-1);
+    if (leaf === undefined) continue;
+    const parents = change.keyPath.slice(0, -1);
+
+    let container: Record<string, unknown> = result;
+    let reachable = true;
+    for (const key of parents) {
+      const next = container[key];
+      if (isPlainObject(next)) {
+        container = next;
+        continue;
+      }
+      if (change.type === 'remove') {
+        reachable = false;
+        break;
+      }
+      const created: Record<string, unknown> = {};
+      container[key] = created;
+      container = created;
+    }
+    if (!reachable) continue;
+
+    if (change.type === 'remove') Reflect.deleteProperty(container, leaf);
+    else container[leaf] = change.value;
+  }
+
+  return result;
+}

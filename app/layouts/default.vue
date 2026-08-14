@@ -1,15 +1,19 @@
 <template>
   <div class="min-h-screen bg-background text-foreground">
     <!-- Floating Island Header -->
-    <div class="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4 transition-all duration-500 ease-out">
+    <div
+      class="fixed top-0 inset-x-0 z-50 flex justify-center px-4 pt-4 transition-all duration-500 ease-out"
+    >
       <header
         class="w-full max-w-5xl transition-all duration-500 ease-out"
-        :class="cn(
-          'rounded-full border px-8 transition-all',
-          isScrolled
-            ? 'border-border bg-background/40 shadow-lg backdrop-blur-xs shadow-black/8 py-3'
-            : 'border-border/20 bg-background/60 py-4 backdrop-blur-xs',
-        )"
+        :class="
+          cn(
+            'rounded-full border px-8 transition-all',
+            isScrolled
+              ? 'border-border bg-background/40 shadow-lg backdrop-blur-xs shadow-black/8 py-3'
+              : 'border-border/20 bg-background/60 py-4 backdrop-blur-xs',
+          )
+        "
       >
         <div class="flex h-full items-center justify-between">
           <!-- Logo -->
@@ -21,7 +25,7 @@
             <NuxtImg
               src="/favicon.svg"
               :alt="APP_MANIFEST.short_name"
-              class="h-6 w-6 transition-all duration-300"
+              class="size-6 transition-all duration-300"
             />
             <span class="text-md font-semibold tracking-tight text-primary hover:text-foreground">
               {{ APP_MANIFEST.short_name }}
@@ -32,10 +36,7 @@
           <nav class="hidden md:flex items-center gap-0.5">
             <LayoutHeaderNav />
 
-            <Separator
-              orientation="vertical"
-              class="mx-3 h-4 bg-border/60"
-            />
+            <Separator orientation="vertical" class="mx-3 h-4 bg-border/60" />
 
             <LayoutSearchButton
               :enable="headerSearch.enable"
@@ -50,27 +51,23 @@
             <!-- Theme Switcher -->
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                >
-                  <SunIcon class="h-3.5 w-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                  <MoonIcon class="absolute h-3.5 w-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <Button variant="ghost" size="icon">
+                  <SunIcon
+                    class="size-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
+                  />
+                  <MoonIcon
+                    class="absolute size-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
+                  />
                   <span class="sr-only">Toggle theme</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-              >
+              <DropdownMenuContent align="end">
                 <ThemeSwitcher />
               </DropdownMenuContent>
             </DropdownMenu>
 
             <!-- CTA Button -->
-            <Separator
-              orientation="vertical"
-              class="mx-3 h-4 bg-border/60"
-            />
+            <Separator orientation="vertical" class="mx-3 h-4 bg-border/60" />
             <Motion
               :initial="{ opacity: 0, scale: 0.9 }"
               :animate="{ opacity: 1, scale: 1 }"
@@ -81,7 +78,9 @@
                 @click="navigateTo(locale == defaultLocale ? '#contact' : `/${locale}#contact`)"
               >
                 {{ $t('cta.primary') }}
-                <ArrowRight class="ml-1.5 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                <ArrowRight
+                  class="ml-1.5 size-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
+                />
               </Button>
             </Motion>
           </nav>
@@ -100,18 +99,17 @@
             <!-- Theme Switcher (mobile) -->
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                >
-                  <SunIcon class="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                  <MoonIcon class="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <Button variant="ghost" size="icon">
+                  <SunIcon
+                    class="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
+                  />
+                  <MoonIcon
+                    class="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
+                  />
                   <span class="sr-only">Toggle theme</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-              >
+              <DropdownMenuContent align="end">
                 <ThemeSwitcher />
               </DropdownMenuContent>
             </DropdownMenu>
@@ -123,14 +121,8 @@
               aria-label="Toggle menu"
               @click="isMobileMenuOpen = !isMobileMenuOpen"
             >
-              <X
-                v-if="isMobileMenuOpen"
-                class="h-5 w-5"
-              />
-              <Menu
-                v-else
-                class="h-5 w-5"
-              />
+              <X v-if="isMobileMenuOpen" class="size-5" />
+              <Menu v-else class="size-5" />
             </Button>
           </div>
         </div>
@@ -164,10 +156,7 @@
                 enter-to-class="opacity-100 translate-y-0"
                 appear
               >
-                <template
-                  v-for="(item, index) in headerNav"
-                  :key="index"
-                >
+                <template v-for="(item, index) in headerNav" :key="index">
                   <!-- Parent item with children -->
                   <button
                     v-if="item.links"
@@ -176,14 +165,18 @@
                     @click="openSubmenu(index)"
                   >
                     <div class="flex items-center justify-between">
-                      <span class="text-3xl font-semibold tracking-tight text-foreground transition-all duration-300 group-hover:text-primary group-active:scale-95">
+                      <span
+                        class="text-3xl font-semibold tracking-tight text-foreground transition-all duration-300 group-hover:text-primary group-active:scale-95"
+                      >
                         {{ $t(item.title) }}
                       </span>
                       <ChevronRight
-                        class="h-7 w-7 shrink-0 text-primary translate-x-3 transition-all duration-300 ease-out group-hover:translate-x-0"
+                        class="size-7 shrink-0 text-primary translate-x-3 transition-all duration-300 ease-out group-hover:translate-x-0"
                       />
                     </div>
-                    <span class="absolute bottom-2 left-0 h-0.5 w-0 bg-primary transition-all duration-400 ease-out group-hover:w-3/4" />
+                    <span
+                      class="absolute bottom-2 left-0 h-0.5 w-0 bg-primary transition-all duration-400 ease-out group-hover:w-3/4"
+                    />
                   </button>
 
                   <!-- Direct link item -->
@@ -196,14 +189,18 @@
                     @click="isMobileMenuOpen = false"
                   >
                     <div class="flex items-center justify-between">
-                      <span class="text-3xl font-semibold tracking-tight text-foreground transition-all duration-300 group-hover:text-primary group-active:scale-95">
+                      <span
+                        class="text-3xl font-semibold tracking-tight text-foreground transition-all duration-300 group-hover:text-primary group-active:scale-95"
+                      >
                         {{ $t(item.title) }}
                       </span>
                       <ChevronRight
-                        class="h-7 w-7 shrink-0 text-primary translate-x-3 transition-all duration-300 ease-out group-hover:translate-x-0"
+                        class="size-7 shrink-0 text-primary translate-x-3 transition-all duration-300 ease-out group-hover:translate-x-0"
                       />
                     </div>
-                    <span class="absolute bottom-2 left-0 h-0.5 w-0 bg-primary transition-all duration-400 ease-out group-hover:w-3/4" />
+                    <span
+                      class="absolute bottom-2 left-0 h-0.5 w-0 bg-primary transition-all duration-400 ease-out group-hover:w-3/4"
+                    />
                   </NuxtLinkLocale>
                 </template>
               </TransitionGroup>
@@ -216,7 +213,9 @@
                   @click="handleMobileNavClick('contact')"
                 >
                   {{ $t('cta.primary') }}
-                  <ArrowRight class="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                  <ArrowRight
+                    class="ml-2 size-4 transition-transform duration-300 group-hover:translate-x-0.5"
+                  />
                 </Button>
               </div>
             </div>
@@ -229,15 +228,17 @@
                   class="group flex items-center gap-2 py-2 cursor-pointer touch-manipulation text-muted-foreground transition-colors duration-300 hover:text-foreground"
                   @click="closeSubmenu()"
                 >
-                  <ChevronLeft class="h-5 w-5 transition-transform duration-300 group-hover:-translate-x-1" />
+                  <ChevronLeft
+                    class="size-5 transition-transform duration-300 group-hover:-translate-x-1"
+                  />
                   <span class="text-lg font-medium">
-                    {{ $t(headerNav[activeSubmenu].title) }}
+                    {{ $t(activeSubmenuNav?.title ?? '') }}
                   </span>
                 </button>
 
                 <div class="mt-2 flex flex-col gap-1">
                   <NuxtLinkLocale
-                    v-for="link in headerNav[activeSubmenu].links"
+                    v-for="link in activeSubmenuNav?.links ?? []"
                     :key="link.title"
                     :to="link.to"
                     :target="link.target"
@@ -252,13 +253,12 @@
                         class="shrink-0 text-primary"
                       />
                       <div>
-                        <span class="text-2xl font-semibold tracking-tight text-foreground transition-all duration-300 group-hover:text-primary group-active:scale-95">
+                        <span
+                          class="text-2xl font-semibold tracking-tight text-foreground transition-all duration-300 group-hover:text-primary group-active:scale-95"
+                        >
                           {{ $t(link.title || '') }}
                         </span>
-                        <p
-                          v-if="link.description"
-                          class="mt-0.5 text-sm text-muted-foreground"
-                        >
+                        <p v-if="link.description" class="mt-0.5 text-sm text-muted-foreground">
                           {{ $t(link.description) }}
                         </p>
                       </div>
@@ -283,15 +283,8 @@
         <div class="lg:grid lg:grid-cols-12 lg:gap-12">
           <!-- Brand -->
           <div class="lg:col-span-5">
-            <NuxtLink
-              to="/"
-              class="inline-flex items-center gap-2.5"
-            >
-              <NuxtImg
-                src="/favicon.svg"
-                :alt="APP_MANIFEST.short_name"
-                class="h-6 w-6"
-              />
+            <NuxtLink to="/" class="inline-flex items-center gap-2.5">
+              <NuxtImg src="/favicon.svg" :alt="APP_MANIFEST.short_name" class="size-6" />
               <span class="text-sm font-semibold tracking-tight text-foreground">
                 {{ APP_MANIFEST.short_name }}
               </span>
@@ -305,7 +298,7 @@
           <div class="mt-10 grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7 lg:mt-0">
             <!-- Navigation -->
             <div>
-              <h3 class="text-xs font-semibold uppercase tracking-[0.1em] text-foreground/80">
+              <h3 class="text-xs font-semibold uppercase tracking-widest text-foreground/80">
                 {{ $t('footer.navigation') }}
               </h3>
               <ul class="mt-4 space-y-3">
@@ -346,7 +339,7 @@
 
             <!-- Services -->
             <div>
-              <h3 class="text-xs font-semibold uppercase tracking-[0.1em] text-foreground/80">
+              <h3 class="text-xs font-semibold uppercase tracking-widest text-foreground/80">
                 {{ $t('footer.services') }}
               </h3>
               <ul class="mt-4 space-y-3">
@@ -375,7 +368,7 @@
 
             <!-- Connect -->
             <div class="col-span-2 sm:col-span-1">
-              <h3 class="text-xs font-semibold uppercase tracking-[0.1em] text-foreground/80">
+              <h3 class="text-xs font-semibold uppercase tracking-widest text-foreground/80">
                 {{ $t('footer.connect') }}
               </h3>
               <ul class="mt-4 space-y-3">
@@ -435,10 +428,7 @@
               >
                 {{ $t('common.privacy') }}
               </NuxtLink>
-              <span
-                class="h-3 w-px bg-border/40"
-                aria-hidden="true"
-              />
+              <span class="h-3 w-px bg-border/40" aria-hidden="true" />
               <NuxtLink
                 to="/terms"
                 class="text-xs text-muted-foreground/60 transition-colors duration-200 hover:text-foreground"
@@ -456,73 +446,88 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
-import { useWindowScroll } from '@vueuse/core'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
+import { useWindowScroll } from '@vueuse/core';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import CtIcon from '@/components/content/CtIcon.vue'
-import { GitHubIcon, XIcon } from 'vue3-simple-icons'
-import { Menu, X, ChevronLeft, ChevronRight, ArrowRight, SunIcon, MoonIcon, MailIcon } from '@lucide/vue'
-import { cn } from '@/lib/utils'
-import { Motion } from 'motion-v'
-import { defaultLocale } from '~~/i18n-constants'
-import { APP_MANIFEST } from '#shared/constants/manifest'
+} from '@/components/ui/dropdown-menu';
+import CtIcon from '@/components/content/CtIcon.vue';
+import { GitHubIcon, XIcon } from 'vue3-simple-icons';
+import {
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  SunIcon,
+  MoonIcon,
+  MailIcon,
+} from '@lucide/vue';
+import { cn } from '@/lib/utils';
+import { Motion } from 'motion-v';
+import { defaultLocale } from '~~/i18n-constants';
+import { APP_MANIFEST } from '#shared/constants/manifest';
 
-const config = useConfig()
+const config = useConfig();
 
-const headerNav = computed(() => config.value.header.nav)
-const headerSearch = computed(() => config.value.search)
+const headerNav = computed(() => config.value.header.nav);
+const headerSearch = computed(() => config.value.search);
 
-const activeSubmenu = ref<number | null>(null)
+const activeSubmenu = ref<number | null>(null);
+
+/** The open submenu, if the index still points at one. */
+const activeSubmenuNav = computed(() =>
+  activeSubmenu.value === null ? undefined : headerNav.value[activeSubmenu.value],
+);
 
 function openSubmenu(index: number) {
-  activeSubmenu.value = index
+  activeSubmenu.value = index;
 }
 
 function closeSubmenu() {
-  activeSubmenu.value = null
+  activeSubmenu.value = null;
 }
 
-const { locale } = useI18n()
-const { i18nEnabled } = useI18nDocs()
-const isMobileMenuOpen = ref(false)
+const { locale, availableLocales } = useI18n();
+// Read straight from i18n rather than through useI18nDocs: this layout only wants
+// the flag, and useI18nDocs also reads the content navigation.
+const i18nEnabled = availableLocales.length > 1;
+const isMobileMenuOpen = ref(false);
 
-const { y: scrollY } = useWindowScroll()
-const isScrolled = computed(() => scrollY.value > 300)
+const { y: scrollY } = useWindowScroll();
+const isScrolled = computed(() => scrollY.value > 300);
 
 // Close mobile menu on escape key
 onMounted(() => {
   const handleEscape = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && isMobileMenuOpen.value) {
-      isMobileMenuOpen.value = false
+      isMobileMenuOpen.value = false;
     }
-  }
-  window.addEventListener('keydown', handleEscape)
-  onUnmounted(() => window.removeEventListener('keydown', handleEscape))
-})
+  };
+  window.addEventListener('keydown', handleEscape);
+  onUnmounted(() => window.removeEventListener('keydown', handleEscape));
+});
 
 // Prevent body scroll when mobile menu is open
 watch(isMobileMenuOpen, (isOpen) => {
   if (isOpen) {
-    document.body.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+    activeSubmenu.value = null;
   }
-  else {
-    document.body.style.overflow = ''
-    activeSubmenu.value = null
-  }
-})
+});
 
 function handleMobileNavClick(sectionId: string) {
-  isMobileMenuOpen.value = false
-  navigateTo(`/${locale}#${sectionId}`)
+  isMobileMenuOpen.value = false;
+  navigateTo(`/${locale}#${sectionId}`);
 }
 
 function localeSectionLink(sectionId: string): string {
-  return locale.value === defaultLocale ? `/#${sectionId}` : `/${locale.value}/#${sectionId}`
+  return locale.value === defaultLocale ? `/#${sectionId}` : `/${locale.value}/#${sectionId}`;
 }
 </script>

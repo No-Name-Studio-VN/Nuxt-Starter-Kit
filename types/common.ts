@@ -1,39 +1,65 @@
-import type { User } from '~~/shared/db'
+import type { Component } from 'vue';
+// The session user, not the database row: sidebar guards run in the browser
+// against whatever `useUserSession()` exposes.
+import type { User } from '#auth-utils';
 
 export type SidebarItem = {
-  title: string
-  url?: string
-  icon?: Component
-  items?: SidebarItem[]
-}
+  title: string;
+  url?: string;
+  icon?: Component;
+  items?: SidebarItem[];
+};
 
-export type SidebarGuardUser = User | null | undefined
+export type SidebarGuardUser = User | null | undefined;
+
+export type SidebarGuardContext = {
+  flags: Record<string, boolean>;
+};
 
 export interface SidebarSection {
-  title: string
-  items: SidebarItem[]
+  title: string;
+  items: SidebarItem[];
   /** Push to bottom of sidebar (e.g. "Support") */
-  secondary?: boolean
+  secondary?: boolean;
   /** Per-section access guard */
-  guard?: (user: SidebarGuardUser) => boolean
+  guard?: (user: SidebarGuardUser, context: SidebarGuardContext) => boolean;
 }
 
 export interface SidebarContext {
   /** Unique key used as transition key */
-  id: string
+  id: string;
   /** Route prefix that activates this context (e.g. '/settings') */
-  match: string
+  match: string;
   /** Grouped nav sections to render */
-  sections: SidebarSection[]
+  sections: SidebarSection[];
   /** Sidebar variant override (defaults to 'inset') */
-  variant?: 'sidebar' | 'inset' | 'floating'
+  variant?: 'sidebar' | 'inset' | 'floating';
   /** Show "Back" button in header */
-  showBack?: boolean
+  showBack?: boolean;
   /** Access guard — return false to skip this context */
-  guard?: (user: SidebarGuardUser) => boolean
+  guard?: (user: SidebarGuardUser, context: SidebarGuardContext) => boolean;
 }
 
-export type BreadcrumbItemType = {
-  title: string
-  href: string
+export interface BreadcrumbItemType {
+  title: string;
+  href: string;
+}
+
+export interface MessagePayload {
+  message: string;
+}
+
+export interface StatusPayload {
+  status: string;
+  timestamp: number;
+}
+
+export interface DeletedPayload {
+  deleted: true;
+}
+
+export type FormatDateInput = Date | number | string;
+
+export interface FormatDateOptions extends Intl.DateTimeFormatOptions {
+  fallback?: string;
 }

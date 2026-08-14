@@ -1,19 +1,19 @@
-import userSchema from '~~/server/utils/database/user'
+import { apiError, success } from '~~/server/utils/apiResponse';
+import { adminBulkUserDeleteSchema } from '#shared/schemas/userSchema';
+import userService from '~~/server/utils/database/user';
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const { userIds } = body
-
-  if (!Array.isArray(userIds) || userIds.length === 0) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Bad Request. A non-empty array of user IDs is required.',
-    })
+  const body = await readBody(event);
+  const result = adminBulkUserDeleteSchema.safeParse(body);
+  if (!result.success) {
+    throw apiError({
+      status: 400,
+      statusText: 'Bad Request',
+      code: 'INVALID_USER_IDS',
+      message: 'A non-empty array of user IDs is required.',
+    });
   }
-  await userSchema.bulkDelete(userIds)
 
-  return {
-    success: true,
-    deleted: userIds.length,
-  }
-})
+  const deletion = await userService.bulkDelete(result.data.userIds);
+  return success({ deleted: deletion });
+});

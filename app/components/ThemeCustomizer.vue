@@ -11,10 +11,7 @@
     <div class="space-y-1.5">
       <Label>{{ $t('common.theme') }}</Label>
       <div class="grid grid-cols-3 gap-2">
-        <template
-          v-for="color in allColors"
-          :key="color"
-        >
+        <template v-for="color in allColors" :key="color">
           <Button
             class="justify-start gap-2"
             variant="outline"
@@ -25,11 +22,7 @@
               class="flex size-5 items-center justify-center rounded-full"
               :style="{ backgroundColor: backgroundColor(color) }"
             >
-              <CheckIcon
-                v-if="theme === color"
-                :size="16"
-                class="text-white"
-              />
+              <CheckIcon v-if="theme === color" :size="16" class="text-white" />
             </span>
             <span class="text-xs capitalize">{{ color }}</span>
           </Button>
@@ -39,10 +32,7 @@
     <div class="space-y-1.5">
       <Label>{{ $t('customizer.radius') }}</Label>
       <div class="grid grid-cols-5 gap-2">
-        <template
-          v-for="r in RADII"
-          :key="r"
-        >
+        <template v-for="r in RADII" :key="r">
           <Button
             class="justify-center gap-2"
             variant="outline"
@@ -54,10 +44,7 @@
         </template>
       </div>
     </div>
-    <div
-      v-if="darkModeToggle"
-      class="space-y-1.5"
-    >
+    <div v-if="darkModeToggle" class="space-y-1.5">
       <Label>{{ $t('common.theme') }}</Label>
       <div class="grid grid-cols-3 gap-2">
         <Button
@@ -66,9 +53,7 @@
           :class="{ 'border-primary border-2': colorMode.preference === 'light' }"
           @click="colorMode.preference = 'light'"
         >
-          <SunIcon
-            :size="16"
-          />
+          <SunIcon :size="16" />
           <span class="text-xs capitalize">{{ $t('common.light') }}</span>
         </Button>
         <Button
@@ -77,9 +62,7 @@
           :class="{ 'border-primary border-2': colorMode.preference === 'dark' }"
           @click="colorMode.preference = 'dark'"
         >
-          <MoonIcon
-            :size="16"
-          />
+          <MoonIcon :size="16" />
           <span class="text-xs capitalize">{{ $t('common.dark') }}</span>
         </Button>
         <Button
@@ -88,9 +71,7 @@
           :class="{ 'border-primary border-2': colorMode.preference === 'system' }"
           @click="colorMode.preference = 'system'"
         >
-          <MonitorIcon
-            :size="16"
-          />
+          <MonitorIcon :size="16" />
           <span class="text-xs capitalize">{{ $t('common.system') }}</span>
         </Button>
       </div>
@@ -99,33 +80,33 @@
 </template>
 
 <script setup lang="ts">
-import { themes } from '@/lib/themes'
-import { CheckIcon, SunIcon, MoonIcon, MonitorIcon } from '@lucide/vue'
-import type { Color } from '~~/types'
+import { themes } from '@/lib/themes';
+import { CheckIcon, SunIcon, MoonIcon, MonitorIcon } from '@lucide/vue';
+import type { Color } from '~~/types';
 
-const { setClassTheme, theme, radius, setTheme, setRadius, allColors } = useThemes()
-const { darkModeToggle } = useConfig().value.header
+const { setClassTheme, theme, radius, setTheme, setRadius, allColors } = useThemes();
+const { darkModeToggle } = useConfig().value.header;
 
-const RADII = [0, 0.25, 0.5, 0.75, 1]
+const RADII = [0, 0.25, 0.5, 0.75, 1];
 
 // Whenever the theme value changes, update the document class list
 watch(theme, () => {
-  setClassTheme()
-})
+  setClassTheme();
+});
 
 // Whenever the radius value changes, update the document style
 watch(radius, () => {
-  setStyleRadius()
-})
+  setStyleRadius();
+});
 
 function setStyleRadius() {
-  document.body.style.setProperty('--radius', `${radius.value}rem`)
+  document.body.style.setProperty('--radius', `${radius.value}rem`);
 }
 
 function backgroundColor(color: Color) {
-  const bg = themes.find(theme => theme.name === color)
-  return `hsl(${bg?.activeColor.light})`
+  const bg = themes.find((theme) => theme.name === color);
+  return `hsl(${bg?.activeColor.light})`;
 }
 
-const colorMode = useColorMode()
+const colorMode = useColorMode();
 </script>

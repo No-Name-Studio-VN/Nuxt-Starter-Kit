@@ -1,16 +1,16 @@
 export interface TwoFactorSetupPayload {
-  uri: string
-  secret: string
+  uri: string;
+  secret: string;
 }
 
 export interface TwoFactorVerifyPayload {
-  backupCodes: string[]
+  backupCodes: string[];
 }
 
-export interface LoginTwoFactorValidationPayload {
-  valid: boolean
+export interface LockScreenValidationPayload {
+  valid: boolean;
 }
 
 export interface PasswordUpdatePayload {
-  message: string
+  message: string;
 }

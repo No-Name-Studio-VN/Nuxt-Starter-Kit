@@ -3,23 +3,29 @@ import type { PrimitiveProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
 import type { ButtonVariants } from '.'
 import { Primitive } from 'reka-ui'
+import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '.'
-import { Loader2Icon } from '@lucide/vue'
 
 interface Props extends PrimitiveProps {
   variant?: ButtonVariants['variant']
   size?: ButtonVariants['size']
   class?: HTMLAttributes['class']
   isLoading?: boolean
+  loadingLabel?: string
   disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   as: 'button',
   isLoading: false,
+  loadingLabel: 'Loading',
   disabled: false,
 })
+
+function handleClick(event: MouseEvent) {
+  if (props.disabled || props.isLoading) return
+}
 </script>
 
 <template>
@@ -28,12 +34,16 @@ const props = withDefaults(defineProps<Props>(), {
     data-slot="button"
     :as="as"
     :as-child="asChild"
-    :class="cn(buttonVariants({ variant, size }), props.class)"
+    :class="cn(buttonVariants({ variant, size }), 'relative overflow-hidden', props.class)"
     :disabled="props.disabled || props.isLoading"
+    @click="handleClick"
   >
-    <Loader2Icon
+    <Spinner
       v-if="isLoading"
-      class="h-4 w-4 animate-spin"
+      variant="default"
+      size="sm"
+      :label="loadingLabel"
+      class="text-current"
     />
     <slot v-else />
   </Primitive>

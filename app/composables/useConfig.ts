@@ -1,19 +1,44 @@
-import { createDefu } from 'defu'
-import type { ContentNavigationItem } from '@nuxt/content'
-import type { DefaultConfig } from '~~/types'
-import { navPageOverrides } from './useContentHelpers'
-import { usePageData } from '@/composables/usePageData'
-import { APP_MANIFEST } from '#shared/constants/manifest'
+import { createDefu } from 'defu';
+import type { DefaultConfig, NavigationItem } from '~~/types';
+import { navPageOverrides } from './useContentHelpers';
+// <nsk:content>
+import { usePageData } from '@/composables/usePageData';
+// </nsk:content>
+import { APP_MANIFEST } from '#shared/constants/manifest';
 
 const customDefu = createDefu((obj, key, value) => {
   if (Array.isArray(value) && value.every((x: unknown) => typeof x === 'string')) {
-    obj[key] = value
-    return true
+    obj[key] = value;
+    return true;
   }
-})
+});
+
+/**
+ * Merges the published overrides over the defaults, stating the result type.
+ *
+ * `defu` describes a merge of two arbitrary shapes, so it widens every merged
+ * section to a union with `{}` — correct in general, useless here, where
+ * `defaultConfig` supplies every key. Left unstated, that union makes each
+ * section's properties unreachable at the ~60 places that read the config.
+ *
+ * Layering the merge back over `defaults` is what carries the type across: the
+ * result is `DefaultConfig` intersected with whatever `defu` inferred, rather
+ * than an assertion that it is one. The overrides cannot be typed as
+ * `DefaultConfig` themselves because Nuxt generates their type from the
+ * committed value, which widens every literal union — `ogImageColor` arrives as
+ * `string`, not `'dark' | 'light'`.
+ */
+function mergeConfig(defaults: DefaultConfig, overrides: object): DefaultConfig {
+  return Object.assign({}, defaults, customDefu(overrides, defaults));
+}
+
+/** Spreadable view of a navigation or frontmatter override, which may be anything. */
+function toRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) ? { ...value } : {};
+}
 
 /** Config sections that support per-page overrides via navigation and frontmatter. */
-const OVERRIDE_SECTIONS = ['header', 'banner', 'main', 'aside', 'toc', 'footer'] as const
+const OVERRIDE_SECTIONS = ['header', 'banner', 'main', 'aside', 'toc', 'footer'] as const;
 
 const defaultConfig: DefaultConfig = {
   site: {
@@ -124,47 +149,45 @@ const defaultConfig: DefaultConfig = {
     placeholder: 'search.title',
     placeholderDetailed: 'search.document',
   },
-}
+};
 
 export function useConfig() {
-  const appConfig = useRuntimeConfig().public.docs
+  const appConfig = useRuntimeConfig().public.docs;
 
-  const route = useRoute()
+  const route = useRoute();
 
   // Safely attempt to get page data — may not be available in all contexts
   // (e.g., plugins, error pages, non-content pages)
-  let page: Ref<Record<string, unknown> | null | undefined> = shallowRef(undefined)
-  let navigation: Ref<ContentNavigationItem[] | null | undefined> = shallowRef(undefined)
+  let page: Ref<Record<string, unknown> | null | undefined> = shallowRef(undefined);
+  let navigation: Ref<NavigationItem[] | null | undefined> = shallowRef(undefined);
 
+  // <nsk:content>
   try {
-    const pageData = usePageData()
-    page = pageData.page as typeof page
-    navigation = pageData.navigation as typeof navigation
-  }
-  catch {
+    const pageData = usePageData();
+    page = pageData.page as typeof page;
+    navigation = pageData.navigation as typeof navigation;
+  } catch {
     // usePageData() not available in this context — config will use defaults only
   }
+  // </nsk:content>
 
-  return computed(() => {
-    const processedConfig = customDefu(appConfig, defaultConfig)
+  return computed<DefaultConfig>(() => {
+    const processedConfig = mergeConfig(defaultConfig, appConfig);
 
-    const navOverrides = navPageOverrides(route.path, OVERRIDE_SECTIONS, navigation.value)
-    const pageData = page.value
+    const navOverrides = navPageOverrides(route.path, OVERRIDE_SECTIONS, navigation.value);
+    const pageData = page.value;
 
-    const sectionOverrides = {} as Record<string, unknown>
+    const sectionOverrides: Record<string, unknown> = {};
     for (const key of OVERRIDE_SECTIONS) {
-      const navOverride = navOverrides[key] as Record<string, unknown> | undefined
-      const pageOverride = pageData?.[key] as Record<string, unknown> | undefined
       sectionOverrides[key] = {
         ...processedConfig[key],
-        ...navOverride,
-        ...pageOverride,
-      }
+        ...toRecord(navOverrides[key]),
+        ...toRecord(pageData?.[key]),
+      };
     }
 
-    return {
-      ...processedConfig,
-      ...sectionOverrides,
-    }
-  })
+    // Same reasoning as `mergeConfig`: the per-page overrides are untyped
+    // frontmatter, so the typed config goes in first and keeps the shape.
+    return Object.assign({}, processedConfig, sectionOverrides);
+  });
 }

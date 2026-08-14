@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { APP_MANIFEST } from '#shared/constants/manifest'
+import { APP_MANIFEST } from '#shared/constants/manifest';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -7,15 +7,18 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb'
-import { Separator } from '@/components/ui/separator'
-import { HomeIcon } from '@lucide/vue'
-import { cn } from '@/lib/utils'
+} from '@/components/ui/breadcrumb';
+import { Separator } from '@/components/ui/separator';
+import { HomeIcon } from '@lucide/vue';
+import { cn } from '@/lib/utils';
 
-withDefaults(defineProps<{
-  title: string
-  className?: string
-}>(), {})
+withDefaults(
+  defineProps<{
+    title: string;
+    className?: string;
+  }>(),
+  {},
+);
 </script>
 
 <template>
@@ -24,19 +27,11 @@ withDefaults(defineProps<{
       class="shrink-0 border-b bg-muted/10 backdrop-blur-md flex h-(--header-height) items-center gap-2 transition-[width,height] ease-linear"
     >
       <div class="flex items-center gap-2 px-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          class="h-7 w-7 -ml-1"
-          @click="navigateTo('/')"
-        >
+        <Button variant="ghost" size="icon" class="size-7 -ml-1" @click="navigateTo('/')">
           <HomeIcon />
-          <span class="sr-only">Go Home</span>
+          <span class="sr-only">{{ $t('common.go_home') }}</span>
         </Button>
-        <Separator
-          orientation="vertical"
-          class="mr-2 data-[orientation=vertical]:h-4"
-        />
+        <Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem class="hidden md:block">
@@ -60,7 +55,8 @@ withDefaults(defineProps<{
     <footer class="shrink-0 border-t bg-muted/10 backdrop-blur-md">
       <div class="px-4 py-6">
         <p class="text-center text-sm">
-          © {{ new Date().getFullYear() }} Developed by <strong>No Name Studio</strong> All rights reserved.
+          © {{ new Date().getFullYear() }} Developed by <strong>No Name Studio</strong> All rights
+          reserved.
         </p>
       </div>
     </footer>

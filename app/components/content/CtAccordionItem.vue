@@ -1,32 +1,26 @@
 <template>
   <AccordionItem :value="value ?? autoValue">
     <AccordionTrigger class="items-center">
-      <slot
-        name="title"
-        mdc-unwrap="p"
-      />
+      <slot name="title" mdc-unwrap="p" />
       {{ title }}
     </AccordionTrigger>
     <AccordionContent>
-      <slot
-        name="content"
-        mdc-unwrap="p"
-      />
+      <slot name="content" mdc-unwrap="p" />
       {{ content }}
     </AccordionContent>
   </AccordionItem>
 </template>
 
 <script setup lang="ts">
-import { useId } from 'reka-ui'
+import { useId } from "reka-ui";
 
 defineProps<{
-  value?: string
-  title?: string
-  content?: string
-}>()
+  value?: string;
+  title?: string;
+  content?: string;
+}>();
 
-defineSlots()
+defineSlots();
 
-const autoValue = useId()
+const autoValue = useId();
 </script>

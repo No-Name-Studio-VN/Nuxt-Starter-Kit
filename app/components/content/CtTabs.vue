@@ -3,37 +3,35 @@
 </template>
 
 <script setup lang="ts">
-import type { SetupContext } from 'vue'
-import TabsInner from './CtTabsInner.vue'
+import type { SetupContext } from "vue";
+import TabsInner from "./CtTabsInner.vue";
 
 const {
-  variant = 'separate',
+  variant = "separate",
   padded = true,
   inStack = false,
   disableSearch = false,
-  searchPlaceholder = 'Search Tab...',
-  searchEmpty = 'No tab found.',
+  searchPlaceholder = "Search Tab...",
+  searchEmpty = "No tab found.",
   sync,
 } = defineProps<{
-  variant?: 'separate' | 'card' | 'line' | 'combobox'
-  padded?: boolean
-  inStack?: boolean
-  disableSearch?: boolean
-  searchPlaceholder?: string
-  searchEmpty?: string
-  sync?: string
-}>()
+  variant?: "separate" | "card" | "line" | "combobox";
+  padded?: boolean;
+  inStack?: boolean;
+  disableSearch?: boolean;
+  searchPlaceholder?: string;
+  searchEmpty?: string;
+  sync?: string;
+}>();
 
-const _slots: SetupContext['slots'] = useSlots()
+const _slots: SetupContext["slots"] = useSlots();
 function render() {
-  const slots = _slots?.default?.() || []
+  const slots = _slots?.default?.() || [];
 
-  const slotsData = slots.map(
-    (slot, index) => ({
-      label: slot.props?.label || slot.props?.filename || '',
-      index,
-    }),
-  )
+  const slotsData = slots.map((slot, index) => ({
+    label: slot.props?.label || slot.props?.filename || "",
+    index,
+  }));
 
   return h(
     TabsInner,
@@ -48,6 +46,6 @@ function render() {
       sync,
     },
     () => slots,
-  )
+  );
 }
 </script>

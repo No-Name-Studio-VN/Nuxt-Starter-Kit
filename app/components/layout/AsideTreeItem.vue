@@ -9,10 +9,7 @@
         >
           <LayoutAsideTreeItemButton :link />
         </div>
-        <LayoutAsideTree
-          :links="link.children"
-          :level="level"
-        />
+        <LayoutAsideTree :links="link.children" :level="level" />
       </template>
       <template v-else>
         <button
@@ -35,10 +32,7 @@
           />
         </button>
         <div v-show="isOpen">
-          <LayoutAsideTree
-            :links="link.children"
-            :level="level + 1"
-          />
+          <LayoutAsideTree :links="link.children" :level="level + 1" />
         </div>
       </template>
     </div>
@@ -48,7 +42,7 @@
       :to="link.path"
       class="text-foreground/80 hover:bg-muted hover:text-primary flex items-center gap-2 rounded-md p-2 text-sm"
       :class="[
-        isActive && 'bg-muted !text-primary font-medium',
+        isActive && 'bg-muted text-primary! font-medium',
         link.navTruncate !== false && 'h-8',
       ]"
     >
@@ -58,39 +52,45 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDownIcon } from '@lucide/vue'
-import type { ContentNavigationItem } from '@nuxt/content'
+import { ChevronDownIcon } from '@lucide/vue';
+import type { ContentNavigationItem } from '@nuxt/content';
 
 const props = defineProps<{
-  link: ContentNavigationItem
-  level: number
-}>()
+  link: ContentNavigationItem;
+  level: number;
+}>();
 
-const { collapse, collapseLevel, folderStyle: defaultFolderStyle } = useConfig().value.aside
+const { collapse, collapseLevel, folderStyle: defaultFolderStyle } = useConfig().value.aside;
 
-const collapsedMapStore = useCollapsedMapStore()
-const route = useRoute()
+const collapsedMapStore = useCollapsedMapStore();
+const route = useRoute();
 
 function defaultOpen() {
-  if (route.path.includes(props.link.path))
-    return true
-  if (props.link.collapse !== undefined)
-    return !props.link.collapse
+  if (route.path.includes(props.link.path)) return true;
+  if (props.link.collapse !== undefined) return !props.link.collapse;
 
-  return props.level < collapseLevel && !collapse
+  return props.level < collapseLevel && !collapse;
 }
 
-const isOpen = ref(collapsedMapStore.get(props.link.path) || defaultOpen())
+const isOpen = ref(collapsedMapStore.get(props.link.path) || defaultOpen());
 
 watch(isOpen, (v) => {
-  collapsedMapStore.set(props.link.path, v)
-})
+  collapsedMapStore.set(props.link.path, v);
+});
 
 function normalizePath(p: string) {
-  const out = p.replace(/\/+$/, '')
-  return out === '' ? '/' : out
+  const out = p.replace(/\/+$/, '');
+  return out === '' ? '/' : out;
 }
-const isActive = computed(() => normalizePath(props.link.path) === normalizePath(route.path))
+const isActive = computed(() => normalizePath(props.link.path) === normalizePath(route.path));
 
-const folderStyle = computed(() => props.link.sidebar?.style ?? defaultFolderStyle)
+/** `sidebar` is frontmatter, so its shape is checked rather than assumed. */
+const folderStyle = computed(() => {
+  const sidebar = props.link.sidebar;
+  if (typeof sidebar === 'object' && sidebar !== null && 'style' in sidebar) {
+    const style = sidebar.style;
+    if (typeof style === 'string') return style;
+  }
+  return defaultFolderStyle;
+});
 </script>

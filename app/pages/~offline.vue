@@ -1,29 +1,37 @@
 <script setup lang="ts">
-import { WifiOff, RefreshCw } from '@lucide/vue'
-import { Button } from '@/components/ui/button'
+import { WifiOff, RefreshCw } from '@lucide/vue';
+import { Button } from '@/components/ui/button';
 
-definePageMeta({ title: 'Offline', layout: 'empty' })
+definePageMeta({ title: 'errors.offline_title', layout: 'empty' });
+
+const { t } = useI18n();
+
+useSeo({
+  title: computed(() => t('errors.offline_title')),
+  description: computed(() => t('errors.offline_description')),
+  type: 'website',
+});
 
 function reload() {
-  window.location.reload()
+  window.location.reload();
 }
 </script>
 
 <template>
   <MaxWidthWrapper class="h-screen relative flex flex-col items-center justify-center gap-4 px-4">
     <div class="flex size-20 shrink-0 items-center justify-center rounded-lg bg-muted">
-      <WifiOff class="h-16 w-16 text-foreground/40" />
+      <WifiOff class="size-16 text-foreground/40" />
     </div>
     <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl text-center">
-      You're offline
+      {{ $t('errors.offline_title') }}
     </h1>
     <p class="text-lg text-muted-foreground text-center max-w-md">
-      No internet connection detected. Connect to the internet and try again, or reload to retry.
+      {{ $t('errors.offline_description') }}
     </p>
     <div class="mt-4 flex items-center justify-center gap-4">
       <Button @click="reload">
-        <RefreshCw class="h-4 w-4" />
-        Try Again
+        <RefreshCw class="size-4" />
+        {{ $t('errors.try_again') }}
       </Button>
     </div>
   </MaxWidthWrapper>

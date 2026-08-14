@@ -10,45 +10,40 @@
       <span class="mr-auto overflow-hidden">
         {{ $t(placeholder) }}
       </span>
-      <Kbd class="ml-auto hidden md:block">
-        <span class="text-xs">⌘</span>K
-      </Kbd>
+      <Kbd class="ml-auto hidden md:block"> <span class="text-xs">⌘</span>K </Kbd>
     </Button>
-    <Button
-      v-else
-      variant="ghost"
-      size="icon"
-      @click="openSearchDialog"
-    >
-      <SearchIcon
-        :size="18"
-      />
+    <Button v-else variant="ghost" size="icon" @click="openSearchDialog">
+      <SearchIcon :size="18" />
     </Button>
   </template>
 
+  <!-- <nsk:content> -->
   <ClientOnly>
     <LazyHydrationLayoutSearchDialog />
   </ClientOnly>
+  <!-- </nsk:content> -->
 </template>
 
 <script setup lang="ts">
-import { SearchIcon } from '@lucide/vue'
+import { SearchIcon } from '@lucide/vue';
 
+// <nsk:content>
 const LazyHydrationLayoutSearchDialog = defineLazyHydrationComponent(
   'visible',
   () => import('./SearchDialog.vue'),
-)
+);
+// </nsk:content>
 
-const { setOpen } = useSearchDialogStore()
+const { setOpen } = useSearchDialogStore();
 
 defineProps<{
-  enable: boolean
-  inAside: boolean
-  style: string
-  placeholder: string
-}>()
+  enable: boolean;
+  inAside: boolean;
+  style: string;
+  placeholder: string;
+}>();
 
 function openSearchDialog() {
-  setOpen(true)
+  setOpen(true);
 }
 </script>

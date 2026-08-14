@@ -1,18 +1,117 @@
-import type { ClassValue } from 'clsx'
-import type { Updater } from '@tanstack/vue-table'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-import { DateTime } from 'luxon'
-import type { Ref } from 'vue'
+import type { ClassValue } from 'clsx';
+import type { Updater } from '@tanstack/vue-table';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { DateTime } from 'luxon';
+import type { Ref } from 'vue';
+import type { FormatDateInput, FormatDateOptions } from '~~/types/common';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function valueUpdater<T extends Updater<unknown>>(updaterOrValue: T, ref: Ref) {
-  ref.value = typeof updaterOrValue === 'function'
-    ? updaterOrValue(ref.value)
-    : updaterOrValue
+  ref.value = typeof updaterOrValue === 'function' ? updaterOrValue(ref.value) : updaterOrValue;
+}
+
+export function formatNumber(
+  value: number,
+  locale: string,
+  options: Intl.NumberFormatOptions = {},
+): string {
+  return new Intl.NumberFormat(locale, options).format(value);
+}
+
+export function formatPercent(
+  value: number,
+  locale: string,
+  options: Intl.NumberFormatOptions = {},
+): string {
+  return formatNumber(value, locale, {
+    style: 'percent',
+    maximumFractionDigits: 0,
+    ...options,
+  });
+}
+
+export function formatDate(
+  value: FormatDateInput | null | undefined,
+  locale: string,
+  options: FormatDateOptions = {},
+): string {
+  const optionsWithDefaults: FormatDateOptions = hasDateFormatOptions(options)
+    ? options
+    : {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        ...options,
+      };
+
+  return formatDateValue(value, locale, optionsWithDefaults, 'date');
+}
+
+export function formatTime(
+  value: FormatDateInput | null | undefined,
+  locale: string,
+  options: FormatDateOptions = {},
+): string {
+  const optionsWithDefaults: FormatDateOptions = hasDateFormatOptions(options)
+    ? options
+    : {
+        hour: 'numeric',
+        minute: '2-digit',
+        ...options,
+      };
+
+  return formatDateValue(value, locale, optionsWithDefaults, 'time');
+}
+
+export function formatDateTime(
+  value: FormatDateInput | null | undefined,
+  locale: string,
+  options: FormatDateOptions = {},
+): string {
+  const optionsWithDefaults: FormatDateOptions = hasDateFormatOptions(options)
+    ? options
+    : {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        ...options,
+      };
+
+  return formatDateValue(value, locale, optionsWithDefaults, 'dateTime');
+}
+
+function hasDateFormatOptions(options: FormatDateOptions): boolean {
+  return Object.keys(options).some((key) => key !== 'fallback');
+}
+
+function formatDateValue(
+  value: FormatDateInput | null | undefined,
+  locale: string,
+  options: FormatDateOptions,
+  formatter: 'date' | 'time' | 'dateTime',
+): string {
+  const { fallback = '', ...dateOptions } = options;
+  if (value === null || value === undefined || value === '') {
+    return fallback;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return fallback;
+  }
+
+  if (formatter === 'date') {
+    return date.toLocaleDateString(locale, dateOptions);
+  }
+
+  if (formatter === 'time') {
+    return date.toLocaleTimeString(locale, dateOptions);
+  }
+
+  return date.toLocaleString(locale, dateOptions);
 }
 
 /**
@@ -36,75 +135,74 @@ export function valueUpdater<T extends Updater<unknown>>(updaterOrValue: T, ref:
  *
  * @param date - The date to format (Date object, timestamp, or ISO string)
  * @param options - Configuration options
+ * @param options.relativeDaysThreshold - Maximum time in days to show relative time (default: 7)
+ * @param options.locale - Locale for date formatting (default: 'en-US')
  * @returns Formatted relative time string
  */
 export function formatRelativeTime(
   date: Date | number | string,
   options: {
     /** Maximum time in days to show relative time (default: 7) */
-    relativeDaysThreshold?: number
+    relativeDaysThreshold?: number;
     /** Locale for date formatting (default: 'en-US') */
-    locale?: string
+    locale?: string;
   } = {},
 ): string {
-  const {
-    relativeDaysThreshold = 7,
-    locale = 'en-US',
-  } = options
+  const { relativeDaysThreshold = 7, locale = 'en-US' } = options;
 
-  const dt = toDateTime(date)
-  const now = DateTime.now()
-  const diffMillis = now.diff(dt).toMillis()
-  const isFuture = diffMillis < 0
+  const dt = toDateTime(date);
+  const now = DateTime.now();
+  const diffMillis = now.diff(dt).toMillis();
+  const isFuture = diffMillis < 0;
 
   // Calculate diff in the correct direction
   const diff = isFuture
     ? dt.diff(now, ['days', 'hours', 'minutes', 'seconds'])
-    : now.diff(dt, ['days', 'hours', 'minutes', 'seconds'])
+    : now.diff(dt, ['days', 'hours', 'minutes', 'seconds']);
 
-  const { days, hours, minutes } = diff.toObject()
+  const { days, hours, minutes } = diff.toObject();
 
   // Within relative threshold
   if ((days ?? 0) < relativeDaysThreshold) {
     // Just now / In a moment (< 1 minute)
     if ((minutes ?? 0) < 1 && (hours ?? 0) === 0 && (days ?? 0) === 0) {
-      return isFuture ? 'In a moment' : 'Just now'
+      return isFuture ? 'In a moment' : 'Just now';
     }
 
     // Minutes (< 1 hour)
     if ((hours ?? 0) < 1 && (days ?? 0) === 0) {
-      const m = Math.floor(minutes ?? 0)
+      const m = Math.floor(minutes ?? 0);
       if (isFuture) {
-        return dt.toRelative({ locale, unit: 'minutes' }) ?? `in ${m} minute${m === 1 ? '' : 's'}`
+        return dt.toRelative({ locale, unit: 'minutes' }) ?? `in ${m} minute${m === 1 ? '' : 's'}`;
       }
-      return dt.toRelative({ locale, unit: 'minutes' }) ?? `${m} minute${m === 1 ? '' : 's'} ago`
+      return dt.toRelative({ locale, unit: 'minutes' }) ?? `${m} minute${m === 1 ? '' : 's'} ago`;
     }
 
     // Hours (< 24 hours)
     if ((days ?? 0) < 1) {
-      const h = Math.floor(hours ?? 0)
+      const h = Math.floor(hours ?? 0);
       if (isFuture) {
-        return dt.toRelative({ locale, unit: 'hours' }) ?? `in ${h} hour${h === 1 ? '' : 's'}`
+        return dt.toRelative({ locale, unit: 'hours' }) ?? `in ${h} hour${h === 1 ? '' : 's'}`;
       }
-      return dt.toRelative({ locale, unit: 'hours' }) ?? `${h} hour${h === 1 ? '' : 's'} ago`
+      return dt.toRelative({ locale, unit: 'hours' }) ?? `${h} hour${h === 1 ? '' : 's'} ago`;
     }
 
     // Tomorrow / Yesterday
     if (isFuture && dt.hasSame(now.plus({ days: 1 }), 'day')) {
-      return `Tomorrow at ${dt.toFormat('h:mm a', { locale })}`
+      return `Tomorrow at ${dt.toFormat('h:mm a', { locale })}`;
     }
     if (!isFuture && dt.hasSame(now.minus({ days: 1 }), 'day')) {
-      return `Yesterday at ${dt.toFormat('h:mm a', { locale })}`
+      return `Yesterday at ${dt.toFormat('h:mm a', { locale })}`;
     }
 
     // Within week (show day name)
     if ((days ?? 0) < 7) {
-      return `${dt.toFormat('cccc', { locale })} at ${dt.toFormat('h:mm a', { locale })}`
+      return `${dt.toFormat('cccc', { locale })} at ${dt.toFormat('h:mm a', { locale })}`;
     }
   }
 
   // Beyond threshold - show absolute date
-  return formatAbsoluteDate(dt, now, locale)
+  return formatAbsoluteDate(dt, now, locale);
 }
 
 /**
@@ -112,17 +210,17 @@ export function formatRelativeTime(
  */
 function toDateTime(date: Date | number | string): DateTime {
   if (date instanceof Date) {
-    return DateTime.fromJSDate(date)
+    return DateTime.fromJSDate(date);
   }
   if (typeof date === 'number') {
-    return DateTime.fromMillis(date)
+    return DateTime.fromMillis(date);
   }
-  return DateTime.fromISO(date)
+  return DateTime.fromISO(date);
 }
 
 /**
  * Format an absolute date in Facebook style using Luxon "MMM D, YYYY" (e.g., "Nov 26, 2024")
  */
 function formatAbsoluteDate(dt: DateTime, now: DateTime, locale: string) {
-  return dt.toFormat('LLL d, yyyy', { locale })
+  return dt.toFormat('LLL d, yyyy', { locale });
 }
