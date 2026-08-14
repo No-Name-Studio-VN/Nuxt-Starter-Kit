@@ -16,7 +16,7 @@
   <!-- 4. Image URL or path -->
   <NuxtImg
     v-else-if="isImage"
-    :src="name as string"
+    :src="imageSrc"
     :width="size"
     :height="size"
     :style="{ width: `${size}px`, height: `${size}px` }"
@@ -62,32 +62,58 @@ const EMOJI_RE = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}]+$/u;
 const IMAGE_RE
   = /^(?:https?:\/\/|\/|\.\/|\.\.\/)|\.(?:png|jpe?g|gif|svg|webp|avif|ico|bmp)(?:\?.*)?$/i;
 
+/**
+ * Lucide's module namespace, widened so icons can be looked up by name.
+ * Values stay `unknown` and are checked by `isComponent` before use.
+ */
+const iconRegistry: Record<string, unknown> = lucideIcons;
+
 // ─── Computed flags ──────────────────────────────────────────
 
-const isStringName = computed(() => typeof props.name === "string");
+/**
+ * The name when it was supplied as a string, otherwise undefined. Carrying the
+ * narrowed value rather than a boolean is what lets every consumer below use it
+ * without re-asserting its type.
+ */
+const stringName = computed(() => (typeof props.name === "string" ? props.name : undefined));
+
+const isStringName = computed(() => stringName.value !== undefined);
 
 const isEmoji = computed(() => {
-  if (!isStringName.value) return false;
-  return EMOJI_RE.test(props.name as string);
+  const value = stringName.value;
+  return value !== undefined && EMOJI_RE.test(value);
 });
 
-const isImage = computed(() => {
-  if (!isStringName.value) return false;
-  return IMAGE_RE.test(props.name as string);
+/** The resolved image source, or an empty string when the name is not an image. */
+const imageSrc = computed(() => {
+  const value = stringName.value;
+  return value !== undefined && IMAGE_RE.test(value) ? value : "";
 });
+
+const isImage = computed(() => imageSrc.value !== "");
 
 const fileIcon = computed<Component | undefined>(() => {
-  if (!isStringName.value || isEmoji.value || isImage.value) return undefined;
-  return useFileIcon(props.name as string);
+  const value = stringName.value;
+  if (value === undefined || isEmoji.value || isImage.value) return undefined;
+  return useFileIcon(value);
 });
 
 const lucideIcon = computed<Component | null>(() => {
-  if (!isStringName.value || isEmoji.value || isImage.value || fileIcon.value) return null;
-  const key = toPascalCase(props.name as string);
-  return (lucideIcons as unknown as Record<string, Component>)[key] ?? null;
+  const value = stringName.value;
+  if (value === undefined || isEmoji.value || isImage.value || fileIcon.value) return null;
+  const icon = iconRegistry[toPascalCase(value)];
+  return isComponent(icon) ? icon : null;
 });
 
 // ─── Helpers ─────────────────────────────────────────────────
+
+/**
+ * Every Lucide export is either a functional component or a component options
+ * object, so this is enough to tell an icon apart from any other export.
+ */
+function isComponent(value: unknown): value is Component {
+  return typeof value === "function" || (typeof value === "object" && value !== null);
+}
 
 /**
  * Converts a kebab-case icon name (with optional lucide prefix) to PascalCase.
