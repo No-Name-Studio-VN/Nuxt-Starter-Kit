@@ -89,18 +89,28 @@ const currentLocale = computed(() => i18nLocale.value);
  * 3. Unified Update Function
  * Nuxt i18n setLocale is asynchronous. We sync our local storage after.
  */
+type LocaleCode = (typeof locales.value)[number]['code'];
+
+/** Narrows a stored or clicked code to one i18n actually knows about. */
+function knownLocale(code: string): LocaleCode | undefined {
+  return locales.value.find((entry) => entry.code === code)?.code;
+}
+
 async function updateLocale(code: string) {
   if (currentLocale.value === code) return;
 
-  await setLocale(code);
-  storedLocale.value = code;
+  const target = knownLocale(code);
+  if (!target) return;
+
+  await setLocale(target);
+  storedLocale.value = target;
 }
 
 // 4. Sync on Init: Check if stored locale differs from default i18n state
 onMounted(() => {
   if (storedLocale.value && storedLocale.value !== i18nLocale.value) {
-    const exists = locales.value.some((l) => l.code === storedLocale.value);
-    if (exists) setLocale(storedLocale.value);
+    const target = knownLocale(storedLocale.value);
+    if (target) setLocale(target);
   }
 });
 </script>

@@ -76,7 +76,7 @@ import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/co
 import ResponsiveDialog from '@/components/ResponsiveDialog.vue';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-import { INSTALL_PROMPTER_FEATURES } from '~/constants/homeData';
+import { INSTALL_PROMPTER_FEATURES } from '~/constants/homedata';
 
 withDefaults(
   defineProps<{

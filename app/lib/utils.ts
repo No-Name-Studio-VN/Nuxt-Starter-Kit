@@ -39,7 +39,7 @@ export function formatDate(
   locale: string,
   options: FormatDateOptions = {},
 ): string {
-  const optionsWithDefaults = hasDateFormatOptions(options)
+  const optionsWithDefaults: FormatDateOptions = hasDateFormatOptions(options)
     ? options
     : {
         month: 'short',
@@ -56,7 +56,7 @@ export function formatTime(
   locale: string,
   options: FormatDateOptions = {},
 ): string {
-  const optionsWithDefaults = hasDateFormatOptions(options)
+  const optionsWithDefaults: FormatDateOptions = hasDateFormatOptions(options)
     ? options
     : {
         hour: 'numeric',
@@ -72,7 +72,7 @@ export function formatDateTime(
   locale: string,
   options: FormatDateOptions = {},
 ): string {
-  const optionsWithDefaults = hasDateFormatOptions(options)
+  const optionsWithDefaults: FormatDateOptions = hasDateFormatOptions(options)
     ? options
     : {
         dateStyle: 'medium',

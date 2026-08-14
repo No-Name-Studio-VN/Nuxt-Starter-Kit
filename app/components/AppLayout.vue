@@ -22,7 +22,7 @@ const fullWidth = computed(() => {
   return true;
 });
 
-function getRouteTitle(meta: { breadcrumb?: unknown; title?: unknown } | undefined) {
+function getRouteTitle(meta: Record<string, unknown> | undefined) {
   if (!meta) return null;
   if (typeof meta.breadcrumb === 'string' && meta.breadcrumb.length > 0)
     return resolveTitle(meta.breadcrumb);
