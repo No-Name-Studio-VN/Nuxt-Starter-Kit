@@ -9,17 +9,9 @@
       <div class="container flex h-12 max-w-screen-2xl items-center justify-between">
         <div class="hidden lg:block" />
         <div class="text-sm">
-          <CtMDC
-            :value="content"
-            class="flex items-center"
-          />
+          <CtMDC :value="content" class="flex items-center" />
         </div>
-        <Button
-          v-if="showClose"
-          variant="ghost"
-          class="z-40 size-8 p-2"
-          @click="open = false"
-        >
+        <Button v-if="showClose" variant="ghost" class="z-40 size-8 p-2" @click="open = false">
           <XIcon />
         </Button>
         <div v-else />
@@ -29,13 +21,13 @@
 </template>
 
 <script setup lang="ts">
-import { XIcon } from '@lucide/vue'
+import { XIcon } from '@lucide/vue';
 
-const open = useCookie<boolean>('banner-open', { default: () => true })
-const { showClose, content, to, target, border } = useConfig().value.banner
+const open = useCookie<boolean>('banner-open', { default: () => true });
+const { showClose, content, to, target, border } = useConfig().value.banner;
 
 function navigate() {
-  const localePath = useLocalePath()
+  const localePath = useLocalePath();
 
   if (open.value && to) {
     navigateTo(localePath(to), {
@@ -43,7 +35,7 @@ function navigate() {
       open: {
         target: target ?? '_blank',
       },
-    })
+    });
   }
 }
 </script>

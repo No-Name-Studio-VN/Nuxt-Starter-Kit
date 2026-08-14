@@ -5,16 +5,8 @@
     :style="`background-size: 120px 120px; background-image: linear-gradient(to right, ${colorMode === 'light' ? '#e5e7eb' : '#27272a'} 1px, transparent 1px), linear-gradient(to bottom, ${colorMode === 'light' ? '#e5e7eb' : '#27272a'} 1px, transparent 1px);`"
   >
     <div class="mb-4 flex">
-      <img
-        v-if="colorMode === 'light'"
-        :src="logo.light"
-        :height="65"
-      >
-      <img
-        v-else
-        :src="logo.dark"
-        :height="65"
-      >
+      <img v-if="colorMode === 'light'" :src="logo.light" :height="65" />
+      <img v-else :src="logo.dark" :height="65" />
       <span
         v-if="showTitle && siteTitle"
         class="ml-4 self-center text-4xl font-bold"
@@ -31,7 +23,7 @@
         {{ title }}
       </h1>
       <p
-        class="text-4xl leading-tight"
+        class="text-4xl/tight"
         :class="[colorMode === 'light' ? 'text-zinc-500' : 'text-zinc-400']"
       >
         {{ description }}
@@ -42,14 +34,14 @@
 
 <script setup lang="ts">
 const props = defineProps<{
-  colorMode?: 'dark' | 'light'
-  title: string
-  description: string
-}>()
+  colorMode?: 'dark' | 'light';
+  title: string;
+  description: string;
+}>();
 
-const { logo, title: siteTitle, showTitle } = useConfig().value.header
+const { logo, title: siteTitle, showTitle } = useConfig().value.header;
 
 const colorMode = computed(() => {
-  return props.colorMode || useConfig().value.site.ogImageColor || 'light'
-})
+  return props.colorMode || useConfig().value.site.ogImageColor || 'light';
+});
 </script>

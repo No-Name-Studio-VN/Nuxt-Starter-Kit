@@ -1,10 +1,7 @@
 <template>
   <Breadcrumb>
     <BreadcrumbList>
-      <template
-        v-for="(breadcrumb, index) in breadcrumbs"
-        :key="breadcrumb.title"
-      >
+      <template v-for="(breadcrumb, index) in breadcrumbs" :key="breadcrumb.title">
         <BreadcrumbItem>
           <NuxtLinkLocale
             :href="index === 0 ? undefined : breadcrumb.href"
@@ -21,10 +18,10 @@
 </template>
 
 <script setup lang="ts">
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbSeparator } from '../ui/breadcrumb'
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbSeparator } from '../ui/breadcrumb';
 
-const { navigation } = usePageData()
+const { navigation } = usePageData();
 
-const route = useRoute()
-const breadcrumbs = useBreadcrumb(route.path, navigation.value)
+const route = useRoute();
+const breadcrumbs = useBreadcrumb(route.path, navigation.value);
 </script>

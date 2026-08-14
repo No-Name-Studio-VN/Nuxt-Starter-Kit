@@ -1,3 +1,3 @@
 <template>
-  <hr class="[&:not(:first-child)]:mt-6">
+  <hr class="not-first:mt-6" />
 </template>

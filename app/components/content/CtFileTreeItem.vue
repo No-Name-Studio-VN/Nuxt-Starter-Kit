@@ -19,23 +19,14 @@
           :size="16"
         />
 
-        <CtIcon
-          v-if="showIcon"
-          :name="tree.icon"
-          class="min-w-4 max-w-5.5"
-        />
+        <CtIcon v-if="showIcon" :name="tree.icon" class="min-w-4 max-w-5.5" />
 
         <span :class="[tree.highlighted && 'text-primary font-bold']">
           {{ tree.title }}
         </span>
       </a>
       <div v-show="isOpen">
-        <CtFileTreeRoot
-          :show-icon
-          :show-arrow
-          :tree="tree.children"
-          :level="level + 1"
-        />
+        <CtFileTreeRoot :show-icon :show-arrow :tree="tree.children" :level="level + 1" />
       </div>
     </div>
     <!-- File -->
@@ -49,11 +40,7 @@
         tree.diff === 'none' && 'hover:bg-muted hover:text-primary',
       ]"
     >
-      <CtIcon
-        v-if="showIcon"
-        :name="tree.icon"
-        class="min-w-4 max-w-5.5"
-      />
+      <CtIcon v-if="showIcon" :name="tree.icon" class="min-w-4 max-w-5.5" />
 
       <span :class="[tree.highlighted && 'text-primary font-bold']">
         {{ tree.title }}
@@ -63,15 +50,15 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDownIcon } from '@lucide/vue'
-import type { FileTreeItem } from '~~/types'
-import CtIcon from './CtIcon.vue'
+import { ChevronDownIcon } from "@lucide/vue";
+import type { FileTreeItem } from "~~/types";
+import CtIcon from "./CtIcon.vue";
 
 defineProps<{
-  showArrow: boolean
-  tree: FileTreeItem
-  showIcon: boolean
-  level: number
-}>()
-const isOpen = ref(true)
+  showArrow: boolean;
+  tree: FileTreeItem;
+  showIcon: boolean;
+  level: number;
+}>();
+const isOpen = ref(true);
 </script>

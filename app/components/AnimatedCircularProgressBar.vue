@@ -3,12 +3,7 @@
     class="progress-circle-base"
     :class="cn('relative size-40 text-2xl font-semibold', props.class)"
   >
-    <svg
-      fill="none"
-      class="size-full"
-      stroke-width="2"
-      viewBox="0 0 100 100"
-    >
+    <svg fill="none" class="size-full" stroke-width="2" viewBox="0 0 100 100">
       <circle
         v-if="currentPercent <= 90 && currentPercent >= 0"
         cx="50"
@@ -42,19 +37,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { cn } from '@/lib/utils'
+import { computed } from 'vue';
+import { cn } from '@/lib/utils';
 
 interface Props {
-  max?: number
-  value?: number
-  min?: number
-  gaugePrimaryColor?: string
-  gaugeSecondaryColor?: string
-  class?: string
-  circleStrokeWidth?: number
-  showPercentage?: boolean
-  duration?: number
+  max?: number;
+  value?: number;
+  min?: number;
+  gaugePrimaryColor?: string;
+  gaugeSecondaryColor?: string;
+  class?: string;
+  circleStrokeWidth?: number;
+  showPercentage?: boolean;
+  duration?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -66,14 +61,14 @@ const props = withDefaults(defineProps<Props>(), {
   circleStrokeWidth: 10,
   showPercentage: true,
   duration: 1,
-})
+});
 
-const circumference = 2 * Math.PI * 45
-const percentPx = circumference / 100
+const circumference = 2 * Math.PI * 45;
+const percentPx = circumference / 100;
 
-const currentPercent = computed(() => ((props.value - props.min) / (props.max - props.min)) * 100)
-const percentageInPx = computed(() => `${percentPx}px`)
-const durationInSeconds = computed(() => `${props.duration}s`)
+const currentPercent = computed(() => ((props.value - props.min) / (props.max - props.min)) * 100);
+const percentageInPx = computed(() => `${percentPx}px`);
+const durationInSeconds = computed(() => `${props.duration}s`);
 </script>
 
 <style scoped lang="css">

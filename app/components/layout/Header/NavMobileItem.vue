@@ -13,21 +13,13 @@
       </CollapsibleTrigger>
       <CollapsibleContent>
         <ul class="pl-2">
-          <li
-            v-for="link in item.links"
-            :key="link.title"
-          >
+          <li v-for="link in item.links" :key="link.title">
             <NuxtLinkLocale
               :to="link.to"
               :target="link.to"
               class="hover:bg-muted mb-1 flex w-full gap-2 rounded-md px-3 py-2 transition-all"
             >
-              <CtIcon
-                v-if="link.icon"
-                :name="link.icon"
-                :size="16"
-                class="mt-1 min-w-5"
-              />
+              <CtIcon v-if="link.icon" :name="link.icon" :size="16" class="mt-1 min-w-5" />
 
               <div>
                 <div class="font-semibold">
@@ -43,12 +35,7 @@
       </CollapsibleContent>
     </Collapsible>
   </template>
-  <NuxtLinkLocale
-    v-else
-    :to="item.to"
-    :target="item.target"
-    class="flex w-full p-2"
-  >
+  <NuxtLinkLocale v-else :to="item.to" :target="item.target" class="flex w-full p-2">
     {{ $t(item.title) }}
     <ArrowUpRightIcon
       v-if="item.showLinkIcon ?? true"
@@ -59,19 +46,19 @@
 </template>
 
 <script setup lang="ts">
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ArrowUpRightIcon, ChevronsDownUpIcon, ChevronsUpDownIcon } from '@lucide/vue'
-import CtIcon from '@/components/content/CtIcon.vue'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ArrowUpRightIcon, ChevronsDownUpIcon, ChevronsUpDownIcon } from '@lucide/vue';
+import CtIcon from '@/components/content/CtIcon.vue';
 
 const props = defineProps<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  item: any
-  index: number
-}>()
+  item: any;
+  index: number;
+}>();
 
-const collapsedMapStore = useCollapsedMapStore()
-const isOpen = ref(collapsedMapStore.get(`mobile-header-nav${props.index}`) || false)
+const collapsedMapStore = useCollapsedMapStore();
+const isOpen = ref(collapsedMapStore.get(`mobile-header-nav${props.index}`) || false);
 watch(isOpen, (v) => {
-  collapsedMapStore.set(`mobile-header-nav${props.index}`, v)
-})
+  collapsedMapStore.set(`mobile-header-nav${props.index}`, v);
+});
 </script>

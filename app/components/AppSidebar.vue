@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { motion, AnimatePresence } from 'motion-v'
-import { ArrowLeft, SearchIcon } from '@lucide/vue'
+import { ArrowLeft, SearchIcon, LogIn, LogOut } from '@lucide/vue';
 
-import NavMain from '@/components/nav/NavMain.vue'
-import NavSecondary from '@/components/nav/NavSecondary.vue'
-import NavUser from '@/components/nav/NavUser.vue'
-import type { SidebarProps } from '@/components/ui/sidebar'
+import NavMain from '@/components/nav/NavMain.vue';
+import NavSecondary from '@/components/nav/NavSecondary.vue';
+import NavUser from '@/components/nav/NavUser.vue';
+import type { SidebarProps } from '@/components/ui/sidebar';
 import {
   Sidebar,
   SidebarContent,
@@ -14,18 +13,26 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from '@/components/ui/sidebar'
-import { useSidebar } from '@/components/ui/sidebar/utils'
+} from '@/components/ui/sidebar';
+import { useSidebar } from '@/components/ui/sidebar/utils';
 
-import { Separator } from './ui/separator'
+import InstallPrompter from './InstallPrompter.vue';
+import { Separator } from './ui/separator';
 
 const props = withDefaults(defineProps<SidebarProps>(), {
   variant: 'inset',
-})
+});
 
-const { toggleIsOpen } = useHotSearch()
-const { open } = useSidebar()
-const { activeContext, primarySections, secondarySections, showBack, isContextView } = useSidebarContext()
+const { toggleIsOpen } = useHotSearch();
+const { open } = useSidebar();
+const { primarySections, secondarySections, showBack, showMainSidebar } = useSidebarContext();
+const { loggedIn, clear } = useUserSession();
+
+async function logout() {
+  clear().then(() => {
+    location.reload();
+  });
+}
 </script>
 
 <template>
@@ -38,15 +45,11 @@ const { activeContext, primarySections, secondarySections, showBack, isContextVi
         <SidebarMenuItem>
           <SidebarMenuButton
             as-child
-            tooltip="Quick Search"
+            :tooltip="$t('nav.quick_search')"
             class="flex items-center"
             @click="toggleIsOpen()"
           >
-            <Button
-              variant="outline"
-              class="w-full"
-              size="lg"
-            >
+            <Button variant="outline" class="w-full" size="lg">
               <SearchIcon />
               <span>Quick Search</span>
               <KbdGroup class="ml-auto">
@@ -62,54 +65,51 @@ const { activeContext, primarySections, secondarySections, showBack, isContextVi
     </SidebarHeader>
 
     <SidebarContent class="overflow-hidden grid relative">
-      <AnimatePresence mode="wait">
-        <motion.div
-          :key="activeContext.id"
-          :initial="{ opacity: 0, x: isContextView ? 20 : -20 }"
-          :animate="{ opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } }"
-          :exit="{ opacity: 0, x: isContextView ? -20 : 20, transition: { duration: 0.2 } }"
-          class="w-full flex flex-col gap-0 overflow-y-auto"
-          style="grid-area: 1 / 1;"
-        >
-          <SidebarGroup v-if="showBack">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  as-child
-                  tooltip="Back"
-                  class="flex items-center"
-                >
-                  <nuxt-link to="/">
-                    <ArrowLeft />
-                    <span>Back</span>
-                  </nuxt-link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-          <NavMain
-            v-for="section in primarySections"
-            :key="section.title"
-            :title="section.title"
-            :items="section.items"
-          />
-          <NavSecondary
-            v-for="section in secondarySections"
-            :key="section.title"
-            class="mt-auto"
-            :items="section.items"
-          />
-        </motion.div>
-      </AnimatePresence>
+      <div class="w-full flex flex-col gap-0 overflow-y-auto" style="grid-area: 1 / 1">
+        <SidebarGroup v-if="showBack">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                :tooltip="$t('common.back')"
+                class="flex items-center"
+                @click="showMainSidebar"
+              >
+                <ArrowLeft />
+                <span>{{ $t('common.back') }}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+        <NavMain
+          v-for="section in primarySections"
+          :key="section.title"
+          :title="section.title"
+          :items="section.items"
+        />
+        <NavSecondary
+          v-for="section in secondarySections"
+          :key="section.title"
+          class="mt-auto"
+          :items="section.items"
+        />
+      </div>
     </SidebarContent>
+
     <Separator />
     <SidebarFooter>
-      <span
-        v-show="open"
-        class="text-sm text-muted-foreground"
-      >
-        © {{ new Date().getFullYear() }} {{ useConfig().value.footer.credits }}
-      </span>
+      <InstallPrompter :sidebar-open="open" />
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <Button v-if="loggedIn" class="w-full" variant="destructive" @click="logout">
+            <LogOut class="size-4" />
+            {{ $t('common.log_out') }}
+          </Button>
+          <Button v-else class="w-full" @click="navigateTo('/auth/login')">
+            <LogIn class="size-4" />
+            {{ $t('common.sign_in') }}
+          </Button>
+        </SidebarMenuItem>
+      </SidebarMenu>
     </SidebarFooter>
   </Sidebar>
 </template>

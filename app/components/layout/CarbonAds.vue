@@ -5,11 +5,10 @@
     :format="carbonAds.format"
     class="lg:mt-6"
   >
-    <template
-      v-if="carbonAds.fallback"
-      #error
-    >
-      <div class="border-border bg-background text-muted-foreground flex flex-col items-center rounded-lg border px-4 py-6">
+    <template v-if="carbonAds.fallback" #error>
+      <div
+        class="border-border bg-background text-muted-foreground flex flex-col items-center rounded-lg border px-4 py-6"
+      >
         {{ $t(carbonAds.fallbackMessage) }}
       </div>
     </template>
@@ -17,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-const { carbonAds } = useConfig().value.toc
+const { carbonAds } = useConfig().value.toc;
 </script>
 
 <style>

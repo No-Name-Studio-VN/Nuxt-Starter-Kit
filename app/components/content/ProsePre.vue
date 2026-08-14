@@ -6,20 +6,17 @@
     :highlights="highlights"
     :meta="meta"
   >
-    <pre
-      :class="$props.class"
-      :style="style"
-    ><slot /></pre>
+    <pre :class="$props.class" :style="style"><slot /></pre>
   </CtCodeBlock>
 </template>
 
 <script setup lang="ts">
-import type { BuiltinLanguage } from 'shiki'
+import type { BuiltinLanguage } from "shiki";
 
 defineProps({
   code: {
     type: String,
-    default: '',
+    default: "",
   },
   language: {
     type: String as PropType<BuiltinLanguage>,
@@ -45,12 +42,12 @@ defineProps({
     type: [String, Object],
     default: null,
   },
-})
+});
 </script>
 
 <style>
-pre code .line{
+pre code .line {
   display: block;
-  min-height: 1rem
+  min-height: 1rem;
 }
 </style>

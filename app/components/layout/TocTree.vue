@@ -4,14 +4,12 @@
       v-for="link in links"
       :key="link.id"
       class="relative py-1"
-      :class="[
-        level !== 0 && '[&:first-child]:pt-2 [&:last-child]:pb-0',
-      ]"
+      :class="[level !== 0 && 'first:pt-2 last:pb-0']"
     >
       <div class="flex items-center">
         <div
           v-if="level === 0 && progressBar"
-          class="absolute md:ml-1.5 left-0 top-0 bottom-0 w-px transition-colors duration-300 ease-in-out"
+          class="absolute md:ml-1.5 left-0 inset-y-0 w-px transition-colors duration-300 ease-in-out"
           :class="isActive(link) ? 'bg-primary' : 'bg-border'"
         />
         <NuxtLink
@@ -35,21 +33,23 @@
 </template>
 
 <script setup lang="ts">
-import type { TocLink } from '@nuxt/content'
+import type { TocLink } from '@nuxt/content';
 
 defineProps<{
-  links: TocLink[]
-  level: number
-}>()
+  links: TocLink[];
+  level: number;
+}>();
 
-const config = useConfig()
-const progressBar = config.value.toc.progressBar
+const config = useConfig();
+const progressBar = config.value.toc.progressBar;
 
-const { activeHeadings, updateHeadings } = useScrollspy()
+const { activeHeadings, updateHeadings } = useScrollspy();
 
 function isActive(link: TocLink) {
-  return activeHeadings.value.includes(link.id)
-    || link.children?.some(child => activeHeadings.value.includes(child.id))
+  return (
+    activeHeadings.value.includes(link.id) ||
+    link.children?.some((child) => activeHeadings.value.includes(child.id))
+  );
 }
 
 onMounted(() =>
@@ -59,5 +59,5 @@ onMounted(() =>
     ...document.querySelectorAll('.docs-content h3'),
     ...document.querySelectorAll('.docs-content h4'),
   ]),
-)
+);
 </script>

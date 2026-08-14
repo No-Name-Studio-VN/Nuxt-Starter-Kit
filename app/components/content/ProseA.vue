@@ -10,14 +10,11 @@
 </template>
 
 <script setup lang="ts">
-import type { Target } from '~~/types'
+import type { Target } from "~~/types";
 
-const {
-  href = '',
-  external = false,
-} = defineProps<{
-  href?: string
-  target?: Target
-  external?: boolean
-}>()
+const { href = "", external = false } = defineProps<{
+  href?: string;
+  target?: Target;
+  external?: boolean;
+}>();
 </script>
