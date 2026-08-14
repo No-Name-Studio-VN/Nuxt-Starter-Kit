@@ -15,7 +15,9 @@ import {
   TicketIcon,
   User,
   UserCog2Icon,
+  // <nsk:admin-users>
   UsersIcon,
+  // </nsk:admin-users>
 } from '@lucide/vue';
 
 export const SIDEBAR_CONTEXTS: SidebarContext[] = [
@@ -52,7 +54,9 @@ export const SIDEBAR_CONTEXTS: SidebarContext[] = [
       {
         title: 'Users & Sales',
         items: [
+          // <nsk:admin-users>
           { title: 'Users', url: '/admin/users', icon: UsersIcon },
+          // </nsk:admin-users>
           { title: 'Coupons', url: '/admin/coupons', icon: TicketIcon },
           { title: 'Subscriptions', url: '/admin/subscriptions', icon: TicketIcon },
         ],

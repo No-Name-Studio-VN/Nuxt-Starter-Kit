@@ -43,7 +43,9 @@
 
 <script setup lang="ts">
 import {
+  // <nsk:admin-users>
   UsersIcon,
+  // </nsk:admin-users>
   TicketIcon,
   HardDriveIcon,
   AlertTriangleIcon,
@@ -73,6 +75,7 @@ interface ManagementCard {
 }
 
 const managementCards: ManagementCard[] = [
+  // <nsk:admin-users>
   {
     id: 'users',
     icon: UsersIcon,
@@ -82,6 +85,7 @@ const managementCards: ManagementCard[] = [
     bgColor: 'bg-blue-500/10',
     textColor: 'text-blue-500',
   },
+  // </nsk:admin-users>
   {
     id: 'coupons',
     icon: TicketIcon,

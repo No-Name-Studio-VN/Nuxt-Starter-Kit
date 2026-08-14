@@ -72,8 +72,10 @@ jobs:
             modules: pwa
           - name: base + content
             modules: content
+          - name: base + admin users
+            modules: admin-users
           - name: all modules
-            modules: content,pwa
+            modules: content,pwa,admin-users
     steps:
       - uses: actions/checkout@v4
 
