@@ -8,9 +8,9 @@ name: CLI matrix
 on:
   push:
     branches:
-      - master
+      - main
     paths:
-      - 'packages/create-nuxt-starter/**'
+      - 'packages/create-nuxt-saas/**'
       - '.github/workflows/cli-matrix.yml'
       - 'package.json'
       - 'nuxt.config.ts'
@@ -20,7 +20,7 @@ on:
       - 'types/**'
   pull_request:
     branches:
-      - master
+      - main
 
 concurrency:
   group: cli-matrix-${{ github.ref }}
@@ -44,18 +44,18 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: packages/create-nuxt-starter/package-lock.json
+          cache-dependency-path: packages/create-nuxt-saas/package-lock.json
 
       - name: Install CLI dependencies
-        working-directory: packages/create-nuxt-starter
+        working-directory: packages/create-nuxt-saas
         run: npm ci
 
       - name: Test
-        working-directory: packages/create-nuxt-starter
+        working-directory: packages/create-nuxt-saas
         run: npm test
 
       - name: Typecheck
-        working-directory: packages/create-nuxt-starter
+        working-directory: packages/create-nuxt-saas
         run: npm run typecheck
 
   generate:
@@ -92,17 +92,17 @@ jobs:
           node-version: '22'
 
       - name: Install CLI dependencies
-        working-directory: packages/create-nuxt-starter
+        working-directory: packages/create-nuxt-saas
         run: npm ci
 
       - name: Build the CLI
-        working-directory: packages/create-nuxt-starter
+        working-directory: packages/create-nuxt-saas
         run: npm run build
 
       - name: Generate the project
         run: |
-          node packages/create-nuxt-starter/bin/nuxt-starter.mjs init \
-            --dir "$RUNNER_TEMP/generated" \
+          node packages/create-nuxt-saas/bin/nuxt-saas.mjs init \
+            "$RUNNER_TEMP/generated" \
             --yes \
             --kit . \
             --modules '${{ matrix.modules }}'
