@@ -5,8 +5,10 @@ import { AVAILABLE_PROVIDERS } from '#shared/constants/oauthProviders';
 import { apiRoutes } from '#shared/apiRoutes';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { loginSchema } from '#shared/schemas/userSchema';
+// <nsk:auth-2fa>
 import { REGEXP_ONLY_DIGITS } from 'vue-input-otp';
 import { TOTP_LENGTH } from '#shared/constants/totp';
+// </nsk:auth-2fa>
 import { cn } from '@/lib/utils';
 import { parseApiError } from '@/utils/apiError';
 import { apiRequest } from '@/utils/apiRequest';
@@ -27,7 +29,9 @@ const showPassword = ref(false);
 const isLoading = ref(false);
 const error = ref('');
 const success = ref('');
+// <nsk:auth-2fa>
 const totpCode = ref('');
+// </nsk:auth-2fa>
 const turnstileToken = ref('');
 const isShaking = ref(false);
 const oauthLoadingProvider = ref<string | null>(null);
@@ -130,7 +134,17 @@ const onSubmit = handleSubmit(async () => {
 const redirectTo = computed(() =>
   safeRedirectPath(getQueryString(route.query.redirectTo) || '/', requestUrl.origin),
 );
-const is2faStep = computed(() => getQueryString(route.query.step) === '2fa');
+/**
+ * Whether the form is on the two-factor step. The auth-2fa module drives it from
+ * the query string below; without that module the step never happens, and the
+ * template's negated branches still need something to read.
+ */
+const is2faStep = ref(false);
+
+// <nsk:auth-2fa>
+watchEffect(() => {
+  is2faStep.value = getQueryString(route.query.step) === '2fa';
+});
 
 const cancel2fa = () => {
   const q = { ...route.query };
@@ -161,6 +175,7 @@ const on2faSubmit = async () => {
     isLoading.value = false;
   }
 };
+// </nsk:auth-2fa>
 
 watch(
   () => route.query.error,
@@ -302,11 +317,13 @@ onBeforeUnmount(() => {
     quote-author="Morgan Vale"
   >
     <div class="space-y-1">
+      <!-- <nsk:auth-2fa> -->
       <template v-if="is2faStep">
         <h1 class="text-2xl font-bold tracking-tight">Two-factor authentication</h1>
         <p class="text-base text-muted-foreground">Enter the code from your authenticator app.</p>
       </template>
-      <template v-else>
+      <!-- </nsk:auth-2fa> -->
+      <template v-if="!is2faStep">
         <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
         <p class="text-base text-muted-foreground">
           {{ APP_MANIFEST.description }}
@@ -327,6 +344,7 @@ onBeforeUnmount(() => {
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
 
+    <!-- <nsk:auth-2fa> -->
     <form v-if="is2faStep" class="space-y-6" @submit.prevent="on2faSubmit">
       <div class="flex justify-center">
         <InputOTP
@@ -361,9 +379,10 @@ onBeforeUnmount(() => {
         Back to login
       </Button>
     </form>
+    <!-- </nsk:auth-2fa> -->
 
     <form
-      v-else
+      v-if="!is2faStep"
       :action="apiRoutes.AUTH_LOGIN_PASSWORD"
       method="POST"
       class="space-y-4"

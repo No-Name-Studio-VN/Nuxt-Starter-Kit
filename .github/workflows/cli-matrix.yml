@@ -76,8 +76,10 @@ jobs:
             modules: admin-users
           - name: base + feature flags
             modules: feature-flags
+          - name: base + 2fa
+            modules: auth-2fa
           - name: all modules
-            modules: content,pwa,admin-users,feature-flags
+            modules: content,pwa,admin-users,feature-flags,auth-2fa
     steps:
       - uses: actions/checkout@v4
 

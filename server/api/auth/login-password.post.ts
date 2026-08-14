@@ -71,6 +71,7 @@ export default defineEventHandler(async (event) => {
   // Update last login
   await userService.update({ id: user.id, lastLoginAt: new Date() });
 
+  // <nsk:auth-2fa>
   // Check if TOTP 2FA is enabled
   const lockScreen = await userLockScreenService.getById(user.id);
 
@@ -86,6 +87,7 @@ export default defineEventHandler(async (event) => {
       apiRoutes.AUTH_LOGIN + `?step=2fa&redirectTo=${encodeURIComponent(redirectToStr)}`,
     );
   }
+  // </nsk:auth-2fa>
 
   // Update last login
   await userService.update({ id: user.id, lastLoginAt: new Date() });

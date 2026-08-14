@@ -33,17 +33,21 @@ export const apiRoutes = {
   MY_LOCK_SCREEN_VALIDATE: '/api/users/me/lock-screen/validate',
 
   // 2FA Routes
+  // <nsk:auth-2fa>
   MY_2FA_SETUP: '/api/users/me/2fa/setup',
   MY_2FA_VERIFY: '/api/users/me/2fa/verify',
   MY_2FA_SETTINGS: '/api/users/me/2fa/settings',
   MY_2FA_DISABLE: '/api/users/me/2fa/disable',
+  // </nsk:auth-2fa>
 
   ADMIN_DASHBOARD: ADMIN_API_PREFIX + '/dashboard',
   ADMIN_USERS: ADMIN_API_PREFIX + '/users',
   ADMIN_USERS_DELETE: ADMIN_API_PREFIX + '/users/delete',
 
   AUTH_LOGIN_PASSWORD: '/api/auth/login-password',
+  // <nsk:auth-2fa>
   AUTH_LOGIN_2FA: '/api/auth/login-2fa',
+  // </nsk:auth-2fa>
   AUTH_REGISTER_PASSWORD: '/api/auth/register-password',
   AUTH_FORGOT_PASSWORD_REQUEST: '/api/auth/forgot-password',
   AUTH_RESEND_VERIFICATION: '/api/auth/resend-verification',

@@ -13,7 +13,9 @@ declare module '#auth-utils' {
   }
 
   interface SecureSessionData {
+    // <nsk:auth-2fa>
     pending2faUserId?: number;
+    // </nsk:auth-2fa>
   }
 }
 
