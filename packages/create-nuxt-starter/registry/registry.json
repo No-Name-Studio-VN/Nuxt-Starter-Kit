@@ -189,9 +189,19 @@
           }
         }
       },
+      "env": [
+        "NUXT_SESSION_PASSWORD",
+        "CSRF_SECRET",
+        "NUXT_PUBLIC_SITE_URL",
+        "NUXT_DEFAULT_ADMIN_PASSWORD",
+        "NUXT_SEED_SECRET",
+        "NUXT_RESEND_API_KEY",
+        "NUXT_RESEND_FROM_EMAIL"
+      ],
       "notes": [
-        "Configure Cloudflare D1 and KV bindings before deploying.",
-        "Replace the Sentry, OAuth, Turnstile, and Studio placeholders with your own settings."
+        "Set \"name\" and \"routes\" in wrangler.jsonc — they still name the kit's own worker and domain — then configure the D1 and KV bindings.",
+        "Your app's name, short name and description come from shared/constants/manifest.ts.",
+        "nuxt.config.ts carries the kit's Sentry org and project; replace them along with the OAuth and Turnstile credentials."
       ]
     },
     {
@@ -236,6 +246,10 @@
           }
         }
       },
+      "env": [
+        "STUDIO_GITHUB_CLIENT_ID",
+        "STUDIO_GITHUB_CLIENT_SECRET"
+      ],
       "notes": [
         "Nuxt Studio is configured for this kit\u2019s repository \u2014 point studio.repository at your own."
       ]
@@ -315,7 +329,9 @@
           }
         }
       },
-      "notes": []
+      "notes": [
+        "The feature_flags tables leave the drizzle schema with this module, but the migration that created them stays. Run \"npm run db:generate\" to record the change."
+      ]
     },
     {
       "id": "auth-2fa",

@@ -12,6 +12,16 @@ const PROTECTED_PATTERNS: RegExp[] = [
   /^(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb)$/,
 ];
 
+/**
+ * Env templates, which the `.env` rule would otherwise catch by name.
+ *
+ * They hold no secrets — they are the kit's list of what a project has to set —
+ * so protecting them would mean a module could never tell an existing project
+ * about a variable it started needing.
+ */
+const ENV_TEMPLATE = /^\.env\.(example|sample|template)$/;
+
 export function isProtectedPath(path: string): boolean {
+  if (ENV_TEMPLATE.test(path)) return false;
   return PROTECTED_PATTERNS.some((pattern) => pattern.test(path));
 }

@@ -1,10 +1,17 @@
 import { readFile, rm } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { CliError } from '../errors';
 import type { ManifestModule, ProjectManifest } from '../manifest/io';
 import { RENDER_VERSION, writeManifest } from '../manifest/io';
 import type { Registry } from '../registry/schema';
 import { substituteFragment } from '../render/placeholders';
-import { hashContent, pathExists, writeJsonAtomically, writeTextFile } from '../util/fs';
+import {
+  hashContent,
+  pathExists,
+  pruneEmptyDirectories,
+  writeJsonAtomically,
+  writeTextFile,
+} from '../util/fs';
 import { resolveInside } from '../util/paths';
 import type { UpgradePlan } from './plan';
 import { isProtectedPath } from './protected';
@@ -146,6 +153,7 @@ export async function applyUpgrade(plan: UpgradePlan, registry: Registry): Promi
         break;
       case 'delete':
         await rm(path, { force: true });
+        await pruneEmptyDirectories(plan.projectRoot, dirname(path));
         result.deleted.push(action.path);
         break;
       case 'orphan':

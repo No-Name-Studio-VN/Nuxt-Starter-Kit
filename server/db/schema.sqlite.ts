@@ -2,7 +2,9 @@ import { sqliteTable, text, integer, unique, index } from 'drizzle-orm/sqlite-co
 import { relations } from 'drizzle-orm';
 import type { WebAuthnCredential } from '#auth-utils';
 import type { AuthTokenType } from '../../shared/commonEnums';
+// <nsk:feature-flags>
 import type { FeatureFlagRules } from '../../types/featureFlags';
+// </nsk:feature-flags>
 
 const timestampColumns = {
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()), // Auto-set on create
@@ -104,6 +106,7 @@ export const oauthAccounts = sqliteTable(
 );
 
 // ── Feature Flags Tables ──────────────────────────────────────
+// <nsk:feature-flags>
 export const featureFlags = sqliteTable('feature_flags', {
   key: text('key').primaryKey(), // e.g. 'new-reader-v2', 'premium-dark-mode'
   description: text('description').notNull().default(''),
@@ -132,6 +135,7 @@ export const featureFlagAuditLog = sqliteTable(
     index('ff_audit_created_idx').on(table.createdAt),
   ],
 );
+// </nsk:feature-flags>
 
 export const authTokensRelations = relations(authTokens, ({ one }) => ({
   user: one(users, {
@@ -162,9 +166,11 @@ export const oauthAccountsRelations = relations(oauthAccounts, ({ one }) => ({
   }),
 }));
 
+// <nsk:feature-flags>
 export const featureFlagAuditLogRelations = relations(featureFlagAuditLog, ({ one }) => ({
   actor: one(users, {
     fields: [featureFlagAuditLog.actorId],
     references: [users.id],
   }),
 }));
+// </nsk:feature-flags>

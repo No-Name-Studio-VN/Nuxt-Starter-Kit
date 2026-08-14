@@ -61,3 +61,24 @@ export async function readManifest(projectRoot: string): Promise<ProjectManifest
 export async function writeManifest(projectRoot: string, manifest: ProjectManifest): Promise<void> {
   await writeJsonAtomically(join(projectRoot, MANIFEST_PATH), manifest);
 }
+
+/**
+ * Refuses to change a project's module set from a registry describing a different
+ * kit revision.
+ *
+ * `add` and `remove` both render the project's current state from the registry's
+ * module definitions and diff against it. Those definitions only describe the
+ * revision they shipped with, so running them against a moved-on registry diffs
+ * against a state the project was never in — files the transition never touched
+ * come out as changes, and one that moved between modules is deleted outright.
+ */
+export function assertRegistryRevision(
+  manifest: ProjectManifest,
+  registryRevision: string,
+  verb: string,
+): void {
+  if (manifest.kit.revision === registryRevision) return;
+  throw new CliError(
+    `This project is on kit revision ${manifest.kit.revision} but the registry is on ${registryRevision}. Run "nuxt-starter upgrade" first, then ${verb}.`,
+  );
+}

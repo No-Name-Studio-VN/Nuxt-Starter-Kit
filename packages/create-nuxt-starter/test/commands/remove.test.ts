@@ -79,9 +79,43 @@ describe('runRemove', () => {
     await expect(remove(projectRoot, ['base'])).rejects.toThrow(/content/);
   });
 
+  // The registry's module definitions describe the revision they shipped with, so
+  // rendering the project's current state from a moved-on registry diffs against a
+  // state it was never in.
+  it('refuses a registry on a different kit revision', async () => {
+    const projectRoot = await generateProjectAtV1(['pwa']);
+    const registry = await loadFixtureRegistry();
+    const moved = { ...registry, kit: { ...registry.kit, revision: 'somewhere-else' } };
+
+    await expect(
+      runRemove({
+        projectRoot,
+        registry: moved,
+        moduleIds: ['pwa'],
+        check: false,
+        force: false,
+        resolveLocalKit: resolveFixtureKit,
+      }),
+    ).rejects.toThrow(/Run "nuxt-starter upgrade" first/);
+  });
+
   it('refuses a module that is not installed', async () => {
     const projectRoot = await generateProjectAtV1(['base']);
     await expect(remove(projectRoot, ['pwa'])).rejects.toThrow(/not installed/);
+  });
+
+  // Nothing survives to report the broken requirement, so the dependency check
+  // above passes and every generated file goes.
+  it('refuses to empty the project', async () => {
+    const projectRoot = await generateProjectAtV1(['base']);
+    await expect(remove(projectRoot, ['base'])).rejects.toThrow(/no modules/);
+    expect(await pathExists(join(projectRoot, 'app/app.vue'))).toBe(true);
+  });
+
+  it('refuses to empty the project one module at a time', async () => {
+    const projectRoot = await generateProjectAtV1(['content']);
+    await expect(remove(projectRoot, ['base', 'content'])).rejects.toThrow(/no modules/);
+    expect(await pathExists(join(projectRoot, 'app/app.vue'))).toBe(true);
   });
 
   it('previews without writing', async () => {

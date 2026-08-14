@@ -1,6 +1,5 @@
-import { CliError } from '../errors';
 import { assertCleanWorkingTree } from '../git/repo';
-import { readManifest } from '../manifest/io';
+import { assertRegistryRevision, readManifest } from '../manifest/io';
 import { resolveModules } from '../registry/resolve';
 import { getModule, type Registry } from '../registry/schema';
 import type { ApplyResult } from '../upgrade/apply';
@@ -39,13 +38,9 @@ export interface AddOptions {
 export async function runAdd(options: AddOptions): Promise<ChangeReport> {
   const manifest = await readManifest(options.projectRoot);
 
-  // Installing at an older revision would produce a module combination that no
-  // CI run has ever built. Upgrade first, then add.
-  if (manifest.kit.revision !== options.registry.kit.revision) {
-    throw new CliError(
-      `This project is on kit revision ${manifest.kit.revision} but the registry is on ${options.registry.kit.revision}. Run "nuxt-starter upgrade" first, then add.`,
-    );
-  }
+  // Installing at an older revision would also produce a module combination that
+  // no CI run has ever built.
+  assertRegistryRevision(manifest, options.registry.kit.revision, 'add');
 
   for (const id of options.moduleIds) getModule(options.registry, id);
 

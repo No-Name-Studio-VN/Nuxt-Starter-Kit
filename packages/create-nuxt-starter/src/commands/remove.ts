@@ -1,6 +1,6 @@
 import { CliError } from '../errors';
 import { assertCleanWorkingTree } from '../git/repo';
-import { readManifest } from '../manifest/io';
+import { assertRegistryRevision, readManifest } from '../manifest/io';
 import { getModule, type Registry } from '../registry/schema';
 import { applyUpgrade } from '../upgrade/apply';
 import { planTransition, summarizePlan } from '../upgrade/plan';
@@ -17,6 +17,8 @@ export interface RemoveOptions {
 
 export async function runRemove(options: RemoveOptions): Promise<ChangeReport> {
   const manifest = await readManifest(options.projectRoot);
+  assertRegistryRevision(manifest, options.registry.kit.revision, 'remove');
+
   const installedIds = manifest.modules.map((module) => module.id);
 
   for (const id of options.moduleIds) {
@@ -26,6 +28,15 @@ export async function runRemove(options: RemoveOptions): Promise<ChangeReport> {
   }
 
   const remainingIds = installedIds.filter((id) => !options.moduleIds.includes(id));
+
+  // Emptying the project is not a module operation. The dependency check below
+  // cannot catch this on its own: with nothing left to survive the removal, there
+  // is no module to report the broken requirement.
+  if (remainingIds.length === 0) {
+    throw new CliError(
+      `Removing ${options.moduleIds.join(', ')} would leave the project with no modules, deleting every file the kit generated. Delete the directory instead.`,
+    );
+  }
 
   // Removing something a surviving module needs would leave the project broken.
   for (const id of remainingIds) {

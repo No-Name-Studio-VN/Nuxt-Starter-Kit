@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -7,6 +7,7 @@ import {
   hashContent,
   listFiles,
   pathExists,
+  pruneEmptyDirectories,
   readTextFile,
   writeJsonAtomically,
   writeTextFile,
@@ -56,6 +57,33 @@ describe('writeJsonAtomically', () => {
     const target = join(root, 'nested/manifest.json');
     await writeJsonAtomically(target, { a: 1 });
     expect(await readFile(target, 'utf8')).toBe('{\n  "a": 1\n}\n');
+  });
+});
+
+describe('pruneEmptyDirectories', () => {
+  it('removes the directory and its emptied parents', async () => {
+    await writeTextFile(join(root, 'server/api/flags/index.get.ts'), 'x');
+    await rm(join(root, 'server/api/flags/index.get.ts'));
+
+    await pruneEmptyDirectories(root, join(root, 'server/api/flags'));
+
+    expect(await pathExists(join(root, 'server'))).toBe(false);
+  });
+
+  it('stops at a parent that still holds something', async () => {
+    await writeTextFile(join(root, 'server/utils/db.ts'), 'x');
+    await writeTextFile(join(root, 'server/api/flags/index.get.ts'), 'x');
+    await rm(join(root, 'server/api/flags/index.get.ts'));
+
+    await pruneEmptyDirectories(root, join(root, 'server/api/flags'));
+
+    expect(await pathExists(join(root, 'server/api'))).toBe(false);
+    expect(await pathExists(join(root, 'server/utils/db.ts'))).toBe(true);
+  });
+
+  it('never removes the project root', async () => {
+    await pruneEmptyDirectories(root, root);
+    expect(await pathExists(root)).toBe(true);
   });
 });
 

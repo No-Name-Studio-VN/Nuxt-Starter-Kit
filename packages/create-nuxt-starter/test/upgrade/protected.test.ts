@@ -24,4 +24,13 @@ describe('isProtectedPath', () => {
   ])('does not protect %s', (path) => {
     expect(isProtectedPath(path)).toBe(false);
   });
+
+  // Templates, not secrets: protecting them would stop a module ever telling an
+  // existing project about a variable it started needing.
+  it.each(['.env.example', '.env.sample', '.env.template'])(
+    'does not protect the %s template',
+    (path) => {
+      expect(isProtectedPath(path)).toBe(false);
+    },
+  );
 });

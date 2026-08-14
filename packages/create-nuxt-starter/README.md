@@ -14,9 +14,11 @@ npx @no-name-studio/create-nuxt-starter@latest init my-app
 - `add <modules>` — install more modules. Their files are written, their marker blocks are inserted
   into shared files, and their `package.json` entries are merged in. Requires the project to be on
   the registry's revision, so upgrade first if it has moved on.
-- `remove <modules>` — uninstall modules: files deleted, marker blocks stripped, `package.json`
-  entries removed (entries another installed module still declares are kept). Refused if a surviving
-  module requires what you are removing. Files you have edited are kept and flagged as orphans.
+- `remove <modules>` — uninstall modules: files deleted, marker blocks stripped, emptied directories
+  pruned, `package.json` entries removed (entries another installed module still declares are kept).
+  Refused if a surviving module requires what you are removing, or if the removal would leave the
+  project with no modules at all. Files you have edited are kept and flagged as orphans. Like `add`,
+  it needs the project to be on the registry's revision.
 - `upgrade [--check] [--force]` — move the project to the registry's kit revision (see below).
 - `status` — installed modules, files you have modified, damaged markers, and whether an update exists.
   Reads only local state, so it is instant and works offline.
@@ -43,12 +45,16 @@ they came from, and a hash per file. Do not delete it — upgrades depend on it.
 | New upstream file         | Added                                            |
 | Removed upstream          | Deleted if untouched, otherwise kept and flagged |
 
-`package.json` and `wrangler.jsonc` are never text-merged: each module's declared entries are compared
-old-versus-new and applied only where you have not changed that value yourself.
+JSON files a module declares under `structured` are never text-merged: each declared entry is compared
+old-versus-new and applied only where you have not changed that value yourself. Today that is
+`package.json`. Everything else, `wrangler.jsonc` included, goes through the three-way text merge — so
+the worker name and routes you set survive an upgrade unless the kit changed those same lines.
 
 A clean git working tree is required before applying (`--force` overrides), because git is the undo
 mechanism: review with `git diff`, revert with `git restore`. `--check` previews without writing and
-works on a dirty tree. Never touched: `.env*`, `content/`, database migrations, and lockfiles.
+works on a dirty tree. Never touched: your `.env` files, `content/`, database migrations, and
+lockfiles. `.env.example` is upgraded like any other file — it is the kit's list of what a project
+has to set, not a secret, so a module has to be able to add to it.
 
 ## Modules
 
@@ -87,11 +93,8 @@ commit, with `test/registry/` green at each step:
    can never be subtracted and would ship everywhere.
 4. Add the combination to `.github/workflows/cli-matrix.yml`. Generating and compiling each
    combination is the guard against undeclared coupling: a `base` file importing the module's symbols
-   compiles fine in the kit, where everything is present. **The compile step is not enforced yet** —
-   the kit's `typecheck` script is `tsc --noEmit` against a `"files": []` root tsconfig, so it builds
-   nothing at all, and running it properly (`tsc -b`) surfaces pre-existing errors. Until that is
-   fixed, verify a peel by inspecting the render: no leftover references, correct file set, correct
-   dependency subtraction.
+   compiles fine in the kit, where everything is present, and only fails once the module is left out.
+   That is how the `feature-flags` tables were caught still sitting in `base`'s drizzle schema.
 
 `test/registry/kitCoverage.test.ts` fails when a kit file belongs to no module and is not in the
 registry's `exclude` list; `packageJsonCoverage.test.ts` holds the registry and the kit's real

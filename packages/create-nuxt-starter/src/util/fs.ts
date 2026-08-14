@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { lstat, mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readdir, readFile, rename, rmdir, writeFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { CliError } from '../errors';
 
@@ -34,6 +34,29 @@ export async function listFiles(root: string): Promise<string[]> {
     return files;
   }
   return visit(root, '');
+}
+
+/**
+ * Deletes `directory` and its now-childless parents, stopping at `root` or at the
+ * first directory that still holds something.
+ *
+ * Removing a module deletes its files one by one, which leaves the directories
+ * that held them standing empty — visible in the editor tree, and a module that
+ * promised to leave nothing behind. `rmdir` refuses a non-empty directory, so the
+ * emptiness check and the removal are the same call.
+ */
+export async function pruneEmptyDirectories(root: string, directory: string): Promise<void> {
+  const stop = resolve(root);
+  let current = resolve(directory);
+
+  while (current !== stop && current.startsWith(`${stop}/`)) {
+    try {
+      await rmdir(current);
+    } catch {
+      return;
+    }
+    current = dirname(current);
+  }
 }
 
 export async function readTextFile(path: string): Promise<string | null> {
