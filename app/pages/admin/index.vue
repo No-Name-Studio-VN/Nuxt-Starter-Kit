@@ -2,137 +2,74 @@
   <div class="space-y-8">
     <!-- Header Section -->
     <div class="space-y-2">
-      <h1 class="text-3xl font-bold tracking-tight">
-        Admin Dashboard
-      </h1>
+      <h1 class="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
       <p class="text-muted-foreground">
         Manage your application's content, users, and system settings
       </p>
     </div>
 
     <!-- Main Management Cards -->
-    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <Card
+    <div class="flex flex-col gap-3">
+      <NuxtLink
         v-for="card in managementCards"
         :key="card.id"
-        class="group cursor-pointer transition-all hover:shadow-lg"
-        @click="navigateTo(card.route)"
+        :to="card.route"
+        class="group flex items-center gap-4 rounded-md border bg-card p-4 transition-colors hover:border-primary hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
-        <CardHeader>
-          <div class="flex items-center justify-between">
-            <div :class="['flex size-12 items-center justify-center rounded-lg', card.bgColor, card.textColor]">
-              <component
-                :is="card.icon"
-                class="size-6"
-              />
-            </div>
-            <ChevronRightIcon class="size-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
-          </div>
-        </CardHeader>
-        <CardContent class="space-y-2">
-          <CardTitle>{{ card.title }}</CardTitle>
-          <CardDescription>
+        <div
+          :class="[
+            'flex size-10 shrink-0 items-center justify-center rounded-lg',
+            card.bgColor,
+            card.textColor,
+          ]"
+        >
+          <component :is="card.icon" class="size-5" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <h3 class="font-medium text-base truncate">
+            {{ card.title }}
+          </h3>
+          <p class="text-sm text-muted-foreground truncate">
             {{ card.description }}
-          </CardDescription>
-        </CardContent>
-      </Card>
-    </div>
-
-    <!-- System Actions Section -->
-    <div class="space-y-4">
-      <h2 class="text-xl font-semibold">
-        System Actions
-      </h2>
-      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle class="flex items-center gap-2 text-base">
-              <TrashIcon class="size-4" />
-              Clear Server Cache
-            </CardTitle>
-            <CardDescription>
-              Clear all cached data to force fresh data retrieval
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AlertDialog>
-              <AlertDialogTrigger as-child>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  class="w-full"
-                >
-                  Clear Cache
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will clear the server cache. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    variant="destructive"
-                    @click="clearServerCache"
-                  >
-                    Confirm
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardContent>
-        </Card>
-      </div>
+          </p>
+        </div>
+        <ChevronRightIcon
+          class="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1"
+        />
+      </NuxtLink>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
-import { toast } from 'vue-sonner'
-import {
   UsersIcon,
+  TicketIcon,
+  HardDriveIcon,
+  AlertTriangleIcon,
+  BookOpenIcon,
   ChevronRightIcon,
-  TrashIcon,
-} from '@lucide/vue'
-import type { Component } from 'vue'
+  PenToolIcon,
+  UploadCloudIcon,
+  FlagIcon,
+  DatabaseIcon,
+} from '@lucide/vue';
+import type { Component } from 'vue';
 
 definePageMeta({
   title: 'Admin Dashboard',
   breadcrumb: 'Admin',
   middleware: ['auth', 'admin'],
-  layout: 'dashboard',
-})
+});
 
 interface ManagementCard {
-  id: string
-  icon: Component
-  title: string
-  description: string
-  route: string
-  bgColor: string
-  textColor: string
+  id: string;
+  icon: Component;
+  title: string;
+  description: string;
+  route: string;
+  bgColor: string;
+  textColor: string;
 }
 
 const managementCards: ManagementCard[] = [
@@ -145,13 +82,86 @@ const managementCards: ManagementCard[] = [
     bgColor: 'bg-blue-500/10',
     textColor: 'text-blue-500',
   },
-]
-
-const clearServerCache = () => {
-  $fetch('/api/admin/clear-server-cache').then(() => {
-    toast.success('Server cache cleared successfully.')
-  }).catch(() => {
-    toast.error('Failed to clear server cache.')
-  })
-}
+  {
+    id: 'coupons',
+    icon: TicketIcon,
+    title: 'Coupons',
+    description: 'Create, manage, and track promotional coupons and discount codes',
+    route: '/admin/coupons',
+    bgColor: 'bg-green-500/10',
+    textColor: 'text-green-500',
+  },
+  {
+    id: 'drives',
+    icon: HardDriveIcon,
+    title: 'Drives',
+    description: 'Configure and monitor connected storage drives and file systems',
+    route: '/admin/drives',
+    bgColor: 'bg-purple-500/10',
+    textColor: 'text-purple-500',
+  },
+  {
+    id: 'removal-requests',
+    icon: AlertTriangleIcon,
+    title: 'Removal Requests',
+    description: 'Review and process content removal and deletion requests',
+    route: '/admin/removal-requests',
+    bgColor: 'bg-orange-500/10',
+    textColor: 'text-orange-500',
+  },
+  {
+    id: 'stories',
+    icon: BookOpenIcon,
+    title: 'Stories',
+    description: 'Browse and manage all stories in the library',
+    route: '/admin/stories',
+    bgColor: 'bg-pink-500/10',
+    textColor: 'text-pink-500',
+  },
+  {
+    id: 'community',
+    icon: PenToolIcon,
+    title: 'Community Stories',
+    description: 'Review, approve, or reject community-submitted stories',
+    route: '/admin/community',
+    bgColor: 'bg-indigo-500/10',
+    textColor: 'text-indigo-500',
+  },
+  {
+    id: 'community-imports',
+    icon: UploadCloudIcon,
+    title: 'Manga Imports',
+    description: 'Queue crawler folders and build draft manga chapters',
+    route: '/admin/community/imports',
+    bgColor: 'bg-amber-500/10',
+    textColor: 'text-amber-500',
+  },
+  {
+    id: 'subscriptions',
+    icon: TicketIcon,
+    title: 'Subscriptions',
+    description: 'Manage user subscriptions, plans, and billing information',
+    route: '/admin/subscriptions',
+    bgColor: 'bg-teal-500/10',
+    textColor: 'text-teal-500',
+  },
+  {
+    id: 'feature-flags',
+    icon: FlagIcon,
+    title: 'Feature Flags',
+    description: 'Manage feature flags and rollouts',
+    route: '/admin/feature-flags',
+    bgColor: 'bg-blue-500/10',
+    textColor: 'text-blue-500',
+  },
+  {
+    id: 'kv',
+    icon: DatabaseIcon,
+    title: 'KV Store',
+    description: 'Browse and manage KV keys, values, and cache clearing controls',
+    route: '/admin/kv',
+    bgColor: 'bg-slate-500/10',
+    textColor: 'text-slate-500',
+  },
+];
 </script>
