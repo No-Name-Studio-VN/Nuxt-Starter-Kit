@@ -118,6 +118,11 @@ jobs:
           cp .env.example .env
           npm install --no-audit --no-fund
 
+      # The kit's own typecheck script builds nothing: the root tsconfig is
+      # "files": [] plus project references, so it needs -b. Reported but not
+      # enforced until the errors it surfaces are fixed -- see the roadmap in
+      # packages/create-nuxt-starter/README.md.
       - name: Typecheck the generated project
         working-directory: ${{ runner.temp }}/generated
-        run: npm run typecheck
+        continue-on-error: true
+        run: npx tsc -b --force
