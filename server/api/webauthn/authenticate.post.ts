@@ -1,6 +1,5 @@
 import { eq } from 'drizzle-orm';
 import { apiError } from '~~/server/utils/apiResponse';
-import subscriptionService from '~~/server/utils/database/userSubscription';
 import { useKV } from '~~/server/utils/kv';
 
 export default defineWebAuthnAuthenticateEventHandler({
@@ -53,15 +52,12 @@ export default defineWebAuthnAuthenticateEventHandler({
     return credential;
   },
   async onSuccess(event, { credential }) {
-    const subscription = await subscriptionService.getActiveByUserId(credential.user.id);
-
     await setUserSession(event, {
       user: {
         id: credential.user.id,
         name: credential.user.name,
         username: credential.user.username,
-        isAdmin: credential.user.isAdmin,
-        subscription,
+        isAdmin: credential.user.isAdmin
       },
     });
   },
