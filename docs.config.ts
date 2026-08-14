@@ -40,7 +40,10 @@ export const DOCS_CONFIG = {
       triggerType: 'icon',
       dropdownType: 'select',
     },
+    // Every entry here is served by the content module's catch-all route, so a
+    // project without it would render a menu of 404s.
     nav: [
+      // <nsk:content>
       {
         title: 'Docs',
         to: '/docs',
@@ -71,6 +74,7 @@ export const DOCS_CONFIG = {
         target: '_self',
         showLinkIcon: false,
       },
+      // </nsk:content>
     ],
     links: [
       {
