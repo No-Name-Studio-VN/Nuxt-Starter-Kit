@@ -20,7 +20,9 @@ export const apiRoutes = {
 
   AUTH_LOGIN: '/auth/login',
   AUTH_REGISTER: '/auth/register',
+  // <nsk:auth-email-verification>
   AUTH_VERIFY_EMAIL: '/auth/verify-email',
+  // </nsk:auth-email-verification>
   AUTH_FORGOT_PASSWORD: '/auth/forgot-password',
   AUTH_RESET_PASSWORD: '/auth/reset-password',
   AUTH_GOOGLE: '/api/auth/google',
@@ -52,7 +54,9 @@ export const apiRoutes = {
   // </nsk:auth-2fa>
   AUTH_REGISTER_PASSWORD: '/api/auth/register-password',
   AUTH_FORGOT_PASSWORD_REQUEST: '/api/auth/forgot-password',
+  // <nsk:auth-email-verification>
   AUTH_RESEND_VERIFICATION: '/api/auth/resend-verification',
+  // </nsk:auth-email-verification>
   AUTH_GOOGLE_ONE_TAP: '/api/auth/google-one-tap',
   AUTH_ACCOUNT_STATUS: '/api/auth/account-status',
   MY_PASSWORD: '/api/users/me/password',

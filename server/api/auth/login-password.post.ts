@@ -51,6 +51,7 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials');
   }
 
+  // <nsk:auth-email-verification>
   // Check email verification
   if (!user.emailVerified) {
     return sendRedirect(
@@ -62,6 +63,7 @@ export default defineEventHandler(async (event) => {
         encodeURIComponent(redirectToStr),
     );
   }
+  // </nsk:auth-email-verification>
 
   // Check if the account is locked
   if (user.isLocked) {

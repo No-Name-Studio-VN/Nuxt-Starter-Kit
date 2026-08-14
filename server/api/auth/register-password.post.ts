@@ -1,11 +1,15 @@
 import { registerUserSchema } from '#shared/schemas/userSchema';
 import userService from '~~/server/utils/database/user';
+// <nsk:auth-email-verification>
 import authTokenService from '~~/server/utils/database/authToken';
 import { sendVerificationEmail } from '~~/server/utils/email';
+// </nsk:auth-email-verification>
 import { apiRoutes } from '#shared/apiRoutes';
 import type { User } from '#shared/db';
 import type { RegisterUserInput } from '#shared/schemas/userSchema';
+// <nsk:auth-email-verification>
 import { AuthTokenType } from '#shared/commonEnums';
+// </nsk:auth-email-verification>
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
@@ -112,6 +116,14 @@ export default defineEventHandler(async (event) => {
     throw err;
   }
 
+  /**
+   * Where to send the new account. The email-verification module diverts it to
+   * the verification notice; without that module registration goes straight to
+   * sign-in.
+   */
+  let postRegisterRedirect = apiRoutes.AUTH_LOGIN + '?redirectTo=' + encodeURIComponent(redirectTo);
+
+  // <nsk:auth-email-verification>
   // Send verification email (non-blocking - don't fail registration if email fails)
   const verificationToken = await authTokenService.createToken(
     newUser.id,
@@ -121,12 +133,13 @@ export default defineEventHandler(async (event) => {
     console.error('[Register] Failed to send verification email:', err);
   });
 
-  return sendRedirect(
-    event,
+  postRegisterRedirect =
     apiRoutes.AUTH_VERIFY_EMAIL +
-      '?email=' +
-      encodeURIComponent(newUser.email) +
-      '&redirectTo=' +
-      encodeURIComponent(redirectTo),
-  );
+    '?email=' +
+    encodeURIComponent(newUser.email) +
+    '&redirectTo=' +
+    encodeURIComponent(redirectTo);
+  // </nsk:auth-email-verification>
+
+  return sendRedirect(event, postRegisterRedirect);
 });

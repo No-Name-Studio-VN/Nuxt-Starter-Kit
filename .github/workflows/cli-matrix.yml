@@ -80,8 +80,10 @@ jobs:
             modules: auth-2fa
           - name: base + passkeys
             modules: auth-passkeys
+          - name: base + email verification
+            modules: auth-email-verification
           - name: all modules
-            modules: content,pwa,admin-users,feature-flags,auth-2fa,auth-passkeys
+            modules: content,pwa,admin-users,feature-flags,auth-2fa,auth-passkeys,auth-email-verification
     steps:
       - uses: actions/checkout@v4
 

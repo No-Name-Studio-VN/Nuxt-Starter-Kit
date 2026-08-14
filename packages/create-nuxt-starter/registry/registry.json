@@ -367,6 +367,22 @@
         }
       },
       "notes": []
+    },
+    {
+      "id": "auth-email-verification",
+      "title": "Email verification",
+      "description": "Verification notice, confirmation link and resend endpoint for new accounts.",
+      "version": "0.3.0",
+      "requires": [
+        "base"
+      ],
+      "paths": [
+        "app/pages/auth/verify-email.vue",
+        "server/api/auth/resend-verification.post.ts",
+        "server/api/auth/verify-email.get.ts"
+      ],
+      "structured": {},
+      "notes": []
     }
   ]
 }
