@@ -1,226 +1,208 @@
 <script setup lang="ts">
-import AuthPageLayout from '@/components/auth/AuthPageLayout.vue'
-import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator.vue'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { apiRoutes } from '#shared/apiRoutes'
-import { resetPasswordFormSchema } from '#shared/schemas/userSchema'
-import { calculatePasswordStrength } from '@/utils/passwordValidation'
-import { apiRequest } from '@/utils/apiRequest'
-import { parseApiError } from '@/utils/apiError'
-import { getQueryString } from '@/utils/safeRedirect'
-import { Field as VeeField, useForm } from 'vee-validate'
-import { Eye, EyeOff, Lock } from '@lucide/vue'
+import AuthPageLayout from '@/components/auth/AuthPageLayout.vue';
+import { Lock, Eye, EyeOff, KeyRound } from '@lucide/vue';
+import { Field as VeeField, useForm } from 'vee-validate';
+import { resetPasswordFormSchema } from '#shared/schemas/userSchema';
+import { calculatePasswordStrength } from '@/utils/passwordValidation';
+import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator.vue';
+import { apiRoutes } from '#shared/apiRoutes';
+import { parseApiError } from '@/utils/apiError';
+import type { ApiResponse } from '~~/types/api';
 
-const route = useRoute()
-const showPassword = ref(false)
-const showConfirmPassword = ref(false)
-const isLoading = ref(false)
-const error = ref('')
+const route = useRoute();
+const token = computed(() => {
+  const val = route.query.token;
+  return typeof val === 'string' ? val : '';
+});
 
-const token = computed(() => getQueryString(route.query.token))
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+const isSubmitting = ref(false);
+const error = ref('');
+const success = ref(false);
+const { t } = useI18n();
 
-const form = useForm({
-  initialValues: {
-    password: '',
-    confirmPassword: '',
-  },
+const { handleSubmit, values, meta } = useForm({
+  initialValues: { password: '', confirmPassword: '' },
   validationSchema: resetPasswordFormSchema,
-})
+});
 
-const { handleSubmit, values, setFieldError } = form
-const passwordStrength = computed(() => calculatePasswordStrength(values.password || ''))
+const passwordStrength = computed(() => calculatePasswordStrength(values.password || ''));
+const isFormValid = computed(() => meta.value.valid && passwordStrength.value.score >= 80);
 
 const onSubmit = handleSubmit(async (formValues) => {
   if (!token.value) {
-    error.value = 'This reset link is invalid. Please request a new one.'
-    return
+    error.value = 'Invalid reset link. Please request a new one.';
+    return;
   }
 
-  isLoading.value = true
-  error.value = ''
+  isSubmitting.value = true;
+  error.value = '';
+  success.value = false;
 
   try {
-    await apiRequest(apiRoutes.AUTH_RESET_PASSWORD_API, {
-      method: 'POST',
-      body: {
-        token: token.value,
-        password: formValues.password,
-        confirmPassword: formValues.confirmPassword,
+    const response = await apiRequest<ApiResponse<Record<string, never>>>(
+      apiRoutes.AUTH_RESET_PASSWORD,
+      {
+        method: 'POST',
+        body: {
+          token: token.value,
+          password: formValues.password,
+          confirmPassword: formValues.confirmPassword,
+        },
       },
-    })
+    );
 
-    await navigateTo(`${apiRoutes.AUTH_LOGIN}?success=password-reset`)
-  }
-  catch (err: unknown) {
-    const parsedError = parseApiError(err, 'Unable to reset your password. Please try again.')
-    if (parsedError.fieldErrors.password?.length) {
-      setFieldError('password', parsedError.fieldErrors.password[0])
+    if (!response.success) {
+      throw response;
     }
-    if (parsedError.fieldErrors.confirmPassword?.length) {
-      setFieldError('confirmPassword', parsedError.fieldErrors.confirmPassword[0])
-    }
-    error.value = parsedError.message
+
+    success.value = true;
+  } catch (err: unknown) {
+    error.value = parseApiError(err, 'Something went wrong. Please try again.').message;
+    isSubmitting.value = false;
   }
-  finally {
-    isLoading.value = false
-  }
-})
+});
 
 definePageMeta({
+  title: 'auth.reset_password_title',
+  breadcrumb: 'auth.reset_password_breadcrumb',
   layout: 'empty',
-  title: 'Reset Password',
-  breadcrumb: 'Reset Password',
-})
+});
+
+useSeo({
+  title: computed(() => t('auth.reset_password_title')),
+  description: computed(() => t('auth.reset_password_description')),
+  type: 'website',
+});
 </script>
 
 <template>
-  <AuthPageLayout quote="A reset flow should prove ownership, update one secret, and clean up stale tokens.">
-    <Card class="w-full">
-      <CardHeader class="text-center">
-        <CardTitle>Choose a new password</CardTitle>
-        <CardDescription>
-          Enter a strong password to finish resetting your account.
-        </CardDescription>
-      </CardHeader>
+  <AuthPageLayout quote="Choose a fresh key and step right back into your library.">
+    <div class="space-y-5">
+      <div class="space-y-3 text-center">
+        <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10">
+          <KeyRound aria-hidden="true" class="size-6 text-primary" />
+        </div>
+        <div class="space-y-1">
+          <h1 class="text-2xl font-bold tracking-tight">Set a new password</h1>
+          <p class="text-base text-muted-foreground">Enter your new password below.</p>
+        </div>
+      </div>
 
-      <CardContent class="flex flex-col gap-4">
-        <Alert
-          v-if="error || !token"
-          variant="destructive"
+      <Alert v-if="error" variant="destructive">
+        <AlertDescription>{{ error }}</AlertDescription>
+      </Alert>
+
+      <Alert v-if="success">
+        <AlertDescription>
+          Password reset successfully. You can now sign in with your new password.
+        </AlertDescription>
+      </Alert>
+
+      <Alert v-if="!token" variant="destructive">
+        <AlertDescription>
+          Invalid reset link. Please
+          <NuxtLink :to="{ path: '/auth/forgot-password' }" class="underline font-medium">
+            request a new one </NuxtLink
+          >.
+        </AlertDescription>
+      </Alert>
+
+      <form v-if="token && !success" class="space-y-4" @submit.prevent="onSubmit">
+        <VeeField v-slot="{ field, errors }" name="password">
+          <Field :data-invalid="!!errors.length" class="space-y-2">
+            <FieldLabel for="new-password" class="text-sm font-medium"> New Password </FieldLabel>
+            <div class="relative">
+              <Lock aria-hidden="true" class="absolute left-3 top-3 size-4" />
+              <Input
+                id="new-password"
+                :model-value="field.value"
+                :type="showPassword ? 'text' : 'password'"
+                placeholder="Enter new password"
+                class="h-11 px-9"
+                :disabled="isSubmitting"
+                :aria-invalid="!!errors.length"
+                autocomplete="new-password"
+                @update:model-value="field.onChange"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              >
+                <Eye v-if="!showPassword" aria-hidden="true" class="size-4" />
+                <EyeOff v-else aria-hidden="true" class="size-4" />
+              </Button>
+            </div>
+            <FieldError v-if="errors.length" :errors="errors" />
+            <PasswordStrengthIndicator
+              :password="values.password || ''"
+              :strength="passwordStrength"
+            />
+          </Field>
+        </VeeField>
+
+        <VeeField v-slot="{ field, errors }" name="confirmPassword">
+          <Field :data-invalid="!!errors.length" class="space-y-2">
+            <FieldLabel for="confirm-new-password" class="text-sm font-medium">
+              Confirm New Password
+            </FieldLabel>
+            <div class="relative">
+              <Lock aria-hidden="true" class="absolute left-3 top-3 size-4" />
+              <Input
+                id="confirm-new-password"
+                :model-value="field.value"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                placeholder="Confirm new password"
+                class="h-11 px-9"
+                :disabled="isSubmitting"
+                :aria-invalid="!!errors.length"
+                autocomplete="new-password"
+                @update:model-value="field.onChange"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
+                :aria-label="
+                  showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'
+                "
+                :aria-pressed="showConfirmPassword"
+                @click="showConfirmPassword = !showConfirmPassword"
+              >
+                <Eye v-if="!showConfirmPassword" aria-hidden="true" class="size-4" />
+                <EyeOff v-else aria-hidden="true" class="size-4" />
+              </Button>
+            </div>
+            <FieldError v-if="errors.length" :errors="errors" />
+          </Field>
+        </VeeField>
+
+        <Button
+          type="submit"
+          class="h-11 w-full"
+          :disabled="!isFormValid"
+          :is-loading="isSubmitting"
         >
-          <AlertDescription>
-            {{ error || 'This reset link is invalid. Please request a new one.' }}
-          </AlertDescription>
-        </Alert>
+          Reset Password
+        </Button>
 
-        <form
-          class="flex flex-col gap-4"
-          @submit.prevent="onSubmit"
-        >
-          <FieldGroup>
-            <VeeField
-              v-slot="{ field, errors }"
-              name="password"
-            >
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="password">
-                  New password
-                </FieldLabel>
-                <div class="relative">
-                  <Lock
-                    aria-hidden="true"
-                    class="absolute left-3 top-3 size-4"
-                  />
-                  <Input
-                    id="password"
-                    :model-value="field.value"
-                    name="password"
-                    :type="showPassword ? 'text' : 'password'"
-                    autocomplete="new-password"
-                    placeholder="Enter your new password"
-                    class="h-11 pl-9 pr-9"
-                    :aria-invalid="!!errors.length"
-                    :disabled="isLoading || !token"
-                    @update:model-value="field.onChange"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
-                    :aria-label="showPassword ? 'Hide password' : 'Show password'"
-                    @click="showPassword = !showPassword"
-                  >
-                    <Eye
-                      v-if="!showPassword"
-                      aria-hidden="true"
-                      class="size-4"
-                    />
-                    <EyeOff
-                      v-else
-                      aria-hidden="true"
-                      class="size-4"
-                    />
-                  </Button>
-                </div>
-                <FieldError
-                  v-if="errors.length"
-                  :errors="errors"
-                />
-                <PasswordStrengthIndicator
-                  :password="values.password || ''"
-                  :strength="passwordStrength"
-                />
-              </Field>
-            </VeeField>
+        <p v-if="values.password && passwordStrength.score < 80" class="text-center text-xs">
+          Password must be strong to reset
+        </p>
+      </form>
 
-            <VeeField
-              v-slot="{ field, errors }"
-              name="confirmPassword"
-            >
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="confirmPassword">
-                  Confirm password
-                </FieldLabel>
-                <div class="relative">
-                  <Lock
-                    aria-hidden="true"
-                    class="absolute left-3 top-3 size-4"
-                  />
-                  <Input
-                    id="confirmPassword"
-                    :model-value="field.value"
-                    name="confirmPassword"
-                    :type="showConfirmPassword ? 'text' : 'password'"
-                    autocomplete="new-password"
-                    placeholder="Confirm your new password"
-                    class="h-11 pl-9 pr-9"
-                    :aria-invalid="!!errors.length"
-                    :disabled="isLoading || !token"
-                    @update:model-value="field.onChange"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
-                    :aria-label="showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'"
-                    @click="showConfirmPassword = !showConfirmPassword"
-                  >
-                    <Eye
-                      v-if="!showConfirmPassword"
-                      aria-hidden="true"
-                      class="size-4"
-                    />
-                    <EyeOff
-                      v-else
-                      aria-hidden="true"
-                      class="size-4"
-                    />
-                  </Button>
-                </div>
-                <FieldError
-                  v-if="errors.length"
-                  :errors="errors"
-                />
-              </Field>
-            </VeeField>
-          </FieldGroup>
-
-          <Button
-            type="submit"
-            class="h-11 w-full"
-            :disabled="!token"
-            :is-loading="isLoading"
-          >
-            Reset password
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+      <div class="text-center">
+        <NuxtLink to="/auth/login" class="text-sm font-medium text-primary hover:underline">
+          Back to Sign In
+        </NuxtLink>
+      </div>
+    </div>
   </AuthPageLayout>
 </template>

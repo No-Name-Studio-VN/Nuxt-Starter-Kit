@@ -1,12 +1,12 @@
-import { AuthTokenType } from '#shared/commonEnums'
-import { forgotPasswordSchema } from '#shared/schemas/userSchema'
-import { apiError, success, zodErrorToFieldErrors } from '~~/server/utils/apiResponse'
-import authTokenService from '~~/server/utils/database/authToken'
-import userService from '~~/server/utils/database/user'
-import { sendPasswordResetEmail } from '~~/server/utils/email'
+import { apiError, zodErrorToFieldErrors } from '~~/server/utils/apiResponse';
+import userService from '~~/server/utils/database/user';
+import authTokenService from '~~/server/utils/database/authToken';
+import { sendPasswordResetEmail } from '~~/server/utils/email';
+import { AuthTokenType } from '#shared/commonEnums';
+import { forgotPasswordSchema } from '#shared/schemas/userSchema';
 
 export default defineEventHandler(async (event) => {
-  const result = await readValidatedBody(event, body => forgotPasswordSchema.safeParse(body))
+  const result = await readValidatedBody(event, (body) => forgotPasswordSchema.safeParse(body));
   if (!result.success) {
     throw apiError({
       status: 400,
@@ -14,33 +14,35 @@ export default defineEventHandler(async (event) => {
       message: 'Valid email and security verification are required.',
       code: 'VALIDATION_ERROR',
       fieldErrors: zodErrorToFieldErrors(result.error),
-    })
+    });
   }
 
-  const tokenValidation = await verifyTurnstileToken(result.data['cf-turnstile-response'])
+  const tokenValidation = await verifyTurnstileToken(result.data['cf-turnstile-response']);
   if (!tokenValidation.success) {
     throw apiError({
       status: 400,
       statusText: 'Bad Request',
       message: 'Security verification failed. Please try again.',
       code: 'CAPTCHA_VERIFICATION_FAILED',
-    })
+    });
   }
 
-  const user = await userService.getByEmail(result.data.email)
+  const user = await userService.getByEmail(result.data.email);
 
+  // Always return success to prevent email enumeration
   if (!user) {
-    return success({})
+    return success({});
   }
 
-  const hasRecent = await authTokenService.hasRecentToken(user.id, AuthTokenType.PasswordReset)
+  const hasRecent = await authTokenService.hasRecentToken(user.id, AuthTokenType.PasswordReset);
   if (hasRecent) {
-    return success({})
+    // Still return success to prevent timing attacks
+    return success({});
   }
 
-  await authTokenService.invalidateUserTokens(user.id, AuthTokenType.PasswordReset)
-  const token = await authTokenService.createToken(user.id, AuthTokenType.PasswordReset)
-  await sendPasswordResetEmail(event, user.email, user.username, token)
+  await authTokenService.invalidateUserTokens(user.id, AuthTokenType.PasswordReset);
+  const token = await authTokenService.createToken(user.id, AuthTokenType.PasswordReset);
+  await sendPasswordResetEmail(user.email, user.username, token);
 
-  return success({})
-})
+  return success({});
+});

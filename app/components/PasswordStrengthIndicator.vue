@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Progress } from '@/components/ui/progress'
-import { Check, X } from '@lucide/vue'
-import type { PasswordStrength } from '@/utils/passwordValidation'
+import { computed } from 'vue';
+import { Progress } from '@/components/ui/progress';
+import { Check, X } from '@lucide/vue';
+import type { PasswordStrength } from '~~/types/password';
 
-const props = withDefaults(defineProps<{
-  password: string
-  strength: PasswordStrength
-  showDetails?: boolean
-}>(), {
-  showDetails: true,
-})
+const props = withDefaults(
+  defineProps<{
+    password: string;
+    strength: PasswordStrength;
+    showDetails?: boolean;
+  }>(),
+  {
+    showDetails: true,
+  },
+);
 
-const progressValue = computed(() => props.strength.score)
+const progressValue = computed(() => props.strength.score);
 
 const checkItems = computed(() => [
   {
@@ -35,14 +38,11 @@ const checkItems = computed(() => [
     label: 'One special character (!@#$...)',
     passed: props.strength.checks.special,
   },
-])
+]);
 </script>
 
 <template>
-  <div
-    v-if="password"
-    class="space-y-3"
-  >
+  <div v-if="password" class="space-y-3">
     <!-- Progress Bar -->
     <div class="space-y-1.5">
       <Progress
@@ -51,26 +51,16 @@ const checkItems = computed(() => [
         :style="{ '--progress-color': strength.color }"
       />
       <div class="flex items-center justify-between text-xs">
-        <span
-          class="font-medium transition-colors duration-300"
-          :style="{ color: strength.color }"
-        >
+        <span class="font-medium transition-colors duration-300" :style="{ color: strength.color }">
           {{ strength.feedback }}
         </span>
-        <span class="text-muted-foreground">
-          {{ strength.score }}%
-        </span>
+        <span class="text-muted-foreground"> {{ strength.score }}% </span>
       </div>
     </div>
 
     <!-- Requirements Checklist -->
-    <div
-      v-if="showDetails"
-      class="space-y-1.5 text-xs"
-    >
-      <p class="text-muted-foreground font-medium">
-        Password Requirements:
-      </p>
+    <div v-if="showDetails" class="space-y-1.5 text-xs">
+      <p class="text-muted-foreground font-medium">Password Requirements:</p>
       <ul class="space-y-1">
         <li
           v-for="(item, index) in checkItems"
@@ -78,14 +68,8 @@ const checkItems = computed(() => [
           class="flex items-center gap-2 transition-colors duration-200"
           :class="item.passed ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
         >
-          <Check
-            v-if="item.passed"
-            class="h-3.5 w-3.5 shrink-0"
-          />
-          <X
-            v-else
-            class="h-3.5 w-3.5 shrink-0"
-          />
+          <Check v-if="item.passed" class="size-3.5 shrink-0" />
+          <X v-else class="size-3.5 shrink-0" />
           <span>{{ item.label }}</span>
         </li>
       </ul>
@@ -94,7 +78,7 @@ const checkItems = computed(() => [
 </template>
 
 <style scoped>
-:deep([data-slot="progress-indicator"]) {
+:deep([data-slot='progress-indicator']) {
   background-color: var(--progress-color, hsl(var(--primary)));
 }
 </style>

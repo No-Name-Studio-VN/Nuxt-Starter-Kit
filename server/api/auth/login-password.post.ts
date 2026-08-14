@@ -1,62 +1,105 @@
-import userService from '~~/server/utils/database/user'
-import userTwoFactorService from '~~/server/utils/database/userTwoFactor'
-import { safeRedirectPath } from '~~/server/utils/safeRedirect'
-import { apiRoutes } from '#shared/apiRoutes'
-import { loginSchema } from '#shared/schemas/userSchema'
+import userService from '~~/server/utils/database/user';
+import userLockScreenService from '~~/server/utils/database/userLockScreen';
+import { apiRoutes } from '#shared/apiRoutes';
+import { loginSchema } from '#shared/schemas/userSchema';
+
+function safeRedirectPath(value: string | undefined, origin: string): string {
+  if (!value) {
+    return '/';
+  }
+
+  try {
+    const parsed = new URL(value, origin);
+    if (parsed.origin !== origin) {
+      return '/';
+    }
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return '/';
+  }
+}
 
 export default defineEventHandler(async (event) => {
-  const result = await readValidatedBody(event, body => loginSchema.safeParse(body))
+  const result = await readValidatedBody(event, (body) => loginSchema.safeParse(body));
   if (!result.success) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=validation')
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=validation');
   }
 
-  const { username, password, 'cf-turnstile-response': token } = result.data
-  const redirectToStr = safeRedirectPath(event, result.data['redirect-to'])
+  const { username, password, 'cf-turnstile-response': token } = result.data;
+  const redirectToStr = safeRedirectPath(result.data['redirect-to'], getRequestURL(event).origin);
 
   if (!token) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha')
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha');
   }
 
-  const tokenValidation = await verifyTurnstileToken(token)
+  const tokenValidation = await verifyTurnstileToken(token);
   if (!tokenValidation.success) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha')
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha');
   }
 
-  const user = await userService.getByUsername(username)
+  // Find user by username
+  const user = await userService.getByUsername(username);
   if (!user) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials')
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials');
   }
 
-  const isValidPassword = await verifyPassword(user.password, password)
+  // Verify password using nuxt-auth-utils
+  const isValidPassword = await verifyPassword(user.password, password);
 
   if (!isValidPassword) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials')
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials');
   }
 
+  // Check email verification
   if (!user.emailVerified) {
-    return sendRedirect(event, `${apiRoutes.AUTH_VERIFY_EMAIL}?email=${encodeURIComponent(user.email)}&redirectTo=${encodeURIComponent(redirectToStr)}`)
+    return sendRedirect(
+      event,
+      apiRoutes.AUTH_VERIFY_EMAIL +
+        '?email=' +
+        encodeURIComponent(user.email) +
+        '&redirectTo=' +
+        encodeURIComponent(redirectToStr),
+    );
   }
 
-  const twoFactor = await userTwoFactorService.getByUserId(user.id)
+  // Check if the account is locked
+  if (user.isLocked) {
+    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=account-locked');
+  }
 
-  if (twoFactor?.totpEnabled && twoFactor.totpSecret) {
+  // Update last login
+  await userService.update({ id: user.id, lastLoginAt: new Date() });
+
+  // Check if TOTP 2FA is enabled
+  const lockScreen = await userLockScreenService.getById(user.id);
+
+  if (lockScreen?.totpEnabled && lockScreen?.totpSecret) {
+    // 2FA required! Save pending login state to the secure session.
     await setUserSession(event, {
       secure: {
         pending2faUserId: user.id,
       },
-    })
-    return sendRedirect(event, `${apiRoutes.AUTH_LOGIN}?step=2fa&redirectTo=${encodeURIComponent(redirectToStr)}`)
+    });
+    return sendRedirect(
+      event,
+      apiRoutes.AUTH_LOGIN + `?step=2fa&redirectTo=${encodeURIComponent(redirectToStr)}`,
+    );
   }
 
-  await userService.update({ id: user.id, lastLoginAt: new Date() })
+  // Update last login
+  await userService.update({ id: user.id, lastLoginAt: new Date() });
+
+  // Normal login (2FA off)
   await setUserSession(event, {
     user: {
       id: user.id,
       username: user.username,
       name: user.name,
       isAdmin: user.isAdmin,
+      skipLockOnInit: true, // Bypass lock screen initial check on fresh login
     },
-  })
+  });
 
-  return sendRedirect(event, redirectToStr)
-})
+  return sendRedirect(event, redirectToStr);
+});

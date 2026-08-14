@@ -1,26 +1,18 @@
-import { and, eq } from 'drizzle-orm'
-
-interface OAuthLinkInput {
-  userId: number
-  provider: string
-  providerAccountId: string
-  email?: string | null
-  name?: string | null
-  avatarUrl?: string | null
-}
+import { and, eq } from 'drizzle-orm';
+import type { OAuthLinkInput } from '~~/types/auth';
 
 class OAuthAccountService {
-  private static instance: OAuthAccountService
+  private static instance: OAuthAccountService;
 
   private get db() {
-    return useDB()
+    return useDB();
   }
 
   public static getInstance(): OAuthAccountService {
     if (!OAuthAccountService.instance) {
-      OAuthAccountService.instance = new OAuthAccountService()
+      OAuthAccountService.instance = new OAuthAccountService();
     }
-    return OAuthAccountService.instance
+    return OAuthAccountService.instance;
   }
 
   /**
@@ -36,7 +28,7 @@ class OAuthAccountService {
           eq(tables.oauthAccounts.providerAccountId, providerAccountId),
         ),
       )
-      .get()
+      .get();
   }
 
   /**
@@ -47,7 +39,7 @@ class OAuthAccountService {
       .select()
       .from(tables.oauthAccounts)
       .where(eq(tables.oauthAccounts.userId, userId))
-      .all()
+      .all();
   }
 
   /**
@@ -58,12 +50,9 @@ class OAuthAccountService {
       .select()
       .from(tables.oauthAccounts)
       .where(
-        and(
-          eq(tables.oauthAccounts.userId, userId),
-          eq(tables.oauthAccounts.provider, provider),
-        ),
+        and(eq(tables.oauthAccounts.userId, userId), eq(tables.oauthAccounts.provider, provider)),
       )
-      .get()
+      .get();
   }
 
   /**
@@ -81,7 +70,7 @@ class OAuthAccountService {
         avatarUrl: data.avatarUrl ?? null,
       })
       .returning()
-      .get()
+      .get();
   }
 
   /**
@@ -91,20 +80,17 @@ class OAuthAccountService {
     return this.db
       .delete(tables.oauthAccounts)
       .where(
-        and(
-          eq(tables.oauthAccounts.userId, userId),
-          eq(tables.oauthAccounts.provider, provider),
-        ),
-      )
+        and(eq(tables.oauthAccounts.userId, userId), eq(tables.oauthAccounts.provider, provider)),
+      );
   }
 
   /**
    * Count linked providers for a user (used for "can unlink" check)
    */
   async countByUserId(userId: number) {
-    const accounts = await this.getByUserId(userId)
-    return accounts.length
+    const accounts = await this.getByUserId(userId);
+    return accounts.length;
   }
 }
 
-export default OAuthAccountService.getInstance()
+export default OAuthAccountService.getInstance();

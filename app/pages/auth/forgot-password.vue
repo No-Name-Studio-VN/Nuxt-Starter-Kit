@@ -1,150 +1,139 @@
 <script setup lang="ts">
-import AuthPageLayout from '@/components/auth/AuthPageLayout.vue'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { apiRoutes } from '#shared/apiRoutes'
-import { forgotPasswordFormSchema } from '#shared/schemas/userSchema'
-import { apiRequest } from '@/utils/apiRequest'
-import { parseApiError } from '@/utils/apiError'
-import { Field as VeeField, useForm } from 'vee-validate'
-import { Mail } from '@lucide/vue'
+import { KeyRound, Mail } from '@lucide/vue';
+import { Field as VeeField, useForm } from 'vee-validate';
+import { apiRoutes } from '#shared/apiRoutes';
+import { forgotPasswordFormSchema } from '#shared/schemas/userSchema';
+import { apiRequest } from '@/utils/apiRequest';
+import { parseApiError } from '@/utils/apiError';
+import type { ApiResponse } from '~~/types/api';
 
-const isLoading = ref(false)
-const error = ref('')
-const successMessage = ref('')
-const turnstileToken = ref('')
+const turnstileToken = ref('');
+const isSubmitting = ref(false);
+const isSubmitted = ref(false);
+const error = ref('');
+const { t } = useI18n();
 
-const { handleSubmit, setFieldError } = useForm({
-  initialValues: {
-    email: '',
-  },
+const { handleSubmit } = useForm({
+  initialValues: { email: '' },
   validationSchema: forgotPasswordFormSchema,
-})
+});
 
 const onSubmit = handleSubmit(async (values) => {
-  if (!turnstileToken.value) {
-    error.value = 'Please complete the security verification before continuing.'
-    return
-  }
-
-  isLoading.value = true
-  error.value = ''
-  successMessage.value = ''
+  isSubmitting.value = true;
+  error.value = '';
 
   try {
-    await apiRequest(apiRoutes.AUTH_FORGOT_PASSWORD_API, {
-      method: 'POST',
-      body: {
-        email: values.email,
-        'cf-turnstile-response': turnstileToken.value,
+    const response = await apiRequest<ApiResponse<Record<string, never>>>(
+      apiRoutes.AUTH_FORGOT_PASSWORD_REQUEST,
+      {
+        method: 'POST',
+        body: {
+          email: values.email,
+          'cf-turnstile-response': turnstileToken.value,
+        },
       },
-    })
-
-    successMessage.value = 'If an account exists for that email, a reset link has been sent.'
-  }
-  catch (err: unknown) {
-    const parsedError = parseApiError(err, 'Unable to send reset instructions. Please try again.')
-    if (parsedError.fieldErrors.email?.length) {
-      setFieldError('email', parsedError.fieldErrors.email[0])
+    );
+    if (!response.success) {
+      throw response;
     }
-    error.value = parsedError.message
+    isSubmitted.value = true;
+  } catch (err: unknown) {
+    error.value = parseApiError(err, 'Something went wrong. Please try again.').message;
+  } finally {
+    isSubmitting.value = false;
   }
-  finally {
-    isLoading.value = false
-  }
-})
+});
 
 definePageMeta({
+  title: 'auth.forgot_password_title',
+  breadcrumb: 'auth.forgot_password_breadcrumb',
   layout: 'empty',
-  title: 'Forgot Password',
-  breadcrumb: 'Forgot Password',
-})
+});
+
+useSeo({
+  title: computed(() => t('auth.forgot_password_title')),
+  description: computed(() => t('auth.forgot_password_description')),
+  type: 'website',
+});
 </script>
 
 <template>
-  <AuthPageLayout quote="Recovery flows should be calm, private, and explicit about what happens next.">
-    <Card class="w-full">
-      <CardHeader class="text-center">
-        <CardTitle>Reset your password</CardTitle>
-        <CardDescription>
-          Enter your email and we’ll send password reset instructions if an account exists.
-        </CardDescription>
-      </CardHeader>
+  <AuthPageLayout quote="Get back into your library without losing your place.">
+    <div class="space-y-3">
+      <div class="flex size-12 items-center justify-center rounded-full bg-primary/10">
+        <KeyRound aria-hidden="true" class="size-6 text-primary" />
+      </div>
+      <div class="space-y-1">
+        <h1 class="text-2xl font-bold tracking-tight">Forgot your password?</h1>
+        <p class="text-base text-muted-foreground">
+          {{
+            isSubmitted
+              ? 'Check your email for a reset link.'
+              : "Enter your email and we'll send you a reset link."
+          }}
+        </p>
+      </div>
+    </div>
 
-      <CardContent class="flex flex-col gap-4">
-        <Alert
-          v-if="error"
-          variant="destructive"
-        >
-          <AlertDescription>{{ error }}</AlertDescription>
-        </Alert>
+    <Alert v-if="error" variant="destructive">
+      <AlertDescription>{{ error }}</AlertDescription>
+    </Alert>
 
-        <Alert v-if="successMessage">
-          <AlertDescription>{{ successMessage }}</AlertDescription>
-        </Alert>
+    <div v-if="isSubmitted" aria-live="polite" class="space-y-4">
+      <p class="text-sm text-muted-foreground">
+        If an account exists with that email, we've sent a password reset link. Check your inbox and
+        spam folder.
+      </p>
+      <p class="text-sm text-muted-foreground">The link expires in 1 hour.</p>
+      <Button
+        type="button"
+        variant="outline"
+        class="w-full active:scale-[0.98]"
+        @click="navigateTo('/auth/login')"
+      >
+        Back to Sign In
+      </Button>
+    </div>
 
-        <form
-          class="flex flex-col gap-4"
-          @submit.prevent="onSubmit"
-        >
-          <FieldGroup>
-            <VeeField
-              v-slot="{ field, errors }"
+    <form v-else class="space-y-4" @submit.prevent="onSubmit">
+      <VeeField v-slot="{ field, errors }" name="email">
+        <Field :data-invalid="!!errors.length" class="space-y-2">
+          <FieldLabel for="forgot-email" class="text-sm font-medium"> Email </FieldLabel>
+          <div class="relative">
+            <Mail aria-hidden="true" class="absolute left-3 top-3 size-4 text-muted-foreground" />
+            <Input
+              id="forgot-email"
               name="email"
-            >
-              <Field :data-invalid="!!errors.length">
-                <FieldLabel for="email">
-                  Email
-                </FieldLabel>
-                <div class="relative">
-                  <Mail
-                    aria-hidden="true"
-                    class="absolute left-3 top-3 size-4"
-                  />
-                  <Input
-                    id="email"
-                    :model-value="field.value"
-                    name="email"
-                    type="email"
-                    autocomplete="email"
-                    placeholder="name@example.com"
-                    class="h-11 pl-9"
-                    :aria-invalid="!!errors.length"
-                    :disabled="isLoading"
-                    @update:model-value="field.onChange"
-                  />
-                </div>
-                <FieldError
-                  v-if="errors.length"
-                  :errors="errors"
-                />
-              </Field>
-            </VeeField>
-          </FieldGroup>
+              :model-value="field.value"
+              type="email"
+              autocomplete="email"
+              placeholder="Enter your email address"
+              class="h-11 pl-9"
+              :disabled="isSubmitting"
+              :aria-invalid="!!errors.length"
+              @update:model-value="field.onChange"
+            />
+          </div>
+          <FieldError v-if="errors.length" :errors="errors" />
+        </Field>
+      </VeeField>
 
-          <NuxtTurnstile v-model="turnstileToken" />
-          <Button
-            type="submit"
-            class="h-11 w-full"
-            :is-loading="isLoading"
-          >
-            Send reset link
-          </Button>
-        </form>
-      </CardContent>
+      <NuxtTurnstile v-model="turnstileToken" />
 
-      <CardFooter class="justify-center text-sm text-muted-foreground">
-        Remember your password?
-        <NuxtLink
-          :to="apiRoutes.AUTH_LOGIN"
-          class="ml-1 font-medium text-primary hover:underline"
-        >
-          Sign in
+      <Button
+        type="submit"
+        class="h-11 w-full active:scale-[0.98]"
+        :is-loading="isSubmitting"
+        :disabled="!turnstileToken"
+      >
+        Send Reset Link
+      </Button>
+
+      <div class="text-center">
+        <NuxtLink to="/auth/login" class="text-sm font-medium text-primary hover:underline">
+          Back to Sign In
         </NuxtLink>
-      </CardFooter>
-    </Card>
+      </div>
+    </form>
   </AuthPageLayout>
 </template>
