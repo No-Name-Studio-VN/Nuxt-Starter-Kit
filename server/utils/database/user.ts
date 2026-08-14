@@ -1,33 +1,29 @@
-import { eq, inArray } from 'drizzle-orm'
-import type { User } from '#shared/db'
-import { IDatabaseService } from '~~/types/db/database-service'
-import type { CreateUserInput, UserUpdateInput } from '#shared/schemas/userSchema'
+import { eq, inArray } from 'drizzle-orm';
+import type { User } from '#shared/db';
+import { IDatabaseService } from '~~/types/db/database-service';
+import type { CreateUserInput, UserUpdateInput } from '#shared/schemas/userSchema';
 
 class UserService extends IDatabaseService<User> {
-  private static instance: UserService
+  private static instance: UserService;
 
   private get db() {
-    return useDB()
+    return useDB();
   }
 
   public static getInstance(): UserService {
     if (!UserService.instance) {
-      UserService.instance = new UserService()
+      UserService.instance = new UserService();
     }
-    return UserService.instance
+    return UserService.instance;
   }
 
   /**
    * Get a user by their ID (with caching)
    */
   async getById(id: number): Promise<User | undefined> {
-    const user = await this.db
-      .select()
-      .from(tables.users)
-      .where(eq(tables.users.id, id))
-      .get()
+    const user = await this.db.select().from(tables.users).where(eq(tables.users.id, id)).get();
 
-    return user
+    return user;
   }
 
   /**
@@ -38,9 +34,9 @@ class UserService extends IDatabaseService<User> {
       .select()
       .from(tables.users)
       .where(eq(tables.users.username, username))
-      .get()
+      .get();
 
-    return user
+    return user;
   }
 
   /**
@@ -51,34 +47,27 @@ class UserService extends IDatabaseService<User> {
       .select()
       .from(tables.users)
       .where(eq(tables.users.email, email))
-      .get()
+      .get();
 
-    return user
+    return user;
   }
 
   /**
    * Get all users
    */
   async getList(): Promise<User[]> {
-    const users = await this.db
-      .select()
-      .from(tables.users)
-      .all()
+    const users = await this.db.select().from(tables.users).all();
 
-    return users
+    return users;
   }
 
   /**
    * Create a new user
    */
   async create(data: CreateUserInput) {
-    const newUser = await this.db
-      .insert(tables.users)
-      .values(data)
-      .returning()
-      .get()
+    const newUser = await this.db.insert(tables.users).values(data).returning().get();
 
-    return newUser
+    return newUser;
   }
 
   /**
@@ -90,31 +79,32 @@ class UserService extends IDatabaseService<User> {
       .set(data)
       .where(eq(tables.users.id, data.id))
       .returning()
-      .get()
+      .get();
 
-    return updatedUser
+    return updatedUser;
   }
 
   /**
    * Delete a user by their ID
    */
   async delete(id: number): Promise<void> {
-    await this.db
-      .delete(tables.users)
-      .where(eq(tables.users.id, id))
+    await this.db.delete(tables.users).where(eq(tables.users.id, id));
   }
 
   /**
    * Delete multiple users by their IDs
    */
-  async bulkDelete(ids: number[]): Promise<void> {
-    if (ids.length === 0) return
+  async bulkDelete(ids: number[]): Promise<number[]> {
+    if (ids.length === 0) return [];
 
-    await this.db
+    const deletedUsers = await this.db
       .delete(tables.users)
       .where(inArray(tables.users.id, ids))
-      .execute()
+      .returning({ id: tables.users.id })
+      .execute();
+
+    return deletedUsers.map(({ id }) => id);
   }
 }
 
-export default UserService.getInstance()
+export default UserService.getInstance();
