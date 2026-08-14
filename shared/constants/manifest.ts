@@ -1,4 +1,4 @@
-import { defaultLocale } from '../../i18n-constants'
+import { defaultLocale } from '../../i18n-constants';
 
 export const APP_MANIFEST = {
   name: 'Nuxt Starter Kit',
@@ -79,7 +79,7 @@ export const APP_MANIFEST = {
       origin: '*',
     },
   ],
-}
+};
 
 // SEO-related constants
 export const SEO_CONFIG = {
@@ -89,4 +89,4 @@ export const SEO_CONFIG = {
   twitterCard: 'summary_large_image' as const,
   robots: 'index, follow',
   colorScheme: 'light dark',
-} as const
+} as const;
