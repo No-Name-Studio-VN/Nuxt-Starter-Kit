@@ -1,4 +1,6 @@
+// <nsk:auth-passkeys>
 import { eq } from 'drizzle-orm';
+// </nsk:auth-passkeys>
 import { apiError } from '~~/server/utils/apiResponse';
 import oauthAccountService from '~~/server/utils/database/oauthAccount';
 import userService from '~~/server/utils/database/user';
@@ -17,11 +19,15 @@ export async function getUserProfileById(userId: number): Promise<UserProfileMod
   }
 
   const db = useDB();
-  const credentials = await db
+  /** Registered passkeys, or none when the module that manages them is absent. */
+  let credentials: unknown[] = [];
+  // <nsk:auth-passkeys>
+  credentials = await db
     .select()
     .from(tables.credentials)
     .where(eq(tables.credentials.userId, userId))
     .all();
+  // </nsk:auth-passkeys>
 
   const oauthAccounts = await oauthAccountService.getByUserId(userId);
 

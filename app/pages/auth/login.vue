@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { User, Lock, Eye, EyeOff, Fingerprint } from '@lucide/vue';
+import { User, Lock, Eye, EyeOff } from '@lucide/vue';
+// <nsk:auth-passkeys>
+import { Fingerprint } from '@lucide/vue';
+// </nsk:auth-passkeys>
 import { getAuthErrorMessage, AUTH_SUCCESS_MESSAGES } from '#shared/constants/authMessages';
 import { AVAILABLE_PROVIDERS } from '#shared/constants/oauthProviders';
 import { apiRoutes } from '#shared/apiRoutes';
@@ -22,7 +25,9 @@ function isAuthSuccessMessageKey(value: string): value is keyof typeof AUTH_SUCC
   return value in AUTH_SUCCESS_MESSAGES;
 }
 
+// <nsk:auth-passkeys>
 const { authenticate } = useWebAuthn();
+// </nsk:auth-passkeys>
 const route = useRoute();
 const requestUrl = useRequestURL();
 const showPassword = ref(false);
@@ -207,6 +212,7 @@ onMounted(() => {
   oauthPopupListener.start();
 });
 
+// <nsk:auth-passkeys>
 async function signInWithPasskey() {
   if (!values.username?.trim()) {
     error.value = 'Username is required';
@@ -227,6 +233,7 @@ async function signInWithPasskey() {
     isLoading.value = false;
   }
 }
+// </nsk:auth-passkeys>
 
 async function signInWithProvider(provider: string) {
   if (oauthLoadingProvider.value) return;
@@ -465,6 +472,7 @@ onBeforeUnmount(() => {
           <div class="h-px flex-1 bg-border" />
         </div>
 
+        <!-- <nsk:auth-passkeys> -->
         <Button
           type="button"
           variant="outline"
@@ -476,6 +484,7 @@ onBeforeUnmount(() => {
           <Fingerprint aria-hidden="true" class="size-4" />
           Sign In with a Passkey
         </Button>
+        <!-- </nsk:auth-passkeys> -->
 
         <div class="flex items-center gap-2 py-1">
           <div class="h-px flex-1 bg-border" />

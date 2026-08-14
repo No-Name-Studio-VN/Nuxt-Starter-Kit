@@ -295,9 +295,11 @@ export default defineNuxtConfig({
   },
   // </nsk:content>
 
+  // <nsk:auth-passkeys>
   auth: {
     webAuthn: true,
   },
+  // </nsk:auth-passkeys>
 
   // <nsk:content>
   componentMeta: {

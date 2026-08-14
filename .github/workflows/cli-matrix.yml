@@ -78,8 +78,10 @@ jobs:
             modules: feature-flags
           - name: base + 2fa
             modules: auth-2fa
+          - name: base + passkeys
+            modules: auth-passkeys
           - name: all modules
-            modules: content,pwa,admin-users,feature-flags,auth-2fa
+            modules: content,pwa,admin-users,feature-flags,auth-2fa,auth-passkeys
     steps:
       - uses: actions/checkout@v4
 

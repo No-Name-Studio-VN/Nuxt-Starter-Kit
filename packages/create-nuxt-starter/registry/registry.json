@@ -72,7 +72,6 @@
         "server/api/admin/kv/**",
         "server/api/auth/**",
         "server/api/users/**",
-        "server/api/webauthn/**",
         "server/db/**",
         "server/middleware/**",
         "server/plugins/**",
@@ -128,8 +127,6 @@
             "@nuxtjs/turnstile": "^1.1.3",
             "@pinia/nuxt": "^1.0.1",
             "@sentry/nuxt": "^10.69.0",
-            "@simplewebauthn/browser": "^11.0.0",
-            "@simplewebauthn/server": "^11.0.0",
             "@tanstack/vue-table": "^9.0.0",
             "@tanstack/vue-virtual": "^3.13.35",
             "@unhead/vue": "^2.1.13",
@@ -339,6 +336,33 @@
         "package.json": {
           "dependencies": {
             "vue-input-otp": "^0.3.2"
+          }
+        }
+      },
+      "notes": []
+    },
+    {
+      "id": "auth-passkeys",
+      "title": "Passkeys",
+      "description": "WebAuthn sign-in and passkey registration, listing and removal.",
+      "version": "0.3.0",
+      "requires": [
+        "base"
+      ],
+      "paths": [
+        "app/components/PasskeyRegistrationDialog.vue",
+        "server/api/users/[id]/passkeys/index.delete.ts",
+        "server/api/users/[id]/passkeys/index.get.ts",
+        "server/api/webauthn/add-passkey.post.ts",
+        "server/api/webauthn/authenticate.post.ts",
+        "server/api/webauthn/register.post.ts",
+        "types/models/passkey.d.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@simplewebauthn/browser": "^11.0.0",
+            "@simplewebauthn/server": "^11.0.0"
           }
         }
       },

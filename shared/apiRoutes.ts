@@ -28,7 +28,9 @@ export const apiRoutes = {
   AUTH_OAUTH_UNLINK: '/api/auth/oauth/unlink',
 
   MY_PROFILE: '/api/users/me',
+  // <nsk:auth-passkeys>
   MY_PASSKEYS: '/api/users/me/passkeys',
+  // </nsk:auth-passkeys>
   MY_LOCK_SCREEN: '/api/users/me/lock-screen',
   MY_LOCK_SCREEN_VALIDATE: '/api/users/me/lock-screen/validate',
 
