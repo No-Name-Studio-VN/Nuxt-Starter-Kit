@@ -1,38 +1,44 @@
 <script setup lang="ts">
-import { isEmpty } from 'es-toolkit/compat'
-import { defaultLocale } from '~~/i18n-constants'
-import { APP_MANIFEST } from '#shared/constants/manifest'
+import { isEmpty } from 'es-toolkit/compat';
+import { defaultLocale } from '~~/i18n-constants';
+import { APP_MANIFEST } from '#shared/constants/manifest';
 
 definePageMeta({
   breadcrumb: 'Home',
-})
+});
 
 useSeo({
   title: APP_MANIFEST.short_name,
   description: APP_MANIFEST.description,
   type: 'website',
-})
+});
 
-const { locale } = useI18n()
-const contentId = computed(() => locale.value === defaultLocale ? 'landing/landing.yml' : `landing/${locale.value}/landing.yml`)
+const { locale } = useI18n();
+const contentId = computed(() =>
+  locale.value === defaultLocale ? 'landing/landing.yml' : `landing/${locale.value}/landing.yml`,
+);
 
-const { data: page } = await useAsyncData(`landing-content-${locale.value}`, () => {
-  return queryCollection('landing').where('id', '=', contentId.value).first()
-}, { watch: [contentId] })
+const { data: page } = await useAsyncData(
+  `landing-content-${locale.value}`,
+  () => {
+    return queryCollection('landing').where('id', '=', contentId.value).first();
+  },
+  { watch: [contentId] },
+);
 
-const route = useRoute()
+const route = useRoute();
 if (!isEmpty(route.hash)) {
-  const sectionId = route.hash.substring(1)
-  setTimeout(() => scrollToSection(sectionId), 300)
+  const sectionId = route.hash.substring(1);
+  setTimeout(() => scrollToSection(sectionId), 300);
 }
 
 function scrollToSection(sectionId: string) {
-  const element = document.getElementById(sectionId)
+  const element = document.getElementById(sectionId);
   if (element) {
-    const headerOffset = 80
-    const elementPosition = element.getBoundingClientRect().top
-    const offsetPosition = elementPosition + window.scrollY - headerOffset
-    window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
+    const headerOffset = 80;
+    const elementPosition = element.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.scrollY - headerOffset;
+    window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
   }
 }
 </script>

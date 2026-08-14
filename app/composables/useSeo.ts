@@ -1,40 +1,40 @@
-import type { MaybeRefOrGetter } from 'vue'
-import type { PageBreadcrumbItem } from '@/utils/navigation'
-import { joinURL, withoutTrailingSlash } from 'ufo'
+import type { MaybeRefOrGetter } from 'vue';
+import type { PageBreadcrumbItem } from '@/utils/navigation';
+import { joinURL, withoutTrailingSlash } from 'ufo';
 
 export interface UseSeoOptions {
   /**
    * Page title
    */
-  title: MaybeRefOrGetter<string | undefined>
+  title: MaybeRefOrGetter<string | undefined>;
   /**
    * Page description
    */
-  description: MaybeRefOrGetter<string | undefined>
+  description: MaybeRefOrGetter<string | undefined>;
   /**
    * Page type for og:type (default: 'article' for docs, 'website' for landing)
    */
-  type?: MaybeRefOrGetter<'website' | 'article'>
+  type?: MaybeRefOrGetter<'website' | 'article'>;
   /**
    * Custom OG image URL (absolute)
    */
-  ogImage?: MaybeRefOrGetter<string | undefined>
+  ogImage?: MaybeRefOrGetter<string | undefined>;
   /**
    * Published date for article schema
    */
-  publishedAt?: MaybeRefOrGetter<string | undefined>
+  publishedAt?: MaybeRefOrGetter<string | undefined>;
   /**
    * Modified date for article schema
    */
-  modifiedAt?: MaybeRefOrGetter<string | undefined>
+  modifiedAt?: MaybeRefOrGetter<string | undefined>;
   /**
    * Collection items for CollectionPage schema (e.g. blog listing)
    */
-  collectionItems?: MaybeRefOrGetter<Array<{ name: string, url: string }> | undefined>
+  collectionItems?: MaybeRefOrGetter<Array<{ name: string; url: string }> | undefined>;
   /**
    * Breadcrumb items for BreadcrumbList schema
    */
-  breadcrumbs?: MaybeRefOrGetter<PageBreadcrumbItem[] | undefined>
+  breadcrumbs?: MaybeRefOrGetter<PageBreadcrumbItem[] | undefined>;
 }
 
 /**
@@ -45,28 +45,28 @@ export interface UseSeoOptions {
  * - JSON-LD structured data
  */
 export function useSeo(options: UseSeoOptions) {
-  const route = useRoute()
-  const site = useSiteConfig()
-  const { locale, locales } = useI18n()
-  const switchLocalePath = useSwitchLocalePath()
+  const route = useRoute();
+  const site = useSiteConfig();
+  const { locale, locales } = useI18n();
+  const switchLocalePath = useSwitchLocalePath();
 
-  const title = computed(() => toValue(options.title))
-  const description = computed(() => toValue(options.description))
-  const type = computed(() => toValue(options.type) || 'article')
-  const ogImage = computed(() => toValue(options.ogImage))
-  const publishedAt = computed(() => toValue(options.publishedAt))
-  const modifiedAt = computed(() => toValue(options.modifiedAt))
-  const collectionItems = computed(() => toValue(options.collectionItems))
-  const breadcrumbs = computed(() => toValue(options.breadcrumbs))
+  const title = computed(() => toValue(options.title));
+  const description = computed(() => toValue(options.description));
+  const type = computed(() => toValue(options.type) || 'article');
+  const ogImage = computed(() => toValue(options.ogImage));
+  const publishedAt = computed(() => toValue(options.publishedAt));
+  const modifiedAt = computed(() => toValue(options.modifiedAt));
+  const collectionItems = computed(() => toValue(options.collectionItems));
+  const breadcrumbs = computed(() => toValue(options.breadcrumbs));
 
   // Build canonical URL
   const canonicalUrl = computed(() => {
-    if (!site.url) return undefined
-    return joinURL(site.url, route.path)
-  })
+    if (!site.url) return undefined;
+    return joinURL(site.url, route.path);
+  });
 
   // Base URL for building other URLs
-  const baseUrl = computed(() => site.url ? withoutTrailingSlash(site.url) : '')
+  const baseUrl = computed(() => (site.url ? withoutTrailingSlash(site.url) : ''));
 
   // Set meta tags
   useSeoMeta({
@@ -77,97 +77,97 @@ export function useSeo(options: UseSeoOptions) {
     ogType: type,
     ogUrl: canonicalUrl,
     ogLocale: locale.value,
-  })
+  });
 
   // Set canonical link
   useHead({
     link: computed(() => {
-      const links: Array<{ rel: string, href?: string, hreflang?: string }> = []
+      const links: Array<{ rel: string; href?: string; hreflang?: string }> = [];
 
       // Canonical URL
       if (canonicalUrl.value) {
         links.push({
           rel: 'canonical',
           href: canonicalUrl.value,
-        })
+        });
       }
 
       // Hreflang tags for i18n
       for (const loc of locales.value) {
-        const localePath = switchLocalePath(loc.code)
+        const localePath = switchLocalePath(loc.code);
         if (localePath) {
           links.push({
             rel: 'alternate',
             hreflang: loc.code,
             href: joinURL(baseUrl.value, localePath),
-          })
+          });
         }
       }
 
       // x-default hreflang (points to default locale)
-      const defaultLocalePath = switchLocalePath(locales.value[0]?.code || 'en')
+      const defaultLocalePath = switchLocalePath(locales.value[0]?.code || 'en');
       if (defaultLocalePath) {
         links.push({
           rel: 'alternate',
           hreflang: 'x-default',
           href: joinURL(baseUrl.value, defaultLocalePath),
-        })
+        });
       }
 
-      return links
+      return links;
     }),
-  })
+  });
 
   // Custom OG image handling
   if (ogImage.value) {
     useSeoMeta({
       ogImage: ogImage.value,
       twitterImage: ogImage.value,
-    })
+    });
   }
 
   // JSON-LD structured data
   useHead({
     script: computed(() => {
-      const scripts: Array<{ type: string, innerHTML: string }> = []
+      const scripts: Array<{ type: string; innerHTML: string }> = [];
 
-      if (!baseUrl.value || !title.value) return scripts
+      if (!baseUrl.value || !title.value) return scripts;
 
-      const pageUrl = joinURL(baseUrl.value, route.path)
+      const pageUrl = joinURL(baseUrl.value, route.path);
 
       // Article schema for documentation pages
       if (type.value === 'article') {
         const articleSchema: Record<string, unknown> = {
           '@context': 'https://schema.org',
           '@type': 'Article',
-          'headline': title.value,
-          'description': description.value,
-          'url': pageUrl,
-          'mainEntityOfPage': {
+          headline: title.value,
+          description: description.value,
+          url: pageUrl,
+          mainEntityOfPage: {
             '@type': 'WebPage',
             '@id': pageUrl,
           },
-        }
+        };
 
         if (publishedAt.value) {
-          articleSchema.datePublished = publishedAt.value
+          articleSchema.datePublished = publishedAt.value;
         }
 
         if (modifiedAt.value) {
-          articleSchema.dateModified = modifiedAt.value
+          articleSchema.dateModified = modifiedAt.value;
         }
 
         if (site.name) {
           articleSchema.publisher = {
             '@type': 'Organization',
-            'name': site.name,
-          }
+            name: site.name,
+          };
         }
 
         scripts.push({
           type: 'application/ld+json',
           innerHTML: JSON.stringify(articleSchema),
-        })
+        });
       }
 
       // WebSite schema for landing pages
@@ -175,15 +175,15 @@ export function useSeo(options: UseSeoOptions) {
         const websiteSchema: Record<string, unknown> = {
           '@context': 'https://schema.org',
           '@type': 'WebSite',
-          'name': site.name || title.value,
-          'description': description.value,
-          'url': baseUrl.value,
-        }
+          name: site.name || title.value,
+          description: description.value,
+          url: baseUrl.value,
+        };
 
         scripts.push({
           type: 'application/ld+json',
           innerHTML: JSON.stringify(websiteSchema),
-        })
+        });
       }
 
       // CollectionPage schema for listing pages (e.g. blog index)
@@ -191,24 +191,24 @@ export function useSeo(options: UseSeoOptions) {
         const collectionSchema = {
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
-          'name': title.value,
-          'description': description.value,
-          'url': pageUrl,
-          'mainEntity': {
+          name: title.value,
+          description: description.value,
+          url: pageUrl,
+          mainEntity: {
             '@type': 'ItemList',
-            'itemListElement': collectionItems.value.map((item, index) => ({
+            itemListElement: collectionItems.value.map((item, index) => ({
               '@type': 'ListItem',
-              'position': index + 1,
-              'name': item.name,
-              'url': item.url,
+              position: index + 1,
+              name: item.name,
+              url: item.url,
             })),
           },
-        }
+        };
 
         scripts.push({
           type: 'application/ld+json',
           innerHTML: JSON.stringify(collectionSchema),
-        })
+        });
       }
 
       // BreadcrumbList schema for navigation
@@ -216,21 +216,21 @@ export function useSeo(options: UseSeoOptions) {
         const breadcrumbSchema = {
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
-          'itemListElement': breadcrumbs.value.map((item, index) => ({
+          itemListElement: breadcrumbs.value.map((item, index) => ({
             '@type': 'ListItem',
-            'position': index + 1,
-            'name': item.title,
-            'item': joinURL(baseUrl.value, item.path),
+            position: index + 1,
+            name: item.title,
+            item: joinURL(baseUrl.value, item.path),
           })),
-        }
+        };
 
         scripts.push({
           type: 'application/ld+json',
           innerHTML: JSON.stringify(breadcrumbSchema),
-        })
+        });
       }
 
-      return scripts
+      return scripts;
     }),
-  })
+  });
 }

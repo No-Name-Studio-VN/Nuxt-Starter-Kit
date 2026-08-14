@@ -1,3 +1,3 @@
-import { createUseFetch } from '#app/composables/fetch'
+import { createUseFetch } from '#app/composables/fetch';
 
-export const useAPI = createUseFetch()
+export const useAPI = createUseFetch();

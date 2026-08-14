@@ -1,5 +1,5 @@
 export default defineNuxtRouteMiddleware((to) => {
-  const { loggedIn } = useUserSession()
+  const { loggedIn } = useUserSession();
 
   if (!loggedIn.value) {
     return navigateTo({
@@ -7,6 +7,6 @@ export default defineNuxtRouteMiddleware((to) => {
       query: {
         redirectTo: to.fullPath,
       },
-    })
+    });
   }
-})
+});

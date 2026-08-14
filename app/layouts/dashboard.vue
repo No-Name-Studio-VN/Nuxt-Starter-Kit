@@ -3,9 +3,7 @@
     <SidebarProvider>
       <AppSidebar :variant="sidebarVariant" />
       <SidebarInset>
-        <div
-          class="flex flex-1 min-h-dvh overflow-hidden"
-        >
+        <div class="flex flex-1 min-h-dvh overflow-hidden">
           <div
             class="flex flex-1 min-w-0 flex-col overflow-hidden transition-[padding-right] duration-200 ease-out"
           >
@@ -22,16 +20,16 @@
 </template>
 
 <script setup lang="ts">
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
-import HotSearch from '@/components/HotSearch.vue'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import HotSearch from '@/components/HotSearch.vue';
 
-import BackToTop from '@/components/BackToTop.vue'
-import AppLayout from '@/components/AppLayout.vue'
-import AppSidebar from '@/components/AppSidebar.vue'
+import BackToTop from '@/components/BackToTop.vue';
+import AppLayout from '@/components/AppLayout.vue';
+import AppSidebar from '@/components/AppSidebar.vue';
 
-const { sidebarVariant: contextVariant } = useSidebarContext()
+const { sidebarVariant: contextVariant } = useSidebarContext();
 
 const sidebarVariant = computed(() => {
-  return contextVariant.value
-})
+  return contextVariant.value;
+});
 </script>
