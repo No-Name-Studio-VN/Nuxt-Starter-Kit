@@ -5,7 +5,9 @@ import type {
   SidebarItem,
 } from '~~/types/common';
 import {
+  // <nsk:feature-flags>
   FlagIcon,
+  // </nsk:feature-flags>
   Home,
   Info,
   LayoutDashboardIcon,
@@ -63,7 +65,11 @@ export const SIDEBAR_CONTEXTS: SidebarContext[] = [
       },
       {
         title: 'System',
-        items: [{ title: 'Feature Flags', url: '/admin/feature-flags', icon: FlagIcon }],
+        items: [
+          // <nsk:feature-flags>
+          { title: 'Feature Flags', url: '/admin/feature-flags', icon: FlagIcon },
+          // </nsk:feature-flags>
+        ],
       },
     ],
   },

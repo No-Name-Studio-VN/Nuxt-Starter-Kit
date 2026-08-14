@@ -53,7 +53,9 @@ import {
   ChevronRightIcon,
   PenToolIcon,
   UploadCloudIcon,
+  // <nsk:feature-flags>
   FlagIcon,
+  // </nsk:feature-flags>
   DatabaseIcon,
 } from '@lucide/vue';
 import type { Component } from 'vue';
@@ -149,6 +151,7 @@ const managementCards: ManagementCard[] = [
     bgColor: 'bg-teal-500/10',
     textColor: 'text-teal-500',
   },
+  // <nsk:feature-flags>
   {
     id: 'feature-flags',
     icon: FlagIcon,
@@ -158,6 +161,7 @@ const managementCards: ManagementCard[] = [
     bgColor: 'bg-blue-500/10',
     textColor: 'text-blue-500',
   },
+  // </nsk:feature-flags>
   {
     id: 'kv',
     icon: DatabaseIcon,

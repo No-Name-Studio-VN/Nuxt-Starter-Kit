@@ -74,8 +74,10 @@ jobs:
             modules: content
           - name: base + admin users
             modules: admin-users
+          - name: base + feature flags
+            modules: feature-flags
           - name: all modules
-            modules: content,pwa,admin-users
+            modules: content,pwa,admin-users,feature-flags
     steps:
       - uses: actions/checkout@v4
 

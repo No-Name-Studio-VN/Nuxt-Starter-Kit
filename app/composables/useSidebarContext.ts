@@ -11,7 +11,18 @@ const sidebarContextOverride = ref<string | null>(null);
 export function useSidebarContext() {
   const route = useRoute();
   const { user } = useUserSession();
-  const { flags } = useFeatureFlags();
+
+  /**
+   * Flag values the section guards read. The feature-flags module supplies live
+   * ones below; without it every guard simply sees an empty set.
+   */
+  const flags = ref<Record<string, boolean>>({});
+  // <nsk:feature-flags>
+  const featureFlags = useFeatureFlags();
+  watchEffect(() => {
+    flags.value = featureFlags.flags.value;
+  });
+  // </nsk:feature-flags>
 
   const guardContext = computed(() => ({
     flags: flags.value,

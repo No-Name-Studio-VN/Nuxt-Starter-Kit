@@ -6,13 +6,17 @@ export const apiRoutes = {
   API_PREFIX: '/api/',
   ADMIN_API_PREFIX: ADMIN_API_PREFIX,
 
+  // <nsk:feature-flags>
   ADMIN_FEATURE_FLAGS: ADMIN_API_PREFIX + '/feature-flags',
+  // </nsk:feature-flags>
   ADMIN_KV: ADMIN_API_PREFIX + '/kv',
   ADMIN_KV_VALUES: ADMIN_API_PREFIX + '/kv/values',
   ADMIN_KV_ITEMS: ADMIN_API_PREFIX + '/kv/items',
   ADMIN_KV_DELETE: ADMIN_API_PREFIX + '/kv/delete',
   ADMIN_KV_CLEAR: ADMIN_API_PREFIX + '/kv/clear',
+  // <nsk:feature-flags>
   FLAGS_EVALUATE: '/api/flags',
+  // </nsk:feature-flags>
 
   AUTH_LOGIN: '/auth/login',
   AUTH_REGISTER: '/auth/register',
@@ -51,10 +55,12 @@ export const apiRoutes = {
 
   ADMIN_TASKS_SEED_ADMIN: ADMIN_API_PREFIX + '/tasks/seed-admin',
 
+  // <nsk:feature-flags>
   adminFeatureFlag: (key: string) => ADMIN_API_PREFIX + `/feature-flags/${key}`,
   adminFeatureFlagsExport: () => ADMIN_API_PREFIX + '/feature-flags/export',
   adminFeatureFlagsImport: () => ADMIN_API_PREFIX + '/feature-flags/import',
   adminFeatureFlagsSeedDefaults: () => ADMIN_API_PREFIX + '/feature-flags/seed-defaults',
+  // </nsk:feature-flags>
 
   adminUser: (userId: string | number) => ADMIN_API_PREFIX + `/users/${userId}`,
   adminUserLock: (userId: string | number) => ADMIN_API_PREFIX + `/users/${userId}/lock`,

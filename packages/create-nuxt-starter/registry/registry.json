@@ -37,7 +37,6 @@
         "app/assets/**",
         "app/components/*",
         "app/components/OgImage/**",
-        "app/components/admin/feature-flags/**",
         "app/components/admin/kv/**",
         "app/components/auth/**",
         "app/components/content/CtIcon.vue",
@@ -70,10 +69,8 @@
         "sentry.client.config.ts",
         "server/api/*",
         "server/api/admin/*",
-        "server/api/admin/feature-flags/**",
         "server/api/admin/kv/**",
         "server/api/auth/**",
-        "server/api/flags/**",
         "server/api/users/**",
         "server/api/webauthn/**",
         "server/db/**",
@@ -82,7 +79,9 @@
         "server/routes/**",
         "server/tasks/**",
         "server/tsconfig.json",
-        "server/utils/**",
+        "server/utils/*",
+        "server/utils/constants/**",
+        "server/utils/database/**",
         "shared/**",
         "tsconfig.json",
         "types/**",
@@ -127,7 +126,6 @@
             "@nuxtjs/seo": "^5.3.10",
             "@nuxtjs/tailwindcss": "^7.0.0-beta.1",
             "@nuxtjs/turnstile": "^1.1.3",
-            "@openfeature/server-sdk": "^1.23.0",
             "@pinia/nuxt": "^1.0.1",
             "@sentry/nuxt": "^10.69.0",
             "@simplewebauthn/browser": "^11.0.0",
@@ -286,6 +284,37 @@
         "app/pages/admin/users.vue",
         "server/api/admin/users/**"
       ],
+      "notes": []
+    },
+    {
+      "id": "feature-flags",
+      "title": "Feature flags",
+      "description": "OpenFeature flags backed by KV, with an admin panel and an edge evaluation endpoint.",
+      "version": "0.3.0",
+      "requires": [
+        "base"
+      ],
+      "paths": [
+        "app/components/admin/feature-flags/**",
+        "app/composables/useFeatureFlags.ts",
+        "app/pages/admin/feature-flags.vue",
+        "server/api/admin/feature-flags/**",
+        "server/api/flags/**",
+        "server/plugins/0-openfeature.ts",
+        "server/utils/database/featureFlag.ts",
+        "server/utils/featureFlags.ts",
+        "server/utils/openfeature/**",
+        "shared/constants/flags.ts",
+        "shared/schemas/featureFlagSchema.ts",
+        "types/featureFlags.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@openfeature/server-sdk": "^1.23.0"
+          }
+        }
+      },
       "notes": []
     }
   ]

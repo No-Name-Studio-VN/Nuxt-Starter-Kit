@@ -1,6 +1,8 @@
 import { eq } from 'drizzle-orm';
+// <nsk:feature-flags>
 import { TEXT_OBFUSCATION_FLAG } from '#shared/constants/flags';
 import featureFlagService from '~~/server/utils/database/featureFlag';
+// </nsk:feature-flags>
 
 interface SeedSummary {
   admin: {
@@ -8,12 +10,15 @@ interface SeedSummary {
     verified: boolean;
     username: string;
   };
+  // <nsk:feature-flags>
   featureFlags: {
     created: number;
     skipped: number;
   };
+  // </nsk:feature-flags>
 }
 
+// <nsk:feature-flags>
 interface SeedFeatureFlag {
   key: string;
   description: string;
@@ -34,6 +39,7 @@ function getDefaultFeatureFlags(): SeedFeatureFlag[] {
     },
   ];
 }
+// </nsk:feature-flags>
 
 async function seedAdmin(defaultAdminPassword: string): Promise<SeedSummary['admin']> {
   const db = useDB();
@@ -82,6 +88,7 @@ async function seedAdmin(defaultAdminPassword: string): Promise<SeedSummary['adm
   return { created: true, verified: true, username: newAdmin.username };
 }
 
+// <nsk:feature-flags>
 export async function seedDefaultFeatureFlags(): Promise<SeedSummary['featureFlags']> {
   const db = useDB();
   let created = 0;
@@ -108,10 +115,13 @@ export async function seedDefaultFeatureFlags(): Promise<SeedSummary['featureFla
 
   return { created, skipped };
 }
+// </nsk:feature-flags>
 
 export async function seedDatabase(defaultAdminPassword: string): Promise<SeedSummary> {
   return {
     admin: await seedAdmin(defaultAdminPassword),
+    // <nsk:feature-flags>
     featureFlags: await seedDefaultFeatureFlags(),
+    // </nsk:feature-flags>
   };
 }
