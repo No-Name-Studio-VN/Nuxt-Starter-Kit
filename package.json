@@ -73,6 +73,7 @@
     "nuxt-content-git": "^7.0.0",
     "nuxt-security": "^2.6.0",
     "nuxt-studio": "^1.7.0",
+    "otpauth": "^9.5.1",
     "pinia": "^4.0.2",
     "reka-ui": "^2.10.1",
     "tailwind-merge": "^3.6.0",

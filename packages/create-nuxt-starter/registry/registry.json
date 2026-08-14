@@ -152,6 +152,7 @@
             "nuxt": "^4.4.5",
             "nuxt-auth-utils": "^0.5.29",
             "nuxt-security": "^2.6.0",
+            "otpauth": "^9.5.1",
             "pinia": "^4.0.2",
             "reka-ui": "^2.10.1",
             "tailwind-merge": "^3.6.0",
