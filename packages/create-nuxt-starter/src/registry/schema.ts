@@ -46,6 +46,13 @@ const registrySchema = z.object({
   version: z.string().min(1),
   kit: z.object({ template: z.string().min(1), revision: z.string().min(1) }),
   modules: z.array(moduleSchema).min(1),
+  /**
+   * Kit paths that deliberately belong to no module — the CLI's own package, the
+   * planning docs, repository tooling. Nothing reads these to decide what to
+   * render (an unowned file simply never renders); they exist so the coverage
+   * check can tell "kit-only" apart from "nobody assigned this yet".
+   */
+  exclude: z.array(kitPathSchema).default([]),
 });
 
 export type RegistryModule = z.infer<typeof moduleSchema>;

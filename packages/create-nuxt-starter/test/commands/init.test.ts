@@ -54,6 +54,22 @@ describe('runInit', () => {
     expect(packageJson.name).toBe('my-app');
   });
 
+  it("drops unselected modules' entries from shared JSON files", async () => {
+    const result = await init(['base']);
+    const packageJson = JSON.parse(
+      await readFile(join(result.projectRoot, 'package.json'), 'utf8'),
+    );
+    expect(packageJson.dependencies).toEqual({});
+  });
+
+  it('keeps an entry a selected module still declares', async () => {
+    const result = await init(['content']);
+    const packageJson = JSON.parse(
+      await readFile(join(result.projectRoot, 'package.json'), 'utf8'),
+    );
+    expect(packageJson.dependencies).toEqual({ '@nuxt/content': '^3.0.0' });
+  });
+
   it('surfaces module notes', async () => {
     const result = await init(['pwa']);
     expect(result.notes).toContain('Generate PWA icons before deploying.');

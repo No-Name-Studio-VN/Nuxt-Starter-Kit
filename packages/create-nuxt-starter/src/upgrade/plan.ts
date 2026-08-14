@@ -161,11 +161,13 @@ export async function planTransition(options: PlanTransitionOptions): Promise<Up
       .map((module) => module.id)
       .filter((id) => !installedIds.includes(id));
 
+    // Structured management is a property of the file, not of the module set: the
+    // kit's committed copy is the union of every module, so its text differs
+    // between revisions for reasons that have nothing to do with what this project
+    // installs. Text-merging it would reintroduce entries the project subtracted.
+    // Every module in either revision's registry gets a say, installed or not.
     const structuredTargets = new Set<string>();
-    for (const module of targetModules) {
-      for (const file of Object.keys(module.structured)) structuredTargets.add(file);
-    }
-    for (const module of manifest.modules) {
+    for (const module of [...registry.modules, ...oldRegistry.modules, ...manifest.modules]) {
       for (const file of Object.keys(module.structured)) structuredTargets.add(file);
     }
 

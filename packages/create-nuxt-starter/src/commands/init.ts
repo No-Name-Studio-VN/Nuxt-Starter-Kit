@@ -7,6 +7,7 @@ import type { Registry, RegistryModule } from '../registry/schema';
 import type { Placeholders } from '../render/placeholders';
 import { renderKit } from '../render/render';
 import { fetchKit } from '../sources/fetchKit';
+import { applyStructuredChanges, planStructuredChanges } from '../upgrade/structured';
 import { hashContent, pathExists, writeJsonAtomically } from '../util/fs';
 
 export interface InitOptions {
@@ -29,26 +30,36 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Deep-merges a module's structured fragment into a parsed JSON document. */
-function mergeFragment(target: Record<string, unknown>, fragment: Record<string, unknown>): void {
-  for (const [key, value] of Object.entries(fragment)) {
-    const existing = target[key];
-    if (isPlainObject(existing) && isPlainObject(value)) {
-      mergeFragment(existing, value);
-      continue;
-    }
-    // Cloned, not aliased: assigning the fragment itself would let a later
-    // module's merge mutate this module's registry data in place.
-    target[key] = structuredClone(value);
-  }
+interface StructuredSplit {
+  /** Fragments belonging to modules this project does not install. */
+  previous: Record<string, unknown>[];
+  /** Fragments belonging to modules this project does install. */
+  next: Record<string, unknown>[];
 }
 
-/** Groups structured fragments by the JSON file they target, in install order. */
-function collectStructured(modules: RegistryModule[]): Map<string, Record<string, unknown>[]> {
-  const byFile = new Map<string, Record<string, unknown>[]>();
-  for (const module of modules) {
+/**
+ * Splits every module's structured fragments by the JSON file they target.
+ *
+ * A committed kit file is the union of all its modules — the kit itself has to
+ * build, so its `package.json` lists every dependency any module needs. Rendering
+ * a subset therefore means taking the unselected modules' entries back out, which
+ * is the same three-way merge an upgrade runs: `previous` is what the modules
+ * being left behind contributed, `next` is what the selected ones want. Entries
+ * two modules share stay put as long as one of them is selected.
+ */
+function collectStructured(
+  registry: Registry,
+  selected: RegistryModule[],
+): Map<string, StructuredSplit> {
+  const selectedIds = new Set(selected.map((module) => module.id));
+  const byFile = new Map<string, StructuredSplit>();
+
+  for (const module of registry.modules) {
     for (const [file, fragment] of Object.entries(module.structured)) {
-      byFile.set(file, [...(byFile.get(file) ?? []), fragment]);
+      const split = byFile.get(file) ?? { previous: [], next: [] };
+      if (selectedIds.has(module.id)) split.next.push(fragment);
+      else split.previous.push(fragment);
+      byFile.set(file, split);
     }
   }
   return byFile;
@@ -82,9 +93,14 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
       destinationRoot: projectRoot,
     });
 
-    for (const [file, fragments] of collectStructured(modules)) {
+    const selectedTargets = new Set(modules.flatMap((module) => Object.keys(module.structured)));
+
+    for (const [file, split] of collectStructured(options.registry, modules)) {
       const path = join(projectRoot, file);
       if (!(await pathExists(path))) {
+        // Only a selected module can be owed a file: an unselected one having
+        // entries to subtract from a file nobody renders is simply a no-op.
+        if (!selectedTargets.has(file)) continue;
         throw new CliError(
           `Module structured data targets "${file}", which no installed module provides.`,
         );
@@ -93,8 +109,8 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
       if (!isPlainObject(document)) {
         throw new CliError(`Structured target "${file}" must contain a JSON object.`);
       }
-      for (const fragment of fragments) mergeFragment(document, fragment);
-      await writeJsonAtomically(path, document);
+      const changes = planStructuredChanges({ file, document, ...split });
+      await writeJsonAtomically(path, applyStructuredChanges(document, changes));
 
       // Rehash after the rewrite, or the first upgrade would mistake the
       // merged file for a user edit.

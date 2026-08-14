@@ -2,5 +2,9 @@
   "name": "{{PROJECT_NAME}}",
   "private": true,
   "description": "{{PROJECT_DESCRIPTION}}",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@nuxt/content": "^3.0.0",
+    "@vite-pwa/nuxt": "^1.0.0"
+  }
 }

@@ -133,6 +133,16 @@ describe('planUpgrade', () => {
     await result.cleanup();
   });
 
+  // The kit's committed package.json is the union of every module, so it changes
+  // between revisions for modules this project never installed. Text-merging it
+  // would put those dependencies back.
+  it('leaves it to the structured pass even when no installed module declares it', async () => {
+    const result = await plan(await generateProjectAtV1(['base']));
+    expect(result.actions.find((action) => action.path === 'package.json')).toBeUndefined();
+    expect(result.structuredTargets).toContain('package.json');
+    await result.cleanup();
+  });
+
   it('still records ownership and hashes for structured targets', async () => {
     const result = await plan(await generateProjectAtV1(['content']));
     expect(result.targetOwners['package.json']).toBe('base');
