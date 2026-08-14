@@ -39,7 +39,7 @@ const hasTopInset = computed(() => props.side === 'right' || props.side === 'lef
 
 <template>
   <DialogPortal>
-    <SheetOverlay />
+    <SheetOverlay class="z-40" />
     <DialogContent
       data-slot="sheet-content"
       :class="cn(

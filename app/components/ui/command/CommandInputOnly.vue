@@ -6,27 +6,34 @@
       v-bind="{ ...forwardedProps, ...$attrs }"
       v-model="model"
       auto-focus
-      :class="cn('flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50', props.class)"
+      :class="
+        cn(
+          'flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+          props.class,
+        )
+      "
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ListboxFilterProps } from 'reka-ui';
-import type { HTMLAttributes } from 'vue';
-import { ListboxFilter, useForwardProps } from 'reka-ui';
-import { computed } from 'vue';
-import { cn } from '@/lib/utils';
-import { SearchIcon, LoaderIcon } from '@lucide/vue';
+import type { ListboxFilterProps } from "reka-ui";
+import type { HTMLAttributes } from "vue";
+import { ListboxFilter, useForwardProps } from "reka-ui";
+import { computed } from "vue";
+import { cn } from "@/lib/utils";
+import { SearchIcon, LoaderIcon } from "@lucide/vue";
 
 defineOptions({
   inheritAttrs: false,
 });
 
-const props = defineProps<ListboxFilterProps & {
-  class?: HTMLAttributes['class'];
-  loading?: boolean;
-}>();
+const props = defineProps<
+  ListboxFilterProps & {
+    class?: HTMLAttributes["class"];
+    loading?: boolean;
+  }
+>();
 
 const model = defineModel<string>();
 

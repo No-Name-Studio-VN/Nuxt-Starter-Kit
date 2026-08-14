@@ -69,10 +69,7 @@ function handleClose() {
 <template>
   <Teleport to="body">
     <AnimatePresence>
-      <div
-        v-if="open"
-        class="fixed inset-0 z-50 h-screen overflow-auto"
-      >
+      <div v-if="open" class="fixed inset-0 z-50 h-screen overflow-auto">
         <Motion
           as="div"
           :initial="{ opacity: 0 }"

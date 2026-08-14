@@ -96,18 +96,14 @@ provide(CarouselKey, {
         :disabled="!canScrollLeft"
         @click="scrollLeft"
       >
-        <ChevronLeftIcon
-          class="size-6 text-gray-500"
-        />
+        <ChevronLeftIcon class="size-6 text-gray-500" />
       </Button>
       <Button
         class="relative z-40 flex size-10 items-center justify-center rounded-full bg-gray-200 not-disabled:hover:bg-gray-100 disabled:opacity-70"
         :disabled="!canScrollRight"
         @click="scrollRight"
       >
-        <ChevronRightIcon
-          class="size-6 text-gray-500"
-        />
+        <ChevronRightIcon class="size-6 text-gray-500" />
       </Button>
     </div>
   </div>
