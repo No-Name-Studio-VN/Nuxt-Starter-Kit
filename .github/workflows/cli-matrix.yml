@@ -1,0 +1,109 @@
+name: CLI matrix
+
+# Generates a project for each module combination the registry supports and
+# typechecks it. This is the only guard against undeclared coupling: a base file
+# importing a module's symbol compiles fine in the kit, where every module is
+# present, and fails here.
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'packages/create-nuxt-starter/**'
+      - '.github/workflows/cli-matrix.yml'
+      - 'package.json'
+      - 'nuxt.config.ts'
+      - 'app/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'types/**'
+  pull_request:
+    branches:
+      - master
+
+concurrency:
+  group: cli-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: CLI unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        # The coverage checks read the kit with `git ls-files`, so they need the
+        # tree rather than an export.
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: packages/create-nuxt-starter/package-lock.json
+
+      - name: Install CLI dependencies
+        working-directory: packages/create-nuxt-starter
+        run: npm ci
+
+      - name: Test
+        working-directory: packages/create-nuxt-starter
+        run: npm test
+
+      - name: Typecheck
+        working-directory: packages/create-nuxt-starter
+        run: npm run typecheck
+
+  generate:
+    name: ${{ matrix.name }}
+    needs: unit
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: base
+            modules: base
+          - name: base + pwa
+            modules: pwa
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install CLI dependencies
+        working-directory: packages/create-nuxt-starter
+        run: npm ci
+
+      - name: Build the CLI
+        working-directory: packages/create-nuxt-starter
+        run: npm run build
+
+      - name: Generate the project
+        run: |
+          node packages/create-nuxt-starter/bin/nuxt-starter.mjs init \
+            --dir "$RUNNER_TEMP/generated" \
+            --yes \
+            --kit . \
+            --modules '${{ matrix.modules }}'
+
+      # husky's install step expects a repository, and npm runs it during install.
+      - name: Initialise a repository
+        working-directory: ${{ runner.temp }}/generated
+        run: git init --quiet
+
+      - name: Install the generated project
+        working-directory: ${{ runner.temp }}/generated
+        run: |
+          cp .env.example .env
+          npm install --no-audit --no-fund
+
+      - name: Typecheck the generated project
+        working-directory: ${{ runner.temp }}/generated
+        run: npm run typecheck

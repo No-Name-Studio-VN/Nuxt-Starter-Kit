@@ -11,6 +11,7 @@
     "CLAUDE.MD",
     ".whitesource",
     ".github/workflows/release.yml",
+    ".github/workflows/cli-matrix.yml",
     "package-lock.json"
   ],
   "modules": [
