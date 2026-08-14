@@ -3,6 +3,7 @@ import { CliError } from '../errors';
 import type { ManifestModule, ProjectManifest } from '../manifest/io';
 import { RENDER_VERSION, writeManifest } from '../manifest/io';
 import type { Registry } from '../registry/schema';
+import { substituteFragment } from '../render/placeholders';
 import { hashContent, pathExists, writeJsonAtomically, writeTextFile } from '../util/fs';
 import { resolveInside } from '../util/paths';
 import type { UpgradePlan } from './plan';
@@ -36,18 +37,24 @@ function fragmentsFor(
 ): { previous: Record<string, unknown>[]; next: Record<string, unknown>[] } {
   const targetIds = new Set(plan.targetModuleIds);
 
+  // Fragments are stored as authored, tokens and all, so they get the project's
+  // placeholders here — otherwise a `{{PROJECT_NAME}}` in the registry would never
+  // match the substituted value sitting in the file.
+  const substitute = (fragment: Record<string, unknown>): Record<string, unknown> =>
+    substituteFragment(fragment, manifest.placeholders);
+
   const previous: Record<string, unknown>[] = [];
   for (const module of manifest.modules) {
     if (plan.droppedModuleIds.includes(module.id)) continue;
     const fragment = module.structured[file];
-    if (fragment) previous.push(fragment);
+    if (fragment) previous.push(substitute(fragment));
   }
 
   const next: Record<string, unknown>[] = [];
   for (const module of registry.modules) {
     if (!targetIds.has(module.id)) continue;
     const fragment = module.structured[file];
-    if (fragment) next.push(fragment);
+    if (fragment) next.push(substitute(fragment));
   }
 
   return { previous, next };

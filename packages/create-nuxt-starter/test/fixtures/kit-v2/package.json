@@ -1,5 +1,5 @@
 {
-  "name": "{{PROJECT_NAME}}",
+  "name": "nuxt-kit-fixture",
   "private": true,
   "description": "{{PROJECT_DESCRIPTION}}",
   "type": "module",

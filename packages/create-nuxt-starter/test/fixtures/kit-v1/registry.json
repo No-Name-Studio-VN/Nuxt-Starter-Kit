@@ -18,15 +18,24 @@
         "app/components/**",
         "app/pages/**",
         "app/legacy.ts"
-      ]
+      ],
+      "structured": {
+        "package.json": {
+          "name": "{{PROJECT_NAME}}"
+        }
+      }
     },
     {
       "id": "content",
       "title": "Content",
       "description": "Nuxt Content",
       "version": "1.0.0",
-      "requires": ["base"],
-      "paths": ["content.config.ts"],
+      "requires": [
+        "base"
+      ],
+      "paths": [
+        "content.config.ts"
+      ],
       "structured": {
         "package.json": {
           "dependencies": {
@@ -40,8 +49,12 @@
       "title": "PWA",
       "description": "Installable app",
       "version": "1.0.0",
-      "requires": ["base"],
-      "paths": ["app/components/InstallPrompter.vue"],
+      "requires": [
+        "base"
+      ],
+      "paths": [
+        "app/components/InstallPrompter.vue"
+      ],
       "structured": {
         "package.json": {
           "dependencies": {
@@ -49,7 +62,9 @@
           }
         }
       },
-      "notes": ["Generate PWA icons before deploying."]
+      "notes": [
+        "Generate PWA icons before deploying."
+      ]
     }
   ]
 }

@@ -5,9 +5,10 @@ import { buildManifest, writeManifest } from '../manifest/io';
 import { resolveModules } from '../registry/resolve';
 import type { Registry, RegistryModule } from '../registry/schema';
 import type { Placeholders } from '../render/placeholders';
+import { substituteFragment } from '../render/placeholders';
 import { renderKit } from '../render/render';
 import { fetchKit } from '../sources/fetchKit';
-import { applyStructuredChanges, planStructuredChanges } from '../upgrade/structured';
+import { applyStructuredChanges, planInitialStructure } from '../upgrade/structured';
 import { hashContent, pathExists, writeJsonAtomically } from '../util/fs';
 
 export interface InitOptions {
@@ -110,7 +111,14 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
       if (!isPlainObject(document)) {
         throw new CliError(`Structured target "${file}" must contain a JSON object.`);
       }
-      const changes = planStructuredChanges({ file, document, ...split });
+      const substitute = (fragment: Record<string, unknown>): Record<string, unknown> =>
+        substituteFragment(fragment, options.placeholders);
+      const changes = planInitialStructure({
+        file,
+        document,
+        installed: split.next.map(substitute),
+        omitted: split.previous.map(substitute),
+      });
       await writeJsonAtomically(path, applyStructuredChanges(document, changes));
 
       // Rehash after the rewrite, or the first upgrade would mistake the

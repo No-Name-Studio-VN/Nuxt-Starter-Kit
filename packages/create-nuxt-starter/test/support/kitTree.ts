@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -37,4 +37,15 @@ export async function mirrorKitTree(paths: string[]): Promise<string> {
     await writeFile(destination, '');
   }
   return root;
+}
+
+export function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Reads a JSON file as an object, narrowing without an assertion. */
+export async function readJsonObject(path: string): Promise<Record<string, unknown>> {
+  const parsed: unknown = JSON.parse(await readFile(path, 'utf8'));
+  if (!isJsonObject(parsed)) throw new Error(`Expected ${path} to hold a JSON object.`);
+  return parsed;
 }

@@ -70,6 +70,16 @@ describe('runInit', () => {
     expect(packageJson.dependencies).toEqual({ '@nuxt/content': '^3.0.0' });
   });
 
+  // The kit cannot hold {{PROJECT_NAME}} in this field and still install, so the
+  // module declares it and the structured pass substitutes on the way in.
+  it('substitutes placeholders in structured values', async () => {
+    const result = await init(['base']);
+    const packageJson = JSON.parse(
+      await readFile(join(result.projectRoot, 'package.json'), 'utf8'),
+    );
+    expect(packageJson.name).toBe('my-app');
+  });
+
   it('surfaces module notes', async () => {
     const result = await init(['pwa']);
     expect(result.notes).toContain('Generate PWA icons before deploying.');
@@ -122,6 +132,10 @@ describe('structured provenance', () => {
     expect(pwa.structured['package.json']).toEqual({
       dependencies: { '@vite-pwa/nuxt': '^1.0.0' },
     });
-    expect(must(manifest.modules.find((module) => module.id === 'base')).structured).toEqual({});
+    // Stored as authored: the token, not the substituted value, so an upgrade can
+    // still tell what the module put there.
+    expect(must(manifest.modules.find((module) => module.id === 'base')).structured).toEqual({
+      'package.json': { name: '{{PROJECT_NAME}}' },
+    });
   });
 });

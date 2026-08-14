@@ -47,8 +47,10 @@ describe('renderKit', () => {
   it('substitutes placeholders', async () => {
     const { destinationRoot } = await render(['base']);
     const packageJson = JSON.parse(await readFile(join(destinationRoot, 'package.json'), 'utf8'));
-    expect(packageJson.name).toBe('my-app');
     expect(packageJson.description).toBe('A test app');
+    // The kit's own name is a literal — rendering copies it, and only the
+    // structured pass that init runs afterwards replaces it.
+    expect(packageJson.name).toBe('nuxt-kit-fixture');
   });
 
   it('attributes each file to its owning module and hashes it', async () => {
