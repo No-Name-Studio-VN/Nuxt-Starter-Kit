@@ -37,6 +37,7 @@ export async function runDiff(options: DiffOptions): Promise<DiffEntry[]> {
   try {
     const rendered = await renderKit({
       kitRoot: kit.root,
+      registryModules: options.registry.modules,
       modules: ids.length === 0 ? [] : resolveModules(options.registry, ids),
       placeholders: manifest.placeholders,
       destinationRoot: workspace.root,

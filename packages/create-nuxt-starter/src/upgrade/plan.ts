@@ -73,12 +73,14 @@ interface RenderedTree {
 
 async function renderRevision(options: {
   kitRoot: string;
+  registryModules: RegistryModule[];
   modules: RegistryModule[];
   manifest: ProjectManifest;
   destinationRoot: string;
 }): Promise<RenderedTree> {
   const rendered = await renderKit({
     kitRoot: options.kitRoot,
+    registryModules: options.registryModules,
     modules: options.modules,
     placeholders: options.manifest.placeholders,
     destinationRoot: options.destinationRoot,
@@ -144,12 +146,14 @@ export async function planTransition(options: PlanTransitionOptions): Promise<Up
     const targetModules = selectModules(registry, keptIds);
     const base = await renderRevision({
       kitRoot: oldKit.root,
+      registryModules: oldRegistry.modules,
       modules: selectModules(oldRegistry, oldIds),
       manifest,
       destinationRoot: join(workspace.root, 'base'),
     });
     const target = await renderRevision({
       kitRoot: newKit.root,
+      registryModules: registry.modules,
       modules: targetModules,
       manifest,
       destinationRoot: join(workspace.root, 'target'),

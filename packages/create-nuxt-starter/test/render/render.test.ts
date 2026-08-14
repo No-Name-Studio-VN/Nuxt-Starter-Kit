@@ -11,6 +11,7 @@ async function render(ids: string[]) {
   const destinationRoot = await makeTempDir('render');
   const files = await renderKit({
     kitRoot: FIXTURE_KIT_V1_ROOT,
+    registryModules: registry.modules,
     modules: resolveModules(registry, ids),
     placeholders: { PROJECT_NAME: 'my-app', PROJECT_DESCRIPTION: 'A test app' },
     destinationRoot,
@@ -72,6 +73,7 @@ describe('renderKit', () => {
     await expect(
       renderKit({
         kitRoot: FIXTURE_KIT_V1_ROOT,
+        registryModules: modules,
         modules,
         placeholders: {},
         destinationRoot: await makeTempDir('render'),
@@ -87,10 +89,25 @@ describe('renderKit', () => {
     await expect(
       renderKit({
         kitRoot: FIXTURE_KIT_V1_ROOT,
+        registryModules: modules,
         modules,
         placeholders: {},
         destinationRoot: await makeTempDir('render'),
       }),
     ).rejects.toThrow(/claimed by both/);
+  });
+
+  // `base` owns app/components/** and `pwa` names InstallPrompter.vue exactly, so
+  // rendering base alone must leave it behind rather than let the glob swallow it.
+  it('leaves a file an unselected module names exactly out of a directory glob', async () => {
+    const { destinationRoot, files } = await render(['base']);
+    expect(await listFiles(destinationRoot)).not.toContain('app/components/InstallPrompter.vue');
+    expect(files.every((file) => file.moduleId === 'base')).toBe(true);
+  });
+
+  it('gives that file to the module that named it when both are selected', async () => {
+    const { files } = await render(['pwa']);
+    const prompter = files.find((file) => file.path === 'app/components/InstallPrompter.vue');
+    expect(prompter?.moduleId).toBe('pwa');
   });
 });

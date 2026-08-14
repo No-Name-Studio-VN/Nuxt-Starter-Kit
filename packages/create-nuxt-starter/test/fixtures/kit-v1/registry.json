@@ -11,7 +11,14 @@
       "title": "Base",
       "description": "Nuxt foundation",
       "version": "1.0.0",
-      "paths": ["nuxt.config.ts", "package.json", "app/app.vue", "app/pages/**", "app/legacy.ts"]
+      "paths": [
+        "nuxt.config.ts",
+        "package.json",
+        "app/app.vue",
+        "app/components/**",
+        "app/pages/**",
+        "app/legacy.ts"
+      ]
     },
     {
       "id": "content",

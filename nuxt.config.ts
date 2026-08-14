@@ -27,7 +27,9 @@ export default defineNuxtConfig({
     'nuxt-auth-utils',
     '@nuxtjs/color-mode',
     '@sentry/nuxt/module',
+    // <nsk:pwa>
     '@vite-pwa/nuxt',
+    // </nsk:pwa>
     'nuxt-content-git', // this adds createdAt and updatedAt dates based on the git history.
     '@nuxtjs/turnstile',
     '@vee-validate/nuxt',
@@ -41,6 +43,7 @@ export default defineNuxtConfig({
       provider: 'cloudflare',
       cloudflare: { baseURL: '/' },
     },
+    // <nsk:pwa>
     pwa: {
       // Use injectManifest for full control over the service worker.
       // This is required for SSR apps to properly handle offline fallbacks
@@ -56,6 +59,7 @@ export default defineNuxtConfig({
         globPatterns: ['**/*.{js,css,html,svg,ico,woff2}'],
       },
     },
+    // </nsk:pwa>
   },
 
   devtools: {

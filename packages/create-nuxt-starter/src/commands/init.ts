@@ -88,6 +88,7 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
     await mkdir(projectRoot, { recursive: true });
     const rendered = await renderKit({
       kitRoot: kit.root,
+      registryModules: options.registry.modules,
       modules,
       placeholders: options.placeholders,
       destinationRoot: projectRoot,
