@@ -24,7 +24,12 @@ export interface RenderOptions {
   destinationRoot: string;
 }
 
-async function resolveOwnership(
+/**
+ * Maps every kit path a module claims to the module that claims it, failing on a
+ * pattern that matches nothing and on two modules claiming the same file.
+ * Exported so the kit coverage check can ask the same question rendering asks.
+ */
+export async function resolveOwnership(
   kitRoot: string,
   modules: RegistryModule[],
 ): Promise<Map<string, string>> {
