@@ -252,6 +252,10 @@ export default defineNuxtConfig({
     },
     typescript: {
       tsConfig: {
+        // Nitro's generated tsconfig includes server/ and shared/*.d.ts only, so
+        // the #auth-utils augmentation in auth.d.ts never reaches server code and
+        // every session.user access fails to resolve.
+        include: ['../auth.d.ts'],
         exclude: ['**/dist/**', '**/node_modules/**'],
       },
     },
