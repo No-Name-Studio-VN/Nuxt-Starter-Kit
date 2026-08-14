@@ -1,6 +1,6 @@
 {
   "name": "nuxt-starter-kit",
-  "version": "2.0",
+  "version": "2.0.0",
   "private": true,
   "description": "A Nuxt 4 starter template with NuxtHub, Auth, and PWA support",
   "author": {
