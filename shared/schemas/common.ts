@@ -1,5 +1,7 @@
 import { z } from 'zod';
+// <nsk:auth>
 import { TOTP_LENGTH } from '#shared/constants/totp';
+// </nsk:auth>
 
 export const positiveIdSchema = z.coerce.number().int().positive('validation.id_required');
 
@@ -34,9 +36,11 @@ export function maxStringSchema(max: number, error: string) {
   return z.string().max(max, error);
 }
 
+// <nsk:auth>
 export function totpCodeSchema(error = `Authenticator code must be ${TOTP_LENGTH} digits`) {
   return z.string().length(TOTP_LENGTH, error);
 }
+// </nsk:auth>
 
 export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional(),

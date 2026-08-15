@@ -118,6 +118,33 @@ describe('runRemove', () => {
     expect(await pathExists(join(projectRoot, 'app/app.vue'))).toBe(true);
   });
 
+  /**
+   * Resolution reinstates required modules at both ends of the transition, so
+   * without an explicit refusal this would report a successful removal and
+   * leave every file where it was.
+   */
+  it('refuses to remove a module the registry marks required', async () => {
+    const registry = await loadFixtureRegistry();
+    const projectRoot = await generateProjectAtV1(['content']);
+
+    await expect(
+      runRemove({
+        projectRoot,
+        registry: {
+          ...registry,
+          modules: registry.modules.map((module) =>
+            module.id === 'base' ? { ...module, required: true } : module,
+          ),
+        },
+        moduleIds: ['base'],
+        check: true,
+        force: false,
+        resolveLocalKit: resolveFixtureKit,
+      }),
+    ).rejects.toThrow(/cannot be removed/);
+    expect(await pathExists(join(projectRoot, 'app/app.vue'))).toBe(true);
+  });
+
   it('previews without writing', async () => {
     const projectRoot = await generateProjectAtV1(['pwa']);
     const report = await remove(projectRoot, ['pwa'], true);

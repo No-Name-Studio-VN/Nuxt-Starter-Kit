@@ -85,10 +85,20 @@ describe('runInit', () => {
     expect(result.notes).toContain('Generate PWA icons before deploying.');
   });
 
-  it('refuses to generate into a non-empty directory', async () => {
+  it('refuses to generate into a non-empty directory, naming what is in the way', async () => {
     const targetDir = await makeTempDir('init-existing');
     await writeTextFile(join(targetDir, 'README.md'), 'mine');
-    await expect(init(['base'], targetDir)).rejects.toThrow(/not empty/);
+    await expect(init(['base'], targetDir)).rejects.toThrow(/already contains README\.md/);
+  });
+
+  it('summarises the count once too many entries are in the way', async () => {
+    const targetDir = await makeTempDir('init-crowded');
+    for (const name of ['a.txt', 'b.txt', 'c.txt', 'd.txt', 'e.txt']) {
+      await writeTextFile(join(targetDir, name), 'mine');
+    }
+    await expect(init(['base'], targetDir)).rejects.toThrow(
+      /already contains a\.txt, b\.txt, c\.txt, and 2 more/,
+    );
   });
 
   it('generates into an existing empty directory', async () => {

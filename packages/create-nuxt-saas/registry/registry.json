@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "kit": {
     "template": "github:No-Name-Studio-VN/Nuxt-Starter-Kit",
     "revision": "main"
@@ -19,8 +19,9 @@
     {
       "id": "base",
       "title": "Base",
-      "description": "Nuxt 4 foundation: UI kit, theming, i18n, SEO, and security.",
-      "version": "0.3.0",
+      "description": "Nuxt 4 frontend: UI kit, theming, i18n, SEO, and security. No server code.",
+      "version": "0.4.0",
+      "required": true,
       "paths": [
         ".editorconfig",
         ".env.example",
@@ -38,12 +39,9 @@
         "app/assets/**",
         "app/components/*",
         "app/components/OgImage/**",
-        "app/components/admin/kv/**",
-        "app/components/auth/**",
         "app/components/content/CtIcon.vue",
         "app/components/layout/Header/Nav.vue",
         "app/components/layout/SearchButton.vue",
-        "app/components/nav/**",
         "app/components/ui/**",
         "app/composables/**",
         "app/constants/**",
@@ -56,7 +54,6 @@
         "app/plugins/**",
         "app/stores/**",
         "app/utils/**",
-        "auth.d.ts",
         "commitlint.config.js",
         "components.json",
         "docs.config.ts",
@@ -68,23 +65,21 @@
         "package.json",
         "public/**",
         "sentry.client.config.ts",
-        "server/api/*",
-        "server/api/admin/*",
-        "server/api/admin/kv/**",
-        "server/api/auth/**",
-        "server/api/users/**",
-        "server/db/**",
-        "server/middleware/**",
-        "server/plugins/**",
-        "server/routes/**",
-        "server/tasks/**",
-        "server/tsconfig.json",
-        "server/utils/*",
-        "server/utils/constants/**",
-        "server/utils/database/**",
-        "shared/**",
+        "shared/apiRoutes.ts",
+        "shared/commonEnums.ts",
+        "shared/constants/manifest.ts",
+        "shared/schemas/common.ts",
+        "shared/serialization.ts",
+        "shared/shuffleArray.ts",
+        "shared/url.ts",
+        "shared/utils/locales.ts",
+        "shared/utils/slugifyTitle.ts",
         "tsconfig.json",
-        "types/**",
+        "types/common.ts",
+        "types/i18n.ts",
+        "types/index.d.ts",
+        "types/screen.ts",
+        "types/seo.ts",
         "vitest.config.ts",
         "wrangler.jsonc"
       ],
@@ -96,9 +91,7 @@
           "scripts": {
             "build": "npm run prepare && npm run prepare && NODE_OPTIONS=--max-old-space-size=12288 nuxt build",
             "clean": "rm -r .nuxt && rm -r .output",
-            "db:generate": "npx nuxt db generate",
-            "db:seed": "nitro task run db:admin-creation",
-            "deploy": "npx wrangler deploy && npx wrangler d1 migrations apply DB --remote",
+            "deploy": "npx wrangler deploy",
             "dev": "npm run prepare && nuxt dev",
             "format": "oxfmt --write .",
             "format:check": "oxfmt --check .",
@@ -115,8 +108,6 @@
             "prepare": "husky"
           },
           "dependencies": {
-            "@codemirror/lang-json": "^6.0.2",
-            "@libsql/client": "^0.17.4",
             "@lucide/vue": "^1.28.0",
             "@nuxt/fonts": "^0.14.0",
             "@nuxt/image": "^2.1.0",
@@ -126,7 +117,6 @@
             "@nuxtjs/i18n": "^10.6.0",
             "@nuxtjs/seo": "^5.3.10",
             "@nuxtjs/tailwindcss": "^7.0.0-beta.1",
-            "@nuxtjs/turnstile": "^1.1.3",
             "@pinia/nuxt": "^1.0.1",
             "@sentry/nuxt": "^10.69.0",
             "@tanstack/vue-table": "^9.0.0",
@@ -136,22 +126,15 @@
             "@vueuse/core": "^14.4.0",
             "@vueuse/nuxt": "^14.4.0",
             "@vueuse/router": "^14.4.0",
-            "bcryptjs": "^3.0.3",
-            "better-sqlite3": "^12.11.1",
             "class-variance-authority": "^0.7.1",
             "clsx": "^2.1.1",
-            "codemirror": "^6.0.2",
-            "drizzle-orm": "^0.45.2",
-            "drizzle-zod": "^0.8.3",
             "embla-carousel-vue": "^8.6.0",
             "es-toolkit": "^1.50.0",
             "jszip": "^3.10.1",
             "luxon": "^3.7.2",
             "motion-v": "^2.3.0",
             "nuxt": "^4.4.5",
-            "nuxt-auth-utils": "^0.5.29",
             "nuxt-security": "^2.6.0",
-            "otpauth": "^9.5.1",
             "pinia": "^4.0.2",
             "reka-ui": "^2.10.1",
             "tailwind-merge": "^3.6.0",
@@ -168,11 +151,9 @@
             "@nuxt/eslint-config": "^1.16.0",
             "@nuxt/test-utils": "^4.1.0",
             "@stylistic/eslint-plugin": "^5.10.0",
-            "@types/better-sqlite3": "^7.6.13",
             "@types/luxon": "^3.7.3",
             "@types/node": "^26.2.0",
             "@vue/test-utils": "^2.4.11",
-            "drizzle-kit": "^0.31.10",
             "eslint": "^10.8.0",
             "eslint-plugin-better-tailwindcss": "^4.7.0",
             "eslint-plugin-oxlint": "^1.77.0",
@@ -190,26 +171,326 @@
           }
         }
       },
+      "env": ["NUXT_PUBLIC_SITE_URL"],
+      "notes": [
+        "Set \"name\" and \"routes\" in wrangler.jsonc — they still name the kit's own worker and domain.",
+        "Your app's name, short name and description come from shared/constants/manifest.ts.",
+        "nuxt.config.ts carries the kit's Sentry org and project; replace them with your own."
+      ]
+    },
+    {
+      "id": "server-core",
+      "title": "Server core",
+      "description": "The API response envelope shared by every server module.",
+      "version": "0.4.0",
+      "internal": true,
+      "requires": ["base"],
+      "paths": [
+        "app/composables/useAPI.ts",
+        "app/composables/useRequestState.ts",
+        "app/utils/apiError.ts",
+        "app/utils/apiRequest.ts",
+        "server/api/index.get.ts",
+        "server/plugins/sentry-cloudflare-plugin.ts",
+        "server/tsconfig.json",
+        "server/utils/apiResponse.ts",
+        "server/utils/constants/cacheKeys.ts",
+        "server/utils/kv.ts",
+        "server/utils/reportServerError.ts",
+        "shared/pagination.ts",
+        "types/api.ts",
+        "types/errors.ts",
+        "types/models/pagination.ts"
+      ],
+      "structured": {},
+      "notes": []
+    },
+    {
+      "id": "database",
+      "title": "Database",
+      "description": "Drizzle ORM over D1/libSQL, with migrations and the db:generate workflow.",
+      "version": "0.4.0",
+      "requires": ["server-core"],
+      "paths": ["server/db/**", "server/utils/db.ts", "shared/db.ts", "types/db/**"],
+      "structured": {
+        "package.json": {
+          "scripts": {
+            "db:generate": "npx nuxt db generate",
+            "deploy": "npx wrangler deploy && npx wrangler d1 migrations apply DB --remote"
+          },
+          "dependencies": {
+            "@libsql/client": "^0.17.4",
+            "better-sqlite3": "^12.11.1",
+            "drizzle-orm": "^0.45.2",
+            "drizzle-zod": "^0.8.3"
+          },
+          "devDependencies": {
+            "@types/better-sqlite3": "^7.6.13",
+            "drizzle-kit": "^0.31.10"
+          }
+        }
+      },
+      "notes": [
+        "Configure the D1 binding in wrangler.jsonc, then run \"npm run db:generate\" after changing the schema."
+      ]
+    },
+    {
+      "id": "auth",
+      "title": "Authentication",
+      "description": "Sessions, password and OAuth sign-in, account pages, and the dashboard shell.",
+      "version": "0.4.0",
+      "requires": ["database"],
+      "paths": [
+        "app/components/AppLayout.vue",
+        "app/components/AppSidebar.vue",
+        "app/components/HotSearch.vue",
+        "app/components/OAuthIcon.vue",
+        "app/components/PasswordStrengthIndicator.vue",
+        "app/components/auth/**",
+        "app/components/nav/**",
+        "app/composables/useOAuthPopupListener.ts",
+        "app/composables/useSidebarContext.ts",
+        "app/constants/sidebar.ts",
+        "app/layouts/dashboard.vue",
+        "app/middleware/auth.ts",
+        "app/middleware/guest.global.ts",
+        "app/pages/auth/forgot-password.vue",
+        "app/pages/auth/index.vue",
+        "app/pages/auth/login.vue",
+        "app/pages/auth/oauth/popup.vue",
+        "app/pages/auth/register.vue",
+        "app/pages/auth/reset-password.vue",
+        "app/pages/dashboard.vue",
+        "app/plugins/oauth-popup-bridge.client.ts",
+        "app/utils/googleOneTap.ts",
+        "app/utils/oauthPopupComplete.ts",
+        "app/utils/passwordValidation.ts",
+        "app/utils/safeRedirect.ts",
+        "app/utils/user.ts",
+        "auth.d.ts",
+        "server/api/auth/[provider].get.ts",
+        "server/api/auth/account-status.get.ts",
+        "server/api/auth/forgot-password.post.ts",
+        "server/api/auth/google-one-tap.post.ts",
+        "server/api/auth/login-password.post.ts",
+        "server/api/auth/oauth/**",
+        "server/api/auth/register-password.post.ts",
+        "server/api/auth/reset-password.post.ts",
+        "server/api/users/[id]/index.delete.ts",
+        "server/api/users/[id]/index.get.ts",
+        "server/api/users/[id]/lock-screen/**",
+        "server/api/users/[id]/password.patch.ts",
+        "server/api/users/[id]/profile.patch.ts",
+        "server/middleware/locked-account.ts",
+        "server/utils/authorization.ts",
+        "server/utils/database/authToken.ts",
+        "server/utils/database/oauthAccount.ts",
+        "server/utils/database/user.ts",
+        "server/utils/database/userLockScreen.ts",
+        "server/utils/email.ts",
+        "server/utils/googleIdentity.ts",
+        "server/utils/lockScreenHelpers.ts",
+        "server/utils/oauth.ts",
+        "server/utils/safeRedirect.ts",
+        "server/utils/userProfile.ts",
+        "shared/constants/authMessages.ts",
+        "shared/constants/authTokens.ts",
+        "shared/constants/oauthProviders.ts",
+        "shared/constants/totp.ts",
+        "shared/schemas/index.ts",
+        "shared/schemas/userSchema.ts",
+        "shared/schemas/userSecuritySchema.ts",
+        "types/auth.ts",
+        "types/email.ts",
+        "types/googleIdentity.ts",
+        "types/googleOneTap.ts",
+        "types/models/profile.d.ts",
+        "types/password.ts",
+        "types/userSecurity.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@nuxtjs/turnstile": "^1.1.3",
+            "bcryptjs": "^3.0.3",
+            "nuxt-auth-utils": "^0.5.29",
+            "otpauth": "^9.5.1"
+          }
+        }
+      },
       "env": [
         "NUXT_SESSION_PASSWORD",
         "CSRF_SECRET",
-        "NUXT_PUBLIC_SITE_URL",
-        "NUXT_DEFAULT_ADMIN_PASSWORD",
-        "NUXT_SEED_SECRET",
         "NUXT_RESEND_API_KEY",
         "NUXT_RESEND_FROM_EMAIL"
       ],
       "notes": [
-        "Set \"name\" and \"routes\" in wrangler.jsonc — they still name the kit's own worker and domain — then configure the D1 and KV bindings.",
-        "Your app's name, short name and description come from shared/constants/manifest.ts.",
-        "nuxt.config.ts carries the kit's Sentry org and project; replace them along with the OAuth and Turnstile credentials."
+        "Replace the OAuth and Turnstile credentials in nuxt.config.ts with your own before deploying."
       ]
+    },
+    {
+      "id": "admin",
+      "title": "Admin",
+      "description": "Admin area shell: route guards, the seed endpoint, and the admin landing page.",
+      "version": "0.4.0",
+      "requires": ["auth"],
+      "paths": [
+        "app/components/DataTable.vue",
+        "app/middleware/admin.ts",
+        "app/pages/admin/index.vue",
+        "server/api/admin/seed.post.ts",
+        "server/middleware/admin.ts",
+        "server/tasks/db/**",
+        "server/utils/database/seed.ts",
+        "types/admin.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "scripts": {
+            "db:seed": "nitro task run db:admin-creation"
+          }
+        }
+      },
+      "env": ["NUXT_DEFAULT_ADMIN_PASSWORD", "NUXT_SEED_SECRET"],
+      "notes": []
+    },
+    {
+      "id": "admin-users",
+      "title": "Admin users panel",
+      "description": "Admin screens and APIs for listing, editing, locking and deleting users.",
+      "version": "0.4.0",
+      "requires": ["admin"],
+      "paths": [
+        "app/components/admin/users/**",
+        "app/pages/admin/users.vue",
+        "server/api/admin/users/**"
+      ],
+      "notes": []
+    },
+    {
+      "id": "admin-kv",
+      "title": "Admin KV browser",
+      "description": "Admin screens and APIs for browsing and editing Workers KV entries.",
+      "version": "0.4.0",
+      "requires": ["admin"],
+      "paths": [
+        "app/components/admin/kv/**",
+        "app/pages/admin/kv.vue",
+        "server/api/admin/kv/**",
+        "server/utils/adminKv.ts",
+        "shared/schemas/adminKvSchema.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@codemirror/lang-json": "^6.0.2",
+            "codemirror": "^6.0.2"
+          }
+        }
+      },
+      "notes": ["Configure the KV binding in wrangler.jsonc before using the browser."]
+    },
+    {
+      "id": "feature-flags",
+      "title": "Feature flags",
+      "description": "OpenFeature flags backed by KV, with an admin panel and an edge evaluation endpoint.",
+      "version": "0.4.0",
+      "requires": ["admin"],
+      "paths": [
+        "app/components/admin/feature-flags/**",
+        "app/composables/useFeatureFlags.ts",
+        "app/pages/admin/feature-flags.vue",
+        "server/api/admin/feature-flags/**",
+        "server/api/flags/**",
+        "server/plugins/0-openfeature.ts",
+        "server/utils/database/featureFlag.ts",
+        "server/utils/featureFlags.ts",
+        "server/utils/openfeature/**",
+        "shared/constants/flags.ts",
+        "shared/schemas/featureFlagSchema.ts",
+        "types/featureFlags.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@openfeature/server-sdk": "^1.23.0"
+          }
+        }
+      },
+      "notes": [
+        "The feature_flags tables leave the drizzle schema with this module, but the migration that created them stays. Run \"npm run db:generate\" to record the change."
+      ]
+    },
+    {
+      "id": "auth-2fa",
+      "title": "Two-factor authentication",
+      "description": "TOTP second factor at sign-in, with setup, verification and disable endpoints.",
+      "version": "0.4.0",
+      "requires": ["auth"],
+      "paths": [
+        "app/components/ui/input-otp/InputOTP.vue",
+        "app/components/ui/input-otp/InputOTPGroup.vue",
+        "app/components/ui/input-otp/InputOTPSeparator.vue",
+        "app/components/ui/input-otp/InputOTPSlot.vue",
+        "app/components/ui/input-otp/index.ts",
+        "server/api/auth/login-2fa.post.ts",
+        "server/api/users/[id]/2fa/disable.delete.ts",
+        "server/api/users/[id]/2fa/setup.post.ts",
+        "server/api/users/[id]/2fa/verify.post.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "vue-input-otp": "^0.3.2"
+          }
+        }
+      },
+      "notes": []
+    },
+    {
+      "id": "auth-passkeys",
+      "title": "Passkeys",
+      "description": "WebAuthn sign-in and passkey registration, listing and removal.",
+      "version": "0.4.0",
+      "requires": ["auth"],
+      "paths": [
+        "app/components/PasskeyRegistrationDialog.vue",
+        "server/api/users/[id]/passkeys/index.delete.ts",
+        "server/api/users/[id]/passkeys/index.get.ts",
+        "server/api/webauthn/add-passkey.post.ts",
+        "server/api/webauthn/authenticate.post.ts",
+        "server/api/webauthn/register.post.ts",
+        "types/models/passkey.d.ts"
+      ],
+      "structured": {
+        "package.json": {
+          "dependencies": {
+            "@simplewebauthn/browser": "^11.0.0",
+            "@simplewebauthn/server": "^11.0.0"
+          }
+        }
+      },
+      "notes": []
+    },
+    {
+      "id": "auth-email-verification",
+      "title": "Email verification",
+      "description": "Verification notice, confirmation link and resend endpoint for new accounts.",
+      "version": "0.4.0",
+      "requires": ["auth"],
+      "paths": [
+        "app/pages/auth/verify-email.vue",
+        "server/api/auth/resend-verification.post.ts",
+        "server/api/auth/verify-email.get.ts"
+      ],
+      "structured": {},
+      "notes": []
     },
     {
       "id": "content",
       "title": "Content",
       "description": "Nuxt Content: documentation site, blog, MDC components, and Studio.",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "requires": ["base"],
       "paths": [
         "content.config.ts",
@@ -247,14 +528,14 @@
       },
       "env": ["STUDIO_GITHUB_CLIENT_ID", "STUDIO_GITHUB_CLIENT_SECRET"],
       "notes": [
-        "Nuxt Studio is configured for this kit\u2019s repository \u2014 point studio.repository at your own."
+        "Nuxt Studio is configured for this kit’s repository — point studio.repository at your own."
       ]
     },
     {
       "id": "pwa",
       "title": "PWA",
       "description": "Installable app: service worker, offline fallback, and install prompt.",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "requires": ["base"],
       "paths": [
         "pwa-assets.config.ts",
@@ -276,117 +557,8 @@
         }
       },
       "notes": [
-        "Icons in public/ are generated by pwa-assets-generator \u2014 re-run \"npm run prepare\" after replacing public/favicon.svg."
+        "Icons in public/ are generated by pwa-assets-generator — re-run \"npm run prepare\" after replacing public/favicon.svg."
       ]
-    },
-    {
-      "id": "admin-users",
-      "title": "Admin users panel",
-      "description": "Admin screens and APIs for listing, editing, locking and deleting users.",
-      "version": "0.3.0",
-      "requires": ["base"],
-      "paths": [
-        "app/components/admin/users/**",
-        "app/pages/admin/users.vue",
-        "server/api/admin/users/**"
-      ],
-      "notes": []
-    },
-    {
-      "id": "feature-flags",
-      "title": "Feature flags",
-      "description": "OpenFeature flags backed by KV, with an admin panel and an edge evaluation endpoint.",
-      "version": "0.3.0",
-      "requires": ["base"],
-      "paths": [
-        "app/components/admin/feature-flags/**",
-        "app/composables/useFeatureFlags.ts",
-        "app/pages/admin/feature-flags.vue",
-        "server/api/admin/feature-flags/**",
-        "server/api/flags/**",
-        "server/plugins/0-openfeature.ts",
-        "server/utils/database/featureFlag.ts",
-        "server/utils/featureFlags.ts",
-        "server/utils/openfeature/**",
-        "shared/constants/flags.ts",
-        "shared/schemas/featureFlagSchema.ts",
-        "types/featureFlags.ts"
-      ],
-      "structured": {
-        "package.json": {
-          "dependencies": {
-            "@openfeature/server-sdk": "^1.23.0"
-          }
-        }
-      },
-      "notes": [
-        "The feature_flags tables leave the drizzle schema with this module, but the migration that created them stays. Run \"npm run db:generate\" to record the change."
-      ]
-    },
-    {
-      "id": "auth-2fa",
-      "title": "Two-factor authentication",
-      "description": "TOTP second factor at sign-in, with setup, verification and disable endpoints.",
-      "version": "0.3.0",
-      "requires": ["base"],
-      "paths": [
-        "app/components/ui/input-otp/InputOTP.vue",
-        "app/components/ui/input-otp/InputOTPGroup.vue",
-        "app/components/ui/input-otp/InputOTPSeparator.vue",
-        "app/components/ui/input-otp/InputOTPSlot.vue",
-        "app/components/ui/input-otp/index.ts",
-        "server/api/auth/login-2fa.post.ts",
-        "server/api/users/[id]/2fa/disable.delete.ts",
-        "server/api/users/[id]/2fa/setup.post.ts",
-        "server/api/users/[id]/2fa/verify.post.ts"
-      ],
-      "structured": {
-        "package.json": {
-          "dependencies": {
-            "vue-input-otp": "^0.3.2"
-          }
-        }
-      },
-      "notes": []
-    },
-    {
-      "id": "auth-passkeys",
-      "title": "Passkeys",
-      "description": "WebAuthn sign-in and passkey registration, listing and removal.",
-      "version": "0.3.0",
-      "requires": ["base"],
-      "paths": [
-        "app/components/PasskeyRegistrationDialog.vue",
-        "server/api/users/[id]/passkeys/index.delete.ts",
-        "server/api/users/[id]/passkeys/index.get.ts",
-        "server/api/webauthn/add-passkey.post.ts",
-        "server/api/webauthn/authenticate.post.ts",
-        "server/api/webauthn/register.post.ts",
-        "types/models/passkey.d.ts"
-      ],
-      "structured": {
-        "package.json": {
-          "dependencies": {
-            "@simplewebauthn/browser": "^11.0.0",
-            "@simplewebauthn/server": "^11.0.0"
-          }
-        }
-      },
-      "notes": []
-    },
-    {
-      "id": "auth-email-verification",
-      "title": "Email verification",
-      "description": "Verification notice, confirmation link and resend endpoint for new accounts.",
-      "version": "0.3.0",
-      "requires": ["base"],
-      "paths": [
-        "app/pages/auth/verify-email.vue",
-        "server/api/auth/resend-verification.post.ts",
-        "server/api/auth/verify-email.get.ts"
-      ],
-      "structured": {},
-      "notes": []
     }
   ]
 }

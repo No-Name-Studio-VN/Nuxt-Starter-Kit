@@ -13,11 +13,14 @@
       "enabled": true,
     },
   },
+  // <nsk:database>
   "d1_databases": [
     {
       "binding": "DB",
     },
   ],
+  // </nsk:database>
+  // <nsk:server-core>
   "kv_namespaces": [
     {
       "binding": "CACHE",
@@ -26,6 +29,7 @@
       "binding": "KV",
     },
   ],
+  // </nsk:server-core>
   "routes": [
     {
       "pattern": "nnsvn.me",

@@ -4,14 +4,23 @@ Create Nuxt projects from selected starter-kit modules, then pull upstream chang
 into files you have edited.
 
 ```bash
+npm create nuxt-saas@latest
+```
+
+Asks for a project name and creates a folder of that name. Pass a directory to skip the question:
+
+```bash
 npm create nuxt-saas@latest my-app
 ```
 
 ## Commands
 
 - `init [dir] [--modules a,b] [--yes]` — generate a project from selected modules.
-  Dependencies come along automatically, so `--modules admin-users` also installs what it needs.
-  `init` is the default, so `npm create nuxt-saas my-app` and `nuxt-saas init my-app` are the same thing.
+  With no `dir`, the project name you are asked for becomes the folder; with one, the name is derived
+  from it and the question is skipped. The target must be empty either way.
+  Dependencies come along automatically, so `--modules admin-users` also installs what it needs, and
+  `base` is always installed. `init` is the default command, so a bare `npm create nuxt-saas`,
+  `npm create nuxt-saas my-app` and `nuxt-saas init my-app` all reach it.
 - `add <modules>` — install more modules. Their files are written, their marker blocks are inserted
   into shared files, and their `package.json` entries are merged in. Requires the project to be on
   the registry's revision, so upgrade first if it has moved on.
@@ -66,24 +75,32 @@ has to set, not a secret, so a module has to be able to add to it.
 
 ## Modules
 
-| Module                    | Owns                                                                            |
-| ------------------------- | ------------------------------------------------------------------------------- |
-| `base`                    | Nuxt foundation, shadcn UI, theming, i18n, SEO, security, the public site shell  |
-| `pwa`                     | Service worker, install prompt, offline page, `pwa-assets.config.ts`             |
-| `content`                 | Nuxt Content, docs site, blog, MDC components, Studio                            |
-| `admin-users`             | Admin screens and APIs for listing, editing, locking and deleting users          |
-| `feature-flags`           | OpenFeature flags backed by KV, admin panel, edge evaluation endpoint            |
-| `auth-2fa`                | TOTP second factor at sign-in, with setup, verification and disable endpoints    |
-| `auth-passkeys`           | WebAuthn sign-in and passkey registration, listing and removal                   |
-| `auth-email-verification` | Verification notice, confirmation link and resend endpoint for new accounts      |
+| Module                    | Requires      | Owns                                                                            |
+| ------------------------- | ------------- | ------------------------------------------------------------------------------- |
+| `base`                    | —             | Nuxt foundation, shadcn UI, theming, i18n, SEO, security, the public site shell |
+| `pwa`                     | `base`        | Service worker, install prompt, offline page, `pwa-assets.config.ts`            |
+| `content`                 | `base`        | Nuxt Content, docs site, blog, MDC components, Studio                           |
+| `server-core`             | `base`        | The API response envelope, server tsconfig, KV and error helpers                |
+| `database`                | `server-core` | Drizzle over D1/libSQL, migrations, the `db:generate` workflow                  |
+| `auth`                    | `database`    | Sessions, password and OAuth sign-in, account pages, the dashboard shell        |
+| `admin`                   | `auth`        | Admin route guards, the seed endpoint, the admin landing page                   |
+| `admin-users`             | `admin`       | Admin screens and APIs for listing, editing, locking and deleting users         |
+| `admin-kv`                | `admin`       | Admin screens and APIs for browsing and editing Workers KV entries              |
+| `feature-flags`           | `admin`       | OpenFeature flags backed by KV, admin panel, edge evaluation endpoint           |
+| `auth-2fa`                | `auth`        | TOTP second factor at sign-in, with setup, verification and disable endpoints   |
+| `auth-passkeys`           | `auth`        | WebAuthn sign-in and passkey registration, listing and removal                  |
+| `auth-email-verification` | `auth`        | Verification notice, confirmation link and resend endpoint for new accounts     |
+
+`base` is **frontend only** — no `server/` directory, no database, no authentication — and is installed
+in every project: the registry marks it `required`, so it never appears in the picker and `remove`
+refuses it. Everything server-side is opt-in above it.
+
+`server-core` is marked `internal`: it is plumbing every server module needs and nothing works without,
+so it is hidden from the picker and arrives with whatever requires it. `database` is a normal choice,
+because a project wanting Drizzle and D1 without authentication is a real project.
 
 Every module is optional and leaves nothing behind: no files, no imports, no dependencies, no dead
-menu entries. A base-only project is 602 files against 818 with everything.
-
-Core `auth` (sessions, password sign-in, OAuth) and `database` (NuxtHub D1, drizzle) are still part of
-`base`. Peels run in reverse dependency order — `database` cannot become optional while `auth` still
-requires it — so `auth` comes out first, and the four modules above gain a `requires: ["auth"]` edge
-when it does.
+menu entries. A base-only project is 483 files against 815 with everything.
 
 ### Adding a module: peel, do not shard
 
@@ -106,7 +123,15 @@ commit, with `test/registry/` green at each step:
 
 `test/registry/kitCoverage.test.ts` fails when a kit file belongs to no module and is not in the
 registry's `exclude` list; `packageJsonCoverage.test.ts` holds the registry and the kit's real
-`package.json` to each other in both directions.
+`package.json` to each other in both directions; `importOwnership.test.ts` resolves every explicit
+import in the kit — through the `#shared/`, `~/`, `~~/` and `@/` aliases — and fails when a file
+imports across a boundary its module does not require. An import inside a marker block belongs to that
+block's module, since those lines leave with it. The same rule applies to npm packages: a module that
+imports a package another module declares would generate a project whose `package.json` is missing it.
+
+The matrix and the import check cover different halves of the same risk: the matrix compiles real
+projects and therefore sees auto-imports and template component usage, but only for the combinations it
+lists; the import check sees every pair in the kit at once, but only what is written as an `import`.
 
 ## Authoring markers
 

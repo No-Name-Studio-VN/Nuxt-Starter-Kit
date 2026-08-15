@@ -1,8 +1,11 @@
+// <nsk:auth>
 import type { Component } from 'vue';
 // The session user, not the database row: sidebar guards run in the browser
 // against whatever `useUserSession()` exposes.
 import type { User } from '#auth-utils';
+// </nsk:auth>
 
+// <nsk:auth>
 export type SidebarItem = {
   title: string;
   url?: string;
@@ -39,6 +42,7 @@ export interface SidebarContext {
   /** Access guard — return false to skip this context */
   guard?: (user: SidebarGuardUser, context: SidebarGuardContext) => boolean;
 }
+// </nsk:auth>
 
 export interface BreadcrumbItemType {
   title: string;

@@ -34,6 +34,14 @@ export async function runRemove(options: RemoveOptions): Promise<ChangeReport> {
     if (!installedIds.includes(id)) {
       throw new CliError(`Module "${id}" is not installed in this project.`);
     }
+    // Resolution puts required modules back regardless of the transition's
+    // endpoints, so without this the removal would report success and change
+    // nothing.
+    if (getModule(options.registry, id).required) {
+      throw new CliError(
+        `Module "${id}" is part of every project and cannot be removed. Delete the directory instead.`,
+      );
+    }
   }
 
   const remainingIds = installedIds.filter((id) => !options.moduleIds.includes(id));
