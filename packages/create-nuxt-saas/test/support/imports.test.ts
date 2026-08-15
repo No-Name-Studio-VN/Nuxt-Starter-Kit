@@ -100,6 +100,24 @@ describe('toPackageName', () => {
       expect(toPackageName(specifier)).toBeNull();
     },
   );
+
+  /**
+   * A virtual module that only exists once its package is installed couples the
+   * importer to that package just as surely as naming it would.
+   */
+  it.each([
+    ['#auth-utils', 'nuxt-auth-utils'],
+    ['#auth-utils/deep', 'nuxt-auth-utils'],
+  ])('attributes %s to the package that provides it', (specifier, expected) => {
+    expect(toPackageName(specifier)).toBe(expected);
+  });
+
+  it.each(['#app', '#app/composables/fetch', '#build/x'])(
+    "leaves Nuxt's own virtual module %s unattributed",
+    (specifier) => {
+      expect(toPackageName(specifier)).toBeNull();
+    },
+  );
 });
 
 describe('resolveKitImport', () => {

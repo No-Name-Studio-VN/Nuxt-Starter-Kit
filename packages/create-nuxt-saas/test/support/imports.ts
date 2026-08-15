@@ -84,17 +84,32 @@ export function extractImports(contents: string): KitImport[] {
 }
 
 /**
+ * Virtual modules a package brings with it.
+ *
+ * Most `#`-prefixed specifiers are Nuxt's own (`#app`, `#imports`, `#build`) and
+ * exist in every project. These do not: they appear only once the package
+ * providing them is installed, which makes importing one exactly as coupling as
+ * importing the package by name. `server/db/schema.sqlite.ts` importing
+ * `#auth-utils` is how a `database`-only project came to fail typecheck.
+ */
+const VIRTUAL_MODULE_PROVIDERS: Record<string, string> = {
+  '#auth-utils': 'nuxt-auth-utils',
+};
+
+/**
  * The npm package a specifier names, or null when it names something else.
  *
  * `@scope/pkg/deep` and `pkg/deep` both reduce to the installable package, which
  * is the unit `package.json` declares and therefore the unit ownership applies
- * to. Relative paths, Nuxt aliases, virtual modules and node builtins are not
- * packages.
+ * to. Relative paths, Nuxt aliases and node builtins are not packages; a virtual
+ * module resolves to whichever package provides it.
  */
 export function toPackageName(specifier: string): string | null {
-  if (specifier.startsWith('.') || specifier.startsWith('#') || specifier.startsWith('node:')) {
-    return null;
+  if (specifier.startsWith('#')) {
+    const root = specifier.split('/')[0] ?? specifier;
+    return VIRTUAL_MODULE_PROVIDERS[root] ?? null;
   }
+  if (specifier.startsWith('.') || specifier.startsWith('node:')) return null;
   if (ALIASES.some(({ prefix }) => specifier.startsWith(prefix))) return null;
 
   const segments = specifier.split('/');

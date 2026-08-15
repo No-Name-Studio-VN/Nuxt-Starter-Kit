@@ -1,9 +1,24 @@
 import { sqliteTable, text, integer, unique, index } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
-import type { WebAuthnCredential } from '#auth-utils';
 import type { AuthTokenType } from '../../shared/commonEnums';
 // <nsk:feature-flags>
 import type { FeatureFlagRules } from '../../types/featureFlags';
+
+/**
+ * Structurally `WebAuthnCredential['transports']` from `#auth-utils`, spelled out
+ * rather than imported: that virtual module exists only once nuxt-auth-utils is
+ * installed, and the schema ships with `database`, which a project can take
+ * without any authentication at all.
+ */
+type CredentialTransports = (
+  | 'ble'
+  | 'cable'
+  | 'hybrid'
+  | 'internal'
+  | 'nfc'
+  | 'smart-card'
+  | 'usb'
+)[];
 // </nsk:feature-flags>
 
 const timestampColumns = {
@@ -55,9 +70,7 @@ export const credentials = sqliteTable(
     publicKey: text('public_key').notNull(),
     counter: integer('counter').notNull(),
     backedUp: integer('backed_up', { mode: 'boolean' }).notNull(),
-    transports: text('transports', { mode: 'json' })
-      .notNull()
-      .$type<WebAuthnCredential['transports']>(),
+    transports: text('transports', { mode: 'json' }).notNull().$type<CredentialTransports>(),
     ...timestampColumns,
   },
   (table) => ({

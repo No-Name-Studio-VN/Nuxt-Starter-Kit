@@ -1,7 +1,8 @@
+import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { main, nextSteps, resolveInitTarget, withDefaultCommand } from '../src/cli';
+import { isHelpRequest, main, nextSteps, resolveInitTarget, withDefaultCommand } from '../src/cli';
 import { DEFAULT_PROJECT_NAME, sanitizeProjectName } from '../src/util/projectName';
 
 describe('main', () => {
@@ -30,12 +31,40 @@ describe('main', () => {
 });
 
 describe('usage', () => {
-  // citty renders usage through its own writer, so this asserts the behaviour
-  // that matters: no unhandled crash, and a non-zero exit code.
-  it('shows help instead of crashing when help is asked for', async () => {
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    await expect(main(['--help'])).resolves.toBe(1);
-    logSpy.mockRestore();
+  // citty renders usage through its own writer rather than console.log, so these
+  // assert the behaviour that matters: help exits cleanly and, crucially, does
+  // not do the thing it was asked to describe.
+  it.each([[['--help']], [['-h']], [['init', '--help']], [['upgrade', '--help']]])(
+    'answers %j without running anything',
+    async (argv) => {
+      await expect(main(argv)).resolves.toBe(0);
+    },
+  );
+
+  /**
+   * citty passes `--help` through as an ordinary argument, so before this was
+   * intercepted `nuxt-saas my-app --help` generated a project called `my-app`
+   * instead of explaining how to generate one.
+   */
+  it.each([[['my-app', '--help']], [['--help', 'my-app']]])(
+    'does not scaffold for %j',
+    async (argv) => {
+      await expect(main(argv)).resolves.toBe(0);
+      expect(existsSync(resolve('my-app'))).toBe(false);
+    },
+  );
+});
+
+describe('isHelpRequest', () => {
+  it.each([[['--help']], [['-h']], [['init', '--help']], [['my-app', '-h']]])(
+    'recognises %j',
+    (argv) => {
+      expect(isHelpRequest(argv)).toBe(true);
+    },
+  );
+
+  it.each([[['init', 'my-app']], [[]], [['--yes']]])('does not misread %j', (argv) => {
+    expect(isHelpRequest(argv)).toBe(false);
   });
 });
 
@@ -65,8 +94,30 @@ describe('withDefaultCommand', () => {
     expect(withDefaultCommand(argv)).toEqual(argv);
   });
 
-  it.each([[['--help']], [['-h']]])('lets %j reach the root command for usage', (argv) => {
+  it.each([[['--help']], [['-h']]])('lets a bare %j reach the root command for usage', (argv) => {
     expect(withDefaultCommand(argv)).toEqual(argv);
+  });
+
+  /**
+   * A help flag next to a directory is asking about the command that directory
+   * belongs to. Routing it to the root instead made citty reject the directory
+   * as an unknown subcommand.
+   */
+  it.each([
+    [
+      ['my-app', '--help'],
+      ['init', 'my-app', '--help'],
+    ],
+    [
+      ['-h', 'my-app'],
+      ['init', '-h', 'my-app'],
+    ],
+  ])('routes %j to init rather than the root command', (argv, expected) => {
+    expect(withDefaultCommand(argv)).toEqual(expected);
+  });
+
+  it('still lets an explicit subcommand handle its own help', () => {
+    expect(withDefaultCommand(['add', '--help'])).toEqual(['add', '--help']);
   });
 });
 
@@ -122,5 +173,18 @@ describe('nextSteps', () => {
 
   it('omits cd when the project is the working directory', () => {
     expect(nextSteps(resolve('.'))).toEqual(['npm install', 'npm run dev']);
+  });
+
+  /** `cd my app` is two arguments; the suggestion has to be pasteable. */
+  it('quotes a directory the shell would otherwise split', () => {
+    expect(nextSteps(resolve('my app'))).toEqual(["cd 'my app'", 'npm install', 'npm run dev']);
+  });
+
+  it('escapes a quote inside the directory name', () => {
+    expect(nextSteps(resolve("it's"))[0]).toBe("cd 'it'\\''s'");
+  });
+
+  it('leaves an ordinary nested path unquoted', () => {
+    expect(nextSteps(resolve('apps/web'))[0]).toBe('cd apps/web');
   });
 });

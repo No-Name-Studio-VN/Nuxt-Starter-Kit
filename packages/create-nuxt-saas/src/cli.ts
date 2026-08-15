@@ -103,10 +103,26 @@ export async function resolveInitTarget(
   return { dir, name: sanitizeProjectName(basename(resolve(dir))) };
 }
 
+/**
+ * Shell-safe form of a path, quoted only when it needs to be.
+ *
+ * A directory argument is echoed back verbatim, so `init "./my app"` would
+ * otherwise suggest `cd ./my app` — two arguments to `cd`, and a command the
+ * user cannot paste. Single quotes with the `'\''` escape, as
+ * `lint-staged.config.js` does for the same reason.
+ */
+function quoteForShell(path: string): string {
+  return /^[\w./@:-]+$/.test(path) ? path : `'${path.replaceAll("'", "'\\''")}'`;
+}
+
 /** The commands a freshly generated project needs, in order. */
 export function nextSteps(projectRoot: string): string[] {
   const location = relative(process.cwd(), projectRoot);
-  return [...(location.length > 0 ? [`cd ${location}`] : []), 'npm install', 'npm run dev'];
+  return [
+    ...(location.length > 0 ? [`cd ${quoteForShell(location)}`] : []),
+    'npm install',
+    'npm run dev',
+  ];
 }
 
 const initCommand = defineCommand({
@@ -391,25 +407,54 @@ const rootCommand = defineCommand({
  * That invocation is the convention every scaffolder is reached through, and npm
  * passes the directory straight to the binary — so a leading argument that names
  * no subcommand is the project the user wants created, and no argument at all is
- * still a request to create one. Only an explicit help flag reaches the root
- * command, since usage is the one thing `init` cannot stand in for.
+ * still a request to create one.
+ *
+ * Help flags are not considered here: {@link resolveHelpTarget} intercepts them
+ * before anything runs, so `my-app --help` can be routed to `init` like any
+ * other directory without that routing causing a project to be generated.
  */
 export function withDefaultCommand(argv: string[]): string[] {
   const first = argv.find((argument) => !argument.startsWith('-'));
-  if (first !== undefined && first in subCommands) return argv;
+  if (first !== undefined) return first in subCommands ? argv : ['init', ...argv];
   if (argv.includes('--help') || argv.includes('-h')) return argv;
   return ['init', ...argv];
 }
 
-/** citty throws this when invoked with no subcommand; it means "show help". */
+/**
+ * Whether `argv` is asking how to use the tool rather than asking it to run.
+ *
+ * `runCommand` treats `--help` as an ordinary argument, so without this
+ * `nuxt-saas init --help` generates a project instead of explaining how to
+ * generate one — and once a bare directory routes to `init`, so does
+ * `nuxt-saas my-app --help`.
+ */
+export function isHelpRequest(argv: string[]): boolean {
+  return argv.includes('--help') || argv.includes('-h');
+}
+
+/**
+ * citty throws these when it cannot pick a subcommand — none given, or one it
+ * does not know. Either way the useful response is the usage text, not a stack
+ * trace naming an internal error code.
+ */
 function isMissingCommand(error: unknown): boolean {
   return (
-    typeof error === 'object' && error !== null && 'code' in error && error.code === 'E_NO_COMMAND'
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error.code === 'E_NO_COMMAND' || error.code === 'E_UNKNOWN_COMMAND')
   );
 }
 
 export async function main(argv: string[]): Promise<number> {
   try {
+    // Checked before running anything: asking how a command works must never be
+    // the same as running it.
+    if (isHelpRequest(argv)) {
+      await showUsage(rootCommand);
+      return 0;
+    }
+
     await runCommand(rootCommand, { rawArgs: withDefaultCommand(argv) });
     return 0;
   } catch (error) {
