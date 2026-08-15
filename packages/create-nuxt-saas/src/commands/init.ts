@@ -67,12 +67,22 @@ function collectStructured(
   return byFile;
 }
 
+/** How many conflicting entries to name before falling back to a count. */
+const LISTED_CONFLICTS = 3;
+
 async function assertEmptyTarget(projectRoot: string): Promise<void> {
   if (!(await pathExists(projectRoot))) return;
-  const entries = await readdir(projectRoot);
-  if (entries.length > 0) {
-    throw new CliError(`${projectRoot} is not empty. Choose an empty directory.`);
-  }
+  const entries = (await readdir(projectRoot)).sort();
+  if (entries.length === 0) return;
+
+  // Naming what is in the way separates "wrong directory" from "the name is
+  // taken", which the bare "is not empty" left the user to work out themselves.
+  const listed = entries.slice(0, LISTED_CONFLICTS).join(', ');
+  const remaining = entries.length - LISTED_CONFLICTS;
+  const summary = remaining > 0 ? `${listed}, and ${remaining} more` : listed;
+  throw new CliError(
+    `${projectRoot} already contains ${summary}. Choose an empty directory or a different project name.`,
+  );
 }
 
 export async function runInit(options: InitOptions): Promise<InitResult> {
