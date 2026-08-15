@@ -1,11 +1,8 @@
 import { CliError } from '../errors';
-import { getModule, type Registry, type RegistryModule, requiredModuleIds } from './schema';
+import { getModule, type Registry, type RegistryModule } from './schema';
 
 export function resolveModules(registry: Registry, requestedIds: string[]): RegistryModule[] {
-  // Required modules lead so they settle first, which keeps the foundation ahead
-  // of its dependents in the result — the order structured fragments merge in.
-  const ids = [...requiredModuleIds(registry), ...requestedIds];
-  if (ids.length === 0) {
+  if (requestedIds.length === 0) {
     throw new CliError('Choose at least one module.');
   }
 
@@ -26,7 +23,7 @@ export function resolveModules(registry: Registry, requestedIds: string[]): Regi
     resolved.push(module);
   }
 
-  for (const id of ids) visit(id);
+  for (const id of requestedIds) visit(id);
 
   for (const module of resolved) {
     const conflict = module.conflicts.find((id) => settled.has(id));

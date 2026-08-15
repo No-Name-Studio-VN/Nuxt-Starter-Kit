@@ -1,6 +1,11 @@
 import { APP_MANIFEST, SEO_CONFIG } from './shared/constants/manifest';
 import { routeRules } from './shared/apiRoutes';
-import { defaultLocale, browserFallbackLocale, languageNames, locales } from './i18n-constants';
+import {
+  defaultLocale,
+  browserFallbackLocale,
+  languageNames,
+  locales,
+} from './i18n-constants';
 import { DOCS_CONFIG } from './docs.config';
 
 export default defineNuxtConfig({
@@ -20,9 +25,7 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     '@nuxtjs/device',
     '@nuxthub/core',
-    // <nsk:auth>
     'nuxt-auth-utils',
-    // </nsk:auth>
     '@nuxtjs/color-mode',
     '@sentry/nuxt/module',
     // <nsk:pwa>
@@ -31,9 +34,7 @@ export default defineNuxtConfig({
     // <nsk:content>
     'nuxt-content-git', // this adds createdAt and updatedAt dates based on the git history.
     // </nsk:content>
-    // <nsk:auth>
     '@nuxtjs/turnstile',
-    // </nsk:auth>
     '@vee-validate/nuxt',
     'motion-v/nuxt',
     // <nsk:content>
@@ -172,7 +173,6 @@ export default defineNuxtConfig({
         dataWebsiteId: '',
       },
     },
-    // <nsk:auth>
     turnstile: {
       secretKey: '',
     },
@@ -181,15 +181,11 @@ export default defineNuxtConfig({
       apiKey: '',
       fromEmail: '',
     },
-    // </nsk:auth>
-    // <nsk:admin>
     // Shared secret guarding the database seed endpoint.
     seed: {
       secret: '',
     },
     defaultAdminPassword: '',
-    // </nsk:admin>
-    // <nsk:auth>
     session: {
       password: '',
       // Without maxAge the session cookie is written with no Expires, so it only
@@ -200,7 +196,6 @@ export default defineNuxtConfig({
       // so this is an absolute lifetime rather than a sliding window.
       maxAge: 60 * 60 * 24 * 30, // 30 days
     },
-    // </nsk:auth>
   },
 
   routeRules: routeRules,
@@ -269,28 +264,22 @@ export default defineNuxtConfig({
     },
     typescript: {
       tsConfig: {
-        // <nsk:auth>
         // Nitro's generated tsconfig includes server/ and shared/*.d.ts only, so
         // the #auth-utils augmentation in auth.d.ts never reaches server code and
         // every session.user access fails to resolve.
         include: ['../auth.d.ts'],
-        // </nsk:auth>
         exclude: ['**/dist/**', '**/node_modules/**'],
       },
     },
   },
 
   hub: {
-    // <nsk:database>
     // D1 database
     db: 'sqlite',
-    // </nsk:database>
-    // <nsk:server-core>
     // KV namespace (binding defaults to 'KV')
     kv: true,
     // Cache KV namespace (binding defaults to 'CACHE')
     cache: true,
-    // </nsk:server-core>
     // R2 bucket (binding defaults to 'BLOB')
     blob: false,
   },
@@ -465,9 +454,7 @@ export default defineNuxtConfig({
   },
   // </nsk:content>
 
-  // <nsk:auth>
   turnstile: {
     siteKey: process.env.NUXT_TURNSTILE_SITE_KEY,
   },
-  // </nsk:auth>
 });

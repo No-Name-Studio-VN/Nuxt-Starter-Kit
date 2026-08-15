@@ -66,24 +66,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # base alone is the load-bearing row: it is the only one that proves
-          # the frontend foundation carries no server code it cannot run without.
           - name: base
             modules: base
           - name: base + pwa
             modules: pwa
           - name: base + content
             modules: content
-          - name: base + database
-            modules: database
-          - name: base + auth
-            modules: auth
-          - name: base + admin
-            modules: admin
           - name: base + admin users
             modules: admin-users
-          - name: base + admin kv
-            modules: admin-kv
           - name: base + feature flags
             modules: feature-flags
           - name: base + 2fa
@@ -93,7 +83,7 @@ jobs:
           - name: base + email verification
             modules: auth-email-verification
           - name: all modules
-            modules: content,pwa,admin-users,admin-kv,feature-flags,auth-2fa,auth-passkeys,auth-email-verification
+            modules: content,pwa,admin-users,feature-flags,auth-2fa,auth-passkeys,auth-email-verification
     steps:
       - uses: actions/checkout@v4
 

@@ -36,18 +36,6 @@ const moduleSchema = z.object({
   paths: z.array(kitPathSchema).min(1),
   requires: z.array(moduleIdSchema).default([]),
   conflicts: z.array(moduleIdSchema).default([]),
-  /**
-   * Installed in every project, whatever the user picked, and refused by
-   * `remove`. The foundation the other modules extend is not a choice, and
-   * saying so here keeps the CLI from hardcoding one module's id.
-   */
-  required: z.boolean().default(false),
-  /**
-   * Reachable only through another module's `requires`, never offered in the
-   * picker. For plumbing that has no meaning as a user-facing choice: offering
-   * it could only ever produce a confusing failure when someone deselected it.
-   */
-  internal: z.boolean().default(false),
   structured: z.record(z.string(), z.record(z.string(), z.unknown())).default({}),
   env: z.array(z.string()).default([]),
   notes: z.array(z.string()).default([]),
@@ -88,11 +76,6 @@ export function parseRegistry(value: unknown, sourceLabel: string): Registry {
         `Invalid registry at ${sourceLabel}: module "${module.id}" is declared more than once.`,
       );
     }
-    if (module.required && module.internal) {
-      throw new CliError(
-        `Invalid registry at ${sourceLabel}: module "${module.id}" is both required and internal, which cannot be true at once.`,
-      );
-    }
     ids.add(module.id);
   }
   for (const module of registry.modules) {
@@ -107,25 +90,12 @@ export function parseRegistry(value: unknown, sourceLabel: string): Registry {
   return registry;
 }
 
-/** Ids of the modules every project installs regardless of what was picked. */
-export function requiredModuleIds(registry: Registry): string[] {
-  return registry.modules.filter((module) => module.required).map((module) => module.id);
-}
-
-/**
- * The modules worth offering: everything the user can meaningfully choose
- * between. Required modules arrive anyway and internal ones arrive with their
- * dependents, so listing either would only invite a selection that changes
- * nothing or breaks something.
- */
-export function pickableModules(registry: Registry): RegistryModule[] {
-  return registry.modules.filter((module) => !module.required && !module.internal);
-}
-
 export function getModule(registry: Registry, id: string): RegistryModule {
   const module = registry.modules.find((candidate) => candidate.id === id);
   if (!module) {
-    throw new CliError(`Unknown module "${id}". Run "nuxt-saas modules" to see what is available.`);
+    throw new CliError(
+      `Unknown module "${id}". Run "nuxt-saas modules" to see what is available.`,
+    );
   }
   return module;
 }

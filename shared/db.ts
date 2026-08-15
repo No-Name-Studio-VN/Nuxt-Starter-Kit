@@ -7,8 +7,6 @@ export type {
   DBLockScreen,
   DBLockScreenClient,
   DBOAuthAccount,
-  // <nsk:auth>
   DBPasskey,
-  // </nsk:auth>
   User,
 } from '~~/types/db/database';
