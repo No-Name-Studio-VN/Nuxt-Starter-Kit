@@ -2,7 +2,9 @@ import type { tables } from '~~/server/utils/db';
 
 export type User = typeof tables.users.$inferSelect;
 export type DBLockScreen = typeof tables.userLockScreen.$inferSelect;
+// <nsk:auth>
 export type DBPasskey = typeof tables.credentials.$inferSelect;
+// </nsk:auth>
 export type DBAuthToken = typeof tables.authTokens.$inferSelect;
 export type DBOAuthAccount = typeof tables.oauthAccounts.$inferSelect;
 // <nsk:feature-flags>
