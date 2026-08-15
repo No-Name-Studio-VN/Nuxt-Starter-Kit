@@ -7,6 +7,7 @@ import type { Registry } from '../../src/registry/schema';
 import { resolveOwnership } from '../../src/render/render';
 import { extractImports, isCodeFile, resolveKitImport, toPackageName } from '../support/imports';
 import { KIT_ROOT, listKitFiles, mirrorKitTree } from '../support/kitTree';
+import { reachableModules } from '../support/markers';
 
 /**
  * Module boundaries only hold if the code respects them. A file that imports
@@ -78,20 +79,6 @@ function packageDeclarers(registry: Registry): Map<string, string[]> {
     }
   }
   return declarers;
-}
-
-/** Every module reachable from `id` through `requires`, including itself. */
-function reachableModules(registry: Registry, id: string): Set<string> {
-  const reached = new Set<string>();
-  const queue = [id];
-  while (queue.length > 0) {
-    const current = queue.pop();
-    if (current === undefined || reached.has(current)) continue;
-    reached.add(current);
-    const module = registry.modules.find((candidate) => candidate.id === current);
-    for (const required of module?.requires ?? []) queue.push(required);
-  }
-  return reached;
 }
 
 beforeAll(async () => {
