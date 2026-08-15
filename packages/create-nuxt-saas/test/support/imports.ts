@@ -84,6 +84,62 @@ export function extractImports(contents: string): KitImport[] {
 }
 
 /**
+ * An `import`/`export … from` statement's brace clause and its specifier.
+ * Anchored to the start of a line so prose or a nested object cannot match, and
+ * `[^}]` spans newlines so a clause broken across lines is still one match.
+ */
+const BRACE_CLAUSE =
+  /(?:^|\n)[ \t]*(?:import|export)[ \t]+(?:type[ \t]+)?(?:[\w$]+[ \t]*,[ \t]*)?\{([^}]*)\}\s*from\s*['"]([^'"\n]+)['"]/g;
+
+/** One name inside a brace clause, after any `type` keyword and before any alias. */
+const BINDING = /(?:^|,)\s*(?:type\s+)?([A-Za-z_$][\w$]*)/g;
+
+export interface NamedBinding {
+  /** The name as the target module exports it, never the local alias. */
+  name: string;
+  specifier: string;
+  /** 0-indexed line the binding itself sits on, not the statement's first line. */
+  line: number;
+}
+
+/**
+ * Every name a file pulls in by name, with the line each one sits on.
+ *
+ * Per-binding lines are the point: a re-export list can wrap a single entry in
+ * its own marker block, so the statement's line says nothing about whether a
+ * given name is gated.
+ *
+ * Sees brace clauses only. `export *` names nothing to attribute, and a default
+ * import binds whatever the target's `default` is, which no marker block can
+ * gate independently.
+ */
+export function extractNamedBindings(contents: string): NamedBinding[] {
+  const starts = lineStarts(contents);
+  const bindings: NamedBinding[] = [];
+
+  for (const clause of contents.matchAll(BRACE_CLAUSE)) {
+    const inner = clause[1];
+    const specifier = clause[2];
+    if (inner === undefined || specifier === undefined || clause.index === undefined) continue;
+
+    // Where the brace's contents begin in the file, so each binding's own offset
+    // can be turned back into a line.
+    const innerStart = clause.index + clause[0].indexOf('{') + 1;
+
+    for (const entry of inner.matchAll(BINDING)) {
+      const name = entry[1];
+      if (name === undefined || entry.index === undefined) continue;
+      // The name ends the match, so the last occurrence is the name itself and
+      // never the `type` keyword preceding it.
+      const offset = innerStart + entry.index + entry[0].lastIndexOf(name);
+      bindings.push({ name, specifier, line: lineAt(starts, offset) });
+    }
+  }
+
+  return bindings;
+}
+
+/**
  * Virtual modules a package brings with it.
  *
  * Most `#`-prefixed specifiers are Nuxt's own (`#app`, `#imports`, `#build`) and

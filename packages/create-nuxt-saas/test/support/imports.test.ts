@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { extractImports, isCodeFile, resolveKitImport, toPackageName } from './imports';
+import {
+  extractImports,
+  extractNamedBindings,
+  isCodeFile,
+  resolveKitImport,
+  toPackageName,
+} from './imports';
 
 const specifiersOf = (source: string): string[] =>
   extractImports(source).map((entry) => entry.specifier);
@@ -80,6 +86,68 @@ describe('isCodeFile', () => {
       expect(isCodeFile(path)).toBe(false);
     },
   );
+});
+
+describe('extractNamedBindings', () => {
+  const namesOf = (source: string): string[] =>
+    extractNamedBindings(source).map((entry) => entry.name);
+
+  it.each([
+    ["import { A, B } from 'x';", ['A', 'B']],
+    ["import type { A } from 'x';", ['A']],
+    ["export { A, B } from 'x';", ['A', 'B']],
+    ["export type { A } from 'x';", ['A']],
+    ["import { type A, B } from 'x';", ['A', 'B']],
+  ])('reads %s', (source, expected) => {
+    expect(namesOf(source)).toEqual(expected);
+  });
+
+  /** The gated name is the one the target exports, not the local alias. */
+  it('takes the exported name from an alias', () => {
+    expect(namesOf("import { DBPasskey as Passkey } from 'x';")).toEqual(['DBPasskey']);
+  });
+
+  it('reads the braces alongside a default import, not the default', () => {
+    expect(namesOf("import service, { helper } from 'x';")).toEqual(['helper']);
+  });
+
+  it.each([
+    ["export * from 'x';", 'a star re-export names nothing'],
+    ["import * as ns from 'x';", 'a namespace import binds the whole module'],
+    ["import service from 'x';", 'a default import cannot be gated independently'],
+    ["import 'x';", 'a side-effect import binds nothing'],
+  ])('yields nothing for %s (%s)', (source) => {
+    expect(namesOf(source)).toEqual([]);
+  });
+
+  it('carries the specifier with each name', () => {
+    expect(extractNamedBindings("import { A } from '#shared/db';")).toEqual([
+      { name: 'A', specifier: '#shared/db', line: 0 },
+    ]);
+  });
+
+  /**
+   * The reason lines are tracked per binding rather than per statement: a
+   * re-export list can gate one entry on its own.
+   */
+  it('reports the line of each binding in a multi-line clause', () => {
+    const source = [
+      'export type {',
+      '  DBAuthToken,',
+      '  DBPasskey,',
+      '  User,',
+      "} from '~~/types/db/database';",
+    ].join('\n');
+    expect(extractNamedBindings(source)).toEqual([
+      { name: 'DBAuthToken', specifier: '~~/types/db/database', line: 1 },
+      { name: 'DBPasskey', specifier: '~~/types/db/database', line: 2 },
+      { name: 'User', specifier: '~~/types/db/database', line: 3 },
+    ]);
+  });
+
+  it('is not fooled by braces that are not an import clause', () => {
+    expect(namesOf("const shape = { a: 1 };\nconst from = 'x';")).toEqual([]);
+  });
 });
 
 describe('toPackageName', () => {

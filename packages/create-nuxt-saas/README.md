@@ -129,9 +129,19 @@ imports across a boundary its module does not require. An import inside a marker
 block's module, since those lines leave with it. The same rule applies to npm packages: a module that
 imports a package another module declares would generate a project whose `package.json` is missing it.
 
-The matrix and the import check cover different halves of the same risk: the matrix compiles real
+`markerScope.test.ts` guards the block boundary itself. A marker block deletes its lines, so a
+module-scope name declared inside one must not be depended on from outside it — such code compiles in
+the kit, where every block survives, and dangles in every project without that module. It checks both
+directions: within a file, and across files, where a name imported by list (`export type { DBPasskey }`)
+must be reachable from the importing side. Ownership alone cannot see the cross-file case, because the
+two files are often the same module — it is the _name_ that is gated, not the file. Only unindented
+declarations count, so a local `const` in one function is never confused with an unrelated one in
+another.
+
+The matrix and the static checks cover different halves of the same risk: the matrix compiles real
 projects and therefore sees auto-imports and template component usage, but only for the combinations it
-lists; the import check sees every pair in the kit at once, but only what is written as an `import`.
+lists; the static checks see every pair in the kit at once, but only what is written down as an
+`import`, a re-export, or a declaration.
 
 ## Authoring markers
 
