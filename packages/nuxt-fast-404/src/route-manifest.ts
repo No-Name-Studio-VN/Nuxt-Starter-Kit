@@ -48,7 +48,7 @@ export function collectServerRoutePatterns(sources: readonly Fast404RouteSource[
   return [
     ...new Set(
       sources.flatMap((source) => {
-        if (source.middleware || !source.route || source.route.startsWith('/__nuxt_error')) {
+        if (source.middleware || !source.route || source.route === '/__nuxt_error') {
           return [];
         }
 

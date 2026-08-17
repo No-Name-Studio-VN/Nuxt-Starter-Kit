@@ -47,8 +47,9 @@ describe('route manifest generation', () => {
         { route: '/api/story/:id' },
         { route: '/**' },
         { route: '/__nuxt_error' },
+        { route: '/__nuxt_error_debug' },
       ]),
-    ).toEqual(['/api/story/:id', '/**']);
+    ).toEqual(['/api/story/:id', '/**', '/__nuxt_error_debug']);
   });
 
   it('serializes the runtime manifest without executable configuration', () => {
