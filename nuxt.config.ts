@@ -40,6 +40,7 @@ export default defineNuxtConfig({
     'nuxt-component-meta',
     '@/modules/navigation-redirects', // Auto-generate redirects from .navigation.yml files
     // </nsk:content>
+    'nuxt-early-404',
   ],
 
   $production: {
