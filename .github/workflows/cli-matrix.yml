@@ -40,23 +40,27 @@ jobs:
         with:
           fetch-depth: 1
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.14.0
+
       - uses: actions/setup-node@v4
         with:
           node-version: '26'
-          cache: 'npm'
-          cache-dependency-path: packages/create-nuxt-saas/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install CLI dependencies
         working-directory: packages/create-nuxt-saas
-        run: npm ci
+        run: pnpm --filter create-nuxt-saas install --frozen-lockfile
 
       - name: Test
         working-directory: packages/create-nuxt-saas
-        run: npm test
+        run: pnpm test
 
       - name: Typecheck
         working-directory: packages/create-nuxt-saas
-        run: npm run typecheck
+        run: pnpm run typecheck
 
   generate:
     name: ${{ matrix.name }}
@@ -97,17 +101,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.14.0
+
       - uses: actions/setup-node@v4
         with:
           node-version: '26'
 
       - name: Install CLI dependencies
         working-directory: packages/create-nuxt-saas
-        run: npm ci
+        run: pnpm --filter create-nuxt-saas install --frozen-lockfile
 
       - name: Build the CLI
         working-directory: packages/create-nuxt-saas
-        run: npm run build
+        run: pnpm run build
 
       - name: Generate the project
         run: |
@@ -117,7 +125,7 @@ jobs:
             --kit . \
             --modules '${{ matrix.modules }}'
 
-      # husky's install step expects a repository, and npm runs it during install.
+      # husky's install step expects a repository, and pnpm runs it during install.
       - name: Initialise a repository
         working-directory: ${{ runner.temp }}/generated
         run: git init --quiet
@@ -126,8 +134,8 @@ jobs:
         working-directory: ${{ runner.temp }}/generated
         run: |
           cp .env.example .env
-          npm install --no-audit --no-fund
+          pnpm install --no-frozen-lockfile
 
       - name: Typecheck the generated project
         working-directory: ${{ runner.temp }}/generated
-        run: npm run typecheck
+        run: pnpm run typecheck
