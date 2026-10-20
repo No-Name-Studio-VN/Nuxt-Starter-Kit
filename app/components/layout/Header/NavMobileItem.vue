@@ -3,7 +3,7 @@
     <Collapsible v-model:open="isOpen">
       <CollapsibleTrigger class="w-full p-2 text-left">
         <div class="flex w-full gap-1">
-          {{ $t(item.title) }}
+          {{ $te(item.title) ? $t(item.title) : item.title }}
           <component
             :is="isOpen ? ChevronsDownUpIcon : ChevronsUpDownIcon"
             :size="12"
@@ -23,10 +23,10 @@
 
               <div>
                 <div class="font-semibold">
-                  {{ $t(link.title) }}
+                  {{ $te(link.title) ? $t(link.title) : link.title }}
                 </div>
                 <div class="text-muted-foreground text-sm">
-                  {{ $t(link.description) }}
+                  {{ $te(link.description) ? $t(link.description) : link.description }}
                 </div>
               </div>
             </NuxtLinkLocale>
@@ -36,7 +36,7 @@
     </Collapsible>
   </template>
   <NuxtLinkLocale v-else :to="item.to" :target="item.target" class="flex w-full p-2">
-    {{ $t(item.title) }}
+    {{ $te(item.title) ? $t(item.title) : item.title }}
     <ArrowUpRightIcon
       v-if="item.showLinkIcon ?? true"
       class="text-muted-foreground ml-1"

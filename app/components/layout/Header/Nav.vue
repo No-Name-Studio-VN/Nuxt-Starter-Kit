@@ -4,7 +4,7 @@
       <NavigationMenuItem v-for="(item, i) in nav" :key="i" class="relative">
         <template v-if="item.links">
           <NavigationMenuTrigger class="bg-transparent font-semibold">
-            {{ $t(item.title) }}
+            {{ $te(item.title) ? $t(item.title) : item.title }}
           </NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul class="w-62.5 p-2">
@@ -18,10 +18,10 @@
 
                   <div>
                     <div v-if="link.title" class="font-semibold">
-                      {{ $t(link.title) }}
+                      {{ $te(link.title) ? $t(link.title) : link.title }}
                     </div>
                     <div v-if="link.description" class="text-muted-foreground text-sm">
-                      {{ $t(link.description) }}
+                      {{ $te(link.description) ? $t(link.description) : link.description }}
                     </div>
                   </div>
                 </NuxtLinkLocale>
@@ -39,7 +39,7 @@
             class="bg-transparent font-semibold"
             :class="[navigationMenuTriggerStyle(), (item.showLinkIcon ?? true) && 'pr-6']"
           >
-            {{ $t(item.title) }}
+            {{ $te(item.title) ? $t(item.title) : item.title }}
           </div>
         </NuxtLinkLocale>
       </NavigationMenuItem>

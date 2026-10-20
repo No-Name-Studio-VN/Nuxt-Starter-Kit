@@ -45,7 +45,7 @@ export const DOCS_CONFIG = {
     nav: [
       // <nsk:content>
       {
-        title: 'Docs',
+        title: 'nav.docs',
         to: '/docs',
         target: '_self',
         showLinkIcon: false,
@@ -69,7 +69,7 @@ export const DOCS_CONFIG = {
         ],
       },
       {
-        title: 'Blog',
+        title: 'nav.blog',
         to: '/blogs',
         target: '_self',
         showLinkIcon: false,

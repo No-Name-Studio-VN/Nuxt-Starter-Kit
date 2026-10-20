@@ -24,7 +24,7 @@
         <!-- Content -->
         <div class="min-w-0 space-y-1" :class="[side === 'right' ? 'text-right' : 'text-left']">
           <div class="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
-            {{ side === 'left' ? $t('Previous') : $t('Next') }}
+            {{ side === 'left' ? $t('nav.previous') : $t('nav.next') }}
           </div>
           <div
             class="truncate text-sm font-semibold text-foreground/90 transition-colors duration-300 group-hover:text-foreground"

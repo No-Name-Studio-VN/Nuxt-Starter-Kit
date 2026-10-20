@@ -1,4 +1,5 @@
 {
+  "nav": { "docs": "Docs", "blog": "Blog", "previous": "Previous", "next": "Next" },
   "common": {
     "privacy": "Privacy",
     "terms": "Terms",
@@ -33,6 +34,8 @@
     "prompt": "Pick a style and color for the docs."
   },
   "docs": {
+    "loading_navigation": "Loading navigation…",
+    "loading_toc": "Loading table of contents…",
     "toc": {
       "title": "On this page"
     },
