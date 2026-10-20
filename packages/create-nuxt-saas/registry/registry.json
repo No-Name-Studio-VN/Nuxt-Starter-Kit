@@ -12,7 +12,8 @@
     ".github/workflows/release.yml",
     ".github/workflows/cli-matrix.yml",
     ".github/workflows/cli-release.yml",
-    "pnpm-lock.yaml"
+    "pnpm-lock.yaml",
+    "tests/**"
   ],
   "modules": [
     {
@@ -515,7 +516,8 @@
         "app/stores/codeTree.ts",
         "app/stores/collapsedMap.ts",
         "server/routes/rss.xml.ts",
-        "types/landing.ts"
+        "types/landing.ts",
+        "app/composables/useDocsToc.ts"
       ],
       "structured": {
         "package.json": {
