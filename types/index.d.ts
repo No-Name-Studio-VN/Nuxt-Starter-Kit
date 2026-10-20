@@ -202,5 +202,5 @@ export interface FileTreeItem {
 export type InputTreeItem =
   | string
   | {
-      [key: string]: InputTreeItem[];
+      [key: string]: InputTreeItem[] | null;
     };

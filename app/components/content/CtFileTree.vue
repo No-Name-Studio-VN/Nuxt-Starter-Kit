@@ -19,7 +19,7 @@ import CtIcon from "./CtIcon.vue";
 
 const props = withDefaults(
   defineProps<{
-    tree: InputTreeItem[];
+    tree?: InputTreeItem[] | null;
     title?: string;
     icon?: string;
     autoSlash?: boolean;
@@ -27,13 +27,14 @@ const props = withDefaults(
     showIcon?: boolean;
   }>(),
   {
+    tree: () => [],
     autoSlash: true,
     showArrow: false,
     showIcon: true,
   },
 );
 
-function getItem(key: string, type: "folder" | "file", children?: InputTreeItem[]): FileTreeItem {
+function getItem(key: string, type: "folder" | "file", children?: InputTreeItem[] | null): FileTreeItem {
   let title = key;
   let highlighted = false;
   if (title.startsWith("^") && title.endsWith("^")) {
@@ -56,20 +57,21 @@ function getItem(key: string, type: "folder" | "file", children?: InputTreeItem[
     return {
       title: `${title}${props.autoSlash ? "/" : ""}`,
       icon: useFileIcon(title, "folder"),
-      children: children && getTree(children),
+      children: getTree(children),
       highlighted,
       diff,
     };
   }
 }
 
-function getTree(tree: InputTreeItem[]) {
+function getTree(tree: InputTreeItem[] | null | undefined): FileTreeItem[] {
   const res: FileTreeItem[] = [];
+  if (!Array.isArray(tree)) return res;
 
   for (const item of tree) {
     if (typeof item === "string") {
       res.push(getItem(item, "file"));
-    } else if (typeof item === "object") {
+    } else if (item !== null && typeof item === "object" && !Array.isArray(item)) {
       for (const key of Object.keys(item)) res.push(getItem(key, "folder", item[key]));
     }
   }
