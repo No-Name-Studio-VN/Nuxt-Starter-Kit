@@ -13,12 +13,14 @@
           : 'h-[calc(100vh-10rem)]',
       ]"
     >
-      <div v-if="toc?.links.length">
+      <div v-if="pending || tocLinks.length" :aria-busy="pending">
         <p class="mb-2 text-base font-semibold">
           {{ $t(title) }}
         </p>
+        <LayoutNavigationSkeleton v-if="pending" :label="$t('docs.loading_toc')" />
         <LayoutTocTree
-          :links="toc.links.filter((x: any) => x.id !== 'hide-toc')"
+          v-else
+          :links="tocLinks"
           :level="0"
           :class="[(links.length || iconLinks?.length) && 'border-b pb-5']"
         />
@@ -60,7 +62,12 @@
       />
     </CollapsibleTrigger>
     <CollapsibleContent>
-      <LayoutTocTree :links="toc.links" :level="0" class="mx-4 mb-3 pl-2 text-sm" />
+      <LayoutNavigationSkeleton
+        v-if="pending"
+        :label="$t('docs.loading_toc')"
+        class="mx-4 mb-3 pl-2"
+      />
+      <LayoutTocTree v-else :links="tocLinks" :level="0" class="mx-4 mb-3 pl-2 text-sm" />
     </CollapsibleContent>
   </Collapsible>
 </template>
@@ -68,143 +75,11 @@
 <script setup lang="ts">
 import CtIcon from '@/components/content/CtIcon.vue';
 import { ArrowUpRightIcon, ChevronRightIcon } from '@lucide/vue';
-import { usePageData } from '@/composables/usePageData';
-import type { TocLink } from '@nuxt/content';
+import { useDocsToc } from '@/composables/useDocsToc';
 
 defineProps<{ isSmall: boolean }>();
-const route = useRoute();
 const config = useConfig();
-
-const toc = ref<{ links: TocLink[] }>({ links: [] });
-
-// Get page data from shared composable
-const { page } = usePageData();
-
-// Extract TOC from rendered DOM on client side (similar to TocTree approach)
-onMounted(() => {
-  updateToc();
-});
-
-watch(
-  () => route.path,
-  () => {
-    nextTick(() => {
-      updateToc();
-    });
-  },
-);
-
-/**
- * Frontmatter types `toc` as `boolean | object`, so a page may set `toc: true`
- * with no links at all. Anything that is not a list of links is treated as
- * absent, and the DOM extraction below takes over.
- */
-function readFrontmatterToc(value: unknown): TocLink[] {
-  if (typeof value !== 'object' || value === null || !('links' in value)) return [];
-  const links = value.links;
-  return Array.isArray(links) ? links.filter(isTocLink) : [];
-}
-
-function isTocLink(value: unknown): value is TocLink {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'id' in value &&
-    'text' in value &&
-    'depth' in value
-  );
-}
-
-function updateToc() {
-  // Check if TOC exists on page data first
-  const frontmatterLinks = readFrontmatterToc(page.value?.toc);
-  if (frontmatterLinks.length > 0) {
-    toc.value = { links: frontmatterLinks };
-    return;
-  }
-
-  // Wait a bit for content to render, then extract headings from DOM
-  setTimeout(() => {
-    const contentElement = document.querySelector('.docs-content');
-    if (!contentElement) {
-      toc.value = { links: [] };
-      return;
-    }
-
-    const headingElements = contentElement.querySelectorAll('h2[id], h3[id], h4[id]');
-    const headings: TocLink[] = [];
-
-    headingElements.forEach((el) => {
-      const id = el.id;
-      if (!id) return;
-
-      const depth = parseInt(el.tagName.charAt(1));
-      const text = el.textContent?.trim() || '';
-
-      headings.push({
-        id,
-        text,
-        depth,
-        children: [],
-      });
-    });
-
-    // If no headings with IDs found, try without ID requirement and generate IDs
-    if (headings.length === 0) {
-      const allHeadings = contentElement.querySelectorAll('h2, h3, h4');
-      allHeadings.forEach((el) => {
-        const text = el.textContent?.trim() || '';
-        if (!text) return;
-
-        // Generate ID from text if not present
-        let id = el.id;
-        if (!id) {
-          id =
-            text
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-+|-+$/g, '') || `heading-${headings.length}`;
-          // Set the ID on the element for future reference
-          el.id = id;
-        }
-
-        const depth = parseInt(el.tagName.charAt(1));
-
-        headings.push({
-          id,
-          text,
-          depth,
-          children: [],
-        });
-      });
-    }
-
-    // Build hierarchy
-    const result: TocLink[] = [];
-    const stack: TocLink[] = [];
-
-    headings.forEach((heading) => {
-      // Pop stack until we find a parent
-      while (stack.length > 0) {
-        const top = stack[stack.length - 1];
-        if (!top || top.depth < heading.depth) break;
-        stack.pop();
-      }
-
-      const parent = stack[stack.length - 1];
-      if (!parent) {
-        result.push(heading);
-      } else {
-        if (!parent.children) parent.children = [];
-        parent.children.push(heading);
-      }
-
-      stack.push(heading);
-    });
-
-    toc.value = { links: result };
-  }, 100);
-}
+const { tocLinks, pending } = useDocsToc();
 
 const { title, links: configLinks, iconLinks, carbonAds } = useConfig().value.toc;
 
