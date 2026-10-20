@@ -43,3 +43,6 @@ AGENTS.MD
 
 # Local deepwork session state
 .slim/deepwork/
+
+# Local-only planning documents
+/docs/
