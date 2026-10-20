@@ -3,7 +3,7 @@
     <LayoutBanner v-if="config.banner.enable" />
     <LayoutHeader />
     <div
-      v-if="page && !page.fullpage && baseRouteName !== 'index'"
+      v-if="!page?.fullpage && baseRouteName !== 'index'"
       class="min-h-screen"
       :class="{ 'border-b': config.footer.border }"
     >
@@ -11,12 +11,12 @@
         class="flex-1 items-start px-4 md:grid md:gap-6 md:px-8 lg:gap-10"
         :class="[
           config.main.padded && 'container',
-          (page.aside ?? true) &&
+          (page?.aside ?? true) &&
             'md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]',
         ]"
       >
         <aside
-          v-if="page.aside ?? true"
+          v-if="page?.aside ?? true"
           class="fixed z-30 -ml-2 hidden w-full shrink-0 overflow-y-auto top-25.5 md:sticky md:block"
           :class="[
             config.aside.useLevel && config.aside.levelStyle === 'aside'
@@ -38,8 +38,32 @@
 </template>
 
 <script setup lang="ts">
+import { usePageData } from '@/composables/usePageData';
+
 const route = useRoute();
 const { page } = usePageData();
+const routePath = computed(() => route.path);
+
+// Resolve page flags before rendering the shell. Fetching in the child page is
+// too late for SSR and causes the sidebar/fullpage columns to change on hydration.
+const { data: pageData } = await useAsyncData(
+  `page-${routePath.value}`,
+  async () => {
+    const data = await queryCollection('content').path(routePath.value).first();
+    if (!data) {
+      return await queryCollection('content').path(route.path.replace(/\/$/, '')).first();
+    }
+    return data;
+  },
+  { watch: [routePath] },
+);
+watch(
+  pageData,
+  (value) => {
+    page.value = value ?? null;
+  },
+  { immediate: true },
+);
 
 const config = useConfig();
 const { themeClass, radius, setClassTheme } = useThemes();

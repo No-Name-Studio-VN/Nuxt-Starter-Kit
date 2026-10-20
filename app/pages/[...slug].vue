@@ -93,30 +93,8 @@ import { usePageData } from '@/composables/usePageData';
 const route = useRoute();
 const routePath = computed(() => route.path);
 
-// Shared data store — populated here, read everywhere
+// The layout resolves page content before rendering; populate the secondary data here.
 const { page, navigation, surroundings } = usePageData();
-
-// Step 1: Fetch page content (SSR-blocking — this is the only query that must complete server-side)
-const { data: pageData } = await useAsyncData(
-  `page-${routePath.value}`,
-  async () => {
-    const data = await queryCollection('content').path(routePath.value).first();
-    if (!data) {
-      return await queryCollection('content').path(route.path.replace(/\/$/, '')).first();
-    }
-    return data;
-  },
-  { watch: [routePath] },
-);
-
-// Sync page data to shared store
-watch(
-  pageData,
-  (val) => {
-    page.value = val ?? null;
-  },
-  { immediate: true },
-);
 
 // Step 2: Fetch navigation server-side so docs layout is stable on first render
 const { data: navData } = await useAsyncData('navigation', () => {
@@ -131,7 +109,7 @@ const { data: navData } = await useAsyncData('navigation', () => {
 watch(
   navData,
   (val) => {
-    navigation.value = val ?? null;
+    navigation.value = val ?? [];
   },
   { immediate: true },
 );

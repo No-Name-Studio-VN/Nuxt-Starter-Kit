@@ -13,7 +13,7 @@
       :placeholder="config.search.placeholder"
     />
     <ul
-      v-if="config.aside.useLevel && config.aside.levelStyle === 'aside'"
+      v-if="navigationReady && config.aside.useLevel && config.aside.levelStyle === 'aside'"
       class="flex flex-col gap-1 border-b pb-4"
     >
       <li v-for="link in navigation" :key="link.stem">
@@ -33,8 +33,9 @@
         </NuxtLinkLocale>
       </li>
     </ul>
+    <LayoutNavigationSkeleton v-if="!navigationReady" :label="$t('docs.loading_navigation')" />
     <LayoutAsideTree
-      v-if="tree"
+      v-else-if="tree"
       :links="tree"
       :level="0"
       :class="[config.aside.useLevel && config.aside.levelStyle === 'aside' ? 'pt-4' : 'pt-1']"
@@ -44,6 +45,7 @@
 
 <script setup lang="ts">
 import { useContentHelpers } from '@/composables/useContentHelpers';
+import { usePageData } from '@/composables/usePageData';
 import CtIcon from '@/components/content/CtIcon.vue';
 
 defineProps<{ isMobile: boolean }>();
@@ -54,6 +56,13 @@ const { locale, defaultLocale } = useI18n();
 const { navDirFromPath } = useContentHelpers();
 
 const { navigation } = usePageData();
+// The layout renders before the page fills shared state on the server, while the
+// client already has the final payload. Keep the same fallback through hydration.
+const mounted = shallowRef(false);
+const navigationReady = computed(() => mounted.value && navigation.value !== null);
+onMounted(() => {
+  mounted.value = true;
+});
 
 const tree = computed(() => {
   const path = route.path.split('/');
