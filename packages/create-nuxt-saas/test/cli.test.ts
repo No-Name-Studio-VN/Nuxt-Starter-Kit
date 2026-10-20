@@ -168,16 +168,16 @@ describe('resolveInitTarget', () => {
 
 describe('nextSteps', () => {
   it('tells the user to enter the new directory first', () => {
-    expect(nextSteps(resolve('my-app'))).toEqual(['cd my-app', 'npm install', 'npm run dev']);
+    expect(nextSteps(resolve('my-app'))).toEqual(['cd my-app', 'pnpm install', 'pnpm run dev']);
   });
 
   it('omits cd when the project is the working directory', () => {
-    expect(nextSteps(resolve('.'))).toEqual(['npm install', 'npm run dev']);
+    expect(nextSteps(resolve('.'))).toEqual(['pnpm install', 'pnpm run dev']);
   });
 
   /** `cd my app` is two arguments; the suggestion has to be pasteable. */
   it('quotes a directory the shell would otherwise split', () => {
-    expect(nextSteps(resolve('my app'))).toEqual(["cd 'my app'", 'npm install', 'npm run dev']);
+    expect(nextSteps(resolve('my app'))).toEqual(["cd 'my app'", 'pnpm install', 'pnpm run dev']);
   });
 
   it('escapes a quote inside the directory name', () => {

@@ -166,10 +166,10 @@ markers included.
 ## Development
 
 ```bash
-npm install
-npm test          # vitest
-npm run typecheck # tsc --noEmit, strict
-npm run build     # unbuild -> dist/
+pnpm install
+pnpm test          # vitest
+pnpm run typecheck # tsc --noEmit, strict
+pnpm run build     # unbuild -> dist/
 ```
 
 Tests run against miniature fixture kits in `test/fixtures/` (`kit-v1` and `kit-v2`), so nothing is

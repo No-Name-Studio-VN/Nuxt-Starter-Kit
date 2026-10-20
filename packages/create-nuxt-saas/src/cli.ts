@@ -120,8 +120,8 @@ export function nextSteps(projectRoot: string): string[] {
   const location = relative(process.cwd(), projectRoot);
   return [
     ...(location.length > 0 ? [`cd ${quoteForShell(location)}`] : []),
-    'npm install',
-    'npm run dev',
+    'pnpm install',
+    'pnpm run dev',
   ];
 }
 
