@@ -74,7 +74,7 @@ A comprehensive, production-ready SaaS starter kit built with Nuxt 4, featuring 
 ### Prerequisites
 
 - Node.js 26.x or higher
-- npm, pnpm, yarn or bun
+- pnpm 12.14.0
 
 ### Installation
 
@@ -88,8 +88,14 @@ cd nuxt-template
 2. Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
+
+The repository uses a pnpm workspace and a shared `pnpm-lock.yaml`. CI installs
+with `pnpm install --frozen-lockfile`. Tailwind's Nuxt module and VeeValidate stay
+on their newer prereleases; their `latest` tags still point to older majors.
+TypeScript uses the latest TypeScript 6 compatibility package because NuxtHub's
+schema generation requires the compiler API that TypeScript 7 no longer provides.
 
 3. Set up environment variables:
 
@@ -102,13 +108,13 @@ Fill in the required environment variables in the `.env` file.
 4. Generate database migrations:
 
 ```bash
-npm run db:generate
+pnpm run db:generate
 ```
 
 5. Start the development server:
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 The app will be available at `http://localhost:3000`.
