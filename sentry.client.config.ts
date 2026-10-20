@@ -20,12 +20,8 @@ if (!isVitest) {
     integrations: [replayIntegration(), piniaIntegration(usePinia())],
     normalizeDepth: 10,
 
-    // Enable logs to be sent to Sentry
-    enableLogs: true,
-
-    // Enable sending of user PII (Personally Identifiable Information)
-    // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-    sendDefaultPii: true,
+    // Preserve automatic user information collection with Sentry v11.
+    dataCollection: { userInfo: true },
 
     // Setting this option to true will print useful information to the console while you're setting up Sentry.
     debug: false,
