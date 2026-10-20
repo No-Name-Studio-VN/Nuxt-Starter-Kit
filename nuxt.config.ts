@@ -40,8 +40,14 @@ export default defineNuxtConfig({
     'nuxt-component-meta',
     '@/modules/navigation-redirects', // Auto-generate redirects from .navigation.yml files
     // </nsk:content>
-    'nuxt-early-404',
   ],
+
+  experimental: {
+    early404: true,
+    stripNeverHydratedData: true,
+    prerenderErrorPages: true,
+    navigateToEarlyReturn: true,
+  },
 
   $production: {
     image: {
@@ -84,6 +90,7 @@ export default defineNuxtConfig({
         { rel: 'icon', href: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       ],
+      meta: [{ name: 'keywords', content: SEO_CONFIG.keywords }],
     },
   },
 
@@ -411,11 +418,9 @@ export default defineNuxtConfig({
   },
 
   sentry: {
-    sourceMapsUploadOptions: {
-      org: 'no-name-studio',
-      project: 'nuxt-starter-kit',
-      authToken: process.env.SENTRY_AUTH_TOKEN,
-    },
+    org: 'no-name-studio',
+    project: 'nuxt-starter-kit',
+    authToken: process.env.SENTRY_AUTH_TOKEN,
     silent: true,
     telemetry: false,
     sourcemaps: {
@@ -426,7 +431,6 @@ export default defineNuxtConfig({
   seo: {
     meta: {
       description: APP_MANIFEST.description,
-      keywords: SEO_CONFIG.keywords,
       themeColor: APP_MANIFEST.theme_color,
       applicationName: APP_MANIFEST.short_name,
       appleMobileWebAppTitle: APP_MANIFEST.short_name,
