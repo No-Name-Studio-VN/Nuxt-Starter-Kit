@@ -23,9 +23,18 @@ sitemap:
 ::ct-stack
 :::div{.p-4}
 ::::ct-file-tree
-\---
-tree: - app: - components: - Header.vue - Footer.vue - composables: - useErrorHandler.ts - ^app.vue^ - docs: - index.md
-\---
+---
+tree:
+  - app:
+      - components:
+          - Header.vue
+          - Footer.vue
+      - composables:
+          - useErrorHandler.ts
+      - ^app.vue^
+  - docs:
+      - index.md
+---
 ::::
 :::
 
@@ -53,13 +62,23 @@ tree:
 ::ct-stack
 :::div{.p-4}
 ::::ct-file-tree
-\---
+---
 autoSlash: false
 showArrow: true
-tree: - components: - layout: - Header.vue - Footer.vue - ... - content: - Accordion.vue - Alert.vue - ProseCode.vue - ...
+tree:
+  - components:
+      - layout:
+          - Header.vue
+          - Footer.vue
+          - ...
+      - content:
+          - Accordion.vue
+          - Alert.vue
+          - ProseCode.vue
+          - ...
 icon: lucide:folder-tree
 title: File Tree Title
-\---
+---
 ::::
 :::
 
@@ -92,10 +111,19 @@ tree:
 ::ct-stack
 :::div{.p-4}
 ::::ct-file-tree
-\---
+---
 showIcon: false
-tree: - app: - components: - Header.vue - Footer.vue - composables: - useErrorHandler.ts - ^app.vue^ - docs: - index.md
-\---
+tree:
+  - app:
+      - components:
+          - Header.vue
+          - Footer.vue
+      - composables:
+          - useErrorHandler.ts
+      - ^app.vue^
+  - docs:
+      - index.md
+---
 ::::
 :::
 
@@ -124,10 +152,19 @@ tree:
 ::ct-stack
 :::div{.p-4}
 ::::ct-file-tree
-\---
+---
 showIcon: false
-tree: - app: - + components: - Header.vue - "- Footer.vue" - composables: - useErrorHandler.ts - ^app.vue^ - docs: - index.md
-\---
+tree:
+  - app:
+      - + components:
+          - Header.vue
+          - "- Footer.vue"
+      - composables:
+          - useErrorHandler.ts
+      - ^app.vue^
+  - docs:
+      - index.md
+---
 ::::
 :::
 
