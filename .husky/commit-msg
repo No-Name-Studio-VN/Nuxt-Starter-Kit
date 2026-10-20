@@ -11,4 +11,4 @@ if [ -z "$EMAIL" ]; then
     exit 1
 fi
 
-npx commitlint --edit "$1"
+pnpm exec commitlint --edit "$1"
