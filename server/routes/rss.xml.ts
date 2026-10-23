@@ -1,12 +1,15 @@
 import { Feed } from 'feed';
 import { queryCollection } from '@nuxt/content/server';
-import { withoutTrailingSlash } from 'ufo';
+import { hasProtocol, withoutTrailingSlash } from 'ufo';
 import { defaultLocale } from '../../i18n-constants';
 import { APP_MANIFEST } from '#shared/constants/manifest';
 
+// Prerendered at build time (nitro.prerender.routes), so this only runs during the build.
 export default defineEventHandler(async (event) => {
   const runtimeConfig = useRuntimeConfig();
-  const url = withoutTrailingSlash(runtimeConfig.public.url as string);
+  const siteUrl = withoutTrailingSlash(runtimeConfig.public.url as string);
+  // NUXT_PUBLIC_SITE_URL is configured without a scheme ("nnsvn.me"), which Feed rejects.
+  const url = hasProtocol(siteUrl) ? siteUrl : `https://${siteUrl}`;
 
   const now = new Date();
 
@@ -20,9 +23,16 @@ export default defineEventHandler(async (event) => {
     copyright: `All rights reserved ${now.getFullYear()}, ${APP_MANIFEST.short_name}`,
   });
 
-  const docs = await queryCollection(event, 'content').where('draft', '<>', true).all();
+  // The collection has no `draft` field. Only blog posts belong in the feed:
+  // privacy and terms carry a publishedAt too.
+  const posts = await queryCollection(event, 'content')
+    .select('title', 'path', 'description', 'publishedAt', 'category')
+    .where('path', 'LIKE', '/blogs/%')
+    .where('publishedAt', 'IS NOT NULL')
+    .order('publishedAt', 'DESC')
+    .all();
 
-  for (const post of docs) {
+  for (const post of posts) {
     if (!post.publishedAt) continue;
 
     feed.addItem({
