@@ -20,9 +20,10 @@ sitemap:
 ## Usage
 
 ::ct-stack
-:::div{.p-4}
-::::ct-tabs
-:::::div{icon="lucide:database" label="PostgreSQL"} ### PostgreSQL column types
+  :::div{.p-4}
+    ::::ct-tabs
+      :::::div{icon="lucide:database" label="PostgreSQL"}
+      ### PostgreSQL column types
 
       ```ts
       import { integer, pgTable } from 'drizzle-orm/pg-core';
@@ -63,8 +64,7 @@ sitemap:
       ```
       :::::
     ::::
-
-:::
+  :::
 
 ````mdc
 ::ct-tabs
@@ -109,16 +109,16 @@ sitemap:
   ::
 ::
 ````
-
 ::
 
 ### Card Style
 
 ::ct-stack
-:::div{.p-4}
-::::ct-tabs{variant="card"}
-:::::div{label="Card Tab"} ### This is a card-style tab
-:::::
+  :::div{.p-4}
+    ::::ct-tabs{variant="card"}
+      :::::div{label="Card Tab"}
+      ### This is a card-style tab
+      :::::
 
       :::::div{icon="lucide:atom" label="Tab 2"}
       This is Tab #2
@@ -128,8 +128,7 @@ sitemap:
     console.log('Hello World!');
     ```
     ::::
-
-:::
+  :::
 
 ````mdc
 ::ct-tabs{variant="card"}
@@ -144,7 +143,6 @@ sitemap:
   ```
 ::
 ````
-
 ::
 
 ### Line Style
@@ -154,18 +152,18 @@ sitemap:
 ::
 
 ::ct-stack
-:::div{.p-4}
-::::ct-tabs{variant="line"}
-:::::div
-\---
-class: border flex min-h-[200px] w-full justify-center p-10 items-center
-rounded-lg shadow-xs
-label: Preview
-\---
-::::::ct-badge
-Badge
-::::::
-:::::
+  :::div{.p-4}
+    ::::ct-tabs{variant="line"}
+      :::::div
+      ---
+      class: border flex min-h-[200px] w-full justify-center p-10 items-center
+        rounded-lg shadow-xs
+      label: Preview
+      ---
+        ::::::ct-badge
+        Badge
+        ::::::
+      :::::
 
       :::::div{label="Code"}
       ```tsx
@@ -177,8 +175,7 @@ Badge
       ```
       :::::
     ::::
-
-:::
+  :::
 
 ````mdc
 ::ct-tabs{variant="line"}
@@ -196,7 +193,6 @@ Badge
   ::
 ::
 ````
-
 ::
 
 ### Combobox Style
@@ -206,14 +202,15 @@ Badge
 ::
 
 ::ct-stack
-:::div{.p-4}
-::::ct-tabs
-\---
-search-empty: No database found.
-search-placeholder: Search database...
-variant: combobox
-\---
-:::::div{label="PostgreSQL"} ### PostgreSQL column types
+  :::div{.p-4}
+    ::::ct-tabs
+    ---
+    search-empty: No database found.
+    search-placeholder: Search database...
+    variant: combobox
+    ---
+      :::::div{label="PostgreSQL"}
+      ### PostgreSQL column types
 
       ```ts
       import { integer, pgTable } from 'drizzle-orm/pg-core';
@@ -254,8 +251,7 @@ variant: combobox
       ```
       :::::
     ::::
-
-:::
+  :::
 
 ````mdc
 ::ct-tabs{variant="combobox" search-placeholder="Search database..." search-empty="No database found."}
@@ -300,7 +296,6 @@ variant: combobox
   ::
 ::
 ````
-
 ::
 
 ### Synced Tabs
@@ -312,9 +307,8 @@ variant: combobox
 :ct-read-more{to="/components/docs/pm"}
 
 ::ct-stack
-:::div{.p-4.md:p-8}
-
-#### Scope 1
+  :::div{.p-4.md:p-8}
+  #### Scope 1
 
     ::::ct-tabs{sync="your-scope-name" variant="card"}
       :::::div{label="Card Tab"}
@@ -340,7 +334,7 @@ variant: combobox
     ```
     ::::
 
-#### Scope 2
+  #### Scope 2
 
     ::::ct-tabs{sync="scope2" variant="line"}
       :::::div{label="Card Tab"}
@@ -369,8 +363,7 @@ variant: combobox
     console.log('Hello World!');
     ```
     ::::
-
-:::
+  :::
 
 ````mdc
 #### Scope 1
@@ -418,7 +411,6 @@ variant: combobox
   ```
 ::
 ````
-
 ::
 
 ## Props
@@ -428,26 +420,24 @@ variant: combobox
 
 :ct-field{default-value="true" name="padded" type="boolean"}
 
-:::ct-field{default-value="false" name="disableSearch" type="boolean"}
-For combobox variant
-:::
+  :::ct-field{default-value="false" name="disableSearch" type="boolean"}
+  For combobox variant
+  :::
 
-:::ct-field
----
+  :::ct-field
+  ---
+  default-value: "'Search Tab...'"
+  name: searchPlaceholder
+  type: string
+  ---
+  For combobox variant
+  :::
 
-default-value: "'Search Tab...'"
-name: searchPlaceholder
-type: string
----
+  :::ct-field{default-value="'No tab found.'" name="searchEmpty" type="string"}
+  For combobox variant
+  :::
 
-For combobox variant
-:::
-
-:::ct-field{default-value="'No tab found.'" name="searchEmpty" type="string"}
-For combobox variant
-:::
-
-:::ct-field{name="sync" type="string"}
-Sync scope
-:::
+  :::ct-field{name="sync" type="string"}
+  Sync scope
+  :::
 ::

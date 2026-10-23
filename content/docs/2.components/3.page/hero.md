@@ -11,19 +11,21 @@ badges:
 ## Usage
 
 ::ct-stack
-::div{class="p-4"}
-::ct-hero
-\---
-announcement:
-title: 'Release v1.0.0'
-icon: 'lucide:party-popper'
-to: /getting-started
-actions: - name: Get Started
-to: /getting-started - name: GitHub
-variant: outline
-to: https://github.com/No-Name-Studio-VN/Homepage
-leftIcon: 'lucide:github'
-\---
+  ::div{class="p-4"}
+    ::ct-hero
+    ---
+    announcement:
+      title: 'Release v1.0.0'
+      icon: 'lucide:party-popper'
+      to: /getting-started
+    actions:
+      - name: Get Started
+        to: /getting-started
+      - name: GitHub
+        variant: outline
+        to: https://github.com/No-Name-Studio-VN/Homepage
+        leftIcon: 'lucide:github'
+    ---
 
     #title
     Effortless and Beautiful :br Docs Template.
@@ -31,31 +33,28 @@ leftIcon: 'lucide:github'
     #description
     Beautifully designed Nuxt Content template with shadcn-vue. :br Customizable. Compatible. Open Source.
     ::
-
-::
-
-```mdc
-::ct-hero
----
-announcement:
-  title: 'Release v1.0.0'
-  icon: 'lucide:party-popper'
-  to: /getting-started
-actions:
-  - name: Get Started
+  ::
+  ```mdc
+  ::ct-hero
+  ---
+  announcement:
+    title: 'Release v1.0.0'
+    icon: 'lucide:party-popper'
     to: /getting-started
-  - name: GitHub
-    variant: outline
-    to: https://github.com/No-Name-Studio-VN/Homepage
-    leftIcon: 'lucide:github'
----
+  actions:
+    - name: Get Started
+      to: /getting-started
+    - name: GitHub
+      variant: outline
+      to: https://github.com/No-Name-Studio-VN/Homepage
+      leftIcon: 'lucide:github'
+  ---
 
-#title
-Effortless and Beautiful :br Docs Template.
+  #title
+  Effortless and Beautiful :br Docs Template.
 
-#description
-Beautifully designed Nuxt Content template with shadcn-vue. :br Customizable. Compatible. Open Source.
-::
-```
-
+  #description
+  Beautifully designed Nuxt Content template with shadcn-vue. :br Customizable. Compatible. Open Source.
+  ::
+  ```
 ::

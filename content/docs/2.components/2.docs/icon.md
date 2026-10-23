@@ -14,11 +14,9 @@ sitemap:
 
 ::ct-alert
 ---
-
 target: _blank
 to: https://lucide.dev/guide/packages/@lucide/vue
 ---
-
 The icon component uses **Lucide Vue** under the hood for string icon names. Check out the full icon list from Lucide.
 ::
 
@@ -43,8 +41,8 @@ The icon component uses **Lucide Vue** under the hood for string icon names. Che
 Pass a Lucide icon name using the `lucide:` prefix or just the kebab-case name directly.
 
 ::ct-stack
-:::div{.p-4}
-**Lucide**
+  :::div{.p-4}
+  **Lucide**
 
     ::::div{.space-x-2}
     :ct-icon{name="lucide:box"}
@@ -55,8 +53,7 @@ Pass a Lucide icon name using the `lucide:` prefix or just the kebab-case name d
 
     :ct-icon{name="arrow-right"}
     ::::
-
-:::
+  :::
 
 ```mdc
 :ct-icon{name="lucide:box"}
@@ -64,7 +61,6 @@ Pass a Lucide icon name using the `lucide:` prefix or just the kebab-case name d
 :ct-icon{name="lucide:heart"}
 :ct-icon{name="arrow-right"}
 ```
-
 ::
 
 ### File-Type Icons
@@ -72,8 +68,8 @@ Pass a Lucide icon name using the `lucide:` prefix or just the kebab-case name d
 Pass a file extension or known filename to automatically resolve a technology icon (e.g. TypeScript, Vue, Python).
 
 ::ct-stack
-:::div{.p-4}
-**File Types**
+  :::div{.p-4}
+  **File Types**
 
     ::::div{.space-x-2}
     :ct-icon{name="js"}
@@ -86,8 +82,7 @@ Pass a file extension or known filename to automatically resolve a technology ic
 
     :ct-icon{name="css"}
     ::::
-
-:::
+  :::
 
 ```mdc
 :ct-icon{name="js"}
@@ -96,7 +91,6 @@ Pass a file extension or known filename to automatically resolve a technology ic
 :ct-icon{name="py"}
 :ct-icon{name="css"}
 ```
-
 ::
 
 ### Emojis
@@ -104,8 +98,8 @@ Pass a file extension or known filename to automatically resolve a technology ic
 Pass an emoji string directly. Use the `:size` prop to control the font size.
 
 ::ct-stack
-:::div{.p-4}
-**Emojis**
+  :::div{.p-4}
+  **Emojis**
 
     ::::div{.space-x-2}
     :ct-icon{name="😍"}
@@ -115,15 +109,13 @@ Pass an emoji string directly. Use the `:size` prop to control the font size.
       :::::ct-icon{:size='30' name="🎉"}
       :::::
     ::::
-
-:::
+  :::
 
 ```mdc
 :ct-icon{name="😍"}
 :ct-icon{name="🚀"}
 :ct-icon{name="🎉" :size="30"}
 ```
-
 ::
 
 ### Images (URL or Path)
@@ -131,8 +123,8 @@ Pass an emoji string directly. Use the `:size` prop to control the font size.
 Pass an image URL or local path. The component renders a `<NuxtImg>` with lazy loading and explicit `width`/`height` for better performance.
 
 ::ct-stack
-:::div{.p-4}
-**URL**
+  :::div{.p-4}
+  **URL**
 
     ::::div{.space-x-2}
     :ct-icon{name="/favicon.svg"}
@@ -140,14 +132,12 @@ Pass an image URL or local path. The component renders a `<NuxtImg>` with lazy l
       :::::ct-icon{:size='40' name="https://vueuse.org/favicon.svg"}
       :::::
     ::::
-
-:::
+  :::
 
 ```mdc
 :ct-icon{name="/favicon.svg"}
 :ct-icon{name="https://vueuse.org/favicon.svg" :size="40"}
 ```
-
 ::
 
 ### Default Fallback
@@ -155,38 +145,36 @@ Pass an image URL or local path. The component renders a `<NuxtImg>` with lazy l
 When no `name` is provided or the name cannot be resolved, a default `CircleHelp` icon is rendered.
 
 ::ct-stack
-:::div{.p-4}
-**Fallback**
+  :::div{.p-4}
+  **Fallback**
 
     ::::div{.space-x-2}
     :ct-icon
 
     :ct-icon{name="unknown-icon-name"}
     ::::
-
-:::
+  :::
 
 ```mdc
 :ct-icon{}
 :ct-icon{name="unknown-icon-name"}
 ```
-
 ::
 
 ## Props
 
 ::ct-field-group
-:::ct-field{name="name" type="string | Component"}
-Icon name, emoji, image URL, file extension, or a Vue component. Falls back to `CircleHelp` when empty or unresolved.
-:::
+  :::ct-field{name="name" type="string | Component"}
+  Icon name, emoji, image URL, file extension, or a Vue component. Falls back to `CircleHelp` when empty or unresolved.
+  :::
 
-:::ct-field{default-value="16" name="size" type="number"}
-Icon size in pixels. Controls both `width`/`height` for images and `size` prop for Lucide icons.
-:::
+  :::ct-field{default-value="16" name="size" type="number"}
+  Icon size in pixels. Controls both `width`/`height` for images and `size` prop for Lucide icons.
+  :::
 
-:::ct-field{name="class" type="string"}
-Additional CSS classes to apply to the rendered element.
-:::
+  :::ct-field{name="class" type="string"}
+  Additional CSS classes to apply to the rendered element.
+  :::
 ::
 
 ## Resolution Order
