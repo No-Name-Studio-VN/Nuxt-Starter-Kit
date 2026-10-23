@@ -80,6 +80,7 @@
         "types/index.d.ts",
         "types/screen.ts",
         "types/seo.ts",
+        "server/plugins/worker-gate.ts",
         "vitest.config.ts",
         "wrangler.jsonc",
         "pnpm-workspace.yaml"
@@ -112,6 +113,7 @@
             "@internationalized/date": "^3.12.4",
             "ufo": "^1.6.4",
             "@lucide/vue": "^1.60.0",
+            "@nuxt/kit": "^4.6.2",
             "@nuxt/fonts": "^1.0.1",
             "@nuxt/image": "^2.2.0",
             "@nuxthub/core": "^0.10.10",
@@ -522,7 +524,6 @@
       "structured": {
         "package.json": {
           "dependencies": {
-            "@nuxt/kit": "^4.6.2",
             "@nuxtjs/mdc": "^0.23.2",
             "shiki": "^4.5.0",
             "@nuxt/content": "^3.16.2",

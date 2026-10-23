@@ -39,7 +39,11 @@ export default defineNuxtConfig({
     // <nsk:content>
     'nuxt-component-meta',
     '@/modules/navigation-redirects', // Auto-generate redirects from .navigation.yml files
+    '@/modules/content-prerender', // Pre-render all content pages as static HTML
     // </nsk:content>
+    // Keep last: lists the handlers and pages every other module registered. Routes
+    // everything else to static assets so unknown URLs never cost Worker CPU.
+    '@/modules/worker-routes',
   ],
 
   experimental: {
@@ -252,17 +256,29 @@ export default defineNuxtConfig({
       },
     },
     prerender: {
-      // Pre-render the homepage
-      routes: ['/'],
+      // Public pages are served as static files; the Worker renders the rest
+      // (auth, dashboard, admin) and routes listed here that fail to prerender
+      // (see app/modules/worker-routes.ts). 404.html is what Cloudflare serves
+      // for unknown URLs.
+      routes: [
+        '/',
+        '/en',
+        // <nsk:content>
+        '/blogs',
+        '/en/blogs',
+        '/rss.xml',
+        // </nsk:content>
+        '/404.html',
+        '/robots.txt',
+      ],
+      // A page that fails to prerender stays on the Worker and is reported by
+      // app/modules/worker-routes.ts instead of failing the build.
+      failOnError: false,
       ignore: [
         '/admin',
         '/admin/**',
         '/settings',
         '/settings/**',
-        '/docs',
-        '/docs/**',
-        '/blogs',
-        '/blogs/**',
         '/pwa',
         '/__og-image__/static/pwa',
         '/_studio',
