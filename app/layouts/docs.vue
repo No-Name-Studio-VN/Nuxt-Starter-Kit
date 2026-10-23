@@ -50,8 +50,9 @@ const { data: pageData } = await useAsyncData(
   `page-${routePath.value}`,
   async () => {
     const data = await queryCollection('content').path(routePath.value).first();
-    if (!data) {
-      return await queryCollection('content').path(route.path.replace(/\/$/, '')).first();
+    // Retry without the trailing slash only when there is one to strip.
+    if (!data && routePath.value.length > 1 && routePath.value.endsWith('/')) {
+      return await queryCollection('content').path(routePath.value.slice(0, -1)).first();
     }
     return data;
   },

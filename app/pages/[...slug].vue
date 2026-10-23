@@ -96,6 +96,13 @@ const routePath = computed(() => route.path);
 // The layout resolves page content before rendering; populate the secondary data here.
 const { page, navigation, surroundings } = usePageData();
 
+// Unknown paths keep the not-found state below but answer 404, so crawlers drop
+// them and prerendering doesn't bake them into static 200 pages.
+const requestEvent = useRequestEvent();
+if (requestEvent && !page.value) {
+  setResponseStatus(requestEvent, 404, 'Page Not Found');
+}
+
 // Step 2: Fetch navigation server-side so docs layout is stable on first render
 const { data: navData } = await useAsyncData('navigation', () => {
   return queryCollectionNavigation('content', [
