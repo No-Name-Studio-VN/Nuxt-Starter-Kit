@@ -5,7 +5,7 @@ import { join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { glob } from 'tinyglobby';
 import { z } from 'zod';
-import { readKitModules, type KitModule } from '../../src/kit/modules';
+import { readKitModule, resolveSelection, type KitModule } from '../../src/kit/modules';
 import {
   extractImports as importsWithLines,
   resolveKitImport,
@@ -32,10 +32,6 @@ export const layerIds = new Set(
         .map((entry) => entry.name)
     : [],
 );
-
-export function readLayerModules(): Promise<KitModule[]> {
-  return existsSync(layersRoot) ? readKitModules(kitRoot) : Promise.resolve([]);
-}
 
 /** Globs are checked against tracked files only; literal Nuxt route names win. */
 export async function trackedMatches(pattern: string): Promise<string[]> {
@@ -124,8 +120,31 @@ export function importOwners(path: string, source: string) {
   }));
 }
 
-export async function boundaryModules(): Promise<KitModule[]> {
-  return [...(await readLayerModules()), ...transitionalModules];
+export async function readLayerModules(root = kitRoot): Promise<KitModule[]> {
+  const directory = join(root, 'layers');
+  if (!existsSync(directory)) return [];
+  const modules: KitModule[] = [];
+  const entries = readdirSync(directory, { withFileTypes: true });
+  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    if (entry.isDirectory()) modules.push(await readKitModule(root, entry.name));
+  }
+  return modules;
+}
+
+export async function boundaryModules(
+  root = kitRoot,
+  registryModules = transitionalModules,
+): Promise<KitModule[]> {
+  const layers = await readLayerModules(root);
+  const peeledIds = new Set(layers.map((module) => module.id));
+  const modules = [...layers, ...registryModules.filter((module) => !peeledIds.has(module.id))];
+  // Layer-only validation would reject valid edges to not-yet-peeled modules.
+  // Validate all merged nodes, including modules unreachable from a given file.
+  resolveSelection(
+    modules,
+    modules.map((module) => module.id),
+  );
+  return modules;
 }
 // End transitional ownership.
 

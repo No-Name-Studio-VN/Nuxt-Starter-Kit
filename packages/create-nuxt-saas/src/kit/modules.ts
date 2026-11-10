@@ -30,6 +30,26 @@ const moduleSchema = z.object({
   rootFiles: z.array(z.string()).default([]),
 });
 
+/** Reads one layer's metadata; callers validate its graph after assembling it. */
+export async function readKitModule(kitRoot: string, id: string): Promise<KitModule> {
+  const source = join(kitRoot, 'layers', id, 'module.json');
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readFile(source, 'utf8'));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown error';
+    throw new CliError(`Unable to read module at ${source}: ${message}`);
+  }
+
+  const result = moduleSchema.safeParse(parsed);
+  if (!result.success) {
+    const issue = result.error.issues[0];
+    const path = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
+    throw new CliError(`Invalid module at ${source}: ${path} ${issue?.message ?? 'is invalid'}`);
+  }
+  return { id, ...result.data };
+}
+
 export async function readKitModules(kitRoot: string): Promise<KitModule[]> {
   const layersRoot = join(kitRoot, 'layers');
   const entries = await readdir(layersRoot, { withFileTypes: true });
@@ -37,22 +57,7 @@ export async function readKitModules(kitRoot: string): Promise<KitModule[]> {
 
   for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
     if (!entry.isDirectory()) continue;
-    const source = join(layersRoot, entry.name, 'module.json');
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(await readFile(source, 'utf8'));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'unknown error';
-      throw new CliError(`Unable to read module at ${source}: ${message}`);
-    }
-
-    const result = moduleSchema.safeParse(parsed);
-    if (!result.success) {
-      const issue = result.error.issues[0];
-      const path = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
-      throw new CliError(`Invalid module at ${source}: ${path} ${issue?.message ?? 'is invalid'}`);
-    }
-    modules.push({ id: entry.name, ...result.data });
+    modules.push(await readKitModule(kitRoot, entry.name));
   }
 
   const ids = new Set(modules.map((module) => module.id));
