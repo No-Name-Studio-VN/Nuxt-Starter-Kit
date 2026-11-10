@@ -1,5 +1,9 @@
 import type { GoogleOneTapPayload, OAuthProfile } from '~~/types/auth';
-import { apiError, success, zodErrorToFieldErrors } from '~~/server/utils/apiResponse';
+import {
+  apiError,
+  success,
+  zodErrorToFieldErrors,
+} from '#layers/server-core/server/utils/apiResponse';
 import { completeOAuthLogin } from '~~/server/utils/oauth';
 import { verifyGoogleIdToken } from '~~/server/utils/googleIdentity';
 import { googleOneTapBodySchema } from '#shared/schemas/userSchema';

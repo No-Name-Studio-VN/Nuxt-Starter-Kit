@@ -1,4 +1,4 @@
-import type { PaginationMeta } from '~~/types/models/pagination';
+import type { PaginationMeta } from './models/pagination';
 
 export type ApiFieldErrors = Record<string, string[]>;
 export type ApiErrorDetails = Record<string, unknown>;

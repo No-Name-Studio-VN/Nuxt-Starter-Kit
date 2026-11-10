@@ -10,11 +10,11 @@ import { calculatePasswordStrength } from '@/utils/passwordValidation';
 import { getAuthErrorMessage } from '#shared/constants/authMessages';
 import { AVAILABLE_PROVIDERS } from '#shared/constants/oauthProviders';
 import { apiRoutes } from '#shared/apiRoutes';
-import { apiRequest } from '@/utils/apiRequest';
-import { parseApiError } from '@/utils/apiError';
+import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
+import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { Field, FieldLabel, FieldError } from '@/components/ui/field';
-import type { ApiResponse } from '~~/types/api';
+import type { ApiResponse } from '#layers/server-core/types/api';
 import type { OAuthUrlPayload } from '~~/types/auth';
 
 const route = useRoute();

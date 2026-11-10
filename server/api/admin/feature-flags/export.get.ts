@@ -1,5 +1,5 @@
 import featureFlagService from '~~/server/utils/database/featureFlag';
-import { success } from '~~/server/utils/apiResponse';
+import { success } from '#layers/server-core/server/utils/apiResponse';
 
 /**
  * Export all feature flags as a portable JSON array.

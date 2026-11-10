@@ -1,4 +1,4 @@
-import type { PaginationParams, PaginationMeta } from '~~/types/models/pagination';
+import type { PaginationParams, PaginationMeta } from '../types/models/pagination';
 
 export function createPaginationMeta(
   page: number,

@@ -2,9 +2,9 @@
 
 <script setup lang="ts">
 import { apiRoutes } from '#shared/apiRoutes';
-import type { ApiResponse } from '~~/types/api';
+import type { ApiResponse } from '#layers/server-core/types/api';
 import type { GoogleOneTapPayload } from '~~/types/auth';
-import { apiRequest } from '@/utils/apiRequest';
+import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
 import type { GoogleCredentialResponse } from '~~/types/googleOneTap';
 import { cancelGoogleOneTapPrompt, loadGoogleIdentityScript } from '@/utils/googleOneTap';
 

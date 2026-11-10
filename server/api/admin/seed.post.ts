@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3';
-import { apiError, success } from '~~/server/utils/apiResponse';
+import { apiError, success } from '#layers/server-core/server/utils/apiResponse';
 
 function getBearerToken(authorization: string | undefined): string | undefined {
   const prefix = 'Bearer ';

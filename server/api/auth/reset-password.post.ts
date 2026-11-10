@@ -1,6 +1,6 @@
 import authTokenService from '~~/server/utils/database/authToken';
 import userService from '~~/server/utils/database/user';
-import { apiError, zodErrorToFieldErrors } from '~~/server/utils/apiResponse';
+import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
 import { AuthTokenType } from '#shared/commonEnums';
 import { resetPasswordSchema } from '#shared/schemas/userSchema';
 

@@ -285,11 +285,11 @@
 <script setup lang="ts">
 import { ArrowUpDown, Download, Plus, RefreshCw, Upload } from '@lucide/vue';
 import { toast } from 'vue-sonner';
-import { parseApiError } from '@/utils/apiError';
+import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import type { DBFeatureFlag } from '#shared/db';
 import { featureFlagInsertSchema } from '#shared/schemas/featureFlagSchema';
 import { apiRoutes } from '#shared/apiRoutes';
-import type { ApiResponse } from '~~/types/api';
+import type { ApiResponse } from '#layers/server-core/types/api';
 import DataTable from '@/components/DataTable.vue';
 import { createColumns } from './columns';
 import type { DateValue } from '@internationalized/date';

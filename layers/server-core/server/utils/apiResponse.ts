@@ -1,4 +1,4 @@
-import type { PaginationMeta } from '~~/types/models/pagination';
+import type { PaginationMeta } from '../../types/models/pagination';
 import type {
   ApiErrorDetails,
   ApiErrorOptions,
@@ -7,8 +7,8 @@ import type {
   ApiResponseFailure,
   ApiResponseSuccess,
   PaginatedApiResponse,
-} from '~~/types/api';
-import { reportServerError } from '~~/server/utils/reportServerError';
+} from '../../types/api';
+import { reportServerError } from './reportServerError';
 
 export type {
   ApiErrorDetails,

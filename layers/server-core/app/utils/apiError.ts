@@ -1,6 +1,6 @@
-import type { ApiErrorDetails, ApiResponseFailure, ParsedApiError } from '~~/types/api';
+import type { ApiErrorDetails, ApiResponseFailure, ParsedApiError } from '../../types/api';
 
-export type { ParsedApiError } from '~~/types/api';
+export type { ParsedApiError } from '../../types/api';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);

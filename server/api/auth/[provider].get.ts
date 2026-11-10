@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3';
 import { apiRoutes } from '#shared/apiRoutes';
-import { apiError } from '~~/server/utils/apiResponse';
+import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import { handleOAuthSuccess, sendOAuthRedirect } from '~~/server/utils/oauth';
 
 /** h3 models a query value as a string, a bare flag, or an array of either. */

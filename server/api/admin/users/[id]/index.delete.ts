@@ -1,5 +1,5 @@
 import userService from '~~/server/utils/database/user';
-import { apiError, success } from '~~/server/utils/apiResponse';
+import { apiError, success } from '#layers/server-core/server/utils/apiResponse';
 
 export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'));

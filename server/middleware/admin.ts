@@ -1,5 +1,5 @@
 import userService from '~~/server/utils/database/user';
-import { apiError } from '~~/server/utils/apiResponse';
+import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import { apiRoutes } from '#shared/apiRoutes';
 
 export default defineEventHandler(async (event) => {

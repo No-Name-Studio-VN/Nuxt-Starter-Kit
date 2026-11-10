@@ -6,8 +6,8 @@ import { resetPasswordFormSchema } from '#shared/schemas/userSchema';
 import { calculatePasswordStrength } from '@/utils/passwordValidation';
 import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator.vue';
 import { apiRoutes } from '#shared/apiRoutes';
-import { parseApiError } from '@/utils/apiError';
-import type { ApiResponse } from '~~/types/api';
+import { parseApiError } from '#layers/server-core/app/utils/apiError';
+import type { ApiResponse } from '#layers/server-core/types/api';
 
 const route = useRoute();
 const token = computed(() => {

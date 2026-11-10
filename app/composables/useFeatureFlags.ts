@@ -1,5 +1,5 @@
 import { apiRoutes } from '#shared/apiRoutes';
-import type { ApiResponse } from '~~/types/api';
+import type { ApiResponse } from '#layers/server-core/types/api';
 
 type FeatureFlags = Record<string, boolean>;
 type FeatureFlagsResponse = ApiResponse<FeatureFlags>;

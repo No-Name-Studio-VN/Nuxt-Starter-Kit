@@ -25,7 +25,6 @@
     },
   ],
   // </nsk:database>
-  // <nsk:server-core>
   "kv_namespaces": [
     {
       "binding": "CACHE",
@@ -34,7 +33,6 @@
       "binding": "KV",
     },
   ],
-  // </nsk:server-core>
   "routes": [
     {
       "pattern": "nnsvn.me",

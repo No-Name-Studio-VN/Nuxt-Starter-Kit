@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { apiError } from '~~/server/utils/apiResponse';
-import { useKV } from '~~/server/utils/kv';
+import { apiError } from '#layers/server-core/server/utils/apiResponse';
+import { useKV } from '#layers/server-core/server/utils/kv';
 
 export default defineWebAuthnAuthenticateEventHandler({
   async storeChallenge(event, challenge, attemptId) {
@@ -57,7 +57,7 @@ export default defineWebAuthnAuthenticateEventHandler({
         id: credential.user.id,
         name: credential.user.name,
         username: credential.user.username,
-        isAdmin: credential.user.isAdmin
+        isAdmin: credential.user.isAdmin,
       },
     });
   },

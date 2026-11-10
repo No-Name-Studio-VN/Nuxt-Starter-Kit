@@ -1,7 +1,7 @@
 // <nsk:auth-passkeys>
 import { eq } from 'drizzle-orm';
 // </nsk:auth-passkeys>
-import { apiError } from '~~/server/utils/apiResponse';
+import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import oauthAccountService from '~~/server/utils/database/oauthAccount';
 import userService from '~~/server/utils/database/user';
 import type { UserProfileModel } from '~~/types/models/profile';

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { apiError, zodErrorToFieldErrors } from '~~/server/utils/apiResponse';
-import { useKV } from '~~/server/utils/kv';
+import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
+import { useKV } from '#layers/server-core/server/utils/kv';
 import { webauthnRegisterUserSchema } from '#shared/schemas/userSecuritySchema';
 
 export default defineWebAuthnRegisterEventHandler({

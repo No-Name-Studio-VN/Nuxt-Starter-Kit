@@ -1,5 +1,5 @@
 import userService from '~~/server/utils/database/user';
-import { success } from '~~/server/utils/apiResponse';
+import { success } from '#layers/server-core/server/utils/apiResponse';
 
 /**
  * Lightweight endpoint that returns the current user's lock status.

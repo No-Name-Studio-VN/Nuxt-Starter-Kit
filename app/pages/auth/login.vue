@@ -15,10 +15,10 @@ import { REGEXP_ONLY_DIGITS } from 'vue-input-otp';
 import { TOTP_LENGTH } from '#shared/constants/totp';
 // </nsk:auth-2fa>
 import { cn } from '@/lib/utils';
-import { parseApiError } from '@/utils/apiError';
-import { apiRequest } from '@/utils/apiRequest';
+import { parseApiError } from '#layers/server-core/app/utils/apiError';
+import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
 import { APP_MANIFEST } from '#shared/constants/manifest';
-import type { ApiResponse } from '~~/types/api';
+import type { ApiResponse } from '#layers/server-core/types/api';
 import type { OAuthUrlPayload } from '~~/types/auth';
 
 const formSchema = loginSchema.pick({ username: true, password: true });

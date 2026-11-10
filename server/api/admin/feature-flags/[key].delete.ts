@@ -1,5 +1,5 @@
 import featureFlagService from '~~/server/utils/database/featureFlag';
-import { apiError, success } from '~~/server/utils/apiResponse';
+import { apiError, success } from '#layers/server-core/server/utils/apiResponse';
 import type { DeletePayload } from '~~/types/admin';
 
 export default defineEventHandler(async (event) => {

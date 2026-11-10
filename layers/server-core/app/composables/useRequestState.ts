@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import type { ComputedRef } from 'vue';
 
-import { parseApiError } from '@/utils/apiError';
+import { parseApiError } from '../utils/apiError';
 
 export interface RequestState {
   /** User-facing reason the request failed, or null while it has not failed. */

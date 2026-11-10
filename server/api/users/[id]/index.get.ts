@@ -1,5 +1,5 @@
 import { getAuthorizedUserId } from '~~/server/utils/authorization';
-import { success } from '~~/server/utils/apiResponse';
+import { success } from '#layers/server-core/server/utils/apiResponse';
 import { getUserProfileById } from '~~/server/utils/userProfile';
 
 export default defineEventHandler(async (event) => {

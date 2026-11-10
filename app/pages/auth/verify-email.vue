@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { MailCheck } from '@lucide/vue';
 import { apiRoutes } from '#shared/apiRoutes';
-import { parseApiError } from '@/utils/apiError';
-import type { ApiResponse } from '~~/types/api';
+import { parseApiError } from '#layers/server-core/app/utils/apiError';
+import type { ApiResponse } from '#layers/server-core/types/api';
 
 const route = useRoute();
 const requestUrl = useRequestURL();

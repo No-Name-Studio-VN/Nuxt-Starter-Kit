@@ -1,5 +1,3 @@
-import type { NuxtSecurityRouteRules } from 'nuxt-security';
-
 const ADMIN_API_PREFIX = '/api/admin';
 
 export const apiRoutes = {
@@ -77,20 +75,8 @@ export const apiRoutes = {
   userProfile: (userId: string | number) => `/api/users/${userId}/profile`,
 };
 
-const apiRules: NuxtSecurityRouteRules = {
-  rateLimiter: {
-    tokensPerInterval: 150,
-    interval: 60000, // 60 seconds
-    headers: true,
-    throwError: true,
-  },
-};
-
 // the route rules of the most outer apis should be defined first
 export const routeRules = {
-  '/api/**': {
-    security: apiRules,
-  },
   '/api/admin/seed': {
     security: {
       rateLimiter: {

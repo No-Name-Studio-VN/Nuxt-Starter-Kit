@@ -1,0 +1,8 @@
+{
+  "title": "Server core",
+  "description": "The API response envelope, KV and cache bindings, and error reporting shared by every server module.",
+  "requires": [],
+  "internal": true,
+  "dependencies": ["@nuxthub/core"],
+  "bindings": ["CACHE", "KV"]
+}

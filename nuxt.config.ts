@@ -19,7 +19,6 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/device',
-    '@nuxthub/core',
     // <nsk:auth>
     'nuxt-auth-utils',
     // </nsk:auth>
@@ -310,14 +309,6 @@ export default defineNuxtConfig({
     // D1 database
     db: 'sqlite',
     // </nsk:database>
-    // <nsk:server-core>
-    // KV namespace (binding defaults to 'KV')
-    kv: true,
-    // Cache KV namespace (binding defaults to 'CACHE')
-    cache: true,
-    // </nsk:server-core>
-    // R2 bucket (binding defaults to 'BLOB')
-    blob: false,
   },
 
   vite: {

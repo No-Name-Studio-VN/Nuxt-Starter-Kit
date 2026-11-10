@@ -1,4 +1,8 @@
-import { apiError, success, zodErrorToFieldErrors } from '~~/server/utils/apiResponse';
+import {
+  apiError,
+  success,
+  zodErrorToFieldErrors,
+} from '#layers/server-core/server/utils/apiResponse';
 import { OAUTH_PROVIDERS } from '#shared/constants/oauthProviders';
 import type { OAuthUrlPayload } from '~~/types/auth';
 import { oauthUrlBodySchema } from '#shared/schemas/userSchema';

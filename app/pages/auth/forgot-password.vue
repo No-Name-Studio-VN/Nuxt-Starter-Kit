@@ -3,9 +3,9 @@ import { KeyRound, Mail } from '@lucide/vue';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { apiRoutes } from '#shared/apiRoutes';
 import { forgotPasswordFormSchema } from '#shared/schemas/userSchema';
-import { apiRequest } from '@/utils/apiRequest';
-import { parseApiError } from '@/utils/apiError';
-import type { ApiResponse } from '~~/types/api';
+import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
+import { parseApiError } from '#layers/server-core/app/utils/apiError';
+import type { ApiResponse } from '#layers/server-core/types/api';
 
 const turnstileToken = ref('');
 const isSubmitting = ref(false);

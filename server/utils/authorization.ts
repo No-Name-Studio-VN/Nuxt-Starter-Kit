@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3';
 import userService from '~~/server/utils/database/user';
-import { apiError } from '~~/server/utils/apiResponse';
+import { apiError } from '#layers/server-core/server/utils/apiResponse';
 
 export function resolveAuthorizedTargetUserId(
   targetId: string | undefined,

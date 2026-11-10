@@ -1,5 +1,9 @@
 import { eq, and, sql } from 'drizzle-orm';
-import { apiError, success, zodErrorToFieldErrors } from '~~/server/utils/apiResponse';
+import {
+  apiError,
+  success,
+  zodErrorToFieldErrors,
+} from '#layers/server-core/server/utils/apiResponse';
 import userService from '~~/server/utils/database/user';
 import type { DeletePasskeyResponse } from '~~/types/models/passkey';
 import { deletePasskeySchema } from '#shared/schemas/userSecuritySchema';

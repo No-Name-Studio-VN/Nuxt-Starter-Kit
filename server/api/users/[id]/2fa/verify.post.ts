@@ -1,5 +1,9 @@
 import * as OTPAuth from 'otpauth';
-import { apiError, success, zodErrorToFieldErrors } from '~~/server/utils/apiResponse';
+import {
+  apiError,
+  success,
+  zodErrorToFieldErrors,
+} from '#layers/server-core/server/utils/apiResponse';
 import userLockScreenService from '~~/server/utils/database/userLockScreen';
 import { getAuthorizedUserId } from '~~/server/utils/authorization';
 import type { TwoFactorVerifyPayload } from '~~/types/userSecurity';

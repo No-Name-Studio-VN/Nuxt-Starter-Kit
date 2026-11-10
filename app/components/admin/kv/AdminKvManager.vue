@@ -249,7 +249,7 @@ import { AlertTriangleIcon, InfoIcon, PlusIcon, Trash2Icon } from '@lucide/vue';
 import { adminKvMutationSchema } from '#shared/schemas/adminKvSchema';
 import type { AdminKvMutationInput, AdminKvValueMode } from '#shared/schemas/adminKvSchema';
 import { apiRoutes } from '#shared/apiRoutes';
-import type { ApiResponse, ParsedApiError } from '~~/types/api';
+import type { ApiResponse, ParsedApiError } from '#layers/server-core/types/api';
 import type {
   AdminKvDeletePayload,
   AdminKvKeysPayload,
@@ -261,7 +261,7 @@ import DataTable from '@/components/DataTable.vue';
 import AdminKvValueEditor from './AdminKvValueEditor.client.vue';
 import { createColumns } from './columns';
 import type { AdminKvTableRow } from './types';
-import { parseApiError } from '@/utils/apiError';
+import { parseApiError } from '#layers/server-core/app/utils/apiError';
 
 interface TableRowWithOriginal {
   original: AdminKvTableRow;

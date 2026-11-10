@@ -1,7 +1,11 @@
 import { updateProfileSchema } from '#shared/schemas/userSchema';
 import userService from '~~/server/utils/database/user';
 import { getAuthorizedUserId } from '~~/server/utils/authorization';
-import { apiError, success, zodErrorToFieldErrors } from '~~/server/utils/apiResponse';
+import {
+  apiError,
+  success,
+  zodErrorToFieldErrors,
+} from '#layers/server-core/server/utils/apiResponse';
 import type { ProfileUpdateData } from '~~/types/models/profile';
 
 export default defineEventHandler(async (event) => {
