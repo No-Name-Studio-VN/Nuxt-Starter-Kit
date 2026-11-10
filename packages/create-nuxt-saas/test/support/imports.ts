@@ -174,7 +174,7 @@ export function toPackageName(specifier: string): string | null {
 }
 
 /** The kit-relative path a specifier points at, before extensions are tried. */
-function toKitPath(fromPath: string, specifier: string): string | null {
+export function toKitPath(fromPath: string, specifier: string): string | null {
   if (specifier.startsWith('.')) {
     return posix.normalize(posix.join(posix.dirname(fromPath), specifier));
   }

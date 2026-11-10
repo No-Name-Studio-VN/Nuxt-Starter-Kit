@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { resolveSelection } from '../../src/kit/modules';
+import { resolveSelection, type KitModule } from '../../src/kit/modules';
 import {
   boundaryModules,
   extractImports,
@@ -18,6 +18,33 @@ import {
 const knownViolations: string[] = [];
 
 const codeFiles = kitFiles.filter((path) => /\.(?:ts|vue|js|mjs)$/.test(path));
+
+interface SourceImports {
+  path: string;
+  imports: ReturnType<typeof importOwners>;
+}
+
+/** Every import whose target lies outside its owner's requires closure, sorted. */
+function boundaryViolations(files: SourceImports[], modules: KitModule[]): string[] {
+  const allowed = new Map(
+    modules.map((module) => [
+      module.id,
+      new Set(
+        module.id === 'base' ? ['base'] : ['base', ...resolveSelection(modules, [module.id])],
+      ),
+    ]),
+  );
+  return files
+    .flatMap(({ path, imports }) =>
+      imports.flatMap(({ specifier, owner }) => {
+        const target = targetOwner(path, specifier, modules);
+        return target === 'base' || allowed.get(owner)?.has(target)
+          ? []
+          : [`${path}:${specifier} (${owner} -> ${target})`];
+      }),
+    )
+    .sort();
+}
 
 describe('kit layer boundaries', () => {
   it('extracts static, type, re-export, side-effect and dynamic imports', () => {
@@ -53,14 +80,36 @@ describe('kit layer boundaries', () => {
     }
   });
 
-  it('keeps global aliases in base and resolves relative layer imports', () => {
-    for (const alias of ['~/', '@/', '~~/', '@@/', '#shared/']) {
+  it('resolves global aliases against the kit root and relative imports against the file', () => {
+    for (const alias of ['~/', '@/', '#shared/']) {
       expect(targetOwner('layers/example/x.ts', `${alias}layers/other/y`, [])).toBe('base');
+    }
+    for (const alias of ['~~/', '@@/']) {
+      expect(targetOwner('layers/example/x.ts', `${alias}layers/other/y`, [])).toBe('other');
     }
     expect(targetOwner('layers/example/app/x.ts', './y', [])).toBe('example');
     expect(targetOwner('layers/example/x.ts', '../other/y', [])).toBe('other');
     expect(targetOwner('app/x.ts', '#layers/example/y', [])).toBe('example');
     expect(targetOwner('app/x.ts', 'unclaimed-package/subpath', [])).toBe('base');
+  });
+
+  it('reports a base file reaching another module through a root alias', async () => {
+    const modules = await boundaryModules();
+    const source = [
+      "import type { ApiResponse } from '~~/layers/server-core/types/api';",
+      // Transitional: types/auth.ts is registry-owned by auth until Task 6 peels it
+      // (retarget this line to a still-unpeeled module); Task 15 removes it.
+      "import type { OAuthUrlPayload } from '~~/types/auth';",
+    ].join('\n');
+    expect(
+      boundaryViolations(
+        [{ path: 'app/app.vue', imports: importOwners('app/app.vue', source) }],
+        modules,
+      ),
+    ).toEqual([
+      'app/app.vue:~~/layers/server-core/types/api (base -> server-core)',
+      'app/app.vue:~~/types/auth (base -> auth)',
+    ]);
   });
 
   it('only imports base or its declared requires closure', async () => {
@@ -82,25 +131,7 @@ describe('kit layer boundaries', () => {
     );
     expect(unknownLayers, unknownLayers.join('\n')).toEqual([]);
 
-    const modules = await boundaryModules();
-    const allowed = new Map(
-      modules.map((module) => [
-        module.id,
-        new Set(
-          module.id === 'base' ? ['base'] : ['base', ...resolveSelection(modules, [module.id])],
-        ),
-      ]),
-    );
-    const violations = files
-      .flatMap(({ path, imports }) =>
-        imports.flatMap(({ specifier, owner }) => {
-          const target = targetOwner(path, specifier, modules);
-          return target === 'base' || allowed.get(owner)?.has(target)
-            ? []
-            : [`${path}:${specifier} (${owner} -> ${target})`];
-        }),
-      )
-      .sort();
+    const violations = boundaryViolations(files, await boundaryModules());
     const unexpected = violations.filter((violation) => !knownViolations.includes(violation));
     expect(unexpected, unexpected.join('\n')).toEqual([]);
     // Stale exceptions fail so the migration must shrink this list.

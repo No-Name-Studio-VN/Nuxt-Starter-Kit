@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join, posix } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { glob } from 'tinyglobby';
 import { z } from 'zod';
@@ -9,6 +9,7 @@ import { readKitModule, resolveSelection, type KitModule } from '../../src/kit/m
 import {
   extractImports as importsWithLines,
   resolveKitImport,
+  toKitPath,
   toPackageName,
 } from '../support/imports';
 
@@ -159,11 +160,11 @@ export function extractImports(source: string): string[] {
 
 export function targetOwner(path: string, specifier: string, modules: KitModule[]): string {
   if (specifier.startsWith('#layers/')) return specifier.split('/')[1] ?? 'base';
-  if (/^(?:~\/|@\/|~~\/|@@\/|#shared\/)/.test(specifier)) return 'base';
-  if (specifier.startsWith('.')) {
-    const resolved = resolveKitImport(path, specifier, fileSet);
-    return ownerOf(resolved ?? posix.normalize(posix.join(posix.dirname(path), specifier)));
-  }
+  // Relative and global-alias specifiers name a concrete kit path; its owner is
+  // the target, so a root file still owned by an unpeeled module counts as that
+  // module rather than base.
+  const kitPath = toKitPath(path, specifier);
+  if (kitPath !== null) return ownerOf(resolveKitImport(path, specifier, fileSet) ?? kitPath);
   const name = toPackageName(specifier);
   if (name === null) return 'base';
   return (
