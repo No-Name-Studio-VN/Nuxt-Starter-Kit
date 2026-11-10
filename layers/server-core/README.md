@@ -8,7 +8,6 @@ Internal module pulled in by every server module; it is never picked on its own.
 - Client helpers: `apiRequest`, `useAPI`, `parseApiError`, `useRequestState`.
 - Shared pagination helpers and the API envelope types (`types/api.ts`).
 - Rate-limits every `/api/**` route (150 requests per minute) and serves the `/api` health check.
-- Sentry reporting for the Cloudflare Worker runtime.
 
 Other layers import these as `#layers/server-core/...`.
 
