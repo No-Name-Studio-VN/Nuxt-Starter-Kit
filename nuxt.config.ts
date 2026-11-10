@@ -47,6 +47,7 @@ export default defineNuxtConfig({
   ],
 
   experimental: {
+    localLayerAliases: false,
     early404: true,
     stripNeverHydratedData: true,
     prerenderErrorPages: true,

@@ -1,0 +1,155 @@
+import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { join, posix } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { glob } from 'tinyglobby';
+import { z } from 'zod';
+import { readKitModules, type KitModule } from '../../src/kit/modules';
+import {
+  extractImports as importsWithLines,
+  resolveKitImport,
+  toPackageName,
+} from '../support/imports';
+
+export const kitRoot = fileURLToPath(new URL('../../../../', import.meta.url));
+
+export const kitFiles = execFileSync('git', ['ls-files', '-z'], {
+  cwd: kitRoot,
+  encoding: 'utf8',
+  maxBuffer: 32 * 1024 * 1024,
+})
+  .split('\0')
+  .filter((path) => path && !/^(?:packages|docs|tests)\//.test(path))
+  .sort();
+
+const fileSet = new Set(kitFiles);
+const layersRoot = join(kitRoot, 'layers');
+export const layerIds = new Set(
+  existsSync(layersRoot)
+    ? readdirSync(layersRoot, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+    : [],
+);
+
+export function readLayerModules(): Promise<KitModule[]> {
+  return existsSync(layersRoot) ? readKitModules(kitRoot) : Promise.resolve([]);
+}
+
+/** Globs are checked against tracked files only; literal Nuxt route names win. */
+export async function trackedMatches(pattern: string): Promise<string[]> {
+  if (fileSet.has(pattern)) return [pattern];
+  const matches = await glob(pattern, {
+    cwd: kitRoot,
+    dot: true,
+    onlyFiles: true,
+    followSymbolicLinks: false,
+  });
+  return matches.filter((path) => fileSet.has(path));
+}
+
+// Transitional ownership: removed in Task 15 together with registry/.
+// Resolve every registry claim before discarding peeled owners: an exact path
+// must not fall back into a different module's broader glob after its peel.
+const registrySchema = z.object({
+  modules: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      description: z.string(),
+      requires: z.array(z.string()).default([]),
+      paths: z.array(z.string()),
+      structured: z.record(z.string(), z.record(z.string(), z.unknown())).default({}),
+    }),
+  ),
+});
+const registryJson: unknown = JSON.parse(
+  await readFile(join(kitRoot, 'packages/create-nuxt-saas/registry/registry.json'), 'utf8'),
+);
+const registry = registrySchema.parse(registryJson);
+const registryOwners = new Map<string, string>();
+const exactOwners = new Map<string, string>();
+const transitionalModules: KitModule[] = [];
+
+for (const module of registry.modules) {
+  for (const pattern of module.paths) {
+    const owners = fileSet.has(pattern) ? exactOwners : registryOwners;
+    for (const path of await trackedMatches(pattern)) {
+      const previous = owners.get(path);
+      if (previous && previous !== module.id) {
+        throw new Error(
+          `${path}: registry ownership conflicts between ${previous} and ${module.id}`,
+        );
+      }
+      owners.set(path, module.id);
+    }
+  }
+  if (layerIds.has(module.id)) continue;
+  const fragment = module.structured['package.json'];
+  const packageSection = z.record(z.string(), z.unknown());
+  transitionalModules.push({
+    id: module.id,
+    title: module.title,
+    description: module.description,
+    requires: module.requires,
+    internal: false,
+    dependencies: Object.keys(packageSection.parse(fragment?.dependencies ?? {})),
+    devDependencies: Object.keys(packageSection.parse(fragment?.devDependencies ?? {})),
+    scripts: [],
+    env: [],
+    bindings: [],
+    rootFiles: [],
+  });
+}
+for (const [path, owner] of exactOwners) registryOwners.set(path, owner);
+
+function transitionalOwner(path: string): string {
+  const id = registryOwners.get(path);
+  return id && !layerIds.has(id) ? id : 'base';
+}
+
+export function importOwners(path: string, source: string) {
+  const owners: string[] = [];
+  let markerOwner: string | undefined;
+  for (const line of source.split('\n')) {
+    for (const match of line.matchAll(/<(\/?)nsk:([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)>/g)) {
+      markerOwner = match[1] === '/' ? undefined : match[2];
+    }
+    owners.push(path.startsWith('layers/') ? ownerOf(path) : (markerOwner ?? ownerOf(path)));
+  }
+  return importsWithLines(source).map((entry) => ({
+    ...entry,
+    owner: owners[entry.line] ?? ownerOf(path),
+  }));
+}
+
+export async function boundaryModules(): Promise<KitModule[]> {
+  return [...(await readLayerModules()), ...transitionalModules];
+}
+// End transitional ownership.
+
+export function ownerOf(kitRelativePath: string): string {
+  const layerId = /^layers\/([^/]+)\//.exec(kitRelativePath)?.[1];
+  return layerId ?? transitionalOwner(kitRelativePath);
+}
+
+export function extractImports(source: string): string[] {
+  return importsWithLines(source).map(({ specifier }) => specifier);
+}
+
+export function targetOwner(path: string, specifier: string, modules: KitModule[]): string {
+  if (specifier.startsWith('#layers/')) return specifier.split('/')[1] ?? 'base';
+  if (/^(?:~\/|@\/|~~\/|@@\/|#shared\/)/.test(specifier)) return 'base';
+  if (specifier.startsWith('.')) {
+    const resolved = resolveKitImport(path, specifier, fileSet);
+    return ownerOf(resolved ?? posix.normalize(posix.join(posix.dirname(path), specifier)));
+  }
+  const name = toPackageName(specifier);
+  if (name === null) return 'base';
+  return (
+    modules.find(
+      (module) => module.dependencies.includes(name) || module.devDependencies.includes(name),
+    )?.id ?? 'base'
+  );
+}

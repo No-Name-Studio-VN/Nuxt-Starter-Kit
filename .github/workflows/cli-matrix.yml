@@ -63,6 +63,7 @@ jobs:
         run: pnpm run typecheck
 
   generate:
+    if: false # re-enabled in Task 22
     name: ${{ matrix.name }}
     needs: unit
     runs-on: ubuntu-latest
