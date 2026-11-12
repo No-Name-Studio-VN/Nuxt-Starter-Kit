@@ -3,9 +3,10 @@ import userService from '#layers/auth/server/utils/database/user';
 // <nsk:auth-email-verification>
 import authTokenService from '#layers/auth/server/utils/database/authToken';
 import { sendVerificationEmail } from '#layers/auth/server/utils/email';
-// </nsk:auth-email-verification>
 import { apiRoutes } from '#shared/apiRoutes';
+// </nsk:auth-email-verification>
 import { authRoutes } from '#layers/auth/shared/authRoutes';
+import { runPostRegisterSteps } from '#layers/auth/server/utils/postRegisterSteps';
 import type { User } from '#layers/auth/types/auth';
 import type { RegisterUserInput } from '#layers/auth/shared/schemas/userSchema';
 // <nsk:auth-email-verification>
@@ -144,5 +145,9 @@ export default defineEventHandler(async (event) => {
     encodeURIComponent(redirectTo);
   // </nsk:auth-email-verification>
 
-  return sendRedirect(event, postRegisterRedirect);
+  // Registered steps run once the account exists, e.g. sending the verification
+  // email; a redirect one of them returns replaces the one above.
+  const postRegister = await runPostRegisterSteps({ event, user: newUser, redirectTo });
+
+  return sendRedirect(event, postRegister.redirect ?? postRegisterRedirect);
 });

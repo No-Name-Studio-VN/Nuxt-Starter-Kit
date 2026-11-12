@@ -1,8 +1,14 @@
 import userService from '#layers/auth/server/utils/database/user';
+// <nsk:auth-2fa>
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
+// </nsk:auth-2fa>
+// <nsk:auth-email-verification>
 import { apiRoutes } from '#shared/apiRoutes';
+// </nsk:auth-email-verification>
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { loginSchema } from '#layers/auth/shared/schemas/userSchema';
+import { runLoginPolicies } from '#layers/auth/server/utils/loginPolicies';
+import { apiError } from '#layers/server-core/server/utils/apiResponse';
 
 function safeRedirectPath(value: string | undefined, origin: string): string {
   if (!value) {
@@ -66,13 +72,15 @@ export default defineEventHandler(async (event) => {
   }
   // </nsk:auth-email-verification>
 
-  // Check if the account is locked
-  if (user.isLocked) {
-    return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=account-locked');
+  // Registered policies run in order: email verification (100), auth's account
+  // lock check, which also records the login (150), and the second factor (200).
+  const policyOutcome = await runLoginPolicies({ event, user, redirectTo: redirectToStr });
+  if (policyOutcome.kind === 'respond') {
+    return policyOutcome.body;
   }
-
-  // Update last login
-  await userService.update({ id: user.id, lastLoginAt: new Date() });
+  if (policyOutcome.kind === 'deny') {
+    throw apiError(policyOutcome.error);
+  }
 
   // <nsk:auth-2fa>
   // Check if TOTP 2FA is enabled
