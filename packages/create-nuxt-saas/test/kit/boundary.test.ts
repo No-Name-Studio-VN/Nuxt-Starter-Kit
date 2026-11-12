@@ -89,6 +89,12 @@ describe('kit layer boundaries', () => {
     }
   });
 
+  it('keeps the registry owner of a root file its module left behind', () => {
+    // R14 transitional ownership; removed in Task 15 with the registry fallback.
+    expect(ownerOf('app/pages/auth/login.vue')).toBe('auth');
+    expect(ownerOf('app/app.vue')).toBe('base');
+  });
+
   it('resolves global aliases against the kit root and relative imports against the file', () => {
     for (const alias of ['~/', '@/', '#shared/']) {
       expect(targetOwner('layers/example/x.ts', `${alias}layers/other/y`, [])).toBe('base');
