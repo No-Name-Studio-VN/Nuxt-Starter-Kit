@@ -1,3 +1,7 @@
+import type { tables } from '#layers/database/server/utils/db';
+
+export type DBPasskey = typeof tables.credentials.$inferSelect;
+
 export interface PasskeyModel {
   id: string;
   name: string;

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createInsertSchema, createUpdateSchema, createSelectSchema } from 'drizzle-zod';
-import { featureFlags } from '~~/server/db/schema.sqlite';
+import { featureFlags } from '#layers/database/server/db/schema.sqlite';
 import { commonSchemaFragments } from '.';
 
 /**

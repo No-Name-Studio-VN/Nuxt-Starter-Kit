@@ -1,6 +1,6 @@
 import { eq, inArray } from 'drizzle-orm';
-import type { User } from '#shared/db';
-import { IDatabaseService } from '~~/types/db/database-service';
+import type { User } from '~~/types/auth';
+import { IDatabaseService } from '#layers/database/types/db/database-service';
 import type { CreateUserInput, UserUpdateInput } from '#shared/schemas/userSchema';
 
 class UserService extends IDatabaseService<User> {

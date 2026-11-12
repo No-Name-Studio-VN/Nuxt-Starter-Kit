@@ -1,8 +1,11 @@
 import { eq, desc, inArray } from 'drizzle-orm';
-import type { DBFeatureFlag } from '#shared/db';
 import type { FeatureFlagInput, FeatureFlagUpdateInput } from '#shared/schemas/featureFlagSchema';
-import { IDatabaseService } from '~~/types/db/database-service';
-import type { CachedFlagConfig, FeatureFlagAuditEntryInput } from '~~/types/featureFlags';
+import { IDatabaseService } from '#layers/database/types/db/database-service';
+import type {
+  CachedFlagConfig,
+  DBFeatureFlag,
+  FeatureFlagAuditEntryInput,
+} from '~~/types/featureFlags';
 import { KV_FLAGS_KEY } from '#shared/constants/flags';
 import { clearAllFlagsCache } from '~~/server/utils/featureFlags';
 

@@ -226,7 +226,7 @@ import { Field as VeeField, useForm } from 'vee-validate';
 import { toast } from 'vue-sonner';
 import { adminUserCreateFormSchema, adminUserEditFormSchema } from '#shared/schemas/userSchema';
 import type { AdminUserCreateFormInput, AdminUserEditFormInput } from '#shared/schemas/userSchema';
-import type { User } from '#shared/db';
+import type { User } from '~~/types/auth';
 import { apiRoutes } from '#shared/apiRoutes';
 import type { ApiResponse } from '#layers/server-core/types/api';
 import { InfoIcon, Trash2Icon, UserPlus } from '@lucide/vue';

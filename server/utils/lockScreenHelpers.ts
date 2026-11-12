@@ -1,4 +1,4 @@
-import type { DBLockScreen, DBLockScreenClient } from '#shared/db';
+import type { DBLockScreen, DBLockScreenClient } from '~~/types/auth';
 
 /**
  * Transforms server-side lock screen data to client-safe format

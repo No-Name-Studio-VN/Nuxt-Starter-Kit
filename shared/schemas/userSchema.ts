@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
-import { users } from '~~/server/db/schema.sqlite';
+import { users } from '#layers/database/server/db/schema.sqlite';
 import { commonSchemaFragments, emailFieldSchema, requiredStringSchema } from './common';
 
 /**

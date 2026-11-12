@@ -1,3 +1,8 @@
+import type { tables } from '#layers/database/server/utils/db';
+
+export type DBFeatureFlag = typeof tables.featureFlags.$inferSelect;
+export type DBFeatureFlagAuditLog = typeof tables.featureFlagAuditLog.$inferSelect;
+
 export type FeatureFlagTier = 'free' | 'premium';
 
 export interface FeatureFlagRules {

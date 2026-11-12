@@ -286,7 +286,7 @@
 import { ArrowUpDown, Download, Plus, RefreshCw, Upload } from '@lucide/vue';
 import { toast } from 'vue-sonner';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
-import type { DBFeatureFlag } from '#shared/db';
+import type { DBFeatureFlag } from '~~/types/featureFlags';
 import { featureFlagInsertSchema } from '#shared/schemas/featureFlagSchema';
 import { apiRoutes } from '#shared/apiRoutes';
 import type { ApiResponse } from '#layers/server-core/types/api';

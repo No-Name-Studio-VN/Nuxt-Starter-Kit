@@ -13,9 +13,15 @@ import {
   targetOwner,
 } from './imports';
 
-// Existing root-kit violations under the transitional ownership rules. Remove
-// entries as their modules are peeled; never add an exception for a new layer.
-const knownViolations: string[] = [];
+// Exceptions are allowed only for the R2 holding schema, which keeps other
+// modules' tables in the database layer until their owners take them out. Each
+// entry names the task that removes it; never add an exception for anything else.
+const knownViolations: string[] = [
+  // Credentials table; removed in Task 11 (auth-passkeys).
+  'layers/database/server/db/schema.sqlite.ts:#auth-utils (database -> auth)',
+  // Feature-flag tables; removed in Task 9 (feature-flags).
+  'layers/database/server/db/schema.sqlite.ts:../../../../types/featureFlags (database -> feature-flags)',
+];
 
 const codeFiles = kitFiles.filter((path) => /\.(?:ts|vue|js|mjs)$/.test(path));
 

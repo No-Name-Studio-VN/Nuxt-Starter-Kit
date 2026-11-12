@@ -1,6 +1,6 @@
 import { eq, inArray } from 'drizzle-orm';
-import type { DBLockScreen } from '#shared/db';
-import { IDatabaseService } from '~~/types/db/database-service';
+import type { DBLockScreen } from '~~/types/auth';
+import { IDatabaseService } from '#layers/database/types/db/database-service';
 import type { UserLockScreenCreateInput, UserLockScreenUpdateInput } from '#shared/schemas';
 
 class UserLockScreenService extends IDatabaseService<DBLockScreen> {

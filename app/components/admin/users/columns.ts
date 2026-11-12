@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from '@lucide/vue';
-import type { User } from '#shared/db';
+import type { User } from '~~/types/auth';
 import { formatRelativeTime } from '@/lib/utils';
 
 export function createColumns(

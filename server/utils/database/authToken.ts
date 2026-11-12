@@ -1,5 +1,5 @@
 import { eq, and, isNull, lt } from 'drizzle-orm';
-import type { DBAuthToken } from '#shared/db';
+import type { DBAuthToken } from '~~/types/auth';
 import { AuthTokenType } from '#shared/commonEnums';
 import {
   EMAIL_VERIFICATION_EXPIRY_MS,

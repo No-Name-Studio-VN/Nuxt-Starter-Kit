@@ -20,7 +20,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ArrowUpDown, MoreHorizontal, Pencil, Power, PowerOff, Trash2 } from '@lucide/vue';
-import type { DBFeatureFlag } from '#shared/db';
+import type { DBFeatureFlag } from '~~/types/featureFlags';
 
 export function createColumns(
   onEdit: (flag: DBFeatureFlag) => void,

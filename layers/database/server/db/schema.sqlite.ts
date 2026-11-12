@@ -1,12 +1,8 @@
 import { sqliteTable, text, integer, unique, index } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
-import type { AuthTokenType } from '../../shared/commonEnums';
-// <nsk:auth>
+import type { AuthTokenType } from '../../../../shared/commonEnums';
 import type { WebAuthnCredential } from '#auth-utils';
-// </nsk:auth>
-// <nsk:feature-flags>
-import type { FeatureFlagRules } from '../../types/featureFlags';
-// </nsk:feature-flags>
+import type { FeatureFlagRules } from '../../../../types/featureFlags';
 
 const timestampColumns = {
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()), // Auto-set on create
@@ -47,7 +43,6 @@ export const authTokens = sqliteTable(
   ],
 );
 
-// <nsk:auth>
 // WebAuthn credentials belong to the auth module: the table is read by password
 // sign-in and the profile as well as by passkeys, but a database-only project
 // has no accounts to hold credentials for. The migration that created it stays,
@@ -71,7 +66,6 @@ export const credentials = sqliteTable(
     userIndex: index('credentials_user_idx').on(table.userId), // Index for faster lookups by user
   }),
 );
-// </nsk:auth>
 
 export const userLockScreen = sqliteTable('user_lock_screen', {
   userId: integer('user_id')
@@ -114,7 +108,6 @@ export const oauthAccounts = sqliteTable(
 );
 
 // ── Feature Flags Tables ──────────────────────────────────────
-// <nsk:feature-flags>
 export const featureFlags = sqliteTable('feature_flags', {
   key: text('key').primaryKey(), // e.g. 'new-reader-v2', 'premium-dark-mode'
   description: text('description').notNull().default(''),
@@ -143,7 +136,6 @@ export const featureFlagAuditLog = sqliteTable(
     index('ff_audit_created_idx').on(table.createdAt),
   ],
 );
-// </nsk:feature-flags>
 
 export const authTokensRelations = relations(authTokens, ({ one }) => ({
   user: one(users, {
@@ -153,22 +145,18 @@ export const authTokensRelations = relations(authTokens, ({ one }) => ({
 }));
 
 export const usersRelations = relations(users, ({ many, one }) => ({
-  // <nsk:auth>
   credentials: many(credentials),
-  // </nsk:auth>
   lockScreen: one(userLockScreen),
   oauthAccounts: many(oauthAccounts),
   authTokens: many(authTokens),
 }));
 
-// <nsk:auth>
 export const credentialsRelations = relations(credentials, ({ one }) => ({
   user: one(users, {
     fields: [credentials.userId],
     references: [users.id],
   }),
 }));
-// </nsk:auth>
 
 // Relations (useful for queries)
 export const oauthAccountsRelations = relations(oauthAccounts, ({ one }) => ({
@@ -178,11 +166,9 @@ export const oauthAccountsRelations = relations(oauthAccounts, ({ one }) => ({
   }),
 }));
 
-// <nsk:feature-flags>
 export const featureFlagAuditLogRelations = relations(featureFlagAuditLog, ({ one }) => ({
   actor: one(users, {
     fields: [featureFlagAuditLog.actorId],
     references: [users.id],
   }),
 }));
-// </nsk:feature-flags>

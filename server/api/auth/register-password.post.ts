@@ -5,7 +5,7 @@ import authTokenService from '~~/server/utils/database/authToken';
 import { sendVerificationEmail } from '~~/server/utils/email';
 // </nsk:auth-email-verification>
 import { apiRoutes } from '#shared/apiRoutes';
-import type { User } from '#shared/db';
+import type { User } from '~~/types/auth';
 import type { RegisterUserInput } from '#shared/schemas/userSchema';
 // <nsk:auth-email-verification>
 import { AuthTokenType } from '#shared/commonEnums';

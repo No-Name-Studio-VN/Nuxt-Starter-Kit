@@ -1,6 +1,6 @@
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { userLockScreen } from '~~/server/db/schema.sqlite';
+import { userLockScreen } from '#layers/database/server/db/schema.sqlite';
 import { commonSchemaFragments } from './common';
 
 export { commonSchemaFragments } from './common';

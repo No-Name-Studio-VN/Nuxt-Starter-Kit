@@ -18,13 +18,11 @@
       "enabled": true,
     },
   },
-  // <nsk:database>
   "d1_databases": [
     {
       "binding": "DB",
     },
   ],
-  // </nsk:database>
   "kv_namespaces": [
     {
       "binding": "CACHE",

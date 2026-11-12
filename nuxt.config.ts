@@ -304,13 +304,6 @@ export default defineNuxtConfig({
     },
   },
 
-  hub: {
-    // <nsk:database>
-    // D1 database
-    db: 'sqlite',
-    // </nsk:database>
-  },
-
   vite: {
     optimizeDeps: {
       include: ['clsx', 'reka-ui', 'tailwind-merge'],
