@@ -1,6 +1,6 @@
 import '#layers/pwa/types/extensions';
 import { NuxtPwaAssets } from '#components';
-import InstallPrompter from '../components/InstallPrompter.vue';
+import { defineAsyncComponent } from 'vue';
 
 export default defineNuxtPlugin(() => {
   registerExtension('app:root', {
@@ -11,6 +11,6 @@ export default defineNuxtPlugin(() => {
   registerExtension('sidebar:footer', {
     id: 'pwa-install',
     order: 100,
-    component: InstallPrompter,
+    component: defineAsyncComponent(() => import('../components/InstallPrompter.vue')),
   });
 });
