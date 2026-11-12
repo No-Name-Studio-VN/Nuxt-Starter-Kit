@@ -13,12 +13,6 @@ import { AVAILABLE_PROVIDERS } from '#layers/auth/shared/constants/oauthProvider
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { loginSchema } from '#layers/auth/shared/schemas/userSchema';
-// <nsk:auth-2fa>
-import { REGEXP_ONLY_DIGITS } from 'vue-input-otp';
-import { TOTP_LENGTH } from '#shared/constants/totp';
-import { apiRoutes } from '#shared/apiRoutes';
-import { cn } from '@/lib/utils';
-// </nsk:auth-2fa>
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
 import { APP_MANIFEST } from '#shared/constants/manifest';
@@ -40,11 +34,7 @@ const showPassword = ref(false);
 const isLoading = ref(false);
 const error = ref('');
 const success = ref('');
-// <nsk:auth-2fa>
-const totpCode = ref('');
-// </nsk:auth-2fa>
 const turnstileToken = ref('');
-const isShaking = ref(false);
 const oauthLoadingProvider = ref<string | null>(null);
 const oauthPopup = ref<Window | null>(null);
 const oauthPopupTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
@@ -117,13 +107,6 @@ const { handleSubmit, values } = useForm({
   validationSchema: formSchema,
 });
 
-function triggerShakeAnimation() {
-  isShaking.value = true;
-  setTimeout(() => {
-    isShaking.value = false;
-  }, 600);
-}
-
 const onSubmit = handleSubmit(async () => {
   // Native form submission for server-side auth
   const formEl = document.querySelector(`form[action="${authRoutes.AUTH_LOGIN_PASSWORD}"]`);
@@ -165,43 +148,6 @@ function onAlternativePending(pending: boolean) {
 function onAlternativeError(message: string) {
   error.value = message;
 }
-
-/**
- * Whether the form is on the two-factor step. The auth-2fa module drives it from
- * the query string below; without that module the step never happens, and the
- * template's negated branches still need something to read.
- */
-const is2faStep = ref(false);
-
-// <nsk:auth-2fa>
-watchEffect(() => {
-  is2faStep.value = getQueryString(route.query.step) === '2fa';
-});
-
-const on2faSubmit = async () => {
-  if (totpCode.value.length !== TOTP_LENGTH) return;
-  isLoading.value = true;
-  error.value = '';
-  try {
-    const response = await apiRequest<ApiResponse<Record<string, never>>>(
-      apiRoutes.AUTH_LOGIN_2FA,
-      {
-        method: 'POST',
-        body: { code: totpCode.value },
-      },
-    );
-    if (!response.success) {
-      throw response;
-    }
-    completeLogin(redirectTo.value);
-  } catch (err: unknown) {
-    error.value = parseApiError(err, 'Invalid authenticator code').message;
-    triggerShakeAnimation();
-    totpCode.value = '';
-    isLoading.value = false;
-  }
-};
-// </nsk:auth-2fa>
 
 watch(
   () => route.query.error,
@@ -353,18 +299,10 @@ onBeforeUnmount(() => {
     />
     <template v-else>
       <div class="space-y-1">
-        <!-- <nsk:auth-2fa> -->
-        <template v-if="is2faStep">
-          <h1 class="text-2xl font-bold tracking-tight">Two-factor authentication</h1>
-          <p class="text-base text-muted-foreground">Enter the code from your authenticator app.</p>
-        </template>
-        <!-- </nsk:auth-2fa> -->
-        <template v-if="!is2faStep">
-          <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
-          <p class="text-base text-muted-foreground">
-            {{ APP_MANIFEST.description }}
-          </p>
-        </template>
+        <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
+        <p class="text-base text-muted-foreground">
+          {{ APP_MANIFEST.description }}
+        </p>
       </div>
 
       <Alert
@@ -380,45 +318,7 @@ onBeforeUnmount(() => {
         <AlertDescription>{{ error }}</AlertDescription>
       </Alert>
 
-      <!-- <nsk:auth-2fa> -->
-      <form v-if="is2faStep" class="space-y-6" @submit.prevent="on2faSubmit">
-        <div class="flex justify-center">
-          <InputOTP
-            v-model="totpCode"
-            :class="cn([{ animateShake: isShaking }, 'justify-center'])"
-            aria-labelledby="two-factor-title"
-            aria-describedby="two-factor-description"
-            placeholder="○"
-            :maxlength="TOTP_LENGTH"
-            :pattern="REGEXP_ONLY_DIGITS"
-            @complete="on2faSubmit"
-          >
-            <InputOTPGroup>
-              <InputOTPSlot
-                v-for="(_, index) in TOTP_LENGTH"
-                :key="index"
-                :index="index"
-                class="h-14 w-12 text-2xl"
-              />
-            </InputOTPGroup>
-          </InputOTP>
-        </div>
-        <Button
-          type="submit"
-          class="w-full"
-          :is-loading="isLoading"
-          :disabled="totpCode.length !== TOTP_LENGTH"
-        >
-          Verify Code
-        </Button>
-        <Button type="button" variant="ghost" class="w-full" @click="leaveLoginStep">
-          Back to login
-        </Button>
-      </form>
-      <!-- </nsk:auth-2fa> -->
-
       <form
-        v-if="!is2faStep"
         :action="authRoutes.AUTH_LOGIN_PASSWORD"
         method="POST"
         class="space-y-4"
@@ -548,7 +448,7 @@ onBeforeUnmount(() => {
         </div>
       </form>
 
-      <div v-if="!is2faStep" class="space-y-3 text-center">
+      <div class="space-y-3 text-center">
         <div class="text-xs text-muted-foreground">
           By signing in, you agree to our
           <NuxtLink

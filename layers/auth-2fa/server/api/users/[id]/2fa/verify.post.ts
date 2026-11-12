@@ -6,8 +6,8 @@ import {
 } from '#layers/server-core/server/utils/apiResponse';
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
-import type { TwoFactorVerifyPayload } from '~~/types/userSecurity';
-import { verifyTotpSchema } from '#shared/schemas/userSecuritySchema';
+import type { TwoFactorVerifyPayload } from '#layers/auth-2fa/types/twoFactor';
+import { verifyTotpSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
 
 export default defineEventHandler(async (event) => {
   const userId = await getAuthorizedUserId(event);

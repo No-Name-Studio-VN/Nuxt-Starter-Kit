@@ -9,7 +9,6 @@ export const authRoutes = {
 
   MY_PROFILE: '/api/users/me',
   MY_LOCK_SCREEN: '/api/users/me/lock-screen',
-  MY_LOCK_SCREEN_VALIDATE: '/api/users/me/lock-screen/validate',
 
   AUTH_LOGIN_PASSWORD: '/api/auth/login-password',
   AUTH_REGISTER_PASSWORD: '/api/auth/register-password',

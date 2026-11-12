@@ -7,7 +7,7 @@ import userLockScreenService from '#layers/auth/server/utils/database/userLockSc
 import userService from '#layers/auth/server/utils/database/user';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import type { PasswordUpdatePayload } from '#layers/auth/types/userSecurity';
-import { disableTotpSchema } from '#shared/schemas/userSecuritySchema';
+import { disableTotpSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
 
 export default defineEventHandler(async (event) => {
   const userId = await getAuthorizedUserId(event);

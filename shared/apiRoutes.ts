@@ -8,17 +8,6 @@ export const apiRoutes = {
   MY_PASSKEYS: '/api/users/me/passkeys',
   // </nsk:auth-passkeys>
 
-  // 2FA Routes
-  // <nsk:auth-2fa>
-  MY_2FA_SETUP: '/api/users/me/2fa/setup',
-  MY_2FA_VERIFY: '/api/users/me/2fa/verify',
-  MY_2FA_SETTINGS: '/api/users/me/2fa/settings',
-  MY_2FA_DISABLE: '/api/users/me/2fa/disable',
-  // </nsk:auth-2fa>
-
-  // <nsk:auth-2fa>
-  AUTH_LOGIN_2FA: '/api/auth/login-2fa',
-  // </nsk:auth-2fa>
   // <nsk:auth-email-verification>
   AUTH_RESEND_VERIFICATION: '/api/auth/resend-verification',
   // </nsk:auth-email-verification>

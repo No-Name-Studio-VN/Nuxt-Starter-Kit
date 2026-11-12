@@ -1,7 +1,4 @@
 import userService from '#layers/auth/server/utils/database/user';
-// <nsk:auth-2fa>
-import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
-// </nsk:auth-2fa>
 // <nsk:auth-email-verification>
 import { apiRoutes } from '#shared/apiRoutes';
 // </nsk:auth-email-verification>
@@ -72,9 +69,10 @@ export default defineEventHandler(async (event) => {
   }
   // </nsk:auth-email-verification>
 
-  // Registered login policies run here. Today that is auth's account lock check,
-  // which also records the login (order 150); the email verification block above
-  // (100) and the 2FA block below (200) become policies in later tasks.
+  // Registered login policies run here: auth's account lock check, which also
+  // records the login (order 150), and the second factor when auth-2fa is
+  // installed (200). The email verification block above (100) becomes a policy
+  // in a later task.
   const policyOutcome = await runLoginPolicies({ event, user, redirectTo: redirectToStr });
   if (policyOutcome.kind !== 'continue') {
     if (policyOutcome.kind === 'respond') {
@@ -92,24 +90,6 @@ export default defineEventHandler(async (event) => {
       code: 'LOGIN_POLICY_UNKNOWN_OUTCOME',
     });
   }
-
-  // <nsk:auth-2fa>
-  // Check if TOTP 2FA is enabled
-  const lockScreen = await userLockScreenService.getById(user.id);
-
-  if (lockScreen?.totpEnabled && lockScreen?.totpSecret) {
-    // 2FA required! Save pending login state to the secure session.
-    await setUserSession(event, {
-      secure: {
-        pending2faUserId: user.id,
-      },
-    });
-    return sendRedirect(
-      event,
-      authRoutes.AUTH_LOGIN + `?step=2fa&redirectTo=${encodeURIComponent(redirectToStr)}`,
-    );
-  }
-  // </nsk:auth-2fa>
 
   // Update last login
   await userService.update({ id: user.id, lastLoginAt: new Date() });

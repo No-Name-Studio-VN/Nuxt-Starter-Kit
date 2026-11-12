@@ -42,9 +42,8 @@ export default defineNuxtConfig({
       tsConfig: {
         // Nitro's generated tsconfig includes server/ and shared/*.d.ts only, so
         // the #auth-utils augmentation in auth.d.ts never reaches server code and
-        // every session.user access fails to resolve. auth.d.ts stays at the kit
-        // root until the 2FA module takes its pending-login field out of it.
-        include: [resolve('../../auth.d.ts')],
+        // every session.user access fails to resolve.
+        include: [resolve('./auth.d.ts')],
       },
     },
   },

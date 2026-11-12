@@ -7,8 +7,8 @@ import {
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
 import userService from '#layers/auth/server/utils/database/user';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
-import type { TwoFactorSetupPayload } from '~~/types/userSecurity';
-import { setupTotpSchema } from '#shared/schemas/userSecuritySchema';
+import type { TwoFactorSetupPayload } from '#layers/auth-2fa/types/twoFactor';
+import { setupTotpSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
 
 export default defineEventHandler(async (event) => {
   const userId = await getAuthorizedUserId(event);
