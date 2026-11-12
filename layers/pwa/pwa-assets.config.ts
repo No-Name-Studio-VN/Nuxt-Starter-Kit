@@ -1,8 +1,11 @@
+import { createResolver } from '@nuxt/kit';
 import {
   combinePresetAndAppleSplashScreens,
   defineConfig,
   minimal2023Preset,
 } from '@vite-pwa/assets-generator/config';
+
+const { resolve } = createResolver(import.meta.url);
 
 export default defineConfig({
   headLinkOptions: {
@@ -46,5 +49,5 @@ export default defineConfig({
     },
     ['iPad Air 9.7"'],
   ),
-  images: ['public/favicon.svg'],
+  images: [resolve('../../public/favicon.svg')],
 });

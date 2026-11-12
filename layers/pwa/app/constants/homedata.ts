@@ -25,4 +25,4 @@ export const INSTALL_PROMPTER_FEATURES = [
     description: 'Your data stays safe with enhanced security features',
     colorClass: 'orange',
   },
-] as const;
+];

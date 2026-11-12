@@ -14,10 +14,6 @@ export const routeRules = {
     ssr: true,
     prerender: true,
   },
-  '/pwa': {
-    ssr: true,
-    prerender: true,
-  },
   '/_studio/**': {
     ssr: true,
   },

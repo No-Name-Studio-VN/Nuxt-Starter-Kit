@@ -15,7 +15,7 @@
           {{ isPWA ? 'Installed' : 'Install App' }}
         </p>
         <span v-if="isPWA" class="ml-2 text-xs text-muted-foreground">
-          {{ config.public.version! }}
+          {{ config.public.version }}
         </span>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -76,7 +76,7 @@ import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/co
 import ResponsiveDialog from '@/components/ResponsiveDialog.vue';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-import { INSTALL_PROMPTER_FEATURES } from '~/constants/homedata';
+import { INSTALL_PROMPTER_FEATURES } from '../constants/homedata';
 
 withDefaults(
   defineProps<{

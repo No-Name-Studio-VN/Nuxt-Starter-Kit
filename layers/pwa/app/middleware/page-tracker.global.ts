@@ -1,4 +1,4 @@
-import { storeCurrentPage } from '@/composables/usePageTracker';
+import { storeCurrentPage } from '../composables/usePageTracker';
 
 export default defineNuxtRouteMiddleware((to) => {
   if (to.meta.noPageTrack) {

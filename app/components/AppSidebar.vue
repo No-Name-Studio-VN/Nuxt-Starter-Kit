@@ -16,9 +16,6 @@ import {
 } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 
-// <nsk:pwa>
-import InstallPrompter from './InstallPrompter.vue';
-// </nsk:pwa>
 import { Separator } from './ui/separator';
 
 const props = withDefaults(defineProps<SidebarProps>(), {
@@ -99,9 +96,6 @@ async function logout() {
 
     <Separator />
     <SidebarFooter>
-      <!-- <nsk:pwa> -->
-      <InstallPrompter :sidebar-open="open" />
-      <!-- </nsk:pwa> -->
       <ExtensionSlot name="sidebar:footer" :sidebar-open="open" />
       <SidebarMenu>
         <SidebarMenuItem>

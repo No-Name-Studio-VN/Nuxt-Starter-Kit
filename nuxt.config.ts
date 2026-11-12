@@ -21,9 +21,6 @@ export default defineNuxtConfig({
     '@nuxtjs/device',
     '@nuxtjs/color-mode',
     '@sentry/nuxt/module',
-    // <nsk:pwa>
-    '@vite-pwa/nuxt',
-    // </nsk:pwa>
     // <nsk:content>
     'nuxt-content-git', // this adds createdAt and updatedAt dates based on the git history.
     // </nsk:content>
@@ -52,23 +49,6 @@ export default defineNuxtConfig({
       provider: 'cloudflare',
       cloudflare: { baseURL: '/' },
     },
-    // <nsk:pwa>
-    pwa: {
-      // Use injectManifest for full control over the service worker.
-      // This is required for SSR apps to properly handle offline fallbacks
-      // (generateSW cannot add a setCatchHandler for navigation requests).
-      strategies: 'injectManifest',
-      registerType: 'autoUpdate',
-      minify: true,
-      manifest: APP_MANIFEST,
-      srcDir: 'service-worker',
-      filename: 'sw.ts',
-      injectManifest: {
-        maximumFileSizeToCacheInBytes: 4000000,
-        globPatterns: ['**/*.{js,css,html,svg,ico,woff2}'],
-      },
-    },
-    // </nsk:pwa>
   },
 
   devtools: {
@@ -86,7 +66,6 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
         { rel: 'icon', href: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
-        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       ],
       meta: [{ name: 'keywords', content: SEO_CONFIG.keywords }],
     },
@@ -239,8 +218,6 @@ export default defineNuxtConfig({
       // app/modules/worker-routes.ts instead of failing the build.
       failOnError: false,
       ignore: [
-        '/pwa',
-        '/__og-image__/static/pwa',
         '/_studio',
         '/_studio/**',
         '/__nuxt_studio',
@@ -378,20 +355,11 @@ export default defineNuxtConfig({
   seo: {
     meta: {
       description: APP_MANIFEST.description,
-      themeColor: APP_MANIFEST.theme_color,
-      applicationName: APP_MANIFEST.short_name,
-      appleMobileWebAppTitle: APP_MANIFEST.short_name,
-      appleMobileWebAppCapable: 'yes',
-      appleMobileWebAppStatusBarStyle: 'black-translucent',
-      mobileWebAppCapable: 'yes',
-      msapplicationTileColor: APP_MANIFEST.background_color,
       charset: 'utf-8',
       viewport:
         'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
-      ogImage: '/pwa-512x512.png',
       twitterTitle: APP_MANIFEST.name,
       twitterDescription: APP_MANIFEST.description,
-      twitterImage: '/pwa-512x512.png',
     },
   },
 
