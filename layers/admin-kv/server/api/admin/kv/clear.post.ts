@@ -1,6 +1,6 @@
 import { success } from '#layers/server-core/server/utils/apiResponse';
 import { useKV } from '#layers/server-core/server/utils/kv';
-import type { ClearedPayload } from '#layers/admin/types/admin';
+import type { ClearedPayload } from '#layers/admin-kv/types/adminKv';
 
 export default defineEventHandler(async () => {
   await useKV().clear();

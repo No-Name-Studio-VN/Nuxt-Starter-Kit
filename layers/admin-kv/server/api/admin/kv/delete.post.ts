@@ -1,16 +1,15 @@
-import { adminKvValuesPayloadSchema } from '#shared/schemas/adminKvSchema';
+import { adminKvDeletePayloadSchema } from '#layers/admin-kv/shared/schemas/adminKvSchema';
 import {
   apiError,
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import { serializeAdminKvValue } from '~~/server/utils/adminKv';
 import { useKV } from '#layers/server-core/server/utils/kv';
-import type { AdminKvValuesResponsePayload } from '#layers/admin/types/admin';
+import type { AdminKvDeletePayload } from '#layers/admin-kv/types/adminKv';
 
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) =>
-    adminKvValuesPayloadSchema.safeParse(body),
+    adminKvDeletePayloadSchema.safeParse(body),
   );
 
   if (!result.success) {
@@ -24,14 +23,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const kv = useKV();
-  const values = await Promise.all(
-    result.data.keys.map(async (key) => {
-      const value: unknown = await kv.get(key);
-      return serializeAdminKvValue(key, value);
-    }),
-  );
+  await Promise.all(result.data.keys.map((key) => kv.del(key)));
 
-  const payload: AdminKvValuesResponsePayload = { values };
+  const payload: AdminKvDeletePayload = {
+    deleted: result.data.keys.length,
+  };
 
   return success(payload);
 });

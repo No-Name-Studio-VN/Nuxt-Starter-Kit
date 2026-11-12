@@ -54,7 +54,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import type { EditorView as CodeMirrorEditorView } from 'codemirror';
-import type { AdminKvValueMode } from '#shared/schemas/adminKvSchema';
+import type { AdminKvValueMode } from '#layers/admin-kv/shared/schemas/adminKvSchema';
 
 const props = defineProps<{
   modelValue: string;

@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import AdminKvManager from '@/components/admin/kv/AdminKvManager.vue';
+import AdminKvManager from '#layers/admin-kv/app/components/admin/kv/AdminKvManager.vue';
 
 definePageMeta({
   title: 'KV Store',

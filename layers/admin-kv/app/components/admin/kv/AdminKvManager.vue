@@ -246,9 +246,12 @@ import { computed, onMounted, ref } from 'vue';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { toast } from 'vue-sonner';
 import { AlertTriangleIcon, InfoIcon, PlusIcon, Trash2Icon } from '@lucide/vue';
-import { adminKvMutationSchema } from '#shared/schemas/adminKvSchema';
-import type { AdminKvMutationInput, AdminKvValueMode } from '#shared/schemas/adminKvSchema';
-import { apiRoutes } from '#shared/apiRoutes';
+import { adminKvMutationSchema } from '#layers/admin-kv/shared/schemas/adminKvSchema';
+import type {
+  AdminKvMutationInput,
+  AdminKvValueMode,
+} from '#layers/admin-kv/shared/schemas/adminKvSchema';
+import { adminKvRoutes } from '#layers/admin-kv/shared/adminKvRoutes';
 import type { ApiResponse, ParsedApiError } from '#layers/server-core/types/api';
 import type {
   AdminKvDeletePayload,
@@ -256,7 +259,7 @@ import type {
   AdminKvValuePayload,
   AdminKvValuesResponsePayload,
   ClearedPayload,
-} from '#layers/admin/types/admin';
+} from '#layers/admin-kv/types/adminKv';
 import DataTable from '#layers/admin/app/components/DataTable.vue';
 import AdminKvValueEditor from './AdminKvValueEditor.client.vue';
 import { createColumns } from './columns';
@@ -351,7 +354,7 @@ const onSubmit = handleSubmit(
     try {
       saving.value = true;
       const response = await apiRequest<ApiResponse<AdminKvValuePayload>>(
-        apiRoutes.ADMIN_KV_ITEMS,
+        adminKvRoutes.ADMIN_KV_ITEMS,
         {
           method: isEditing.value ? 'PUT' : 'POST',
           body: payload,
@@ -388,7 +391,7 @@ const onSubmit = handleSubmit(
 async function fetchKeys() {
   try {
     loading.value = true;
-    const response = await apiRequest<ApiResponse<AdminKvKeysPayload>>(apiRoutes.ADMIN_KV);
+    const response = await apiRequest<ApiResponse<AdminKvKeysPayload>>(adminKvRoutes.ADMIN_KV);
 
     if (!response.success) {
       throw response;
@@ -414,7 +417,7 @@ async function fetchValuesForKeys(candidateKeys: string[]): Promise<AdminKvValue
   try {
     valuesLoading.value = true;
     const response = await apiRequest<ApiResponse<AdminKvValuesResponsePayload>>(
-      apiRoutes.ADMIN_KV_VALUES,
+      adminKvRoutes.ADMIN_KV_VALUES,
       {
         method: 'POST',
         body: { keys: missingKeys },
@@ -500,7 +503,7 @@ async function confirmDelete() {
   try {
     deleting.value = true;
     const response = await apiRequest<ApiResponse<AdminKvDeletePayload>>(
-      apiRoutes.ADMIN_KV_DELETE,
+      adminKvRoutes.ADMIN_KV_DELETE,
       {
         method: 'POST',
         body: { keys: keysToDelete.value },
@@ -525,7 +528,7 @@ async function confirmDelete() {
 async function clearKvAndCache() {
   try {
     clearing.value = true;
-    const response = await apiRequest<ApiResponse<ClearedPayload>>(apiRoutes.ADMIN_KV_CLEAR, {
+    const response = await apiRequest<ApiResponse<ClearedPayload>>(adminKvRoutes.ADMIN_KV_CLEAR, {
       method: 'POST',
     });
 

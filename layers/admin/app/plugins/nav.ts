@@ -1,7 +1,7 @@
 import '#layers/auth/types/extensions';
+// Declares the adminCards menu that the landing page reads; admin modules fill it.
 import '#layers/admin/types/extensions';
-import { DatabaseIcon, LayoutDashboardIcon, UsersIcon } from '@lucide/vue';
-import type { AdminCardRecord } from '#layers/admin/types/adminCards';
+import { LayoutDashboardIcon, UsersIcon } from '@lucide/vue';
 import type { SidebarGuard, SidebarNavRecord, UserMenuRecord } from '#layers/auth/types/sidebar';
 
 const isAdmin: SidebarGuard = (user) => user?.isAdmin === true;
@@ -59,21 +59,7 @@ const userMenuRecords: UserMenuRecord[] = [
   { id: 'admin', order: 100, title: 'Admin', to: '/admin', icon: UsersIcon, guard: isAdmin },
 ];
 
-// The KV browser's card stays here until that module registers it itself.
-const adminCardRecords: AdminCardRecord[] = [
-  {
-    id: 'kv',
-    order: 300,
-    title: 'KV Store',
-    description: 'Browse and manage KV keys, values, and cache clearing controls',
-    to: '/admin/kv',
-    icon: DatabaseIcon,
-    bgColor: 'bg-slate-500/10',
-    textColor: 'text-slate-500',
-  },
-];
-
-/** Admin's sidebar context, account-menu entry and landing-page cards. */
+/** Admin's sidebar context and account-menu entry. */
 export default defineNuxtPlugin(() => {
   for (const record of sidebarRecords) {
     registerNavItem('sidebar', record);
@@ -81,9 +67,5 @@ export default defineNuxtPlugin(() => {
 
   for (const record of userMenuRecords) {
     registerNavItem('userMenu', record);
-  }
-
-  for (const record of adminCardRecords) {
-    registerNavItem('adminCards', record);
   }
 });

@@ -1,10 +1,10 @@
-import { adminKvMutationSchema } from '#shared/schemas/adminKvSchema';
+import { adminKvMutationSchema } from '#layers/admin-kv/shared/schemas/adminKvSchema';
 import {
   apiError,
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import { getAdminKvWriteValue, serializeAdminKvValue } from '~~/server/utils/adminKv';
+import { getAdminKvWriteValue, serializeAdminKvValue } from '#layers/admin-kv/server/utils/adminKv';
 import { useKV } from '#layers/server-core/server/utils/kv';
 
 export default defineEventHandler(async (event) => {

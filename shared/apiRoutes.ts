@@ -1,17 +1,12 @@
+// <nsk:feature-flags>
 const ADMIN_API_PREFIX = '/api/admin';
+// </nsk:feature-flags>
 
 export const apiRoutes = {
   API_PREFIX: '/api/',
 
   // <nsk:feature-flags>
   ADMIN_FEATURE_FLAGS: ADMIN_API_PREFIX + '/feature-flags',
-  // </nsk:feature-flags>
-  ADMIN_KV: ADMIN_API_PREFIX + '/kv',
-  ADMIN_KV_VALUES: ADMIN_API_PREFIX + '/kv/values',
-  ADMIN_KV_ITEMS: ADMIN_API_PREFIX + '/kv/items',
-  ADMIN_KV_DELETE: ADMIN_API_PREFIX + '/kv/delete',
-  ADMIN_KV_CLEAR: ADMIN_API_PREFIX + '/kv/clear',
-  // <nsk:feature-flags>
   FLAGS_EVALUATE: '/api/flags',
   // </nsk:feature-flags>
 
