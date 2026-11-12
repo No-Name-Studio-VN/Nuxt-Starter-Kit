@@ -15,7 +15,11 @@ export interface LoginStepEmits {
   cancel: [];
 }
 
-/** Props the login page passes to every `auth:login:alternatives` entry. */
+/**
+ * Props the login page passes to every `auth:login:alternatives` entry. The
+ * entries render inside the password `<form>`, so their buttons must be
+ * `type="button"` or they submit the password sign-in.
+ */
 export interface LoginAlternativeProps {
   /** What the user has typed into the username field so far. */
   username: string;

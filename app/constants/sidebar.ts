@@ -89,8 +89,32 @@ const ADMIN_SIDEBAR_RECORDS: SidebarNavRecord[] = [
   },
 ];
 
+/** In development, names every record whose parent section or context is not registered. */
+function warnOrphanRecords(records: readonly SidebarNavRecord[]): void {
+  const idsOf = (kind: SidebarNavRecord['kind']) =>
+    new Set(records.flatMap((record) => (record.kind === kind ? [record.id] : [])));
+  const sectionIds = idsOf('section');
+  const contextIds = idsOf('context');
+
+  for (const record of records) {
+    const parent =
+      record.kind === 'item'
+        ? { id: record.section, known: sectionIds.has(record.section) }
+        : record.kind === 'section'
+          ? { id: record.context, known: contextIds.has(record.context) }
+          : null;
+    if (parent && !parent.known) {
+      console.warn(`[sidebar] "${record.id}" is not shown: its parent "${parent.id}" is missing.`);
+    }
+  }
+}
+
 /** Nests sidebar records into contexts, sections and items, each level sorted by `order`. */
 function buildSidebarContexts(records: readonly SidebarNavRecord[]): SidebarContext[] {
+  if (import.meta.dev) {
+    warnOrphanRecords(records);
+  }
+
   const sorted = [...records].sort((a, b) => a.order - b.order);
   const items = sorted.flatMap((record) => (record.kind === 'item' ? [record] : []));
   const sections = sorted.flatMap((record) =>
@@ -108,7 +132,20 @@ function buildSidebarContexts(records: readonly SidebarNavRecord[]): SidebarCont
 
 /** Every sidebar context, read from the nav registry on each call. */
 export function getSidebarContexts(): SidebarContext[] {
-  return buildSidebarContexts([...getNavItems('sidebar'), ...ADMIN_SIDEBAR_RECORDS]);
+  const registered = getNavItems('sidebar');
+  const registeredIds = new Set(registered.map((record) => record.id));
+  // A registered record wins over an inline admin record with the same id.
+  const inline = ADMIN_SIDEBAR_RECORDS.filter((record) => {
+    if (!registeredIds.has(record.id)) {
+      return true;
+    }
+    if (import.meta.dev) {
+      console.warn(`[sidebar] "${record.id}" is registered; its inline admin record is skipped.`);
+    }
+    return false;
+  });
+
+  return buildSidebarContexts([...registered, ...inline]);
 }
 
 export function getAllSidebarItems(
