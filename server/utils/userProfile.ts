@@ -1,6 +1,3 @@
-// <nsk:auth-passkeys>
-import { eq } from 'drizzle-orm';
-// </nsk:auth-passkeys>
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import oauthAccountService from '#layers/auth/server/utils/database/oauthAccount';
 import userService from '#layers/auth/server/utils/database/user';
@@ -18,18 +15,6 @@ export async function getUserProfileById(userId: number): Promise<UserProfileMod
     });
   }
 
-  const db = useDB();
-  /** Registered passkeys, or none when the module that manages them is absent. */
-  // eslint-disable-next-line no-useless-assignment
-  let credentials: unknown[] = [];
-  // <nsk:auth-passkeys>
-  credentials = await db
-    .select()
-    .from(tables.credentials)
-    .where(eq(tables.credentials.userId, userId))
-    .all();
-  // </nsk:auth-passkeys>
-
   const oauthAccounts = await oauthAccountService.getByUserId(userId);
 
   return {
@@ -41,7 +26,6 @@ export async function getUserProfileById(userId: number): Promise<UserProfileMod
     createdAt: dbUser.createdAt || new Date(),
     lastLoginAt: dbUser.lastLoginAt || dbUser.createdAt || new Date(),
     hasPassword: !!dbUser.password && dbUser.password.trim().length > 0,
-    passkeyCount: credentials.length,
     isAdmin: dbUser.isAdmin,
     linkedAccounts: oauthAccounts.map((account) => ({
       provider: account.provider,

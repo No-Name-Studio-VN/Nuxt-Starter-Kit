@@ -17,7 +17,6 @@ export interface UserProfileModel {
   createdAt: Date;
   lastLoginAt: Date;
   hasPassword: boolean;
-  passkeyCount: number;
   isAdmin: boolean;
   linkedAccounts: LinkedAccount[];
 }

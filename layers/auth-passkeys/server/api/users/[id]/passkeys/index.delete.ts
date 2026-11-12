@@ -5,8 +5,8 @@ import {
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
 import userService from '#layers/auth/server/utils/database/user';
-import type { DeletePasskeyResponse } from '~~/types/models/passkey';
-import { deletePasskeySchema } from '#layers/auth/shared/schemas/userSecuritySchema';
+import type { DeletePasskeyResponse } from '#layers/auth-passkeys/types/models/passkey';
+import { deletePasskeySchema } from '#layers/auth-passkeys/shared/schemas/passkeySchema';
 
 export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);

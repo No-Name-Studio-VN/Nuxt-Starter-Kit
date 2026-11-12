@@ -284,12 +284,6 @@ export default defineNuxtConfig({
   },
   // </nsk:content>
 
-  // <nsk:auth-passkeys>
-  auth: {
-    webAuthn: true,
-  },
-  // </nsk:auth-passkeys>
-
   // <nsk:content>
   componentMeta: {
     // Exclude problematic paths that cause Windows path resolution issues

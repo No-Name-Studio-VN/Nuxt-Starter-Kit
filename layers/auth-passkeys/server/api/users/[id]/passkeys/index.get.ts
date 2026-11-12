@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { PasskeyModel } from '~~/types/models/passkey';
+import type { PasskeyModel } from '#layers/auth-passkeys/types/models/passkey';
 
 export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);

@@ -4,9 +4,6 @@ export const apiRoutes = {
   // <nsk:auth-email-verification>
   AUTH_VERIFY_EMAIL: '/auth/verify-email',
   // </nsk:auth-email-verification>
-  // <nsk:auth-passkeys>
-  MY_PASSKEYS: '/api/users/me/passkeys',
-  // </nsk:auth-passkeys>
 
   // <nsk:auth-email-verification>
   AUTH_RESEND_VERIFICATION: '/api/auth/resend-verification',

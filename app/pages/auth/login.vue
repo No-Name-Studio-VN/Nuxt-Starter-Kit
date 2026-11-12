@@ -1,10 +1,5 @@
 <script setup lang="ts">
-// eslint-disable-next-line import/no-duplicates
 import { User, Lock, Eye, EyeOff } from '@lucide/vue';
-// <nsk:auth-passkeys>
-// eslint-disable-next-line import/no-duplicates
-import { Fingerprint } from '@lucide/vue';
-// </nsk:auth-passkeys>
 import {
   getAuthErrorMessage,
   AUTH_SUCCESS_MESSAGES,
@@ -25,9 +20,6 @@ function isAuthSuccessMessageKey(value: string): value is keyof typeof AUTH_SUCC
   return value in AUTH_SUCCESS_MESSAGES;
 }
 
-// <nsk:auth-passkeys>
-const { authenticate } = useWebAuthn();
-// </nsk:auth-passkeys>
 const route = useRoute();
 const requestUrl = useRequestURL();
 const showPassword = ref(false);
@@ -178,29 +170,6 @@ watch(
 onMounted(() => {
   oauthPopupListener.start();
 });
-
-// <nsk:auth-passkeys>
-async function signInWithPasskey() {
-  if (!values.username?.trim()) {
-    error.value = 'Username is required';
-    return;
-  }
-
-  isLoading.value = true;
-  error.value = '';
-
-  try {
-    await authenticate(values.username);
-    window.location.href = redirectTo.value;
-  } catch (err) {
-    error.value = parseApiError(
-      err,
-      'Authentication failed. Please ensure your passkey is set up correctly, or sign in with your password.',
-    ).message;
-    isLoading.value = false;
-  }
-}
-// </nsk:auth-passkeys>
 
 async function signInWithProvider(provider: string) {
   if (oauthLoadingProvider.value) return;
@@ -401,19 +370,6 @@ onBeforeUnmount(() => {
             <div class="h-px flex-1 bg-border" />
           </div>
 
-          <!-- <nsk:auth-passkeys> -->
-          <Button
-            type="button"
-            variant="outline"
-            class="w-full active:scale-[0.98]"
-            :disabled="!values.username?.trim()"
-            :is-loading="isLoading"
-            @click="signInWithPasskey"
-          >
-            <Fingerprint aria-hidden="true" class="size-4" />
-            Sign In with a Passkey
-          </Button>
-          <!-- </nsk:auth-passkeys> -->
           <ExtensionSlot
             name="auth:login:alternatives"
             :username="values.username ?? ''"
