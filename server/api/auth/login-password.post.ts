@@ -72,14 +72,25 @@ export default defineEventHandler(async (event) => {
   }
   // </nsk:auth-email-verification>
 
-  // Registered policies run in order: email verification (100), auth's account
-  // lock check, which also records the login (150), and the second factor (200).
+  // Registered login policies run here. Today that is auth's account lock check,
+  // which also records the login (order 150); the email verification block above
+  // (100) and the 2FA block below (200) become policies in later tasks.
   const policyOutcome = await runLoginPolicies({ event, user, redirectTo: redirectToStr });
-  if (policyOutcome.kind === 'respond') {
-    return policyOutcome.body;
-  }
-  if (policyOutcome.kind === 'deny') {
-    throw apiError(policyOutcome.error);
+  if (policyOutcome.kind !== 'continue') {
+    if (policyOutcome.kind === 'respond') {
+      return policyOutcome.body;
+    }
+    if (policyOutcome.kind === 'deny') {
+      throw apiError(policyOutcome.error);
+    }
+
+    // Fail closed: an outcome no branch above understands never signs the user in.
+    throw apiError({
+      status: 500,
+      statusText: 'Internal Server Error',
+      message: 'Internal Server Error. The sign-in could not be completed.',
+      code: 'LOGIN_POLICY_UNKNOWN_OUTCOME',
+    });
   }
 
   // <nsk:auth-2fa>

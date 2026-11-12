@@ -7,7 +7,12 @@ import type {
 // Filled once by Nitro plugins; shared by every request.
 const postRegisterSteps = new Map<string, PostRegisterStep>();
 
+/** Throws when the id is taken, so no module can silently replace another's step. */
 export function registerPostRegisterStep(step: PostRegisterStep): void {
+  if (postRegisterSteps.has(step.id)) {
+    throw new Error(`Post-register step "${step.id}" is already registered.`);
+  }
+
   postRegisterSteps.set(step.id, step);
 }
 
