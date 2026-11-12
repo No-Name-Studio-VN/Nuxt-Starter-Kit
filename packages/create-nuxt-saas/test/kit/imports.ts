@@ -47,8 +47,8 @@ export async function trackedMatches(pattern: string): Promise<string[]> {
 }
 
 // Transitional ownership: removed in Task 15 together with registry/.
-// Resolve every registry claim before discarding peeled owners: an exact path
-// must not fall back into a different module's broader glob after its peel.
+// Resolve every registry claim first, so an exact path never falls back into a
+// different module's broader glob.
 const registrySchema = z.object({
   modules: z.array(
     z.object({
@@ -101,9 +101,11 @@ for (const module of registry.modules) {
 }
 for (const [path, owner] of exactOwners) registryOwners.set(path, owner);
 
+// A root file keeps its registry owner after that module's layer exists: a peel
+// leaves files at the root while they still carry another module's marker
+// blocks, and they belong to the peeled module until they move into its layer.
 function transitionalOwner(path: string): string {
-  const id = registryOwners.get(path);
-  return id && !layerIds.has(id) ? id : 'base';
+  return registryOwners.get(path) ?? 'base';
 }
 
 export function importOwners(path: string, source: string) {
