@@ -128,7 +128,7 @@ function leaveLoginStep() {
   navigateTo({ query: q });
 }
 
-// A sign-in alternative (e.g. a passkey) holds the form while it runs and
+// An alternative sign-in holds the form while it runs and
 // reports failures through the page's error alert.
 function onAlternativePending(pending: boolean) {
   isLoading.value = pending;
