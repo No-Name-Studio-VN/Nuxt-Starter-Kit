@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronsUpDown, LogOut, SunMoon, Settings, LogIn, UserIcon, UsersIcon } from '@lucide/vue';
+import { ChevronsUpDown, LogOut, SunMoon, UsersIcon } from '@lucide/vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -19,7 +19,13 @@ import { useSidebar } from '@/components/ui/sidebar/utils';
 
 const { user, clear, loggedIn } = useUserSession();
 const { isMobile, setOpenMobile } = useSidebar();
-const { clearSidebarContextOverride } = useSidebarContext();
+const { clearSidebarContextOverride, guardContext } = useSidebarContext();
+
+const menuItems = computed(() =>
+  getNavItems('userMenu').filter(
+    (item) => !item.guard || item.guard(user.value, guardContext.value),
+  ),
+);
 
 function getInitials(name: string) {
   return name
@@ -97,21 +103,18 @@ function navigateFromSidebar(path: string) {
       :side-offset="4"
     >
       <DropdownMenuGroup>
+        <!-- Admin's entry stays inline until the admin module registers it. -->
         <DropdownMenuItem v-if="user?.isAdmin" @click="navigateFromSidebar('/admin')">
           <UsersIcon />
           Admin
         </DropdownMenuItem>
-        <DropdownMenuItem v-if="loggedIn" @click="navigateFromSidebar('/settings/account')">
-          <UserIcon />
-          Account
-        </DropdownMenuItem>
-        <DropdownMenuItem v-else @click="navigateFromSidebar('/auth/login')">
-          <LogIn />
-          Sign In
-        </DropdownMenuItem>
-        <DropdownMenuItem @click="navigateFromSidebar('/settings')">
-          <Settings />
-          Settings
+        <DropdownMenuItem
+          v-for="item in menuItems"
+          :key="item.id"
+          @click="navigateFromSidebar(item.to)"
+        >
+          <component :is="item.icon" />
+          {{ item.title }}
         </DropdownMenuItem>
       </DropdownMenuGroup>
 

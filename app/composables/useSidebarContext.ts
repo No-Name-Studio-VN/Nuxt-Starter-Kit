@@ -1,11 +1,6 @@
 import type { SidebarContext, SidebarSection } from '#layers/auth/types/sidebar';
-import { SIDEBAR_CONTEXTS } from '@/constants/sidebar';
+import { getSidebarContexts } from '@/constants/sidebar';
 
-const firstContext = SIDEBAR_CONTEXTS[0];
-if (!firstContext) {
-  throw new Error('Sidebar contexts must include at least one context.');
-}
-const DEFAULT_CONTEXT = SIDEBAR_CONTEXTS.find((ctx) => ctx.id === 'main') ?? firstContext;
 const sidebarContextOverride = ref<string | null>(null);
 
 export function useSidebarContext() {
@@ -28,8 +23,20 @@ export function useSidebarContext() {
     flags: flags.value,
   }));
 
+  // Layer plugins fill the nav registry while the app starts, after this module
+  // loads, so the contexts are read here rather than once at import time.
+  const contexts = computed(() => getSidebarContexts());
+
+  const defaultContext = computed<SidebarContext>(() => {
+    const firstContext = contexts.value[0];
+    if (!firstContext) {
+      throw new Error('Sidebar contexts must include at least one context.');
+    }
+    return contexts.value.find((ctx) => ctx.id === 'main') ?? firstContext;
+  });
+
   const getContextById = (id: string) => {
-    return SIDEBAR_CONTEXTS.find(
+    return contexts.value.find(
       (ctx) => ctx.id === id && (!ctx.guard || ctx.guard(user.value, guardContext.value)),
     );
   };
@@ -42,17 +49,17 @@ export function useSidebarContext() {
 
     const path = route.path;
     return (
-      SIDEBAR_CONTEXTS.find((ctx) => {
+      contexts.value.find((ctx) => {
         if (ctx.match !== '/' && !path.startsWith(ctx.match)) return false;
         if (
           ctx.match === '/' &&
           path !== '/' &&
-          SIDEBAR_CONTEXTS.some((c) => c.match !== '/' && path.startsWith(c.match))
+          contexts.value.some((c) => c.match !== '/' && path.startsWith(c.match))
         )
           return false;
         if (ctx.guard && !ctx.guard(user.value, guardContext.value)) return false;
         return true;
-      }) ?? DEFAULT_CONTEXT
+      }) ?? defaultContext.value
     );
   });
 
@@ -86,6 +93,7 @@ export function useSidebarContext() {
   );
 
   return {
+    guardContext,
     activeContext,
     visibleSections,
     primarySections,

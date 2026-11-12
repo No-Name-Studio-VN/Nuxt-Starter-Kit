@@ -102,6 +102,7 @@ async function logout() {
       <!-- <nsk:pwa> -->
       <InstallPrompter :sidebar-open="open" />
       <!-- </nsk:pwa> -->
+      <ExtensionSlot name="sidebar:footer" :sidebar-open="open" />
       <SidebarMenu>
         <SidebarMenuItem>
           <Button v-if="loggedIn" class="w-full" variant="destructive" @click="logout">
