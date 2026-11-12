@@ -9,7 +9,8 @@ import { KVFeatureFlagProvider } from '#layers/feature-flags/server/utils/openfe
  * empty even though D1 has all the flags. This plugin ensures KV is
  * populated before any flag evaluations happen.
  *
- * The `0-` prefix guarantees this runs before other plugins.
+ * The `0-` prefix makes this run first among the feature-flags layer's plugins. It only
+ * registers the provider; evaluation happens in request handlers.
  */
 export default defineNitroPlugin(async () => {
   // disabled it as it might not run in serverless environment

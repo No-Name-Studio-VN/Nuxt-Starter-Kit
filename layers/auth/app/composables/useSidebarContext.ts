@@ -15,8 +15,9 @@ export function useSidebarContext() {
    * What the guards read besides the user. A module such as feature-flags provides
    * live values from an app plugin; without one every guard sees an empty flag set.
    */
-  const useGuardContext = inject(SIDEBAR_GUARD_CONTEXT_KEY, null);
-  const guardContext = useGuardContext?.() ?? computed<SidebarGuardContext>(() => ({ flags: {} }));
+  const guardContextSource = inject(SIDEBAR_GUARD_CONTEXT_KEY, null);
+  const guardContext =
+    guardContextSource?.() ?? computed<SidebarGuardContext>(() => ({ flags: {} }));
 
   // Layer plugins fill the nav registry while the app starts, after this module
   // loads, so the contexts are read here rather than once at import time.
