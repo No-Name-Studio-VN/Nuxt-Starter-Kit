@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { createResolver } from '@nuxt/kit';
+import { createResolver, useNuxt } from '@nuxt/kit';
 import { APP_MANIFEST } from './shared/constants/manifest';
 
 const { resolve } = createResolver(import.meta.url);
@@ -17,6 +17,15 @@ export default defineNuxtConfig({
   },
 
   hooks: {
+    'modules:before'() {
+      const seo = useNuxt().options.seo;
+      if (!seo) return;
+      const meta = seo.meta;
+      // Root config wins layer merges. Replace only base's defaults, preserving
+      // explicit custom social images and the full kit's existing public URLs.
+      if (meta?.ogImage === '/social-preview.png') meta.ogImage = '/pwa-512x512.png';
+      if (meta?.twitterImage === '/social-preview.png') meta.twitterImage = '/pwa-512x512.png';
+    },
     'prepare:types'({ references }) {
       // The icons plugin is also reached from Nuxt's node/shared type contexts.
       references.push({
@@ -68,8 +77,6 @@ export default defineNuxtConfig({
       appleMobileWebAppStatusBarStyle: 'black-translucent',
       mobileWebAppCapable: 'yes',
       msapplicationTileColor: APP_MANIFEST.background_color,
-      ogImage: '/pwa-512x512.png',
-      twitterImage: '/pwa-512x512.png',
     },
   },
 });
