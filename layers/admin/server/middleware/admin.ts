@@ -1,12 +1,12 @@
 import userService from '#layers/auth/server/utils/database/user';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
-import { apiRoutes } from '#shared/apiRoutes';
+import { adminRoutes } from '#layers/admin/shared/adminRoutes';
 
 export default defineEventHandler(async (event) => {
   const path = getRequestURL(event).pathname;
-  if (path === apiRoutes.ADMIN_TASKS_SEED_ADMIN) return;
+  if (path === adminRoutes.ADMIN_TASKS_SEED_ADMIN) return;
 
-  if (path.startsWith(apiRoutes.ADMIN_API_PREFIX)) {
+  if (path.startsWith(adminRoutes.ADMIN_API_PREFIX)) {
     const session = await requireUserSession(event);
     const user = await userService.getById(session.user.id);
     if (!user) {

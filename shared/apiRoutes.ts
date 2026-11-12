@@ -2,7 +2,6 @@ const ADMIN_API_PREFIX = '/api/admin';
 
 export const apiRoutes = {
   API_PREFIX: '/api/',
-  ADMIN_API_PREFIX: ADMIN_API_PREFIX,
 
   // <nsk:feature-flags>
   ADMIN_FEATURE_FLAGS: ADMIN_API_PREFIX + '/feature-flags',
@@ -31,7 +30,6 @@ export const apiRoutes = {
   MY_2FA_DISABLE: '/api/users/me/2fa/disable',
   // </nsk:auth-2fa>
 
-  ADMIN_DASHBOARD: ADMIN_API_PREFIX + '/dashboard',
   ADMIN_USERS: ADMIN_API_PREFIX + '/users',
   ADMIN_USERS_DELETE: ADMIN_API_PREFIX + '/users/delete',
 
@@ -41,8 +39,6 @@ export const apiRoutes = {
   // <nsk:auth-email-verification>
   AUTH_RESEND_VERIFICATION: '/api/auth/resend-verification',
   // </nsk:auth-email-verification>
-
-  ADMIN_TASKS_SEED_ADMIN: ADMIN_API_PREFIX + '/tasks/seed-admin',
 
   // <nsk:feature-flags>
   adminFeatureFlag: (key: string) => ADMIN_API_PREFIX + `/feature-flags/${key}`,
