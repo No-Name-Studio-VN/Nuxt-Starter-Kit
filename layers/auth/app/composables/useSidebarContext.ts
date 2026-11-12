@@ -3,7 +3,7 @@ import type {
   SidebarGuardContext,
   SidebarSection,
 } from '#layers/auth/types/sidebar';
-import { getSidebarContexts, SIDEBAR_GUARD_CONTEXT_KEY } from '@/constants/sidebar';
+import { getSidebarContexts, SIDEBAR_GUARD_CONTEXT_KEY } from '#layers/auth/app/constants/sidebar';
 
 const sidebarContextOverride = ref<string | null>(null);
 

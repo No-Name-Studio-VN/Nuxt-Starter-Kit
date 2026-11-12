@@ -1,4 +1,4 @@
-import { SIDEBAR_GUARD_CONTEXT_KEY } from '@/constants/sidebar';
+import { SIDEBAR_GUARD_CONTEXT_KEY } from '#layers/auth/app/constants/sidebar';
 
 /**
  * Gives the sidebar guards the live flag values of the signed-in user. Runs on the

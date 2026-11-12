@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import { useMagicKeys } from '@vueuse/core';
 import { Search } from '@lucide/vue';
-import { getAllSidebarItems } from '@/constants/sidebar';
+import { getAllSidebarItems } from '#layers/auth/app/constants/sidebar';
 import { useHotSearch } from '#layers/auth/app/composables/useHotSearch';
 
 const { isOpen: hotSearchOpen, toggleIsOpen, setIsOpen } = useHotSearch();
