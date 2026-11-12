@@ -16,10 +16,6 @@ export default defineTask({
     console.log('━'.repeat(50));
     console.log('Admin created:', summary.admin.created);
     console.log('Admin verified:', summary.admin.verified);
-    // <nsk:feature-flags>
-    console.log('Feature flags created:', summary.featureFlags.created);
-    console.log('Feature flags skipped:', summary.featureFlags.skipped);
-    // </nsk:feature-flags>
     for (const task of tasks) {
       for (const [name, count] of Object.entries(task.counts)) {
         console.log(`${task.label} ${name}:`, count);

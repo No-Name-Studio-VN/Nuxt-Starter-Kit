@@ -1,45 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { runSeedTasks } from '#layers/admin/server/utils/seedTasks';
-import type { SeedAdminResult, SeedTaskResult } from '#layers/admin/types/seedTasks';
-// <nsk:feature-flags>
-import { TEXT_OBFUSCATION_FLAG } from '#shared/constants/flags';
-import featureFlagService from '~~/server/utils/database/featureFlag';
-// </nsk:feature-flags>
-
-interface SeedSummary {
-  admin: SeedAdminResult;
-  // <nsk:feature-flags>
-  featureFlags: {
-    created: number;
-    skipped: number;
-  };
-  // </nsk:feature-flags>
-  /** Counts of each registered seed task, under its result's `key`. */
-  [key: string]: SeedAdminResult | SeedTaskResult['counts'];
-}
-
-// <nsk:feature-flags>
-interface SeedFeatureFlag {
-  key: string;
-  description: string;
-  enabled: boolean;
-  rolloutPct: number;
-  owner: string;
-}
-
-function getDefaultFeatureFlags(): SeedFeatureFlag[] {
-  return [
-    {
-      key: TEXT_OBFUSCATION_FLAG,
-      description:
-        'Controls whether the text obfuscation is enabled. Enabling will render UI texts in an illegible way. Ensure maximum security when demoing the app publicly.',
-      enabled: false,
-      rolloutPct: 100,
-      owner: 'system',
-    },
-  ];
-}
-// </nsk:feature-flags>
+import type { SeedAdminResult, SeedSummary, SeedTaskResult } from '#layers/admin/types/seedTasks';
 
 async function seedAdmin(defaultAdminPassword: string): Promise<SeedAdminResult> {
   const db = useDB();
@@ -88,52 +49,17 @@ async function seedAdmin(defaultAdminPassword: string): Promise<SeedAdminResult>
   return { created: true, verified: true, username: newAdmin.username };
 }
 
-// <nsk:feature-flags>
-export async function seedDefaultFeatureFlags(): Promise<SeedSummary['featureFlags']> {
-  const db = useDB();
-  let created = 0;
-  let skipped = 0;
-
-  for (const flag of getDefaultFeatureFlags()) {
-    const existingFlag = await db
-      .select({ key: tables.featureFlags.key })
-      .from(tables.featureFlags)
-      .where(eq(tables.featureFlags.key, flag.key))
-      .get();
-
-    if (existingFlag) {
-      skipped++;
-      continue;
-    }
-
-    await db.insert(tables.featureFlags).values(flag);
-
-    created++;
-  }
-
-  await featureFlagService.syncToKV();
-
-  return { created, skipped };
-}
-// </nsk:feature-flags>
-
 /** Creates the admin account, then runs every registered seed task. */
 export async function seedDatabase(
   defaultAdminPassword: string,
 ): Promise<{ summary: SeedSummary; tasks: SeedTaskResult[] }> {
   const summary: SeedSummary = {
     admin: await seedAdmin(defaultAdminPassword),
-    // <nsk:feature-flags>
-    featureFlags: await seedDefaultFeatureFlags(),
-    // </nsk:feature-flags>
   };
 
+  // registerSeedTask() keeps every key unique and off 'admin'.
   const tasks = await runSeedTasks();
   for (const task of tasks) {
-    // Two results under one key would hide one of them, so the seed fails instead.
-    if (Object.hasOwn(summary, task.key)) {
-      throw new Error(`Seed summary key "${task.key}" is already taken.`);
-    }
     summary[task.key] = task.counts;
   }
 

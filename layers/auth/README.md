@@ -15,6 +15,8 @@ Extension points for modules that require auth:
   (orders: email verification 100, auth's account lock 150, second factor 200);
   `registerPostRegisterStep()` runs after a password registration. Register both from a Nitro plugin.
 - Nav menus `sidebar` (contexts, sections and items) and `userMenu`, through `registerNavItem()`.
+  Their guards read a context (today, flag values) that an app plugin can provide under
+  `SIDEBAR_GUARD_CONTEXT_KEY` (`app/constants/sidebar.ts`); without one, the flag set is empty.
 - Extension slots `auth:login:steps` (replaces the password form when its id matches `?step=`),
   `auth:login:alternatives` (other sign-in buttons) and `sidebar:footer`, through `registerExtension()`.
   The props and events they receive are typed in `types/loginSteps.ts`.

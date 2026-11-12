@@ -15,9 +15,23 @@ export interface SeedTaskResult {
   counts: Record<string, number>;
 }
 
-/** Work that runs after the seed has created the admin account, e.g. a module's default rows. */
-export interface SeedTask {
+/**
+ * The seed's response body. Task keys are known only once modules register
+ * their tasks, so they sit behind an index signature.
+ */
+export interface SeedSummary {
+  admin: SeedAdminResult;
+  /** Counts of each registered seed task, under its `key`. */
+  [key: string]: SeedAdminResult | SeedTaskResult['counts'];
+}
+
+/**
+ * Work that runs after the seed has created the admin account, e.g. a module's
+ * default rows. `key` and `label` are declared up front so a clash with another
+ * task's summary key fails at registration, before any seed runs.
+ */
+export interface SeedTask extends Pick<SeedTaskResult, 'key' | 'label'> {
   id: string;
   order: number;
-  run(): Promise<SeedTaskResult>;
+  run(): Promise<SeedTaskResult['counts']>;
 }

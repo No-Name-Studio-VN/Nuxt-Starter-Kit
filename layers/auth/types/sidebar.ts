@@ -1,4 +1,4 @@
-import type { Component } from 'vue';
+import type { Component, ComputedRef } from 'vue';
 // The session user, not the database row: sidebar guards run in the browser
 // against whatever `useUserSession()` exposes.
 import type { User } from '#auth-utils';
@@ -15,6 +15,12 @@ export type SidebarGuardUser = User | null | undefined;
 export type SidebarGuardContext = {
   flags: Record<string, boolean>;
 };
+
+/**
+ * Supplies the live guard context. A module provides one from an app plugin under
+ * `SIDEBAR_GUARD_CONTEXT_KEY`; `useSidebarContext()` calls it during component setup.
+ */
+export type SidebarGuardContextSource = () => ComputedRef<SidebarGuardContext>;
 
 /** Access guard — return false to hide the entry */
 export type SidebarGuard = (user: SidebarGuardUser, context: SidebarGuardContext) => boolean;

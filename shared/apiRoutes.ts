@@ -1,14 +1,5 @@
-// <nsk:feature-flags>
-const ADMIN_API_PREFIX = '/api/admin';
-// </nsk:feature-flags>
-
 export const apiRoutes = {
   API_PREFIX: '/api/',
-
-  // <nsk:feature-flags>
-  ADMIN_FEATURE_FLAGS: ADMIN_API_PREFIX + '/feature-flags',
-  FLAGS_EVALUATE: '/api/flags',
-  // </nsk:feature-flags>
 
   // <nsk:auth-email-verification>
   AUTH_VERIFY_EMAIL: '/auth/verify-email',
@@ -31,13 +22,6 @@ export const apiRoutes = {
   // <nsk:auth-email-verification>
   AUTH_RESEND_VERIFICATION: '/api/auth/resend-verification',
   // </nsk:auth-email-verification>
-
-  // <nsk:feature-flags>
-  adminFeatureFlag: (key: string) => ADMIN_API_PREFIX + `/feature-flags/${key}`,
-  adminFeatureFlagsExport: () => ADMIN_API_PREFIX + '/feature-flags/export',
-  adminFeatureFlagsImport: () => ADMIN_API_PREFIX + '/feature-flags/import',
-  adminFeatureFlagsSeedDefaults: () => ADMIN_API_PREFIX + '/feature-flags/seed-defaults',
-  // </nsk:feature-flags>
 };
 
 // the route rules of the most outer apis should be defined first

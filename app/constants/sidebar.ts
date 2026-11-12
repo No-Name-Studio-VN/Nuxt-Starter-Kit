@@ -1,31 +1,16 @@
+import type { InjectionKey } from 'vue';
 import type {
   SidebarContext,
   SidebarGuardContext,
+  SidebarGuardContextSource,
   SidebarGuardUser,
   SidebarItem,
   SidebarNavRecord,
 } from '#layers/auth/types/sidebar';
-// <nsk:feature-flags>
-import { FlagIcon } from '@lucide/vue';
-// </nsk:feature-flags>
 
-/**
- * Admin pages whose modules have not registered them yet, in the same records the
- * nav registry holds. Each lands in the admin section it names, as if registered.
- */
-const INLINE_SIDEBAR_RECORDS: SidebarNavRecord[] = [
-  // <nsk:feature-flags>
-  {
-    kind: 'item',
-    id: 'admin.system.feature-flags',
-    order: 100,
-    section: 'admin.system',
-    title: 'Feature Flags',
-    url: '/admin/feature-flags',
-    icon: FlagIcon,
-  },
-  // </nsk:feature-flags>
-];
+/** Where an app plugin provides the sidebar guards' live context, e.g. feature flag values. */
+export const SIDEBAR_GUARD_CONTEXT_KEY: InjectionKey<SidebarGuardContextSource> =
+  Symbol('sidebar-guard-context');
 
 /** In development, names every record whose parent section or context is not registered. */
 function warnOrphanRecords(records: readonly SidebarNavRecord[]): void {
@@ -70,20 +55,7 @@ function buildSidebarContexts(records: readonly SidebarNavRecord[]): SidebarCont
 
 /** Every sidebar context, read from the nav registry on each call. */
 export function getSidebarContexts(): SidebarContext[] {
-  const registered = getNavItems('sidebar');
-  const registeredIds = new Set(registered.map((record) => record.id));
-  // A registered record wins over an inline record with the same id.
-  const inline = INLINE_SIDEBAR_RECORDS.filter((record) => {
-    if (!registeredIds.has(record.id)) {
-      return true;
-    }
-    if (import.meta.dev) {
-      console.warn(`[sidebar] "${record.id}" is registered; its inline record is skipped.`);
-    }
-    return false;
-  });
-
-  return buildSidebarContexts([...registered, ...inline]);
+  return buildSidebarContexts(getNavItems('sidebar'));
 }
 
 export function getAllSidebarItems(
