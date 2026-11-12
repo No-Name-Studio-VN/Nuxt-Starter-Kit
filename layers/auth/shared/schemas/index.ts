@@ -16,8 +16,8 @@ export type UserLockScreenCreateInput = z.infer<typeof createUserLockScreenSchem
 export const updateUserLockScreenSchema = createUpdateSchema(userLockScreen, {
   userId: userIdSchema,
   ...commonSchemaFragments.coerceDates,
-  // Optional: an update touches whichever fields it names, and callers that only
-  // rotate backup codes have no activity time to send.
+  // Optional: an update touches whichever fields it names, so callers that only
+  // change one field need not send an activity time.
   lastActivityTime: z.coerce.date().optional(),
   lastFailedAttempt: z.coerce.date().nullish(),
 });

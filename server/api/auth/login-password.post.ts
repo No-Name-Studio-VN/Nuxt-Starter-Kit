@@ -94,7 +94,7 @@ export default defineEventHandler(async (event) => {
   // Update last login
   await userService.update({ id: user.id, lastLoginAt: new Date() });
 
-  // Normal login (2FA off)
+  // The login policy allowed a direct sign-in (no second factor required)
   await setUserSession(event, {
     user: {
       id: user.id,

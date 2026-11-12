@@ -3,6 +3,9 @@ import { createResolver } from '@nuxt/kit';
 const { resolve } = createResolver(import.meta.url);
 
 export default defineNuxtConfig({
+  // The shadcn input-otp folder has a barrel index.ts that would register as a fake
+  // global component; ignore .ts files so only the .vue components are registered.
+  components: [{ path: './app/components', ignore: ['**/*.ts'] }],
   nitro: {
     typescript: {
       tsConfig: {
