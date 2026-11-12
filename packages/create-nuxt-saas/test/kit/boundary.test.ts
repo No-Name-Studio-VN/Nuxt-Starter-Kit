@@ -82,7 +82,7 @@ describe('kit layer boundaries', () => {
 
   it('keeps the registry owner of a root file its module left behind', () => {
     // R14 transitional ownership; removed in Task 15 with the registry fallback.
-    expect(ownerOf('app/pages/auth/login.vue')).toBe('auth');
+    expect(ownerOf('server/api/auth/login-password.post.ts')).toBe('auth');
     expect(ownerOf('app/app.vue')).toBe('base');
   });
 
