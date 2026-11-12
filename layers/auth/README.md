@@ -9,6 +9,16 @@ Accounts and sessions through `nuxt-auth-utils`, with Cloudflare Turnstile on th
   password, lock-screen and account-deletion APIs under `/api/users/:id`.
 - The account pages (`/auth/**`), the `auth` route middleware, and the dashboard layout with its sidebar.
 
+Extension points for modules that require auth:
+
+- Server registries: `registerLoginPolicy()` adds a check between the password check and the session
+  (orders: email verification 100, auth's account lock 150, second factor 200);
+  `registerPostRegisterStep()` runs after a password registration. Register both from a Nitro plugin.
+- Nav menus `sidebar` (contexts, sections and items) and `userMenu`, through `registerNavItem()`.
+- Extension slots `auth:login:steps` (replaces the password form when its id matches `?step=`),
+  `auth:login:alternatives` (other sign-in buttons) and `sidebar:footer`, through `registerExtension()`.
+  The props and events they receive are typed in `types/loginSteps.ts`.
+
 Env keys to fill: `NUXT_SESSION_PASSWORD` (at least 32 characters), `CSRF_SECRET`, the Turnstile site and
 secret keys, `NUXT_RESEND_API_KEY` and `NUXT_RESEND_FROM_EMAIL`, and the Google and GitHub OAuth client
 IDs and secrets.

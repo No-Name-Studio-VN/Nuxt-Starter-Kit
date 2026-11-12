@@ -10,15 +10,15 @@ import {
   AUTH_SUCCESS_MESSAGES,
 } from '#layers/auth/shared/constants/authMessages';
 import { AVAILABLE_PROVIDERS } from '#layers/auth/shared/constants/oauthProviders';
-import { apiRoutes } from '#shared/apiRoutes';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { loginSchema } from '#layers/auth/shared/schemas/userSchema';
 // <nsk:auth-2fa>
 import { REGEXP_ONLY_DIGITS } from 'vue-input-otp';
 import { TOTP_LENGTH } from '#shared/constants/totp';
-// </nsk:auth-2fa>
+import { apiRoutes } from '#shared/apiRoutes';
 import { cn } from '@/lib/utils';
+// </nsk:auth-2fa>
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
 import { APP_MANIFEST } from '#shared/constants/manifest';
@@ -133,6 +133,39 @@ const onSubmit = handleSubmit(async () => {
 const redirectTo = computed(() =>
   safeRedirectPath(getQueryString(route.query.redirectTo) || '/', requestUrl.origin),
 );
+
+/**
+ * The registered login step `?step=` names, e.g. a second-factor challenge. It
+ * replaces the password form until it signs the user in or is cancelled.
+ */
+const activeLoginStep = computed(() => {
+  const step = getQueryString(route.query.step);
+  return step ? getExtensions('auth:login:steps').find((entry) => entry.id === step) : undefined;
+});
+
+function completeLogin(redirect: string) {
+  window.location.href = safeRedirectPath(redirect, requestUrl.origin);
+}
+
+function leaveLoginStep() {
+  const q = { ...route.query };
+  delete q.step;
+  navigateTo({ query: q });
+}
+
+// A sign-in alternative (e.g. a passkey) holds the form while it runs and
+// reports failures through the page's error alert.
+function onAlternativePending(pending: boolean) {
+  isLoading.value = pending;
+  if (pending) {
+    error.value = '';
+  }
+}
+
+function onAlternativeError(message: string) {
+  error.value = message;
+}
+
 /**
  * Whether the form is on the two-factor step. The auth-2fa module drives it from
  * the query string below; without that module the step never happens, and the
@@ -144,12 +177,6 @@ const is2faStep = ref(false);
 watchEffect(() => {
   is2faStep.value = getQueryString(route.query.step) === '2fa';
 });
-
-const cancel2fa = () => {
-  const q = { ...route.query };
-  delete q.step;
-  navigateTo({ query: q });
-};
 
 const on2faSubmit = async () => {
   if (totpCode.value.length !== TOTP_LENGTH) return;
@@ -166,7 +193,7 @@ const on2faSubmit = async () => {
     if (!response.success) {
       throw response;
     }
-    window.location.href = redirectTo.value;
+    completeLogin(redirectTo.value);
   } catch (err: unknown) {
     error.value = parseApiError(err, 'Invalid authenticator code').message;
     triggerShakeAnimation();
@@ -317,221 +344,239 @@ onBeforeUnmount(() => {
     quote="Gromet Reader keeps my library organized and lets me get back to reading without fighting the interface."
     quote-author="Morgan Vale"
   >
-    <div class="space-y-1">
-      <!-- <nsk:auth-2fa> -->
-      <template v-if="is2faStep">
-        <h1 class="text-2xl font-bold tracking-tight">Two-factor authentication</h1>
-        <p class="text-base text-muted-foreground">Enter the code from your authenticator app.</p>
-      </template>
-      <!-- </nsk:auth-2fa> -->
-      <template v-if="!is2faStep">
-        <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
-        <p class="text-base text-muted-foreground">
-          {{ APP_MANIFEST.description }}
-        </p>
-      </template>
-    </div>
-
-    <Alert
-      v-if="success"
-      class="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
-    >
-      <AlertDescription class="text-green-700 dark:text-green-300">
-        {{ success }}
-      </AlertDescription>
-    </Alert>
-
-    <Alert v-if="error" variant="destructive">
-      <AlertDescription>{{ error }}</AlertDescription>
-    </Alert>
-
-    <!-- <nsk:auth-2fa> -->
-    <form v-if="is2faStep" class="space-y-6" @submit.prevent="on2faSubmit">
-      <div class="flex justify-center">
-        <InputOTP
-          v-model="totpCode"
-          :class="cn([{ animateShake: isShaking }, 'justify-center'])"
-          aria-labelledby="two-factor-title"
-          aria-describedby="two-factor-description"
-          placeholder="○"
-          :maxlength="TOTP_LENGTH"
-          :pattern="REGEXP_ONLY_DIGITS"
-          @complete="on2faSubmit"
-        >
-          <InputOTPGroup>
-            <InputOTPSlot
-              v-for="(_, index) in TOTP_LENGTH"
-              :key="index"
-              :index="index"
-              class="h-14 w-12 text-2xl"
-            />
-          </InputOTPGroup>
-        </InputOTP>
+    <component
+      :is="activeLoginStep.component"
+      v-if="activeLoginStep"
+      :redirect-to="redirectTo"
+      @done="completeLogin"
+      @cancel="leaveLoginStep"
+    />
+    <template v-else>
+      <div class="space-y-1">
+        <!-- <nsk:auth-2fa> -->
+        <template v-if="is2faStep">
+          <h1 class="text-2xl font-bold tracking-tight">Two-factor authentication</h1>
+          <p class="text-base text-muted-foreground">Enter the code from your authenticator app.</p>
+        </template>
+        <!-- </nsk:auth-2fa> -->
+        <template v-if="!is2faStep">
+          <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
+          <p class="text-base text-muted-foreground">
+            {{ APP_MANIFEST.description }}
+          </p>
+        </template>
       </div>
-      <Button
-        type="submit"
-        class="w-full"
-        :is-loading="isLoading"
-        :disabled="totpCode.length !== TOTP_LENGTH"
+
+      <Alert
+        v-if="success"
+        class="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
       >
-        Verify Code
-      </Button>
-      <Button type="button" variant="ghost" class="w-full" @click="cancel2fa">
-        Back to login
-      </Button>
-    </form>
-    <!-- </nsk:auth-2fa> -->
+        <AlertDescription class="text-green-700 dark:text-green-300">
+          {{ success }}
+        </AlertDescription>
+      </Alert>
 
-    <form
-      v-if="!is2faStep"
-      :action="authRoutes.AUTH_LOGIN_PASSWORD"
-      method="POST"
-      class="space-y-4"
-      @submit.prevent="onSubmit"
-    >
-      <input type="hidden" name="redirect-to" :value="redirectTo" />
-      <VeeField v-slot="{ field, errors }" name="username">
-        <Field :data-invalid="!!errors.length" class="space-y-2">
-          <FieldLabel for="username" class="text-sm font-medium"> Username </FieldLabel>
-          <div class="relative">
-            <User aria-hidden="true" class="absolute left-3 top-3 size-4" />
-            <Input
-              id="username"
-              :model-value="field.value"
-              name="username"
-              type="text"
-              placeholder="Enter your username"
-              class="pl-9 h-11"
-              :disabled="isLoading"
-              :aria-invalid="!!errors.length"
-              @update:model-value="field.onChange"
-            />
-          </div>
-          <FieldError v-if="errors.length" :errors="errors" />
-        </Field>
-      </VeeField>
+      <Alert v-if="error" variant="destructive">
+        <AlertDescription>{{ error }}</AlertDescription>
+      </Alert>
 
-      <VeeField v-slot="{ field, errors }" name="password">
-        <Field :data-invalid="!!errors.length" class="space-y-2">
-          <FieldLabel for="password" class="text-sm font-medium"> Password </FieldLabel>
-          <div class="relative">
-            <Lock aria-hidden="true" class="absolute left-3 top-3 size-4" />
-            <Input
-              id="password"
-              :model-value="field.value"
-              name="password"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="Enter your password"
-              class="h-11 px-9"
-              :disabled="isLoading"
-              :aria-invalid="!!errors.length"
-              @update:model-value="field.onChange"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
-              :aria-label="showPassword ? 'Hide password' : 'Show password'"
-              :aria-pressed="showPassword"
-              @click="showPassword = !showPassword"
-            >
-              <Eye v-if="!showPassword" aria-hidden="true" class="size-4" />
-              <EyeOff v-else aria-hidden="true" class="size-4" />
-            </Button>
-          </div>
-          <FieldError v-if="errors.length" :errors="errors" />
-        </Field>
-      </VeeField>
-
-      <div class="flex justify-end">
-        <NuxtLink
-          :to="{ path: '/auth/forgot-password' }"
-          class="text-xs text-primary hover:underline"
-        >
-          {{ $t('auth.forgot_password') }}
-        </NuxtLink>
-      </div>
-
-      <div class="space-y-3">
-        <NuxtTurnstile v-model="turnstileToken" />
-        <Button type="submit" class="h-11 w-full active:scale-[0.98]" :is-loading="isLoading">
-          <Lock aria-hidden="true" class="size-4" />
-          Sign In with Password
-        </Button>
-
-        <div class="flex items-center gap-2 py-1">
-          <div class="h-px flex-1 bg-border" />
-          <span class="text-xs uppercase text-muted-foreground">Or</span>
-          <div class="h-px flex-1 bg-border" />
+      <!-- <nsk:auth-2fa> -->
+      <form v-if="is2faStep" class="space-y-6" @submit.prevent="on2faSubmit">
+        <div class="flex justify-center">
+          <InputOTP
+            v-model="totpCode"
+            :class="cn([{ animateShake: isShaking }, 'justify-center'])"
+            aria-labelledby="two-factor-title"
+            aria-describedby="two-factor-description"
+            placeholder="○"
+            :maxlength="TOTP_LENGTH"
+            :pattern="REGEXP_ONLY_DIGITS"
+            @complete="on2faSubmit"
+          >
+            <InputOTPGroup>
+              <InputOTPSlot
+                v-for="(_, index) in TOTP_LENGTH"
+                :key="index"
+                :index="index"
+                class="h-14 w-12 text-2xl"
+              />
+            </InputOTPGroup>
+          </InputOTP>
         </div>
-
-        <!-- <nsk:auth-passkeys> -->
         <Button
-          type="button"
-          variant="outline"
-          class="w-full active:scale-[0.98]"
-          :disabled="!values.username?.trim()"
+          type="submit"
+          class="w-full"
           :is-loading="isLoading"
-          @click="signInWithPasskey"
+          :disabled="totpCode.length !== TOTP_LENGTH"
         >
-          <Fingerprint aria-hidden="true" class="size-4" />
-          Sign In with a Passkey
+          Verify Code
         </Button>
-        <!-- </nsk:auth-passkeys> -->
+        <Button type="button" variant="ghost" class="w-full" @click="leaveLoginStep">
+          Back to login
+        </Button>
+      </form>
+      <!-- </nsk:auth-2fa> -->
 
-        <div class="flex items-center gap-2 py-1">
-          <div class="h-px flex-1 bg-border" />
-          <span class="text-xs uppercase text-muted-foreground">Or</span>
-          <div class="h-px flex-1 bg-border" />
+      <form
+        v-if="!is2faStep"
+        :action="authRoutes.AUTH_LOGIN_PASSWORD"
+        method="POST"
+        class="space-y-4"
+        @submit.prevent="onSubmit"
+      >
+        <input type="hidden" name="redirect-to" :value="redirectTo" />
+        <VeeField v-slot="{ field, errors }" name="username">
+          <Field :data-invalid="!!errors.length" class="space-y-2">
+            <FieldLabel for="username" class="text-sm font-medium"> Username </FieldLabel>
+            <div class="relative">
+              <User aria-hidden="true" class="absolute left-3 top-3 size-4" />
+              <Input
+                id="username"
+                :model-value="field.value"
+                name="username"
+                type="text"
+                placeholder="Enter your username"
+                class="pl-9 h-11"
+                :disabled="isLoading"
+                :aria-invalid="!!errors.length"
+                @update:model-value="field.onChange"
+              />
+            </div>
+            <FieldError v-if="errors.length" :errors="errors" />
+          </Field>
+        </VeeField>
+
+        <VeeField v-slot="{ field, errors }" name="password">
+          <Field :data-invalid="!!errors.length" class="space-y-2">
+            <FieldLabel for="password" class="text-sm font-medium"> Password </FieldLabel>
+            <div class="relative">
+              <Lock aria-hidden="true" class="absolute left-3 top-3 size-4" />
+              <Input
+                id="password"
+                :model-value="field.value"
+                name="password"
+                :type="showPassword ? 'text' : 'password'"
+                placeholder="Enter your password"
+                class="h-11 px-9"
+                :disabled="isLoading"
+                :aria-invalid="!!errors.length"
+                @update:model-value="field.onChange"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              >
+                <Eye v-if="!showPassword" aria-hidden="true" class="size-4" />
+                <EyeOff v-else aria-hidden="true" class="size-4" />
+              </Button>
+            </div>
+            <FieldError v-if="errors.length" :errors="errors" />
+          </Field>
+        </VeeField>
+
+        <div class="flex justify-end">
+          <NuxtLink
+            :to="{ path: '/auth/forgot-password' }"
+            class="text-xs text-primary hover:underline"
+          >
+            {{ $t('auth.forgot_password') }}
+          </NuxtLink>
         </div>
 
-        <template v-for="provider in AVAILABLE_PROVIDERS" :key="provider.id">
+        <div class="space-y-3">
+          <NuxtTurnstile v-model="turnstileToken" />
+          <Button type="submit" class="h-11 w-full active:scale-[0.98]" :is-loading="isLoading">
+            <Lock aria-hidden="true" class="size-4" />
+            Sign In with Password
+          </Button>
+
+          <div class="flex items-center gap-2 py-1">
+            <div class="h-px flex-1 bg-border" />
+            <span class="text-xs uppercase text-muted-foreground">Or</span>
+            <div class="h-px flex-1 bg-border" />
+          </div>
+
+          <!-- <nsk:auth-passkeys> -->
           <Button
             type="button"
             variant="outline"
-            class="w-full"
-            :is-loading="oauthLoadingProvider === provider.id"
-            :disabled="isLoading || oauthLoadingProvider !== null"
-            @click="signInWithProvider(provider.id)"
+            class="w-full active:scale-[0.98]"
+            :disabled="!values.username?.trim()"
+            :is-loading="isLoading"
+            @click="signInWithPasskey"
           >
-            <div class="flex size-4 items-center justify-center">
-              <OAuthIcon :provider="provider.id" />
-            </div>
-            Continue with {{ provider.name }}
+            <Fingerprint aria-hidden="true" class="size-4" />
+            Sign In with a Passkey
           </Button>
-        </template>
-      </div>
-    </form>
+          <!-- </nsk:auth-passkeys> -->
+          <ExtensionSlot
+            name="auth:login:alternatives"
+            :username="values.username ?? ''"
+            :redirect-to="redirectTo"
+            :pending="isLoading"
+            @done="completeLogin"
+            @pending="onAlternativePending"
+            @error="onAlternativeError"
+          />
 
-    <div v-if="!is2faStep" class="space-y-3 text-center">
-      <div class="text-xs text-muted-foreground">
-        By signing in, you agree to our
-        <NuxtLink
-          to="https://nnsvn.me/terms"
-          class="underline underline-offset-4 hover:text-primary"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Terms of Service
-        </NuxtLink>
-        and
-        <NuxtLink
-          to="https://nnsvn.me/privacy"
-          class="underline underline-offset-4 hover:text-primary"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Privacy Policy
-        </NuxtLink>
-      </div>
+          <div class="flex items-center gap-2 py-1">
+            <div class="h-px flex-1 bg-border" />
+            <span class="text-xs uppercase text-muted-foreground">Or</span>
+            <div class="h-px flex-1 bg-border" />
+          </div>
 
-      <div class="text-sm text-muted-foreground">
-        Don't have an account?
-        <NuxtLink to="/auth/register" class="font-medium text-primary hover:underline">
-          Sign Up
-        </NuxtLink>
+          <template v-for="provider in AVAILABLE_PROVIDERS" :key="provider.id">
+            <Button
+              type="button"
+              variant="outline"
+              class="w-full"
+              :is-loading="oauthLoadingProvider === provider.id"
+              :disabled="isLoading || oauthLoadingProvider !== null"
+              @click="signInWithProvider(provider.id)"
+            >
+              <div class="flex size-4 items-center justify-center">
+                <OAuthIcon :provider="provider.id" />
+              </div>
+              Continue with {{ provider.name }}
+            </Button>
+          </template>
+        </div>
+      </form>
+
+      <div v-if="!is2faStep" class="space-y-3 text-center">
+        <div class="text-xs text-muted-foreground">
+          By signing in, you agree to our
+          <NuxtLink
+            to="https://nnsvn.me/terms"
+            class="underline underline-offset-4 hover:text-primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Terms of Service
+          </NuxtLink>
+          and
+          <NuxtLink
+            to="https://nnsvn.me/privacy"
+            class="underline underline-offset-4 hover:text-primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Privacy Policy
+          </NuxtLink>
+        </div>
+
+        <div class="text-sm text-muted-foreground">
+          Don't have an account?
+          <NuxtLink to="/auth/register" class="font-medium text-primary hover:underline">
+            Sign Up
+          </NuxtLink>
+        </div>
       </div>
-    </div>
+    </template>
   </AuthPageLayout>
 </template>
