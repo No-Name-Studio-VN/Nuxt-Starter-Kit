@@ -5,11 +5,6 @@ export type DBLockScreen = typeof tables.userLockScreen.$inferSelect;
 export type DBAuthToken = typeof tables.authTokens.$inferSelect;
 export type DBOAuthAccount = typeof tables.oauthAccounts.$inferSelect;
 
-// Client-safe version of DBLockScreen that excludes sensitive pinHash
-export type DBLockScreenClient = Omit<DBLockScreen, 'totpSecret' | 'backupCodes'> & {
-  hasTotpSet: boolean;
-};
-
 export const OAUTH_POPUP_COMPLETE_STORAGE_KEY = 'oauth_popup_complete';
 export const OAUTH_POPUP_COMPLETE_CHANNEL = 'oauth_popup_complete';
 

@@ -5,6 +5,7 @@ import {
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
+import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwoFactor';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import type { TwoFactorVerifyPayload } from '#layers/auth-2fa/types/twoFactor';
 import { verifyTotpSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
@@ -23,9 +24,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const { code } = result.data;
-  const lockScreen = await userLockScreenService.getById(userId);
+  const twoFactor = await userTwoFactorService.getById(userId);
 
-  if (!lockScreen || !lockScreen.totpSecret) {
+  if (!twoFactor || !twoFactor.secret) {
     throw apiError({
       status: 404,
       statusText: 'Not Found',
@@ -39,7 +40,7 @@ export default defineEventHandler(async (event) => {
     algorithm: 'SHA1',
     digits: 6,
     period: 30,
-    secret: OTPAuth.Secret.fromBase32(lockScreen.totpSecret),
+    secret: OTPAuth.Secret.fromBase32(twoFactor.secret),
   });
 
   // Verify the code
@@ -58,10 +59,13 @@ export default defineEventHandler(async (event) => {
   const backupCodes = Array.from({ length: 10 }, () => cryptoStr());
   const now = new Date();
 
+  await userTwoFactorService.update({
+    userId,
+    enabled: true,
+    backupCodes,
+  });
   await userLockScreenService.update({
     userId,
-    totpEnabled: true,
-    backupCodes,
     lastActivityTime: now,
   });
 

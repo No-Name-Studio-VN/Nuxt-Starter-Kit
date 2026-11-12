@@ -4,6 +4,7 @@ import {
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
+import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwoFactor';
 import userService from '#layers/auth/server/utils/database/user';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import type { PasswordUpdatePayload } from '#layers/auth/types/userSecurity';
@@ -47,12 +48,15 @@ export default defineEventHandler(async (event) => {
 
   const now = new Date();
 
-  // Reset 2FA/Lock Screen security-related fields
+  // Clear the 2FA settings and reset the lock screen's failed-attempt counters
+  await userTwoFactorService.update({
+    userId,
+    secret: null,
+    enabled: false,
+    backupCodes: null,
+  });
   await userLockScreenService.update({
     userId,
-    totpSecret: null,
-    totpEnabled: false,
-    backupCodes: null,
     failedAttempts: 0,
     lastFailedAttempt: null,
     lastActivityTime: now,

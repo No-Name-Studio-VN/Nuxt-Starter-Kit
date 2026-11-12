@@ -46,9 +46,6 @@ export const userLockScreen = sqliteTable('user_lock_screen', {
     .primaryKey()
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  totpSecret: text('totp_secret'),
-  totpEnabled: integer('totp_enabled', { mode: 'boolean' }).notNull().default(false),
-  backupCodes: text('backup_codes', { mode: 'json' }).$type<string[]>(),
   lockTimeout: integer('lock_timeout').notNull().default(0),
   showMessage: integer('show_message', { mode: 'boolean' }).notNull().default(false),
   customMessage: text('custom_message'),

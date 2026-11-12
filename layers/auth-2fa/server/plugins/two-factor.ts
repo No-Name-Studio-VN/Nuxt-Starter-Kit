@@ -1,6 +1,6 @@
-import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
 import { registerLoginPolicy } from '#layers/auth/server/utils/loginPolicies';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
+import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwoFactor';
 
 /**
  * Sends a password sign-in with an authenticator app to the code step. The
@@ -12,8 +12,8 @@ export default defineNitroPlugin(() => {
     id: 'two-factor',
     order: 200,
     async run({ event, user, redirectTo }) {
-      const lockScreen = await userLockScreenService.getById(user.id);
-      if (!lockScreen?.totpEnabled || !lockScreen.totpSecret) {
+      const twoFactor = await userTwoFactorService.getById(user.id);
+      if (!twoFactor?.enabled || !twoFactor.secret) {
         return { kind: 'continue' };
       }
 

@@ -2,6 +2,8 @@
 
 A TOTP second factor (authenticator apps) for password sign-in.
 
+- The `user_two_factor` table (`server/db/schema.sqlite.ts`): each account's secret, on/off flag and
+  backup codes, with its service in `server/utils/database/userTwoFactor.ts`.
 - `POST /api/users/:id/2fa/setup`, `/verify` and `DELETE /api/users/:id/2fa/disable` to turn it on
   and off; verifying hands out ten single-use backup codes.
 - The `two-factor` login policy (order 200): a password sign-in with 2FA on stops at
@@ -9,7 +11,8 @@ A TOTP second factor (authenticator apps) for password sign-in.
 - The `2fa` login step (`auth:login:steps`), with its OTP input (`app/components/ui/input-otp`).
 - `POST /api/users/:id/lock-screen/validate`, which unlocks the lock screen with a code.
 
-Codes are limited to ten failed attempts, counted on auth's lock-screen row. OAuth, One Tap and
-passkey sign-in do not ask for a code.
+Codes are limited to ten failed attempts, counted on auth's `user_lock_screen` row, which setup
+creates when the account has none. OAuth, One Tap and passkey sign-in do not ask for a code.
 
-No env keys to fill.
+No env keys to fill. Follow-up commands: `pnpm db:generate` to record the `user_two_factor` table in your
+migrations, then `pnpm deploy:db`.

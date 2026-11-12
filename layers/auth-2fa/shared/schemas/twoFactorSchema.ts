@@ -1,5 +1,21 @@
+import { createInsertSchema, createUpdateSchema } from 'drizzle-zod';
 import { z } from 'zod';
+import { commonSchemaFragments } from '#shared/schemas/common';
+import { userIdSchema } from '#layers/auth/shared/schemas/userSchema';
+import { userTwoFactor } from '../../server/db/schema.sqlite';
 import { TOTP_LENGTH } from '../constants/totp';
+
+export const createUserTwoFactorSchema = createInsertSchema(userTwoFactor, {
+  userId: userIdSchema,
+  ...commonSchemaFragments.coerceDates,
+});
+export type UserTwoFactorCreateInput = z.infer<typeof createUserTwoFactorSchema>;
+
+export const updateUserTwoFactorSchema = createUpdateSchema(userTwoFactor, {
+  userId: userIdSchema,
+  ...commonSchemaFragments.coerceDates,
+});
+export type UserTwoFactorUpdateInput = z.infer<typeof updateUserTwoFactorSchema>;
 
 export function totpCodeSchema(error = `Authenticator code must be ${TOTP_LENGTH} digits`) {
   return z.string().length(TOTP_LENGTH, error);

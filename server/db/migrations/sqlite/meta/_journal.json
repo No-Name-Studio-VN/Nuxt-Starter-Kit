@@ -8,6 +8,13 @@
       "when": 1786643662716,
       "tag": "0000_round_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794468203143,
+      "tag": "0001_sharp_the_fury",
+      "breakpoints": true
     }
   ]
 }

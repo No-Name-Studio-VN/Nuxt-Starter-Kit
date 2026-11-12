@@ -23,7 +23,7 @@ export const updateUserLockScreenSchema = createUpdateSchema(userLockScreen, {
 });
 export type UserLockScreenUpdateInput = z.infer<typeof updateUserLockScreenSchema>;
 
-// Lock screen settings schema (excludes security fields like totpSecret, failedAttempts, etc.)
+// Lock screen settings schema (excludes the failed-attempt counters)
 export const updateUserLockScreenSettingsSchema = createUpdateSchema(userLockScreen, {
   userId: userIdSchema,
   lockTimeout: z.number().int().min(-1).max(1440),
@@ -32,8 +32,6 @@ export const updateUserLockScreenSettingsSchema = createUpdateSchema(userLockScr
   lastActivityTime: z.coerce.date().optional(),
   ...commonSchemaFragments.coerceDates,
 }).omit({
-  totpSecret: true,
-  backupCodes: true,
   failedAttempts: true,
   lastFailedAttempt: true,
 });

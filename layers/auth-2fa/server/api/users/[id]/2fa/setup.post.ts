@@ -5,6 +5,7 @@ import {
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
+import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwoFactor';
 import userService from '#layers/auth/server/utils/database/user';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import type { TwoFactorSetupPayload } from '#layers/auth-2fa/types/twoFactor';
@@ -63,31 +64,44 @@ export default defineEventHandler(async (event) => {
   // get the URI
   const uri = totp.toString();
 
+  const existingTwoFactor = await userTwoFactorService.getById(userId);
   const existingLockScreen = await userLockScreenService.getById(userId);
   const now = new Date();
 
-  if (existingLockScreen) {
-    if (existingLockScreen.totpEnabled) {
-      throw apiError({
-        status: 400,
-        statusText: 'Bad Request',
-        message: 'Bad Request. 2FA is already enabled. Disable it first.',
-        code: 'TWO_FACTOR_ALREADY_ENABLED',
-      });
-    }
+  if (existingTwoFactor?.enabled) {
+    throw apiError({
+      status: 400,
+      statusText: 'Bad Request',
+      message: 'Bad Request. 2FA is already enabled. Disable it first.',
+      code: 'TWO_FACTOR_ALREADY_ENABLED',
+    });
+  }
 
+  // The code checks count failed attempts on the account's lock-screen row,
+  // so setup makes sure it exists.
+  if (existingLockScreen) {
     await userLockScreenService.update({
       userId,
-      totpSecret: secret.base32,
-      totpEnabled: false,
       lastActivityTime: now,
     });
   } else {
     await userLockScreenService.create({
       userId,
-      totpSecret: secret.base32,
-      totpEnabled: false,
       lastActivityTime: now,
+    });
+  }
+
+  if (existingTwoFactor) {
+    await userTwoFactorService.update({
+      userId,
+      secret: secret.base32,
+      enabled: false,
+    });
+  } else {
+    await userTwoFactorService.create({
+      userId,
+      secret: secret.base32,
+      enabled: false,
     });
   }
 

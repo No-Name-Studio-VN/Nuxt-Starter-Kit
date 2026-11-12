@@ -6,7 +6,6 @@ import {
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import { updateUserLockScreenSettingsSchema } from '#layers/auth/shared/schemas';
-import { toClientSafeLockScreen } from '#layers/auth/server/utils/lockScreenHelpers';
 
 export default defineEventHandler(async (event) => {
   const userId = await getAuthorizedUserId(event);
@@ -24,13 +23,12 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Update settings (security fields like pinHash, failedAttempts are excluded by schema)
+  // Update settings (the failed-attempt counters are excluded by the schema)
   const data = await userLockScreenService.update({
     ...result.data,
     userId,
     lastActivityTime: result.data.lastActivityTime || new Date(),
   });
 
-  // Don't send pinHash to client for security
-  return success(toClientSafeLockScreen(data));
+  return success(data);
 });

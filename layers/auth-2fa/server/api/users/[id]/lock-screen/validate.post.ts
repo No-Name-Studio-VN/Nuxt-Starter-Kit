@@ -5,6 +5,7 @@ import {
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
+import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwoFactor';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import { MAX_TOTP_ATTEMPTS } from '#layers/auth-2fa/shared/constants/totp';
 import type { LockScreenValidationPayload } from '#layers/auth-2fa/types/twoFactor';
@@ -25,9 +26,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const { code } = result.data;
+  const twoFactor = await userTwoFactorService.getById(userId);
   const lockScreen = await userLockScreenService.getById(userId);
 
-  if (!lockScreen || !lockScreen.totpEnabled || !lockScreen.totpSecret) {
+  if (!lockScreen || !twoFactor || !twoFactor.enabled || !twoFactor.secret) {
     throw apiError({
       status: 404,
       statusText: 'Not Found',
@@ -52,7 +54,7 @@ export default defineEventHandler(async (event) => {
     algorithm: 'SHA1',
     digits: 6,
     period: 30,
-    secret: OTPAuth.Secret.fromBase32(lockScreen.totpSecret),
+    secret: OTPAuth.Secret.fromBase32(twoFactor.secret),
   });
 
   // We allow a window of 1 (30 seconds before and after)
@@ -61,14 +63,14 @@ export default defineEventHandler(async (event) => {
   const now = new Date();
 
   // Also check if it's a backup code if regular TOTP fails
-  if (!isCorrect && lockScreen.backupCodes && lockScreen.backupCodes.length > 0) {
-    const backupIndex = lockScreen.backupCodes.indexOf(code);
+  if (!isCorrect && twoFactor.backupCodes && twoFactor.backupCodes.length > 0) {
+    const backupIndex = twoFactor.backupCodes.indexOf(code);
     if (backupIndex !== -1) {
       isCorrect = true;
       // Remove the used backup code
-      const newBackupCodes = [...lockScreen.backupCodes];
+      const newBackupCodes = [...twoFactor.backupCodes];
       newBackupCodes.splice(backupIndex, 1);
-      await userLockScreenService.update({
+      await userTwoFactorService.update({
         userId,
         backupCodes: newBackupCodes,
       });
