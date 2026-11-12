@@ -76,10 +76,6 @@ export type AuthErrorCode =
   | 'email-existed'
   | 'unknown'
   | 'invalid-credentials'
-  | 'email-not-verified'
-  | 'invalid-token'
-  | 'token-expired'
-  | 'resend-too-soon'
   | 'reset-invalid-token'
   | 'reset-token-expired'
   | 'oauth-already-linked'
@@ -91,7 +87,10 @@ export type AuthErrorCode =
 export type AuthSuccessCode =
   | 'oauth-linked'
   | 'oauth-unlinked'
-  | 'email-verified'
   | 'password-reset'
-  | 'verification-sent'
   | 'reset-link-sent';
+
+export interface AuthMessages {
+  errors: Record<string, string>;
+  success: Record<string, string>;
+}

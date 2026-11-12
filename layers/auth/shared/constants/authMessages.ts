@@ -1,4 +1,4 @@
-import type { AuthErrorCode, AuthSuccessCode } from '../../types/auth';
+import type { AuthErrorCode, AuthSuccessCode, AuthMessages } from '../../types/auth';
 
 /**
  * Authentication error messages for user-facing display
@@ -14,14 +14,6 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   // Login errors
   'invalid-credentials':
     'Invalid username or password. Please check your credentials and try again.',
-  'email-not-verified':
-    'Your email address has not been verified. Please check your inbox for the verification link.',
-
-  // Email verification errors
-  'invalid-token': 'This verification link is invalid or has already been used.',
-  'token-expired': 'This link has expired. Please request a new one.',
-  'resend-too-soon':
-    'A verification email was recently sent. Please check your inbox or wait a moment before requesting another.',
 
   // Password reset errors
   'reset-invalid-token': 'This reset link is invalid or has already been used.',
@@ -41,16 +33,37 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
 export const AUTH_SUCCESS_MESSAGES: Record<AuthSuccessCode, string> = {
   'oauth-linked': 'Account linked successfully!',
   'oauth-unlinked': 'Account unlinked successfully.',
-  'email-verified': 'Your email has been verified! You can now sign in.',
   'password-reset': 'Your password has been reset. You can now sign in with your new password.',
-  'verification-sent': 'A verification email has been sent. Please check your inbox.',
   'reset-link-sent': "If an account exists with that email, we've sent a password reset link.",
 };
 
 export type { AuthErrorCode, AuthSuccessCode } from '../../types/auth';
 
+const extraErrorMessages = new Map<string, string>();
+const extraSuccessMessages = new Map<string, string>();
+
+/** Adds messages owned by installed layers without making auth depend on them. */
+export function registerAuthMessages(messages: AuthMessages): void {
+  for (const [code, message] of Object.entries(messages.errors)) {
+    extraErrorMessages.set(code, message);
+  }
+  for (const [code, message] of Object.entries(messages.success)) {
+    extraSuccessMessages.set(code, message);
+  }
+}
+
 function isAuthErrorCode(errorCode: string): errorCode is AuthErrorCode {
   return errorCode in AUTH_ERROR_MESSAGES;
+}
+
+function isAuthSuccessCode(successCode: string): successCode is AuthSuccessCode {
+  return successCode in AUTH_SUCCESS_MESSAGES;
+}
+
+export function getAuthSuccessMessage(successCode: string): string | null {
+  return isAuthSuccessCode(successCode)
+    ? AUTH_SUCCESS_MESSAGES[successCode]
+    : (extraSuccessMessages.get(successCode) ?? null);
 }
 
 /**
@@ -60,5 +73,5 @@ export function getAuthErrorMessage(errorCode: string | null | undefined): strin
   if (!errorCode) return null;
   return isAuthErrorCode(errorCode)
     ? AUTH_ERROR_MESSAGES[errorCode]
-    : 'An error occurred. Please try again.';
+    : (extraErrorMessages.get(errorCode) ?? 'An error occurred. Please try again.');
 }

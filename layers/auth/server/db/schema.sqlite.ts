@@ -1,6 +1,6 @@
 import { sqliteTable, text, integer, unique, index } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
-import type { AuthTokenType } from '../../shared/constants/authTokens';
+import type { AuthTokenKind } from '../../types/authTokens';
 
 const timestampColumns = {
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()), // Auto-set on create
@@ -28,7 +28,7 @@ export const authTokens = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     token: text('token').notNull().unique(),
-    type: text('type').$type<AuthTokenType>().notNull(),
+    type: text('type').$type<AuthTokenKind>().notNull(),
     expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
     usedAt: integer('used_at', { mode: 'timestamp' }),
     ...timestampColumns,

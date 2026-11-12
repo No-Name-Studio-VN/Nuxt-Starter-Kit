@@ -110,9 +110,8 @@ export default defineEventHandler(async (event) => {
     throw err;
   }
 
-  // Registered steps run once the account exists: auth-email-verification, when
-  // installed, sends the verification email and diverts the new account to the
-  // verification notice. Without a step redirect, registration goes to sign-in.
+  // Installed layers can run post-registration work and choose a redirect.
+  // Without a step redirect, registration goes to sign-in.
   const postRegister = await runPostRegisterSteps({ event, user: newUser, redirectTo });
 
   return sendRedirect(

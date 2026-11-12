@@ -12,7 +12,7 @@ Accounts and sessions through `nuxt-auth-utils`, with Cloudflare Turnstile on th
 Extension points for modules that require auth:
 
 - Server registries: `registerLoginPolicy()` adds a check between the password check and the session
-  (orders: email verification 100, auth's account lock 150, second factor 200);
+  (auth's account lock runs at order 150; layers can register before or after it);
   `registerPostRegisterStep()` runs after a password registration. Register both from a Nitro plugin.
 - Nav menus `sidebar` (contexts, sections and items) and `userMenu`, through `registerNavItem()`.
   Their guards read a context (today, flag values) that an app plugin can provide under

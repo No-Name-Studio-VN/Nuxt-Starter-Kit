@@ -1,7 +1,11 @@
+import { registerAuthTokenKind } from '#layers/auth/server/utils/authTokenKinds';
+import {
+  EMAIL_VERIFICATION_EXPIRY_MS,
+  EmailVerificationTokenType,
+} from '#layers/auth-email-verification/shared/constants/emailVerificationTokens';
 import { registerLoginPolicy } from '#layers/auth/server/utils/loginPolicies';
 import { registerPostRegisterStep } from '#layers/auth/server/utils/postRegisterSteps';
 import authTokenService from '#layers/auth/server/utils/database/authToken';
-import { AuthTokenType } from '#layers/auth/shared/constants/authTokens';
 import { emailVerificationRoutes } from '#layers/auth-email-verification/shared/emailVerificationRoutes';
 import { sendVerificationEmail } from '#layers/auth-email-verification/server/utils/verificationEmail';
 
@@ -22,6 +26,11 @@ function verifyEmailNotice(email: string, redirectTo: string): string {
  * not recorded as a login.
  */
 export default defineNitroPlugin(() => {
+  registerAuthTokenKind({
+    id: EmailVerificationTokenType.EmailVerification,
+    expiresInMs: EMAIL_VERIFICATION_EXPIRY_MS,
+  });
+
   registerLoginPolicy({
     id: 'email-verification',
     order: 100,
@@ -40,15 +49,17 @@ export default defineNitroPlugin(() => {
   registerPostRegisterStep({
     id: 'email-verification',
     order: 100,
-    async run({ user, redirectTo }) {
+    async run({ event, user, redirectTo }) {
       const verificationToken = await authTokenService.createToken(
         user.id,
-        AuthTokenType.EmailVerification,
+        EmailVerificationTokenType.EmailVerification,
       );
       // Non-blocking: a failed send must not fail the registration.
-      sendVerificationEmail(user.email, user.username, verificationToken).catch((err) => {
-        console.error('[Register] Failed to send verification email:', err);
-      });
+      event.waitUntil(
+        sendVerificationEmail(user.email, user.username, verificationToken).catch((err) => {
+          console.error('[Register] Failed to send verification email:', err);
+        }),
+      );
 
       return { redirect: verifyEmailNotice(user.email, redirectTo) };
     },

@@ -1,7 +1,7 @@
 import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
 import userService from '#layers/auth/server/utils/database/user';
 import authTokenService from '#layers/auth/server/utils/database/authToken';
-import { AuthTokenType } from '#layers/auth/shared/constants/authTokens';
+import { EmailVerificationTokenType } from '#layers/auth-email-verification/shared/constants/emailVerificationTokens';
 import { resendVerificationSchema } from '../../../shared/schemas/emailVerificationSchema';
 import { sendVerificationEmail } from '../../utils/verificationEmail';
 
@@ -24,7 +24,10 @@ export default defineEventHandler(async (event) => {
     return success({});
   }
 
-  const hasRecent = await authTokenService.hasRecentToken(user.id, AuthTokenType.EmailVerification);
+  const hasRecent = await authTokenService.hasRecentToken(
+    user.id,
+    EmailVerificationTokenType.EmailVerification,
+  );
   if (hasRecent) {
     throw apiError({
       status: 429,
@@ -35,8 +38,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  await authTokenService.invalidateUserTokens(user.id, AuthTokenType.EmailVerification);
-  const token = await authTokenService.createToken(user.id, AuthTokenType.EmailVerification);
+  await authTokenService.invalidateUserTokens(
+    user.id,
+    EmailVerificationTokenType.EmailVerification,
+  );
+  const token = await authTokenService.createToken(
+    user.id,
+    EmailVerificationTokenType.EmailVerification,
+  );
   await sendVerificationEmail(user.email, user.username, token);
 
   return success({});

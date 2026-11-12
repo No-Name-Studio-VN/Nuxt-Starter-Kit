@@ -52,8 +52,7 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=invalid-credentials');
   }
 
-  // Registered login policies run here: email verification when
-  // auth-email-verification is installed (order 100), auth's account lock check,
+  // Installed layers can register policies before auth's account lock check,
   // which also records the login (150), and the second factor when auth-2fa is
   // installed (200).
   const policyOutcome = await runLoginPolicies({ event, user, redirectTo: redirectToStr });

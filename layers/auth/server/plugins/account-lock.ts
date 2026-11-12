@@ -3,8 +3,8 @@ import { registerLoginPolicy } from '#layers/auth/server/utils/loginPolicies';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 
 /**
- * Auth's own password sign-in policy. It sits between email verification (100)
- * and the second factor (200) so a locked or unverified account gets the same
+ * Auth's own password sign-in policy. Installed layers can run before or after
+ * this check, so accounts stopped by an earlier policy get the same
  * answer as before those checks became policies.
  */
 export default defineNitroPlugin(() => {

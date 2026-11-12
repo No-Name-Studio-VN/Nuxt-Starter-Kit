@@ -1,11 +1,8 @@
 import { eq, and, isNull, lt } from 'drizzle-orm';
 import type { DBAuthToken } from '#layers/auth/types/auth';
-import {
-  AuthTokenType,
-  EMAIL_VERIFICATION_EXPIRY_MS,
-  PASSWORD_RESET_EXPIRY_MS,
-  RESEND_COOLDOWN_MS,
-} from '#layers/auth/shared/constants/authTokens';
+import type { AuthTokenKind } from '#layers/auth/types/authTokens';
+import { RESEND_COOLDOWN_MS } from '#layers/auth/shared/constants/authTokens';
+import { getAuthTokenLifetime } from '#layers/auth/server/utils/authTokenKinds';
 
 function generateToken(): string {
   const bytes = new Uint8Array(32);
@@ -27,21 +24,16 @@ class AuthTokenService {
     return AuthTokenService.instance;
   }
 
-  async createToken(userId: number, type: AuthTokenType): Promise<string> {
+  async createToken(userId: number, type: AuthTokenKind): Promise<string> {
     const token = generateToken();
-    const expiresAt = new Date(
-      Date.now() +
-        (type === AuthTokenType.EmailVerification
-          ? EMAIL_VERIFICATION_EXPIRY_MS
-          : PASSWORD_RESET_EXPIRY_MS),
-    );
+    const expiresAt = new Date(Date.now() + getAuthTokenLifetime(type));
 
     await this.db.insert(tables.authTokens).values({ userId, token, type, expiresAt });
 
     return token;
   }
 
-  async verifyToken(token: string, type: AuthTokenType): Promise<DBAuthToken | null> {
+  async verifyToken(token: string, type: AuthTokenKind): Promise<DBAuthToken | null> {
     const record = await this.db
       .select()
       .from(tables.authTokens)
@@ -67,20 +59,20 @@ class AuthTokenService {
       .where(eq(tables.authTokens.id, tokenId));
   }
 
-  async invalidateUserTokens(userId: number, type: AuthTokenType): Promise<void> {
+  async invalidateUserTokens(userId: number, type?: AuthTokenKind): Promise<void> {
     await this.db
       .update(tables.authTokens)
       .set({ usedAt: new Date() })
       .where(
         and(
           eq(tables.authTokens.userId, userId),
-          eq(tables.authTokens.type, type),
+          type === undefined ? undefined : eq(tables.authTokens.type, type),
           isNull(tables.authTokens.usedAt),
         ),
       );
   }
 
-  async hasRecentToken(userId: number, type: AuthTokenType): Promise<boolean> {
+  async hasRecentToken(userId: number, type: AuthTokenKind): Promise<boolean> {
     const cutoff = new Date(Date.now() - RESEND_COOLDOWN_MS);
     const recent = await this.db
       .select()

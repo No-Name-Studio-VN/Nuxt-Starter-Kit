@@ -2,7 +2,7 @@
 import { User, Lock, Eye, EyeOff } from '@lucide/vue';
 import {
   getAuthErrorMessage,
-  AUTH_SUCCESS_MESSAGES,
+  getAuthSuccessMessage,
 } from '#layers/auth/shared/constants/authMessages';
 import { AVAILABLE_PROVIDERS } from '#layers/auth/shared/constants/oauthProviders';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
@@ -15,10 +15,6 @@ import type { ApiResponse } from '#layers/server-core/types/api';
 import type { OAuthUrlPayload } from '#layers/auth/types/auth';
 
 const formSchema = loginSchema.pick({ username: true, password: true });
-
-function isAuthSuccessMessageKey(value: string): value is keyof typeof AUTH_SUCCESS_MESSAGES {
-  return value in AUTH_SUCCESS_MESSAGES;
-}
 
 const route = useRoute();
 const requestUrl = useRequestURL();
@@ -158,9 +154,7 @@ watch(
   (queryValue) => {
     const successCode = getQueryString(queryValue);
     if (successCode) {
-      success.value = isAuthSuccessMessageKey(successCode)
-        ? AUTH_SUCCESS_MESSAGES[successCode]
-        : '';
+      success.value = getAuthSuccessMessage(successCode) ?? '';
       error.value = '';
     }
   },

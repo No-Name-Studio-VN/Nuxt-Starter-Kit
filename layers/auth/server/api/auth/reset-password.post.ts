@@ -43,12 +43,11 @@ export default defineEventHandler(async (event) => {
 
   await userService.update({ id: user.id, password: hashedPassword });
   await authTokenService.markUsed(tokenRecord.id);
-  await authTokenService.invalidateUserTokens(user.id, AuthTokenType.PasswordReset);
+  await authTokenService.invalidateUserTokens(user.id);
 
   // Also verify email if it wasn't verified (user proved email ownership via reset link)
   if (!user.emailVerified) {
     await userService.update({ id: user.id, emailVerified: true });
-    await authTokenService.invalidateUserTokens(user.id, AuthTokenType.EmailVerification);
   }
 
   return success({});
