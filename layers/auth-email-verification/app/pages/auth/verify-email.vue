@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { MailCheck } from '@lucide/vue';
-import { apiRoutes } from '#shared/apiRoutes';
+import { emailVerificationRoutes } from '../../../shared/emailVerificationRoutes';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import type { ApiResponse } from '#layers/server-core/types/api';
 
@@ -59,6 +59,7 @@ definePageMeta({
   title: 'auth.verify_email_title',
   breadcrumb: 'auth.verify_email_breadcrumb',
   layout: 'empty',
+  middleware: ['guest'],
 });
 
 useSeo({
@@ -75,10 +76,13 @@ async function resendVerification() {
   resendError.value = '';
 
   try {
-    const response = await apiRequest<ApiResponse<object>>(apiRoutes.AUTH_RESEND_VERIFICATION, {
-      method: 'POST',
-      body: { email: email.value },
-    });
+    const response = await apiRequest<ApiResponse<object>>(
+      emailVerificationRoutes.AUTH_RESEND_VERIFICATION,
+      {
+        method: 'POST',
+        body: { email: email.value },
+      },
+    );
     if (!response.success) {
       throw response;
     }

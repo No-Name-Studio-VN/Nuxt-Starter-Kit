@@ -1,18 +1,16 @@
+import guest from './guest';
+
+// Auth's own guest pages. Pages from other layers opt in with
+// `definePageMeta({ middleware: ['guest'] })`.
 const ignoredPaths = [
   '/auth/login',
   '/auth/register',
-  '/auth/verify-email',
   '/auth/forgot-password',
   '/auth/reset-password',
 ];
 
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware((to, from) => {
   if (ignoredPaths.includes(to.path)) {
-    const { loggedIn } = useUserSession();
-    if (!loggedIn.value) {
-      return;
-    }
-
-    return navigateTo('/');
+    return guest(to, from);
   }
 });

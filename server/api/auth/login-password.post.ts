@@ -1,7 +1,4 @@
 import userService from '#layers/auth/server/utils/database/user';
-// <nsk:auth-email-verification>
-import { apiRoutes } from '#shared/apiRoutes';
-// </nsk:auth-email-verification>
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { loginSchema } from '#layers/auth/shared/schemas/userSchema';
 import { runLoginPolicies } from '#layers/auth/server/utils/loginPolicies';
@@ -55,24 +52,10 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=invalid-credentials');
   }
 
-  // <nsk:auth-email-verification>
-  // Check email verification
-  if (!user.emailVerified) {
-    return sendRedirect(
-      event,
-      apiRoutes.AUTH_VERIFY_EMAIL +
-        '?email=' +
-        encodeURIComponent(user.email) +
-        '&redirectTo=' +
-        encodeURIComponent(redirectToStr),
-    );
-  }
-  // </nsk:auth-email-verification>
-
-  // Registered login policies run here: auth's account lock check, which also
-  // records the login (order 150), and the second factor when auth-2fa is
-  // installed (200). The email verification block above (100) becomes a policy
-  // in a later task.
+  // Registered login policies run here: email verification when
+  // auth-email-verification is installed (order 100), auth's account lock check,
+  // which also records the login (150), and the second factor when auth-2fa is
+  // installed (200).
   const policyOutcome = await runLoginPolicies({ event, user, redirectTo: redirectToStr });
   if (policyOutcome.kind !== 'continue') {
     if (policyOutcome.kind === 'respond') {

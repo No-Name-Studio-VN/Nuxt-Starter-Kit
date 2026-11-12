@@ -131,10 +131,6 @@ export const forgotPasswordFormSchema = z.object({
   email: z.email('Please enter a valid email address'),
 });
 
-export const resendVerificationSchema = z.object({
-  email: z.email(),
-});
-
 export const resetPasswordSchema = z
   .object({
     token: z.string().min(1),
@@ -177,7 +173,6 @@ export type UserSelect = z.infer<typeof userSelectSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ForgotPasswordFormInput = z.infer<typeof forgotPasswordFormSchema>;
-export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ResetPasswordFormInput = z.infer<typeof resetPasswordFormSchema>;
 export type GoogleOneTapBodyInput = z.infer<typeof googleOneTapBodySchema>;

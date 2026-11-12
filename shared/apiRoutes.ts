@@ -1,13 +1,5 @@
 export const apiRoutes = {
   API_PREFIX: '/api/',
-
-  // <nsk:auth-email-verification>
-  AUTH_VERIFY_EMAIL: '/auth/verify-email',
-  // </nsk:auth-email-verification>
-
-  // <nsk:auth-email-verification>
-  AUTH_RESEND_VERIFICATION: '/api/auth/resend-verification',
-  // </nsk:auth-email-verification>
 };
 
 // the route rules of the most outer apis should be defined first

@@ -7,7 +7,7 @@ Accounts and sessions through `nuxt-auth-utils`, with Cloudflare Turnstile on th
 - The `users`, `auth_tokens`, `user_lock_screen` and `oauth_accounts` tables
   (`server/db/schema.sqlite.ts`), their services under `server/utils/database/`, and the profile,
   password, lock-screen and account-deletion APIs under `/api/users/:id`.
-- The account pages (`/auth/**`), the `auth` route middleware, and the dashboard layout with its sidebar.
+- The account pages (`/auth/**`), the `auth` and `guest` route middleware, and the dashboard layout with its sidebar.
 
 Extension points for modules that require auth:
 

@@ -22,9 +22,8 @@ export type LoginPolicyOutcome =
 
 /**
  * A check between the password check and the session. Policies run in ascending
- * `order`: the account lock (150, auth's own), then the second factor (200,
- * auth-2fa). Order 100 is kept for email verification, which still runs inline
- * before the policies.
+ * `order`: email verification (100, auth-email-verification), the account lock
+ * (150, auth's own), then the second factor (200, auth-2fa).
  */
 export interface LoginPolicy {
   id: string;

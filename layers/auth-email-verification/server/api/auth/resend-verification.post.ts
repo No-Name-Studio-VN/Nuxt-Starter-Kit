@@ -1,9 +1,9 @@
 import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
 import userService from '#layers/auth/server/utils/database/user';
 import authTokenService from '#layers/auth/server/utils/database/authToken';
-import { sendVerificationEmail } from '#layers/auth/server/utils/email';
 import { AuthTokenType } from '#layers/auth/shared/constants/authTokens';
-import { resendVerificationSchema } from '#layers/auth/shared/schemas/userSchema';
+import { resendVerificationSchema } from '../../../shared/schemas/emailVerificationSchema';
+import { sendVerificationEmail } from '../../utils/verificationEmail';
 
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) => resendVerificationSchema.safeParse(body));

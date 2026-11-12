@@ -1,17 +1,9 @@
 import { registerUserSchema } from '#layers/auth/shared/schemas/userSchema';
 import userService from '#layers/auth/server/utils/database/user';
-// <nsk:auth-email-verification>
-import authTokenService from '#layers/auth/server/utils/database/authToken';
-import { sendVerificationEmail } from '#layers/auth/server/utils/email';
-import { apiRoutes } from '#shared/apiRoutes';
-// </nsk:auth-email-verification>
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { runPostRegisterSteps } from '#layers/auth/server/utils/postRegisterSteps';
 import type { User } from '#layers/auth/types/auth';
 import type { RegisterUserInput } from '#layers/auth/shared/schemas/userSchema';
-// <nsk:auth-email-verification>
-import { AuthTokenType } from '#layers/auth/shared/constants/authTokens';
-// </nsk:auth-email-verification>
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
@@ -118,36 +110,14 @@ export default defineEventHandler(async (event) => {
     throw err;
   }
 
-  /**
-   * Where to send the new account. The email-verification module diverts it to
-   * the verification notice; without that module registration goes straight to
-   * sign-in.
-   */
-  // eslint-disable-next-line no-useless-assignment
-  let postRegisterRedirect =
-    authRoutes.AUTH_LOGIN + '?redirectTo=' + encodeURIComponent(redirectTo);
-
-  // <nsk:auth-email-verification>
-  // Send verification email (non-blocking - don't fail registration if email fails)
-  const verificationToken = await authTokenService.createToken(
-    newUser.id,
-    AuthTokenType.EmailVerification,
-  );
-  sendVerificationEmail(newUser.email, newUser.username, verificationToken).catch((err) => {
-    console.error('[Register] Failed to send verification email:', err);
-  });
-
-  postRegisterRedirect =
-    apiRoutes.AUTH_VERIFY_EMAIL +
-    '?email=' +
-    encodeURIComponent(newUser.email) +
-    '&redirectTo=' +
-    encodeURIComponent(redirectTo);
-  // </nsk:auth-email-verification>
-
-  // Registered steps run once the account exists, e.g. sending the verification
-  // email; a redirect one of them returns replaces the one above.
+  // Registered steps run once the account exists: auth-email-verification, when
+  // installed, sends the verification email and diverts the new account to the
+  // verification notice. Without a step redirect, registration goes to sign-in.
   const postRegister = await runPostRegisterSteps({ event, user: newUser, redirectTo });
 
-  return sendRedirect(event, postRegister.redirect ?? postRegisterRedirect);
+  return sendRedirect(
+    event,
+    postRegister.redirect ??
+      authRoutes.AUTH_LOGIN + '?redirectTo=' + encodeURIComponent(redirectTo),
+  );
 });
