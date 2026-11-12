@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import { useKV } from '#layers/server-core/server/utils/kv';
+import userService from '#layers/auth/server/utils/database/user';
 
 export default defineWebAuthnAuthenticateEventHandler({
   async storeChallenge(event, challenge, attemptId) {
@@ -21,16 +22,12 @@ export default defineWebAuthnAuthenticateEventHandler({
     return challenge;
   },
   async allowCredentials(event, userName) {
-    const db = useDB();
+    const user = await userService.getByUsername(userName);
+    if (!user) {
+      return [];
+    }
 
-    const user = await db.query.users.findFirst({
-      where: eq(tables.users.username, userName),
-      with: {
-        credentials: true,
-      },
-    });
-
-    return user?.credentials || [];
+    return useDB().select().from(tables.credentials).where(eq(tables.credentials.userId, user.id));
   },
   async getCredential(event, credentialID) {
     const credential = await useDB().query.credentials.findFirst({

@@ -4,8 +4,8 @@ Adds a Cloudflare D1 (SQLite) database through NuxtHub (`hub.db: 'sqlite'`) and 
 
 - Server utils: `useDB()` and `tables` (`server/utils/db.ts`), plus the `IDatabaseService` base class
   (`types/db/database-service.ts`).
-- Every layer declares its own tables in `server/db/schema.sqlite.ts`; NuxtHub merges them into
-  `hub:db` and `hub:db:schema`.
+- No tables of its own: each module that needs tables declares them in its layer's
+  `server/db/schema.sqlite.ts`, and NuxtHub merges them into `hub:db` and `hub:db:schema`.
 
 Bindings: the `DB` D1 database in `wrangler.jsonc`. No env keys to fill.
 

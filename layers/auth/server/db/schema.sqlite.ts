@@ -78,6 +78,12 @@ export const oauthAccounts = sqliteTable(
   ],
 );
 
+export const usersRelations = relations(users, ({ many, one }) => ({
+  lockScreen: one(userLockScreen),
+  oauthAccounts: many(oauthAccounts),
+  authTokens: many(authTokens),
+}));
+
 export const authTokensRelations = relations(authTokens, ({ one }) => ({
   user: one(users, {
     fields: [authTokens.userId],

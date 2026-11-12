@@ -13,16 +13,9 @@ import {
   targetOwner,
 } from './imports';
 
-// Exceptions are allowed only for the R2 holding schema, which keeps other
-// modules' tables in the database layer until their owners take them out. Each
-// entry names the task that removes it; never add an exception for anything else.
-const knownViolations: string[] = [
-  // Credentials table; removed in Task 11 (auth-passkeys).
-  'layers/database/server/db/schema.sqlite.ts:#auth-utils (database -> auth)',
-  // Auth's tables for the credentials foreign key and the users relations; removed
-  // in Task 11 (auth-passkeys).
-  'layers/database/server/db/schema.sqlite.ts:../../../auth/server/db/schema.sqlite (database -> auth)',
-];
+// The only exceptions were for the R2 holding schema, deleted once every table
+// moved into its owner's layer. Never add one: fix the import instead.
+const knownViolations: string[] = [];
 
 const codeFiles = kitFiles.filter((path) => /\.(?:ts|vue|js|mjs)$/.test(path));
 

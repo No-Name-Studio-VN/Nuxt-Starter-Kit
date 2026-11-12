@@ -3,6 +3,8 @@
 Passwordless sign-in with WebAuthn passkeys, through `nuxt-auth-utils` (`auth.webAuthn`) and
 SimpleWebAuthn.
 
+- The `credentials` table (`server/db/schema.sqlite.ts`): one row per passkey, with its public key,
+  counter and transports.
 - `POST /api/webauthn/authenticate` signs a user in with a passkey. Its button is the `passkey` entry of
   auth's `auth:login:alternatives` slot on `/auth/login`.
 - `POST /api/webauthn/register` and `/api/webauthn/add-passkey` add a passkey to the signed-in account.
