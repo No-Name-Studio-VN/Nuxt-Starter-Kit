@@ -12,7 +12,7 @@
     "build": "pnpm run prepare && NODE_OPTIONS=--max-old-space-size=12288 nuxt build",
     "clean": "rm -r .nuxt && rm -r .output",
     "db:generate": "pnpm exec nuxt db generate",
-    "db:seed": "nitro task run db:admin-creation",
+    "db:seed": "nuxt task run db:admin-creation",
     "deploy": "pnpm exec wrangler deploy",
     "deploy:db": "pnpm exec wrangler d1 migrations apply DB --remote",
     "dev": "pnpm run prepare && nuxt dev",
