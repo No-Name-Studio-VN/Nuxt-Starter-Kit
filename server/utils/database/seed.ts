@@ -1,21 +1,21 @@
 import { eq } from 'drizzle-orm';
+import { runSeedTasks } from '#layers/admin/server/utils/seedTasks';
+import type { SeedAdminResult, SeedTaskResult } from '#layers/admin/types/seedTasks';
 // <nsk:feature-flags>
 import { TEXT_OBFUSCATION_FLAG } from '#shared/constants/flags';
 import featureFlagService from '~~/server/utils/database/featureFlag';
 // </nsk:feature-flags>
 
 interface SeedSummary {
-  admin: {
-    created: boolean;
-    verified: boolean;
-    username: string;
-  };
+  admin: SeedAdminResult;
   // <nsk:feature-flags>
   featureFlags: {
     created: number;
     skipped: number;
   };
   // </nsk:feature-flags>
+  /** Counts of each registered seed task, under its result's `key`. */
+  [key: string]: SeedAdminResult | SeedTaskResult['counts'];
 }
 
 // <nsk:feature-flags>
@@ -41,7 +41,7 @@ function getDefaultFeatureFlags(): SeedFeatureFlag[] {
 }
 // </nsk:feature-flags>
 
-async function seedAdmin(defaultAdminPassword: string): Promise<SeedSummary['admin']> {
+async function seedAdmin(defaultAdminPassword: string): Promise<SeedAdminResult> {
   const db = useDB();
   const adminUsername = 'admin';
   const existingAdmin = await db
@@ -117,11 +117,25 @@ export async function seedDefaultFeatureFlags(): Promise<SeedSummary['featureFla
 }
 // </nsk:feature-flags>
 
-export async function seedDatabase(defaultAdminPassword: string): Promise<SeedSummary> {
-  return {
+/** Creates the admin account, then runs every registered seed task. */
+export async function seedDatabase(
+  defaultAdminPassword: string,
+): Promise<{ summary: SeedSummary; tasks: SeedTaskResult[] }> {
+  const summary: SeedSummary = {
     admin: await seedAdmin(defaultAdminPassword),
     // <nsk:feature-flags>
     featureFlags: await seedDefaultFeatureFlags(),
     // </nsk:feature-flags>
   };
+
+  const tasks = await runSeedTasks();
+  for (const task of tasks) {
+    // Two results under one key would hide one of them, so the seed fails instead.
+    if (Object.hasOwn(summary, task.key)) {
+      throw new Error(`Seed summary key "${task.key}" is already taken.`);
+    }
+    summary[task.key] = task.counts;
+  }
+
+  return { summary, tasks };
 }

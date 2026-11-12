@@ -256,8 +256,8 @@ import type {
   AdminKvValuePayload,
   AdminKvValuesResponsePayload,
   ClearedPayload,
-} from '~~/types/admin';
-import DataTable from '@/components/DataTable.vue';
+} from '#layers/admin/types/admin';
+import DataTable from '#layers/admin/app/components/DataTable.vue';
 import AdminKvValueEditor from './AdminKvValueEditor.client.vue';
 import { createColumns } from './columns';
 import type { AdminKvTableRow } from './types';

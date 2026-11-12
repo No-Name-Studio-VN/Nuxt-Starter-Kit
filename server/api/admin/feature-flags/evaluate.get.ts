@@ -1,7 +1,7 @@
 import { apiError, success } from '#layers/server-core/server/utils/apiResponse';
 import { evaluateFlag } from '~~/server/utils/featureFlags';
 import type { FlagContext } from '~~/types/featureFlags';
-import type { FeatureFlagEvaluatePayload } from '~~/types/admin';
+import type { FeatureFlagEvaluatePayload } from '#layers/admin/types/admin';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);

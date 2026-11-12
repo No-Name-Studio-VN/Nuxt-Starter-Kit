@@ -57,20 +57,6 @@ export const apiRoutes = {
 
 // the route rules of the most outer apis should be defined first
 export const routeRules = {
-  '/api/admin/seed': {
-    security: {
-      rateLimiter: {
-        tokensPerInterval: 5,
-        interval: 3 * 60 * 60 * 24 * 1000, // 3 days
-        headers: true,
-        throwError: true,
-      },
-    },
-  },
-  '/admin/**': {
-    ssr: false,
-    prerender: false,
-  },
   // The front page ships as a static shell: only the chrome and the loading
   // skeleton are baked at build time, and every data source (stories,
   // reading history, session) resolves in the browser. Matches the exact

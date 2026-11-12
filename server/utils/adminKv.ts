@@ -4,7 +4,7 @@ import type {
   AdminKvValueMode,
   AdminKvValuePayload,
   JsonValue,
-} from '~~/types/admin';
+} from '#layers/admin/types/admin';
 
 const textEncoder = new TextEncoder();
 

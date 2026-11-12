@@ -5,7 +5,7 @@ import {
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
 import { featureFlagImportPayloadSchema } from '#shared/schemas/featureFlagSchema';
-import type { FeatureFlagImportSummaryPayload } from '~~/types/admin';
+import type { FeatureFlagImportSummaryPayload } from '#layers/admin/types/admin';
 
 /**
  * Import feature flags from a JSON payload.

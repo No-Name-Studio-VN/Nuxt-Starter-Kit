@@ -236,7 +236,7 @@ import type { User } from '#layers/auth/types/auth';
 import { apiRoutes } from '#shared/apiRoutes';
 import type { ApiResponse } from '#layers/server-core/types/api';
 import { InfoIcon, Trash2Icon, UserPlus } from '@lucide/vue';
-import DataTable from '@/components/DataTable.vue';
+import DataTable from '#layers/admin/app/components/DataTable.vue';
 import { createColumns } from './columns';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 

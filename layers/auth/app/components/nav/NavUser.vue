@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronsUpDown, LogOut, SunMoon, UsersIcon } from '@lucide/vue';
+import { ChevronsUpDown, LogOut, SunMoon } from '@lucide/vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -103,11 +103,6 @@ function navigateFromSidebar(path: string) {
       :side-offset="4"
     >
       <DropdownMenuGroup>
-        <!-- Admin's entry stays inline until the admin module registers it. -->
-        <DropdownMenuItem v-if="user?.isAdmin" @click="navigateFromSidebar('/admin')">
-          <UsersIcon />
-          Admin
-        </DropdownMenuItem>
         <DropdownMenuItem
           v-for="item in menuItems"
           :key="item.id"

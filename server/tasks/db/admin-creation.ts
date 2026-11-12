@@ -10,7 +10,7 @@ export default defineTask({
     const defaultAdminPassword = useRuntimeConfig().defaultAdminPassword;
     if (!defaultAdminPassword) throw new Error('Default admin password is not configured');
 
-    const summary = await seedDatabase(defaultAdminPassword.toString());
+    const { summary, tasks } = await seedDatabase(defaultAdminPassword.toString());
 
     console.log('✅ Database seeding completed');
     console.log('━'.repeat(50));
@@ -20,6 +20,11 @@ export default defineTask({
     console.log('Feature flags created:', summary.featureFlags.created);
     console.log('Feature flags skipped:', summary.featureFlags.skipped);
     // </nsk:feature-flags>
+    for (const task of tasks) {
+      for (const [name, count] of Object.entries(task.counts)) {
+        console.log(`${task.label} ${name}:`, count);
+      }
+    }
     console.log('━'.repeat(50));
 
     return {

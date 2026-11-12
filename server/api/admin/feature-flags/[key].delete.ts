@@ -1,6 +1,6 @@
 import featureFlagService from '~~/server/utils/database/featureFlag';
 import { apiError, success } from '#layers/server-core/server/utils/apiResponse';
-import type { DeletePayload } from '~~/types/admin';
+import type { DeletePayload } from '#layers/admin/types/admin';
 
 export default defineEventHandler(async (event) => {
   const key = getRouterParam(event, 'key');

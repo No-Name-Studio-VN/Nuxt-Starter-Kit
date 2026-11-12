@@ -9,44 +9,16 @@ import {
   // <nsk:feature-flags>
   FlagIcon,
   // </nsk:feature-flags>
-  LayoutDashboardIcon,
   // <nsk:admin-users>
   UsersIcon,
   // </nsk:admin-users>
 } from '@lucide/vue';
 
 /**
- * Admin's entries, in the same records the nav registry holds. They stay here
- * until the admin module registers them itself; auth's own entries come from its
- * nav plugin.
+ * Admin pages whose modules have not registered them yet, in the same records the
+ * nav registry holds. Each lands in the admin section it names, as if registered.
  */
-const ADMIN_SIDEBAR_RECORDS: SidebarNavRecord[] = [
-  {
-    kind: 'context',
-    id: 'admin',
-    order: 200,
-    match: '/admin',
-    variant: 'inset',
-    showBack: true,
-    guard: (user) => user?.isAdmin === true,
-  },
-  { kind: 'section', id: 'admin.overview', order: 100, context: 'admin', title: 'Overview' },
-  {
-    kind: 'item',
-    id: 'admin.overview.dashboard',
-    order: 100,
-    section: 'admin.overview',
-    title: 'Dashboard',
-    url: '/admin',
-    icon: LayoutDashboardIcon,
-  },
-  {
-    kind: 'section',
-    id: 'admin.users-sales',
-    order: 200,
-    context: 'admin',
-    title: 'Users & Sales',
-  },
+const INLINE_SIDEBAR_RECORDS: SidebarNavRecord[] = [
   // <nsk:admin-users>
   {
     kind: 'item',
@@ -58,7 +30,6 @@ const ADMIN_SIDEBAR_RECORDS: SidebarNavRecord[] = [
     icon: UsersIcon,
   },
   // </nsk:admin-users>
-  { kind: 'section', id: 'admin.system', order: 300, context: 'admin', title: 'System' },
   // <nsk:feature-flags>
   {
     kind: 'item',
@@ -70,23 +41,6 @@ const ADMIN_SIDEBAR_RECORDS: SidebarNavRecord[] = [
     icon: FlagIcon,
   },
   // </nsk:feature-flags>
-  {
-    kind: 'section',
-    id: 'main.admin',
-    order: 300,
-    context: 'main',
-    title: 'Admin',
-    guard: (user) => user?.isAdmin === true,
-  },
-  {
-    kind: 'item',
-    id: 'main.admin.dashboard',
-    order: 100,
-    section: 'main.admin',
-    title: 'Admin Dashboard',
-    url: '/admin',
-    icon: LayoutDashboardIcon,
-  },
 ];
 
 /** In development, names every record whose parent section or context is not registered. */
@@ -134,13 +88,13 @@ function buildSidebarContexts(records: readonly SidebarNavRecord[]): SidebarCont
 export function getSidebarContexts(): SidebarContext[] {
   const registered = getNavItems('sidebar');
   const registeredIds = new Set(registered.map((record) => record.id));
-  // A registered record wins over an inline admin record with the same id.
-  const inline = ADMIN_SIDEBAR_RECORDS.filter((record) => {
+  // A registered record wins over an inline record with the same id.
+  const inline = INLINE_SIDEBAR_RECORDS.filter((record) => {
     if (!registeredIds.has(record.id)) {
       return true;
     }
     if (import.meta.dev) {
-      console.warn(`[sidebar] "${record.id}" is registered; its inline admin record is skipped.`);
+      console.warn(`[sidebar] "${record.id}" is registered; its inline record is skipped.`);
     }
     return false;
   });

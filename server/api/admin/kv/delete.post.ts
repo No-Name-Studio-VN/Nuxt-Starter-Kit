@@ -5,7 +5,7 @@ import {
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
 import { useKV } from '#layers/server-core/server/utils/kv';
-import type { AdminKvDeletePayload } from '~~/types/admin';
+import type { AdminKvDeletePayload } from '#layers/admin/types/admin';
 
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) =>

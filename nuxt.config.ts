@@ -178,13 +178,6 @@ export default defineNuxtConfig({
         dataWebsiteId: '',
       },
     },
-    // <nsk:admin>
-    // Shared secret guarding the database seed endpoint.
-    seed: {
-      secret: '',
-    },
-    defaultAdminPassword: '',
-    // </nsk:admin>
   },
 
   routeRules: routeRules,
@@ -196,7 +189,6 @@ export default defineNuxtConfig({
     experimental: {
       openAPI: true,
       wasm: true,
-      tasks: true,
     },
     wasm: {
       esmImport: true,
@@ -247,8 +239,6 @@ export default defineNuxtConfig({
       // app/modules/worker-routes.ts instead of failing the build.
       failOnError: false,
       ignore: [
-        '/admin',
-        '/admin/**',
         '/pwa',
         '/__og-image__/static/pwa',
         '/_studio',
@@ -418,7 +408,6 @@ export default defineNuxtConfig({
 
   sitemap: {
     zeroRuntime: true,
-    exclude: ['/admin/**'],
   },
 
   // <nsk:content>

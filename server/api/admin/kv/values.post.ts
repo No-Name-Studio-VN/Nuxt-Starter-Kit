@@ -6,7 +6,7 @@ import {
 } from '#layers/server-core/server/utils/apiResponse';
 import { serializeAdminKvValue } from '~~/server/utils/adminKv';
 import { useKV } from '#layers/server-core/server/utils/kv';
-import type { AdminKvValuesResponsePayload } from '~~/types/admin';
+import type { AdminKvValuesResponsePayload } from '#layers/admin/types/admin';
 
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) =>

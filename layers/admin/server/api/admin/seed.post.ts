@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const summary = await seedDatabase(defaultAdminPassword);
+  const { summary } = await seedDatabase(defaultAdminPassword);
 
   return success(summary, 'Database seed completed.');
 });

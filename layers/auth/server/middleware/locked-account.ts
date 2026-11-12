@@ -6,9 +6,8 @@ import { authRoutes } from '#layers/auth/shared/authRoutes';
 /**
  * Middleware that blocks any authenticated API call from locked user accounts.
  *
- * Runs after the admin middleware. It only activates when a valid user session
- * exists, so unauthenticated requests pass through untouched (they are handled
- * by individual route guards).
+ * It only activates when a valid user session exists, so unauthenticated
+ * requests pass through untouched (they are handled by individual route guards).
  *
  * Lock status is always read from the database so it takes effect immediately
  * after an admin changes the account state — no session refresh required.
