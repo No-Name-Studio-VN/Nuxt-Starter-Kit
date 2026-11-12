@@ -25,7 +25,7 @@ import HotSearch from '#layers/auth/app/components/HotSearch.vue';
 
 import BackToTop from '@/components/BackToTop.vue';
 import AppLayout from '#layers/auth/app/components/AppLayout.vue';
-import AppSidebar from '@/components/AppSidebar.vue';
+import AppSidebar from '../components/AppSidebar.vue';
 
 const { sidebarVariant: contextVariant } = useSidebarContext();
 

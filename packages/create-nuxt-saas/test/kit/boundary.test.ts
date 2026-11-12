@@ -82,7 +82,8 @@ describe('kit layer boundaries', () => {
 
   it('keeps the registry owner of a root file its module left behind', () => {
     // R14 transitional ownership; removed in Task 15 with the registry fallback.
-    expect(ownerOf('app/components/AppSidebar.vue')).toBe('auth');
+    // AppSidebar moved in Task 13; this plugin retains its registry owner (R10/R14).
+    expect(ownerOf('server/plugins/sentry-cloudflare-plugin.ts')).toBe('server-core');
     expect(ownerOf('app/app.vue')).toBe('base');
   });
 

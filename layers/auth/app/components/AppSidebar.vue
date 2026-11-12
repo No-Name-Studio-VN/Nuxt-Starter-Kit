@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 
-import { Separator } from './ui/separator';
+import { Separator } from '@/components/ui/separator';
 
 const props = withDefaults(defineProps<SidebarProps>(), {
   variant: 'inset',
