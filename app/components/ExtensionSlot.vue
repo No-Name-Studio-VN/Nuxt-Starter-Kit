@@ -12,5 +12,6 @@ const entries = computed(() => getExtensions(props.name));
 </script>
 
 <template>
+  <slot v-if="entries.length === 0" />
   <component :is="entry.component" v-for="entry in entries" :key="entry.id" v-bind="$attrs" />
 </template>

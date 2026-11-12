@@ -3,6 +3,7 @@ import type { Component } from 'vue';
 export interface ExtensionSlots {
   'app:root': true;
   'home:hero': true;
+  'header:actions': true;
 }
 
 export type ExtensionSlotName = keyof ExtensionSlots;
@@ -20,6 +21,15 @@ export interface NavRecord {
   to: string;
   icon?: Component;
   descriptionKey?: string;
+  target?: string;
+  showLinkIcon?: boolean;
+  links?: {
+    labelKey: string;
+    to: string;
+    target?: string;
+    descriptionKey?: string;
+    icon?: string;
+  }[];
 }
 
 export interface NavMenus {

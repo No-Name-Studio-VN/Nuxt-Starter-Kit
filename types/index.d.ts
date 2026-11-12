@@ -204,3 +204,56 @@ export type InputTreeItem =
   | {
       [key: string]: InputTreeItem[] | null;
     };
+
+export interface SiteConfig {
+  site: {
+    name: string;
+    description: string;
+    ogImage: string;
+    umami: {
+      enable: boolean;
+      src: string;
+      dataWebsiteId: string;
+    };
+  };
+  theme: {
+    customizable: boolean;
+    color: Color;
+    radius: number;
+  };
+  header: {
+    showLoadingIndicator: boolean;
+    title: string;
+    showTitle: boolean;
+    border: boolean;
+    logo: {
+      light: string;
+      dark: string;
+    };
+    showTitleInMobile: boolean;
+    darkModeToggle: boolean;
+    languageSwitcher: {
+      enable: boolean;
+      triggerType: 'icon' | 'text';
+      dropdownType: 'select' | 'popover';
+    };
+    nav: {
+      title: string;
+      to: string;
+      target?: string;
+      showLinkIcon?: boolean;
+      links?: {
+        title?: string;
+        to?: string;
+        target?: string;
+        description?: string;
+        icon?: string;
+      }[];
+    }[];
+    links: {
+      icon: string;
+      to: string;
+      target?: string;
+    }[];
+  };
+}
