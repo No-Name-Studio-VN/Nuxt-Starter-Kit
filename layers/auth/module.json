@@ -2,7 +2,7 @@
   "title": "Authentication",
   "description": "Sessions, password and OAuth sign-in, account pages, and the dashboard shell.",
   "requires": ["database"],
-  "dependencies": ["@nuxtjs/turnstile", "bcryptjs", "nuxt-auth-utils"],
+  "dependencies": ["@nuxtjs/turnstile", "nuxt-auth-utils"],
   "env": [
     "NUXT_SESSION_PASSWORD",
     "CSRF_SECRET",

@@ -249,8 +249,6 @@ export default defineNuxtConfig({
       ignore: [
         '/admin',
         '/admin/**',
-        '/settings',
-        '/settings/**',
         '/pwa',
         '/__og-image__/static/pwa',
         '/_studio',
@@ -258,7 +256,6 @@ export default defineNuxtConfig({
         '/__nuxt_studio',
         '/__nuxt_studio/**',
         '/api/**', // Ignore ALL API routes (not just /api/studio/**)
-        '/auth/**', // Auth0 routes should be SSR (optional, not required for Studio)
         '/admin/studio/login', // Login page should also be SSR
         '/admin/studio/login/**', // Login page with any sub-paths
       ],
@@ -421,7 +418,7 @@ export default defineNuxtConfig({
 
   sitemap: {
     zeroRuntime: true,
-    exclude: ['/admin/**', '/settings/**'],
+    exclude: ['/admin/**'],
   },
 
   // <nsk:content>

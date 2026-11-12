@@ -34,6 +34,10 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    prerender: {
+      // Sign-in and account pages are rendered per request on the Worker.
+      ignore: ['/settings', '/settings/**', '/auth/**'],
+    },
     typescript: {
       tsConfig: {
         // Nitro's generated tsconfig includes server/ and shared/*.d.ts only, so
@@ -58,5 +62,9 @@ export default defineNuxtConfig({
 
   turnstile: {
     siteKey: process.env.NUXT_TURNSTILE_SITE_KEY,
+  },
+
+  sitemap: {
+    exclude: ['/settings/**'],
   },
 });
