@@ -43,9 +43,6 @@
 
 <script setup lang="ts">
 import {
-  // <nsk:admin-users>
-  UsersIcon,
-  // </nsk:admin-users>
   ChevronRightIcon,
   // <nsk:feature-flags>
   FlagIcon,
@@ -64,18 +61,6 @@ definePageMeta({
  * `adminCards` nav menu holds. They sort in with the registered cards by `order`.
  */
 const INLINE_ADMIN_CARDS: AdminCardRecord[] = [
-  // <nsk:admin-users>
-  {
-    id: 'users',
-    order: 100,
-    title: 'Users Management',
-    description: 'View, edit, and manage user accounts, roles, and permissions',
-    to: '/admin/users',
-    icon: UsersIcon,
-    bgColor: 'bg-blue-500/10',
-    textColor: 'text-blue-500',
-  },
-  // </nsk:admin-users>
   // <nsk:feature-flags>
   {
     id: 'feature-flags',

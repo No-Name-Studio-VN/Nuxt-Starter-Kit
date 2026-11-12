@@ -54,14 +54,6 @@ export interface AdminKvDeletePayload {
   deleted: number;
 }
 
-export interface AdminUserCreatePayload {
-  id: number;
-  username: string;
-  name: string;
-  email: string;
-  isAdmin: boolean;
-}
-
 export interface FeatureFlagEvaluatePayload {
   key: string;
   enabled: boolean;
@@ -76,8 +68,4 @@ export interface FeatureFlagImportSummaryPayload {
   created: number;
   updated: number;
   skipped: number;
-}
-
-export interface AdminBulkUserDeletePayload {
-  deleted: number;
 }

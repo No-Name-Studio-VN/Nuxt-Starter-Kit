@@ -22,16 +22,6 @@ export interface UserProfileModel {
   linkedAccounts: LinkedAccount[];
 }
 
-export interface AdminUserModel {
-  id: number;
-  username: string;
-  name: string;
-  email: string;
-  isAdmin: boolean;
-  isLocked: boolean;
-  emailVerified: boolean;
-}
-
 export type ProfileUpdateData = Pick<
   UserProfileModel,
   'id' | 'username' | keyof UpdateProfileInput

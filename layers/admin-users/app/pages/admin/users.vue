@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import AdminUsersManager from '@/components/admin/users/AdminUsersManager.vue';
+import AdminUsersManager from '#layers/admin-users/app/components/admin/users/AdminUsersManager.vue';
 
 definePageMeta({
   title: 'admin.users.title',

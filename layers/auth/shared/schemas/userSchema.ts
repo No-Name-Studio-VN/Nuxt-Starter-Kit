@@ -89,44 +89,6 @@ export const userUpdateSchema = createUpdateSchema(users, {
 });
 
 /**
- * Schema for the dedicated lock/unlock endpoint.
- */
-export const adminUserLockSchema = z.object({
-  isLocked: z.boolean(),
-});
-export type AdminUserLockInput = z.infer<typeof adminUserLockSchema>;
-
-export const adminBulkUserDeleteSchema = z.object({
-  userIds: z
-    .array(z.number().int().positive().refine(Number.isSafeInteger))
-    .min(1)
-    .transform((userIds) => [...new Set(userIds)]),
-});
-export type AdminBulkUserDeleteInput = z.input<typeof adminBulkUserDeleteSchema>;
-
-export const adminUserCreateFormSchema = createUserSchema.pick({
-  username: true,
-  email: true,
-  name: true,
-  password: true,
-  isAdmin: true,
-});
-
-export const adminUserEditFormSchema = userUpdateSchema
-  .pick({
-    id: true,
-    username: true,
-    email: true,
-    name: true,
-    password: true,
-    emailVerified: true,
-    isAdmin: true,
-  })
-  .extend({
-    password: z.string().optional().default(''),
-  });
-
-/**
  * Select schema for type inference from database queries.
  */
 export const userSelectSchema = createSelectSchema(users);
@@ -210,8 +172,6 @@ export const oauthUnlinkBodySchema = z.object({
 
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
-export type AdminUserCreateFormInput = z.infer<typeof adminUserCreateFormSchema>;
-export type AdminUserEditFormInput = z.infer<typeof adminUserEditFormSchema>;
 export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 export type UserSelect = z.infer<typeof userSelectSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

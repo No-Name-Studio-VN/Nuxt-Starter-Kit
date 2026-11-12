@@ -1,11 +1,11 @@
-import { adminUserLockSchema } from '#layers/auth/shared/schemas/userSchema';
+import { userUpdateSchema } from '#layers/auth/shared/schemas/userSchema';
 import userService from '#layers/auth/server/utils/database/user';
 import {
   apiError,
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import type { AdminUserModel } from '#layers/auth/types/models/profile';
+import type { AdminUserModel } from '#layers/admin-users/types/adminUsers';
 
 export default defineEventHandler(async (event) => {
   const userId = Number(getRouterParam(event, 'id'));
@@ -17,30 +17,29 @@ export default defineEventHandler(async (event) => {
       code: 'INVALID_USER_ID',
     });
   }
-
-  const result = await readValidatedBody(event, (body) => adminUserLockSchema.safeParse(body));
+  const result = await readValidatedBody(event, (body) => userUpdateSchema.safeParse(body));
   if (!result.success) {
     throw apiError({
       status: 400,
       statusText: 'Bad Request',
-      message: 'Bad Request. The submitted lock data is invalid.',
+      message: 'Bad Request. The submitted user data is invalid.',
       code: 'VALIDATION_ERROR',
       fieldErrors: zodErrorToFieldErrors(result.error),
     });
   }
 
-  // Prevent admins from locking their own account
-  const session = await getUserSession(event);
-  if (session.user?.id === userId) {
-    throw apiError({
-      status: 403,
-      statusText: 'Forbidden',
-      message: 'You cannot lock your own account.',
-      code: 'SELF_LOCK_FORBIDDEN',
-    });
-  }
+  const { password, ...validatedData } = result.data;
+  const hashedPassword =
+    typeof password === 'string' && password.trim().length > 0
+      ? await hashPassword(password)
+      : undefined;
+  const updateData = {
+    ...validatedData,
+    id: userId,
+    ...(hashedPassword ? { password: hashedPassword } : {}),
+  };
 
-  const updatedUser = await userService.update({ id: userId, isLocked: result.data.isLocked });
+  const updatedUser = await userService.update(updateData);
   if (!updatedUser) {
     throw apiError({
       status: 404,

@@ -30,9 +30,6 @@ export const apiRoutes = {
   MY_2FA_DISABLE: '/api/users/me/2fa/disable',
   // </nsk:auth-2fa>
 
-  ADMIN_USERS: ADMIN_API_PREFIX + '/users',
-  ADMIN_USERS_DELETE: ADMIN_API_PREFIX + '/users/delete',
-
   // <nsk:auth-2fa>
   AUTH_LOGIN_2FA: '/api/auth/login-2fa',
   // </nsk:auth-2fa>
@@ -46,9 +43,6 @@ export const apiRoutes = {
   adminFeatureFlagsImport: () => ADMIN_API_PREFIX + '/feature-flags/import',
   adminFeatureFlagsSeedDefaults: () => ADMIN_API_PREFIX + '/feature-flags/seed-defaults',
   // </nsk:feature-flags>
-
-  adminUser: (userId: string | number) => ADMIN_API_PREFIX + `/users/${userId}`,
-  adminUserLock: (userId: string | number) => ADMIN_API_PREFIX + `/users/${userId}/lock`,
 };
 
 // the route rules of the most outer apis should be defined first

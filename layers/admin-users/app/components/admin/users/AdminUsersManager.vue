@@ -227,13 +227,13 @@ import { toast } from 'vue-sonner';
 import {
   adminUserCreateFormSchema,
   adminUserEditFormSchema,
-} from '#layers/auth/shared/schemas/userSchema';
+} from '#layers/admin-users/shared/schemas/adminUserSchema';
 import type {
   AdminUserCreateFormInput,
   AdminUserEditFormInput,
-} from '#layers/auth/shared/schemas/userSchema';
+} from '#layers/admin-users/shared/schemas/adminUserSchema';
 import type { User } from '#layers/auth/types/auth';
-import { apiRoutes } from '#shared/apiRoutes';
+import { adminUserRoutes } from '#layers/admin-users/shared/adminUserRoutes';
 import type { ApiResponse } from '#layers/server-core/types/api';
 import { InfoIcon, Trash2Icon, UserPlus } from '@lucide/vue';
 import DataTable from '#layers/admin/app/components/DataTable.vue';
@@ -298,7 +298,7 @@ const onSubmit = handleSubmit(async (values) => {
       };
 
       const response = await apiRequest<ApiResponse<User>>(
-        apiRoutes.adminUser(editingUserId.value),
+        adminUserRoutes.adminUser(editingUserId.value),
         {
           method: 'PUT',
           body: payload,
@@ -317,7 +317,7 @@ const onSubmit = handleSubmit(async (values) => {
         isAdmin: values.isAdmin,
       };
 
-      const response = await apiRequest<ApiResponse<User>>(apiRoutes.ADMIN_USERS, {
+      const response = await apiRequest<ApiResponse<User>>(adminUserRoutes.ADMIN_USERS, {
         method: 'POST',
         body: payload,
       });
@@ -360,7 +360,7 @@ const columns = computed(() => createColumns(handleEdit, handleDeleteConfirm));
 async function fetchUsers() {
   try {
     loading.value = true;
-    const res = await apiRequest<ApiResponse<User[]>>(apiRoutes.ADMIN_USERS);
+    const res = await apiRequest<ApiResponse<User[]>>(adminUserRoutes.ADMIN_USERS);
     if (res.success && res.data) {
       users.value = res.data;
     } else {
@@ -434,7 +434,7 @@ async function handleDelete(userId: number) {
   try {
     loading.value = true;
     const response = await apiRequest<ApiResponse<Record<string, never>>>(
-      apiRoutes.adminUser(userId),
+      adminUserRoutes.adminUser(userId),
       {
         method: 'DELETE',
       },
@@ -460,7 +460,7 @@ async function handleBatchDelete() {
     loading.value = true;
     const count = selectedUserIds.value.length;
     const response = await apiRequest<ApiResponse<Record<string, never>>>(
-      apiRoutes.ADMIN_USERS_DELETE,
+      adminUserRoutes.ADMIN_USERS_DELETE,
       {
         method: 'POST',
         body: { userIds: selectedUserIds.value },

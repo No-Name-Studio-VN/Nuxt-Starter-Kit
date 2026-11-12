@@ -5,31 +5,15 @@ import type {
   SidebarItem,
   SidebarNavRecord,
 } from '#layers/auth/types/sidebar';
-import {
-  // <nsk:feature-flags>
-  FlagIcon,
-  // </nsk:feature-flags>
-  // <nsk:admin-users>
-  UsersIcon,
-  // </nsk:admin-users>
-} from '@lucide/vue';
+// <nsk:feature-flags>
+import { FlagIcon } from '@lucide/vue';
+// </nsk:feature-flags>
 
 /**
  * Admin pages whose modules have not registered them yet, in the same records the
  * nav registry holds. Each lands in the admin section it names, as if registered.
  */
 const INLINE_SIDEBAR_RECORDS: SidebarNavRecord[] = [
-  // <nsk:admin-users>
-  {
-    kind: 'item',
-    id: 'admin.users-sales.users',
-    order: 100,
-    section: 'admin.users-sales',
-    title: 'Users',
-    url: '/admin/users',
-    icon: UsersIcon,
-  },
-  // </nsk:admin-users>
   // <nsk:feature-flags>
   {
     kind: 'item',

@@ -5,7 +5,7 @@ import {
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import type { AdminUserModel } from '#layers/auth/types/models/profile';
+import type { AdminUserModel } from '#layers/admin-users/types/adminUsers';
 
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) => createUserSchema.safeParse(body));

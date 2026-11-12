@@ -1,5 +1,5 @@
 import { apiError, success } from '#layers/server-core/server/utils/apiResponse';
-import { adminBulkUserDeleteSchema } from '#layers/auth/shared/schemas/userSchema';
+import { adminBulkUserDeleteSchema } from '#layers/admin-users/shared/schemas/adminUserSchema';
 import userService from '#layers/auth/server/utils/database/user';
 
 export default defineEventHandler(async (event) => {
