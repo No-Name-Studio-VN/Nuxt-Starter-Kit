@@ -2,9 +2,9 @@
 import { eq } from 'drizzle-orm';
 // </nsk:auth-passkeys>
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
-import oauthAccountService from '~~/server/utils/database/oauthAccount';
-import userService from '~~/server/utils/database/user';
-import type { UserProfileModel } from '~~/types/models/profile';
+import oauthAccountService from '#layers/auth/server/utils/database/oauthAccount';
+import userService from '#layers/auth/server/utils/database/user';
+import type { UserProfileModel } from '#layers/auth/types/models/profile';
 
 export async function getUserProfileById(userId: number): Promise<UserProfileModel> {
   const dbUser = await userService.getById(userId);

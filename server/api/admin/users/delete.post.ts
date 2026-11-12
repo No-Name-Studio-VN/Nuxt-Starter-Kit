@@ -1,6 +1,6 @@
 import { apiError, success } from '#layers/server-core/server/utils/apiResponse';
-import { adminBulkUserDeleteSchema } from '#shared/schemas/userSchema';
-import userService from '~~/server/utils/database/user';
+import { adminBulkUserDeleteSchema } from '#layers/auth/shared/schemas/userSchema';
+import userService from '#layers/auth/server/utils/database/user';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);

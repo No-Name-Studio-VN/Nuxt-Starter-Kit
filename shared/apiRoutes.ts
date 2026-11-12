@@ -16,23 +16,12 @@ export const apiRoutes = {
   FLAGS_EVALUATE: '/api/flags',
   // </nsk:feature-flags>
 
-  AUTH_LOGIN: '/auth/login',
-  AUTH_REGISTER: '/auth/register',
   // <nsk:auth-email-verification>
   AUTH_VERIFY_EMAIL: '/auth/verify-email',
   // </nsk:auth-email-verification>
-  AUTH_FORGOT_PASSWORD: '/auth/forgot-password',
-  AUTH_RESET_PASSWORD: '/auth/reset-password',
-  AUTH_GOOGLE: '/api/auth/google',
-  AUTH_OAUTH_URL: '/api/auth/oauth/url',
-  AUTH_OAUTH_UNLINK: '/api/auth/oauth/unlink',
-
-  MY_PROFILE: '/api/users/me',
   // <nsk:auth-passkeys>
   MY_PASSKEYS: '/api/users/me/passkeys',
   // </nsk:auth-passkeys>
-  MY_LOCK_SCREEN: '/api/users/me/lock-screen',
-  MY_LOCK_SCREEN_VALIDATE: '/api/users/me/lock-screen/validate',
 
   // 2FA Routes
   // <nsk:auth-2fa>
@@ -46,20 +35,12 @@ export const apiRoutes = {
   ADMIN_USERS: ADMIN_API_PREFIX + '/users',
   ADMIN_USERS_DELETE: ADMIN_API_PREFIX + '/users/delete',
 
-  AUTH_LOGIN_PASSWORD: '/api/auth/login-password',
   // <nsk:auth-2fa>
   AUTH_LOGIN_2FA: '/api/auth/login-2fa',
   // </nsk:auth-2fa>
-  AUTH_REGISTER_PASSWORD: '/api/auth/register-password',
-  AUTH_FORGOT_PASSWORD_REQUEST: '/api/auth/forgot-password',
   // <nsk:auth-email-verification>
   AUTH_RESEND_VERIFICATION: '/api/auth/resend-verification',
   // </nsk:auth-email-verification>
-  AUTH_GOOGLE_ONE_TAP: '/api/auth/google-one-tap',
-  AUTH_ACCOUNT_STATUS: '/api/auth/account-status',
-  MY_PASSWORD: '/api/users/me/password',
-  ACCOUNT_DELETE: '/api/account',
-  MY_PROFILE_UPDATE: '/api/users/me/profile',
 
   ADMIN_TASKS_SEED_ADMIN: ADMIN_API_PREFIX + '/tasks/seed-admin',
 
@@ -72,7 +53,6 @@ export const apiRoutes = {
 
   adminUser: (userId: string | number) => ADMIN_API_PREFIX + `/users/${userId}`,
   adminUserLock: (userId: string | number) => ADMIN_API_PREFIX + `/users/${userId}/lock`,
-  userProfile: (userId: string | number) => `/api/users/${userId}/profile`,
 };
 
 // the route rules of the most outer apis should be defined first
@@ -104,10 +84,6 @@ export const routeRules = {
   '/pwa': {
     ssr: true,
     prerender: true,
-  },
-  '/settings/**': {
-    ssr: false,
-    prerender: false,
   },
   '/_studio/**': {
     ssr: true,

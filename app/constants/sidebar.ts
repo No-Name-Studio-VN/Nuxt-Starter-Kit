@@ -3,7 +3,7 @@ import type {
   SidebarGuardContext,
   SidebarGuardUser,
   SidebarItem,
-} from '~~/types/common';
+} from '#layers/auth/types/sidebar';
 import {
   // <nsk:feature-flags>
   FlagIcon,
@@ -14,7 +14,6 @@ import {
   Search,
   Settings,
   Shield,
-  TicketIcon,
   User,
   UserCog2Icon,
   // <nsk:admin-users>
@@ -59,8 +58,6 @@ export const SIDEBAR_CONTEXTS: SidebarContext[] = [
           // <nsk:admin-users>
           { title: 'Users', url: '/admin/users', icon: UsersIcon },
           // </nsk:admin-users>
-          { title: 'Coupons', url: '/admin/coupons', icon: TicketIcon },
-          { title: 'Subscriptions', url: '/admin/subscriptions', icon: TicketIcon },
         ],
       },
       {

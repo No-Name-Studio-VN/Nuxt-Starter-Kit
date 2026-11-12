@@ -1,4 +1,4 @@
-import type { SessionUser } from '~~/types/auth';
+import type { SessionUser } from '#layers/auth/types/auth';
 
 declare module '#auth-utils' {
   interface User {
@@ -25,4 +25,4 @@ declare module '#auth-utils' {
  * Type for the authenticated user from session
  * Use this when accessing session.user to get proper typing
  */
-export type { SessionUser } from '~~/types/auth';
+export type { SessionUser } from '#layers/auth/types/auth';

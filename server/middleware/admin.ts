@@ -1,4 +1,4 @@
-import userService from '~~/server/utils/database/user';
+import userService from '#layers/auth/server/utils/database/user';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import { apiRoutes } from '#shared/apiRoutes';
 

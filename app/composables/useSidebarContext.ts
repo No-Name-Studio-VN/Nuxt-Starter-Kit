@@ -1,4 +1,4 @@
-import type { SidebarContext, SidebarSection } from '~~/types/common';
+import type { SidebarContext, SidebarSection } from '#layers/auth/types/sidebar';
 import { SIDEBAR_CONTEXTS } from '@/constants/sidebar';
 
 const firstContext = SIDEBAR_CONTEXTS[0];

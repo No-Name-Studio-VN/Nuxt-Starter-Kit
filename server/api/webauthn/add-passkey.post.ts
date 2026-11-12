@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
 import { useKV } from '#layers/server-core/server/utils/kv';
-import { webauthnAddPasskeyUserSchema } from '#shared/schemas/userSecuritySchema';
+import { webauthnAddPasskeyUserSchema } from '#layers/auth/shared/schemas/userSecuritySchema';
 
 export default defineWebAuthnRegisterEventHandler({
   async storeChallenge(event, challenge, attemptId) {

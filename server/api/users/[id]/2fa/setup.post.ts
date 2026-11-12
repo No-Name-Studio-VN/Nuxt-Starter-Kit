@@ -4,9 +4,9 @@ import {
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import userLockScreenService from '~~/server/utils/database/userLockScreen';
-import userService from '~~/server/utils/database/user';
-import { getAuthorizedUserId } from '~~/server/utils/authorization';
+import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
+import userService from '#layers/auth/server/utils/database/user';
+import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import type { TwoFactorSetupPayload } from '~~/types/userSecurity';
 import { setupTotpSchema } from '#shared/schemas/userSecuritySchema';
 

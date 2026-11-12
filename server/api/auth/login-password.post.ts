@@ -1,7 +1,8 @@
-import userService from '~~/server/utils/database/user';
-import userLockScreenService from '~~/server/utils/database/userLockScreen';
+import userService from '#layers/auth/server/utils/database/user';
+import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
 import { apiRoutes } from '#shared/apiRoutes';
-import { loginSchema } from '#shared/schemas/userSchema';
+import { authRoutes } from '#layers/auth/shared/authRoutes';
+import { loginSchema } from '#layers/auth/shared/schemas/userSchema';
 
 function safeRedirectPath(value: string | undefined, origin: string): string {
   if (!value) {
@@ -23,32 +24,32 @@ function safeRedirectPath(value: string | undefined, origin: string): string {
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) => loginSchema.safeParse(body));
   if (!result.success) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=validation');
+    return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=validation');
   }
 
   const { username, password, 'cf-turnstile-response': token } = result.data;
   const redirectToStr = safeRedirectPath(result.data['redirect-to'], getRequestURL(event).origin);
 
   if (!token) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha');
+    return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=captcha');
   }
 
   const tokenValidation = await verifyTurnstileToken(token);
   if (!tokenValidation.success) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=captcha');
+    return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=captcha');
   }
 
   // Find user by username
   const user = await userService.getByUsername(username);
   if (!user) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials');
+    return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=invalid-credentials');
   }
 
   // Verify password using nuxt-auth-utils
   const isValidPassword = await verifyPassword(user.password, password);
 
   if (!isValidPassword) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=invalid-credentials');
+    return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=invalid-credentials');
   }
 
   // <nsk:auth-email-verification>
@@ -67,7 +68,7 @@ export default defineEventHandler(async (event) => {
 
   // Check if the account is locked
   if (user.isLocked) {
-    return sendRedirect(event, apiRoutes.AUTH_LOGIN + '?error=account-locked');
+    return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=account-locked');
   }
 
   // Update last login
@@ -86,7 +87,7 @@ export default defineEventHandler(async (event) => {
     });
     return sendRedirect(
       event,
-      apiRoutes.AUTH_LOGIN + `?step=2fa&redirectTo=${encodeURIComponent(redirectToStr)}`,
+      authRoutes.AUTH_LOGIN + `?step=2fa&redirectTo=${encodeURIComponent(redirectToStr)}`,
     );
   }
   // </nsk:auth-2fa>

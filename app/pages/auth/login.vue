@@ -5,11 +5,15 @@ import { User, Lock, Eye, EyeOff } from '@lucide/vue';
 // eslint-disable-next-line import/no-duplicates
 import { Fingerprint } from '@lucide/vue';
 // </nsk:auth-passkeys>
-import { getAuthErrorMessage, AUTH_SUCCESS_MESSAGES } from '#shared/constants/authMessages';
-import { AVAILABLE_PROVIDERS } from '#shared/constants/oauthProviders';
+import {
+  getAuthErrorMessage,
+  AUTH_SUCCESS_MESSAGES,
+} from '#layers/auth/shared/constants/authMessages';
+import { AVAILABLE_PROVIDERS } from '#layers/auth/shared/constants/oauthProviders';
 import { apiRoutes } from '#shared/apiRoutes';
+import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { Field as VeeField, useForm } from 'vee-validate';
-import { loginSchema } from '#shared/schemas/userSchema';
+import { loginSchema } from '#layers/auth/shared/schemas/userSchema';
 // <nsk:auth-2fa>
 import { REGEXP_ONLY_DIGITS } from 'vue-input-otp';
 import { TOTP_LENGTH } from '#shared/constants/totp';
@@ -19,7 +23,7 @@ import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
 import { APP_MANIFEST } from '#shared/constants/manifest';
 import type { ApiResponse } from '#layers/server-core/types/api';
-import type { OAuthUrlPayload } from '~~/types/auth';
+import type { OAuthUrlPayload } from '#layers/auth/types/auth';
 
 const formSchema = loginSchema.pick({ username: true, password: true });
 
@@ -122,7 +126,7 @@ function triggerShakeAnimation() {
 
 const onSubmit = handleSubmit(async () => {
   // Native form submission for server-side auth
-  const formEl = document.querySelector(`form[action="${apiRoutes.AUTH_LOGIN_PASSWORD}"]`);
+  const formEl = document.querySelector(`form[action="${authRoutes.AUTH_LOGIN_PASSWORD}"]`);
   if (formEl instanceof HTMLFormElement) formEl.submit();
 });
 
@@ -232,7 +236,7 @@ async function signInWithProvider(provider: string) {
   error.value = '';
 
   try {
-    const response = await apiRequest<ApiResponse<OAuthUrlPayload>>(apiRoutes.AUTH_OAUTH_URL, {
+    const response = await apiRequest<ApiResponse<OAuthUrlPayload>>(authRoutes.AUTH_OAUTH_URL, {
       method: 'POST',
       body: { provider, action: 'login', redirectTo: redirectTo.value },
     });
@@ -380,7 +384,7 @@ onBeforeUnmount(() => {
 
     <form
       v-if="!is2faStep"
-      :action="apiRoutes.AUTH_LOGIN_PASSWORD"
+      :action="authRoutes.AUTH_LOGIN_PASSWORD"
       method="POST"
       class="space-y-4"
       @submit.prevent="onSubmit"

@@ -1,14 +1,15 @@
-import { registerUserSchema } from '#shared/schemas/userSchema';
-import userService from '~~/server/utils/database/user';
+import { registerUserSchema } from '#layers/auth/shared/schemas/userSchema';
+import userService from '#layers/auth/server/utils/database/user';
 // <nsk:auth-email-verification>
-import authTokenService from '~~/server/utils/database/authToken';
-import { sendVerificationEmail } from '~~/server/utils/email';
+import authTokenService from '#layers/auth/server/utils/database/authToken';
+import { sendVerificationEmail } from '#layers/auth/server/utils/email';
 // </nsk:auth-email-verification>
 import { apiRoutes } from '#shared/apiRoutes';
-import type { User } from '~~/types/auth';
-import type { RegisterUserInput } from '#shared/schemas/userSchema';
+import { authRoutes } from '#layers/auth/shared/authRoutes';
+import type { User } from '#layers/auth/types/auth';
+import type { RegisterUserInput } from '#layers/auth/shared/schemas/userSchema';
 // <nsk:auth-email-verification>
-import { AuthTokenType } from '#shared/commonEnums';
+import { AuthTokenType } from '#layers/auth/shared/constants/authTokens';
 // </nsk:auth-email-verification>
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -35,14 +36,14 @@ function safeRedirectPath(value: string | undefined, origin: string): string {
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) => registerUserSchema.safeParse(body));
   if (!result.success) {
-    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=validation');
+    return sendRedirect(event, authRoutes.AUTH_REGISTER + '?error=validation');
   }
 
   const { username, password, 'cf-turnstile-response': token } = result.data;
 
   const tokenValidation = await verifyTurnstileToken(token);
   if (!tokenValidation.success) {
-    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=captcha');
+    return sendRedirect(event, authRoutes.AUTH_REGISTER + '?error=captcha');
   }
 
   const redirectTo = safeRedirectPath(result.data['redirect-to'], getRequestURL(event).origin);
@@ -54,10 +55,10 @@ export default defineEventHandler(async (event) => {
   ]);
 
   if (existingUsername) {
-    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=existed');
+    return sendRedirect(event, authRoutes.AUTH_REGISTER + '?error=existed');
   }
   if (existingEmail) {
-    return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=email-existed');
+    return sendRedirect(event, authRoutes.AUTH_REGISTER + '?error=email-existed');
   }
 
   // 2. EXPENSIVE OPERATION: Hash only when pre-checks pass
@@ -109,9 +110,9 @@ export default defineEventHandler(async (event) => {
       maybeErrMessage?.includes('UNIQUE');
     if (isUniqueConstraint) {
       if (maybeErrMessage?.includes('email') || maybeErrCauseMessage?.includes('email')) {
-        return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=email-existed');
+        return sendRedirect(event, authRoutes.AUTH_REGISTER + '?error=email-existed');
       }
-      return sendRedirect(event, apiRoutes.AUTH_REGISTER + '?error=existed');
+      return sendRedirect(event, authRoutes.AUTH_REGISTER + '?error=existed');
     }
     throw err;
   }
@@ -122,7 +123,8 @@ export default defineEventHandler(async (event) => {
    * sign-in.
    */
   // eslint-disable-next-line no-useless-assignment
-  let postRegisterRedirect = apiRoutes.AUTH_LOGIN + '?redirectTo=' + encodeURIComponent(redirectTo);
+  let postRegisterRedirect =
+    authRoutes.AUTH_LOGIN + '?redirectTo=' + encodeURIComponent(redirectTo);
 
   // <nsk:auth-email-verification>
   // Send verification email (non-blocking - don't fail registration if email fails)

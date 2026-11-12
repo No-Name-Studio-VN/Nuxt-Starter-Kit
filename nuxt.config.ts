@@ -19,9 +19,6 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/device',
-    // <nsk:auth>
-    'nuxt-auth-utils',
-    // </nsk:auth>
     '@nuxtjs/color-mode',
     '@sentry/nuxt/module',
     // <nsk:pwa>
@@ -30,9 +27,6 @@ export default defineNuxtConfig({
     // <nsk:content>
     'nuxt-content-git', // this adds createdAt and updatedAt dates based on the git history.
     // </nsk:content>
-    // <nsk:auth>
-    '@nuxtjs/turnstile',
-    // </nsk:auth>
     '@vee-validate/nuxt',
     'motion-v/nuxt',
     // <nsk:content>
@@ -184,16 +178,6 @@ export default defineNuxtConfig({
         dataWebsiteId: '',
       },
     },
-    // <nsk:auth>
-    turnstile: {
-      secretKey: '',
-    },
-    // Transactional email, read by server/utils/email.ts.
-    resend: {
-      apiKey: '',
-      fromEmail: '',
-    },
-    // </nsk:auth>
     // <nsk:admin>
     // Shared secret guarding the database seed endpoint.
     seed: {
@@ -201,18 +185,6 @@ export default defineNuxtConfig({
     },
     defaultAdminPassword: '',
     // </nsk:admin>
-    // <nsk:auth>
-    session: {
-      password: '',
-      // Without maxAge the session cookie is written with no Expires, so it only
-      // lives as long as the browsing session. Desktop browsers keep (and restore)
-      // that, but mobile browsers and the standalone PWA drop it every time the OS
-      // kills the process, logging mobile users out constantly.
-      // Counted from login, not from last activity: h3 never refreshes createdAt,
-      // so this is an absolute lifetime rather than a sliding window.
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-    },
-    // </nsk:auth>
   },
 
   routeRules: routeRules,
@@ -293,12 +265,6 @@ export default defineNuxtConfig({
     },
     typescript: {
       tsConfig: {
-        // <nsk:auth>
-        // Nitro's generated tsconfig includes server/ and shared/*.d.ts only, so
-        // the #auth-utils augmentation in auth.d.ts never reaches server code and
-        // every session.user access fails to resolve.
-        include: ['../auth.d.ts'],
-        // </nsk:auth>
         exclude: ['**/dist/**', '**/node_modules/**'],
       },
     },
@@ -397,11 +363,10 @@ export default defineNuxtConfig({
     ssg: false,
     sri: false,
     headers: {
-      crossOriginOpenerPolicy: 'same-origin-allow-popups',
       crossOriginEmbedderPolicy: 'unsafe-none',
       contentSecurityPolicy: {
         'script-src': ["'self'", 'https:', "'unsafe-inline'", "'wasm-unsafe-eval'"],
-        'style-src': ["'self'", 'https:', "'unsafe-inline'", 'https://challenges.cloudflare.com'],
+        'style-src': ["'self'", 'https:', "'unsafe-inline'"],
         'img-src': ["'self'", 'data:', 'https:'],
         'media-src': ["'self'", 'blob:', 'https:'],
         'connect-src': ["'self'", 'https:'],
@@ -470,10 +435,4 @@ export default defineNuxtConfig({
     },
   },
   // </nsk:content>
-
-  // <nsk:auth>
-  turnstile: {
-    siteKey: process.env.NUXT_TURNSTILE_SITE_KEY,
-  },
-  // </nsk:auth>
 });

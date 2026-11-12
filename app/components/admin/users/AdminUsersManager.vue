@@ -224,9 +224,15 @@
 import { computed, onMounted, ref } from 'vue';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { toast } from 'vue-sonner';
-import { adminUserCreateFormSchema, adminUserEditFormSchema } from '#shared/schemas/userSchema';
-import type { AdminUserCreateFormInput, AdminUserEditFormInput } from '#shared/schemas/userSchema';
-import type { User } from '~~/types/auth';
+import {
+  adminUserCreateFormSchema,
+  adminUserEditFormSchema,
+} from '#layers/auth/shared/schemas/userSchema';
+import type {
+  AdminUserCreateFormInput,
+  AdminUserEditFormInput,
+} from '#layers/auth/shared/schemas/userSchema';
+import type { User } from '#layers/auth/types/auth';
 import { apiRoutes } from '#shared/apiRoutes';
 import type { ApiResponse } from '#layers/server-core/types/api';
 import { InfoIcon, Trash2Icon, UserPlus } from '@lucide/vue';

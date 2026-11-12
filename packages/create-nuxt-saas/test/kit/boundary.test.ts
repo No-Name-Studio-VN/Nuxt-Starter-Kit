@@ -21,6 +21,9 @@ const knownViolations: string[] = [
   'layers/database/server/db/schema.sqlite.ts:#auth-utils (database -> auth)',
   // Feature-flag tables; removed in Task 9 (feature-flags).
   'layers/database/server/db/schema.sqlite.ts:../../../../types/featureFlags (database -> feature-flags)',
+  // Auth's tables for the credentials and flag audit-log foreign keys and the users
+  // relations; removed in Task 11 (auth-passkeys), after Task 9 takes the flag tables.
+  'layers/database/server/db/schema.sqlite.ts:../../../auth/server/db/schema.sqlite (database -> auth)',
 ];
 
 const codeFiles = kitFiles.filter((path) => /\.(?:ts|vue|js|mjs)$/.test(path));
@@ -103,9 +106,9 @@ describe('kit layer boundaries', () => {
     const modules = await boundaryModules();
     const source = [
       "import type { ApiResponse } from '~~/layers/server-core/types/api';",
-      // Transitional: types/auth.ts is registry-owned by auth until Task 6 peels it
-      // (retarget this line to a still-unpeeled module); Task 15 removes it.
-      "import type { OAuthUrlPayload } from '~~/types/auth';",
+      // Transitional: types/featureFlags.ts is registry-owned by feature-flags until
+      // Task 9 peels it (retarget this line to a still-unpeeled module); Task 15 removes it.
+      "import type { FeatureFlagRules } from '~~/types/featureFlags';",
     ].join('\n');
     expect(
       boundaryViolations(
@@ -114,7 +117,7 @@ describe('kit layer boundaries', () => {
       ),
     ).toEqual([
       'app/app.vue:~~/layers/server-core/types/api (base -> server-core)',
-      'app/app.vue:~~/types/auth (base -> auth)',
+      'app/app.vue:~~/types/featureFlags (base -> feature-flags)',
     ]);
   });
 

@@ -1,11 +1,11 @@
-import { adminUserLockSchema } from '#shared/schemas/userSchema';
-import userService from '~~/server/utils/database/user';
+import { adminUserLockSchema } from '#layers/auth/shared/schemas/userSchema';
+import userService from '#layers/auth/server/utils/database/user';
 import {
   apiError,
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import type { AdminUserModel } from '~~/types/models/profile';
+import type { AdminUserModel } from '#layers/auth/types/models/profile';
 
 export default defineEventHandler(async (event) => {
   const userId = Number(getRouterParam(event, 'id'));

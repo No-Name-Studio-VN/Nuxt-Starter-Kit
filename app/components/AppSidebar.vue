@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ArrowLeft, SearchIcon, LogIn, LogOut } from '@lucide/vue';
 
-import NavMain from '@/components/nav/NavMain.vue';
-import NavSecondary from '@/components/nav/NavSecondary.vue';
-import NavUser from '@/components/nav/NavUser.vue';
+import NavMain from '#layers/auth/app/components/nav/NavMain.vue';
+import NavSecondary from '#layers/auth/app/components/nav/NavSecondary.vue';
+import NavUser from '#layers/auth/app/components/nav/NavUser.vue';
 import type { SidebarProps } from '@/components/ui/sidebar';
 import {
   Sidebar,

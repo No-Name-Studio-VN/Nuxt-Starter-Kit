@@ -4,8 +4,8 @@ import {
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import userLockScreenService from '~~/server/utils/database/userLockScreen';
-import { getAuthorizedUserId } from '~~/server/utils/authorization';
+import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
+import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import { MAX_TOTP_ATTEMPTS } from '#shared/constants/totp';
 import type { LockScreenValidationPayload } from '~~/types/userSecurity';
 import { validateTotpSchema } from '#shared/schemas/userSecuritySchema';

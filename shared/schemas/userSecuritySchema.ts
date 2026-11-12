@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { totpCodeSchema } from './common';
+import { TOTP_LENGTH } from '../constants/totp';
+
+export function totpCodeSchema(error = `Authenticator code must be ${TOTP_LENGTH} digits`) {
+  return z.string().length(TOTP_LENGTH, error);
+}
 
 export const setupTotpSchema = z.object({
   password: z.string().min(1, 'Password is required to setup 2FA'),
@@ -27,20 +31,6 @@ export const twoFactorVerifyFormSchema = z.object({
   verificationCode: totpCodeSchema('Verification code must be 6 digits'),
 });
 
-export const deletePasskeySchema = z.object({
-  credentialId: z.string(),
-});
-
-export const webauthnRegisterUserSchema = z.object({
-  userName: z.string().min(1).toLowerCase().trim(),
-  displayName: z.string().min(1).trim(),
-});
-
-export const webauthnAddPasskeyUserSchema = z.object({
-  userName: z.string().min(1).toLowerCase().trim(),
-  displayName: z.string().min(1).trim().optional(),
-});
-
 export type SetupTotpInput = z.infer<typeof setupTotpSchema>;
 export type SetupTotpFormInput = z.infer<typeof setupTotpFormSchema>;
 export type DisableTotpInput = z.infer<typeof disableTotpSchema>;
@@ -48,6 +38,3 @@ export type VerifyTotpInput = z.infer<typeof verifyTotpSchema>;
 export type ValidateTotpInput = z.infer<typeof validateTotpSchema>;
 export type LoginTwoFactorInput = z.infer<typeof loginTwoFactorSchema>;
 export type TwoFactorVerifyFormInput = z.infer<typeof twoFactorVerifyFormSchema>;
-export type DeletePasskeyInput = z.infer<typeof deletePasskeySchema>;
-export type WebauthnRegisterUserInput = z.infer<typeof webauthnRegisterUserSchema>;
-export type WebauthnAddPasskeyUserInput = z.infer<typeof webauthnAddPasskeyUserSchema>;

@@ -10,7 +10,3 @@ export interface TwoFactorVerifyPayload {
 export interface LockScreenValidationPayload {
   valid: boolean;
 }
-
-export interface PasswordUpdatePayload {
-  message: string;
-}

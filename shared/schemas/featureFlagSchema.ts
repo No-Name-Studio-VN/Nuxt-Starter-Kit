@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createInsertSchema, createUpdateSchema, createSelectSchema } from 'drizzle-zod';
 import { featureFlags } from '#layers/database/server/db/schema.sqlite';
-import { commonSchemaFragments } from '.';
+import { commonSchemaFragments } from './common';
 
 /**
  * Targeting rules schema — optional complex targeting for feature flags.
