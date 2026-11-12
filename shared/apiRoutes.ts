@@ -14,20 +14,4 @@ export const routeRules = {
     ssr: true,
     prerender: true,
   },
-  '/_studio/**': {
-    ssr: true,
-  },
-  '/__nuxt_studio/**': {
-    ssr: true,
-  },
-  '/admin/studio/login': {
-    ssr: true,
-    index: false, // Prevent index.html generation
-  },
-  '/admin/studio/login/**': {
-    ssr: true,
-    index: false,
-  },
-  // Directory-level redirects are auto-generated from .navigation.yml files
-  // by the ~/modules/navigation-redirects module at build time
 };

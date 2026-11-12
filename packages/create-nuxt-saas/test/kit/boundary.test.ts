@@ -104,9 +104,8 @@ describe('kit layer boundaries', () => {
     const modules = await boundaryModules();
     const source = [
       "import type { ApiResponse } from '~~/layers/server-core/types/api';",
-      // Transitional: types/landing.ts is registry-owned by content until Task 14
-      // peels it (retarget this line to a still-unpeeled module); Task 15 removes it.
-      "import type { LandingHero } from '~~/types/landing';",
+      // Root aliases can reach layer files too; no unpeeled modules remain.
+      "import type { LandingHero } from '~~/layers/content/types/landing';",
     ].join('\n');
     expect(
       boundaryViolations(
@@ -114,8 +113,8 @@ describe('kit layer boundaries', () => {
         modules,
       ),
     ).toEqual([
+      'app/app.vue:~~/layers/content/types/landing (base -> content)',
       'app/app.vue:~~/layers/server-core/types/api (base -> server-core)',
-      'app/app.vue:~~/types/landing (base -> content)',
     ]);
   });
 

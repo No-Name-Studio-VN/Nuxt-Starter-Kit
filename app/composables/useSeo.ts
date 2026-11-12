@@ -1,41 +1,5 @@
-import type { MaybeRefOrGetter } from 'vue';
-import type { PageBreadcrumbItem } from '@/utils/navigation';
+import type { UseSeoOptions } from '~~/types/seo';
 import { joinURL, withoutTrailingSlash } from 'ufo';
-
-export interface UseSeoOptions {
-  /**
-   * Page title
-   */
-  title: MaybeRefOrGetter<string | undefined>;
-  /**
-   * Page description
-   */
-  description: MaybeRefOrGetter<string | undefined>;
-  /**
-   * Page type for og:type (default: 'article' for docs, 'website' for landing)
-   */
-  type?: MaybeRefOrGetter<'website' | 'article'>;
-  /**
-   * Custom OG image URL (absolute)
-   */
-  ogImage?: MaybeRefOrGetter<string | undefined>;
-  /**
-   * Published date for article schema
-   */
-  publishedAt?: MaybeRefOrGetter<string | undefined>;
-  /**
-   * Modified date for article schema
-   */
-  modifiedAt?: MaybeRefOrGetter<string | undefined>;
-  /**
-   * Collection items for CollectionPage schema (e.g. blog listing)
-   */
-  collectionItems?: MaybeRefOrGetter<Array<{ name: string; url: string }> | undefined>;
-  /**
-   * Breadcrumb items for BreadcrumbList schema
-   */
-  breadcrumbs?: MaybeRefOrGetter<PageBreadcrumbItem[] | undefined>;
-}
 
 /**
  * Composable for comprehensive SEO setup including:
@@ -86,8 +50,7 @@ export function useSeo(options: UseSeoOptions) {
       // tags as a union discriminated on it, and a widened `rel` matches no member,
       // so every entry is checked against the wrong one.
       const links: Array<
-        | { rel: 'canonical'; href: string }
-        | { rel: 'alternate'; hreflang: string; href: string }
+        { rel: 'canonical'; href: string } | { rel: 'alternate'; hreflang: string; href: string }
       > = [];
 
       // Canonical URL

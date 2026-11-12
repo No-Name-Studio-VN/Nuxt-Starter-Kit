@@ -1,7 +1,6 @@
 import { APP_MANIFEST, SEO_CONFIG } from './shared/constants/manifest';
 import { routeRules } from './shared/apiRoutes';
 import { defaultLocale, browserFallbackLocale, languageNames, locales } from './i18n-constants';
-import { DOCS_CONFIG } from './docs.config';
 import { SITE_CONFIG } from './site.config';
 
 export default defineNuxtConfig({
@@ -11,10 +10,6 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxtjs/seo',
     '@nuxtjs/i18n',
-    // <nsk:content>
-    'nuxt-studio',
-    '@nuxt/content',
-    // </nsk:content>
     '@nuxt/fonts',
     '@nuxt/image',
     '@pinia/nuxt',
@@ -22,16 +17,8 @@ export default defineNuxtConfig({
     '@nuxtjs/device',
     '@nuxtjs/color-mode',
     '@sentry/nuxt/module',
-    // <nsk:content>
-    'nuxt-content-git', // this adds createdAt and updatedAt dates based on the git history.
-    // </nsk:content>
     '@vee-validate/nuxt',
     'motion-v/nuxt',
-    // <nsk:content>
-    'nuxt-component-meta',
-    '@/modules/navigation-redirects', // Auto-generate redirects from .navigation.yml files
-    '@/modules/content-prerender', // Pre-render all content pages as static HTML
-    // </nsk:content>
     // Keep last: lists the handlers and pages every other module registered. Routes
     // everything else to static assets so unknown URLs never cost Worker CPU.
     '@/modules/worker-routes',
@@ -87,64 +74,6 @@ export default defineNuxtConfig({
     disableTransition: true,
   },
 
-  // <nsk:content>
-  content: {
-    build: {
-      markdown: {
-        highlight: {
-          theme: {
-            default: 'github-light',
-            dark: 'github-dark',
-          },
-          preload: [
-            'json',
-            'js',
-            'ts',
-            'html',
-            'css',
-            'vue',
-            'diff',
-            'shell',
-            'markdown',
-            'mdc',
-            'yaml',
-            'bash',
-            'ini',
-            'dotenv',
-          ],
-        },
-      },
-    },
-  },
-  // </nsk:content>
-
-  // <nsk:content>
-  mdc: {
-    highlight: {
-      theme: {
-        default: 'github-light',
-        dark: 'github-dark',
-      },
-      langs: [
-        'json',
-        'js',
-        'ts',
-        'html',
-        'css',
-        'vue',
-        'diff',
-        'shell',
-        'markdown',
-        'mdc',
-        'yaml',
-        'bash',
-        'ini',
-        'dotenv',
-      ],
-    },
-  },
-  // </nsk:content>
-
   runtimeConfig: {
     public: {
       version: process.env.npm_package_version || '0.0.0',
@@ -152,7 +81,6 @@ export default defineNuxtConfig({
         dsn: '',
       },
       url: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-      docs: DOCS_CONFIG,
       site: SITE_CONFIG,
       umami: {
         src: '',
@@ -205,17 +133,7 @@ export default defineNuxtConfig({
       // (auth, dashboard, admin) and routes listed here that fail to prerender
       // (see app/modules/worker-routes.ts). 404.html is what Cloudflare serves
       // for unknown URLs.
-      routes: [
-        '/',
-        '/en',
-        // <nsk:content>
-        '/blogs',
-        '/en/blogs',
-        '/rss.xml',
-        // </nsk:content>
-        '/404.html',
-        '/robots.txt',
-      ],
+      routes: ['/', '/en', '/404.html', '/robots.txt'],
       // A page that fails to prerender stays on the Worker and is reported by
       // app/modules/worker-routes.ts instead of failing the build.
       failOnError: false,
@@ -252,30 +170,6 @@ export default defineNuxtConfig({
     server: true,
     client: false,
   },
-
-  // <nsk:content>
-  hooks: {
-    'content:file:afterParse': function (ctx) {
-      // Add computed fields after parsing
-      const wordCount = ctx.file.body?.split(/\s+/).length || 0;
-      ctx.content.readingTime = Math.ceil(wordCount / 180);
-    },
-  },
-  // </nsk:content>
-
-  // <nsk:content>
-  componentMeta: {
-    // Exclude problematic paths that cause Windows path resolution issues
-    exclude: [/node_modules/, /\.nuxt/, /\.output/, /dist/, /\.component-meta/],
-    // Only scan components from our local directories
-    // Components in /components/content are automatically available in Nuxt Studio
-    componentDirs: [
-      {
-        path: './app/components/content',
-      },
-    ],
-  },
-  // </nsk:content>
 
   fonts: {
     families: [
@@ -375,16 +269,4 @@ export default defineNuxtConfig({
   sitemap: {
     zeroRuntime: true,
   },
-
-  // <nsk:content>
-  studio: {
-    route: '/admin/studio',
-    repository: {
-      provider: 'github',
-      owner: 'No-Name-Studio-VN',
-      repo: 'Nuxt-Starter-Kit',
-      branch: 'main',
-    },
-  },
-  // </nsk:content>
 });
