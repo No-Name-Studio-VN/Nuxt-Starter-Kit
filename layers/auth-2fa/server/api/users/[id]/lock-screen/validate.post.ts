@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
   const twoFactor = await userTwoFactorService.getById(userId);
   const lockScreen = await userLockScreenService.getById(userId);
 
-  if (!lockScreen || !twoFactor || !twoFactor.enabled || !twoFactor.secret) {
+  if (!twoFactor || !twoFactor.enabled || !twoFactor.secret) {
     throw apiError({
       status: 404,
       statusText: 'Not Found',
@@ -38,8 +38,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Check if max attempts reached
-  if (lockScreen.failedAttempts >= MAX_TOTP_ATTEMPTS) {
+  // An account without a lock-screen row counts as 0 failed attempts.
+  const failedAttempts = lockScreen?.failedAttempts ?? 0;
+  if (failedAttempts >= MAX_TOTP_ATTEMPTS) {
     throw apiError({
       status: 429,
       statusText: 'Too Many Requests',
@@ -89,13 +90,22 @@ export default defineEventHandler(async (event) => {
     return success(response);
   } else {
     // Increment failed attempts
-    const newFailedAttempts = lockScreen.failedAttempts + 1;
-    await userLockScreenService.update({
-      userId,
-      failedAttempts: newFailedAttempts,
-      lastFailedAttempt: now,
-      lastActivityTime: now,
-    });
+    const newFailedAttempts = failedAttempts + 1;
+    if (lockScreen) {
+      await userLockScreenService.update({
+        userId,
+        failedAttempts: newFailedAttempts,
+        lastFailedAttempt: now,
+        lastActivityTime: now,
+      });
+    } else {
+      await userLockScreenService.create({
+        userId,
+        failedAttempts: newFailedAttempts,
+        lastFailedAttempt: now,
+        lastActivityTime: now,
+      });
+    }
 
     throw apiError({
       status: 401,

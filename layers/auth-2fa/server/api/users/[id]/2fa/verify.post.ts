@@ -59,14 +59,16 @@ export default defineEventHandler(async (event) => {
   const backupCodes = Array.from({ length: 10 }, () => cryptoStr());
   const now = new Date();
 
+  // Two services, two writes, so enabling 2FA comes last: if the lock-screen
+  // touch fails the user can retry, and never ends up enabled without seeing codes.
+  await userLockScreenService.update({
+    userId,
+    lastActivityTime: now,
+  });
   await userTwoFactorService.update({
     userId,
     enabled: true,
     backupCodes,
-  });
-  await userLockScreenService.update({
-    userId,
-    lastActivityTime: now,
   });
 
   const response: TwoFactorVerifyPayload = { backupCodes };

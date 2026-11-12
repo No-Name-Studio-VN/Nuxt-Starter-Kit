@@ -45,10 +45,10 @@ export default defineEventHandler(async (event) => {
   }
   const { code } = result.data;
 
-  // Failed attempts are counted on the lock-screen row that 2FA setup creates.
+  // Failed attempts are counted on the lock-screen row; an account without one counts as 0.
   const twoFactor = await userTwoFactorService.getById(userId);
   const lockScreen = await userLockScreenService.getById(userId);
-  if (!lockScreen || !twoFactor || !twoFactor.enabled || !twoFactor.secret) {
+  if (!twoFactor || !twoFactor.enabled || !twoFactor.secret) {
     throw apiError({
       status: 400,
       statusText: 'Bad Request',
@@ -57,7 +57,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (lockScreen.failedAttempts >= MAX_TOTP_ATTEMPTS) {
+  const failedAttempts = lockScreen?.failedAttempts ?? 0;
+  if (failedAttempts >= MAX_TOTP_ATTEMPTS) {
     throw apiError({
       status: 429,
       statusText: 'Too Many Requests',
@@ -95,13 +96,22 @@ export default defineEventHandler(async (event) => {
 
   if (!isCorrect) {
     // Increment failed attempts
-    const newFailedAttempts = lockScreen.failedAttempts + 1;
-    await userLockScreenService.update({
-      userId,
-      failedAttempts: newFailedAttempts,
-      lastFailedAttempt: now,
-      lastActivityTime: now,
-    });
+    const newFailedAttempts = failedAttempts + 1;
+    if (lockScreen) {
+      await userLockScreenService.update({
+        userId,
+        failedAttempts: newFailedAttempts,
+        lastFailedAttempt: now,
+        lastActivityTime: now,
+      });
+    } else {
+      await userLockScreenService.create({
+        userId,
+        failedAttempts: newFailedAttempts,
+        lastFailedAttempt: now,
+        lastActivityTime: now,
+      });
+    }
 
     throw apiError({
       status: 401,
