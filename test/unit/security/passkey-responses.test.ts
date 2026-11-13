@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import userService from '../../../../layers/auth/server/utils/database/user';
-import { getClientSafeWebAuthnResponse } from '../../../../layers/auth-passkeys/server/utils/webauthnResponse';
+import userService from '../../../layers/auth/server/utils/database/user';
+import { getClientSafeWebAuthnResponse } from '../../../layers/auth-passkeys/server/utils/webauthnResponse';
 
-vi.mock('../../../../layers/auth/server/utils/database/user', () => ({
+vi.mock('../../../layers/auth/server/utils/database/user', () => ({
   default: { getByUsername: vi.fn() },
 }));
-vi.mock('../../../../layers/server-core/server/utils/kv', () => ({ useKV: vi.fn() }));
+vi.mock('../../../layers/server-core/server/utils/kv', () => ({ useKV: vi.fn() }));
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -25,7 +25,7 @@ describe('client-safe WebAuthn responses', () => {
     vi.stubGlobal('defineEventHandler', (handler: unknown) => handler);
     vi.stubGlobal('useDB', () => ({ select }));
     vi.stubGlobal('tables', { credentials });
-    await import('../../../../layers/auth-passkeys/server/api/webauthn/authenticate.post');
+    await import('../../../layers/auth-passkeys/server/api/webauthn/authenticate.post');
     const options = captureHandler.mock.calls[0]?.[0];
     if (
       options === null ||

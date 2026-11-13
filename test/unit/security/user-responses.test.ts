@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { users } from '../../../../layers/auth/server/db/schema.sqlite';
-import userService from '../../../../layers/auth/server/utils/database/user';
+import { users } from '../../../layers/auth/server/db/schema.sqlite';
+import userService from '../../../layers/auth/server/utils/database/user';
 
 const safeFields = [
   'id',

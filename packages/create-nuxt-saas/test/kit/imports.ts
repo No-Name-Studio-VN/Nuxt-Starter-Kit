@@ -21,7 +21,7 @@ export const kitFiles = execFileSync('git', ['ls-files', '-z'], {
   maxBuffer: 32 * 1024 * 1024,
 })
   .split('\0')
-  .filter((path) => path && !/^(?:packages|docs|tests)\//.test(path))
+  .filter((path) => path && !/^(?:packages|docs|tests?)\//.test(path))
   .sort();
 
 const fileSet = new Set(kitFiles);

@@ -19,6 +19,7 @@ export default defineConfig({
             '~~': fileURLToPath(new URL('.', import.meta.url)),
             '@@': fileURLToPath(new URL('.', import.meta.url)),
             '#shared': fileURLToPath(new URL('./shared', import.meta.url)),
+            '#layers': fileURLToPath(new URL('./layers', import.meta.url)),
             'hub:blob': fileURLToPath(new URL('./test/unit/mocks/hubBlob.ts', import.meta.url)),
             'hub:db': fileURLToPath(new URL('./test/unit/mocks/hubDb.ts', import.meta.url)),
           },

@@ -47,6 +47,10 @@ function boundaryViolations(files: SourceImports[], modules: KitModule[]): strin
 }
 
 describe('kit layer boundaries', () => {
+  it('excludes test harnesses that intentionally exercise layer internals', () => {
+    expect(kitFiles.some((path) => /^tests?\//.test(path))).toBe(false);
+  });
+
   it('extracts static, type, re-export, side-effect and dynamic imports', () => {
     expect(
       extractImports(
