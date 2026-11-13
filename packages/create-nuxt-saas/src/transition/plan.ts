@@ -104,8 +104,10 @@ export async function planTransition(
       if (!unchanged) changes.push({ path, kind: 'keep-edited' });
       continue;
     }
-    if (protectedPath && !user && newFile) {
-      changes.push({ path, kind: 'create', content: newFile.content });
+    if (protectedPath && !user) {
+      if (!oldFile && newFile) {
+        changes.push({ path, kind: 'create', content: newFile.content });
+      }
       continue;
     }
     if (unchanged) continue;

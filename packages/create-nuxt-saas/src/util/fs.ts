@@ -13,11 +13,11 @@ export async function pathExists(path: string): Promise<boolean> {
   }
 }
 
-/** Inspect from the project root down, never traversing a symlinked ancestor. */
+/** Inspect below the project root, allowing the root itself to be a symlink. */
 export async function hasSymbolicLink(root: string, filePath: string): Promise<boolean> {
   let current = resolve(root);
   const segments = relative(current, filePath).split(sep).filter(Boolean);
-  for (const segment of ['', ...segments]) {
+  for (const segment of segments) {
     current = resolve(current, segment);
     try {
       if ((await lstat(current)).isSymbolicLink()) return true;

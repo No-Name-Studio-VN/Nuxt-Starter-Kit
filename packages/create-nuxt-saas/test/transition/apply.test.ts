@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CliError } from '../../src/errors';
 import { applyPlan } from '../../src/transition/apply';
+import { planTransition } from '../../src/transition/plan';
+import type { Tree } from '../../src/render/render';
 import { pathExists, writeTextFile } from '../../src/util/fs';
 import { makeTempDir } from '../support/fixtureKit';
 
@@ -85,14 +87,26 @@ describe('applyPlan', () => {
     },
   );
 
-  it('checks projectRoot itself for symbolic links', async () => {
-    await symlink(outside, join(root, 'linked-root'));
-    await expect(
-      applyPlan(join(root, 'linked-root'), {
-        changes: [{ path: 'file.txt', kind: 'create', content: Buffer.from('bad') }],
-      }),
-    ).rejects.toThrow('symbolic link');
-    expect(await pathExists(join(outside, 'file.txt'))).toBe(false);
+  it('plans and applies updates through a symlinked project root', async () => {
+    const linkedRoot = join(root, 'linked-root');
+    await symlink(outside, linkedRoot);
+    await writeTextFile(join(outside, 'file.txt'), 'old\n');
+    const base: Tree = new Map([['file.txt', { content: Buffer.from('old\n'), binary: false }]]);
+    const target: Tree = new Map([
+      ['file.txt', { content: Buffer.from('new\n'), binary: false }],
+      ['nested/created.txt', { content: Buffer.from('created\n'), binary: false }],
+    ]);
+    const plan = await planTransition(linkedRoot, base, target);
+    expect(plan).toEqual({
+      changes: [
+        { path: 'file.txt', kind: 'update', content: Buffer.from('new\n') },
+        { path: 'nested/created.txt', kind: 'create', content: Buffer.from('created\n') },
+      ],
+    });
+    await applyPlan(linkedRoot, plan);
+    expect(await readFile(join(outside, 'file.txt'), 'utf8')).toBe('new\n');
+    expect(await readFile(join(outside, 'nested/created.txt'), 'utf8')).toBe('created\n');
+    expect((await lstat(linkedRoot)).isSymbolicLink()).toBe(true);
   });
 
   it('rejects deletion through symlinked directories', async () => {

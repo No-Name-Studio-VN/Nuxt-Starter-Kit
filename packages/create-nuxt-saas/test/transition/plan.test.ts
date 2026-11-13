@@ -271,12 +271,48 @@ describe('protected paths', () => {
     });
   });
 
-  it('creates missing protected content even when unchanged upstream', async () => {
-    expect(
-      await planTransition(root, tree('old\n', 'content/x.md'), tree('old\n', 'content/x.md')),
-    ).toEqual({
-      changes: [{ path: 'content/x.md', kind: 'create', content: Buffer.from('old\n') }],
+  it.each(['old\n', 'new\n'])(
+    'keeps deleted protected content absent when upstream content is %s',
+    async (targetContent) => {
+      const plan = await planTransition(
+        root,
+        tree('old\n', 'content/x.md'),
+        tree(targetContent, 'content/x.md'),
+      );
+      expect(plan).toEqual({ changes: [] });
+      await applyPlan(root, plan);
+      expect(await pathExists(join(root, 'content/x.md'))).toBe(false);
+    },
+  );
+
+  it('creates protected content introduced by an added module', async () => {
+    const base = tree('base\n', 'app/app.vue');
+    const target: Tree = new Map([...base, ...tree('sample\n', 'content/x.md')]);
+    const plan = await planTransition(root, base, target);
+    expect(plan).toEqual({
+      changes: [{ path: 'content/x.md', kind: 'create', content: Buffer.from('sample\n') }],
     });
+    await applyPlan(root, plan);
+    expect(await readFile(join(root, 'content/x.md'), 'utf8')).toBe('sample\n');
+  });
+
+  it('creates new upstream protected content during an upgrade', async () => {
+    const base = tree('v1\n', 'version.txt');
+    const target: Tree = new Map([
+      ...tree('v2\n', 'version.txt'),
+      ...tree('sample\n', 'content/new.md'),
+    ]);
+    await writeTextFile(join(root, 'version.txt'), 'v1\n');
+    const plan = await planTransition(root, base, target);
+    expect(plan).toEqual({
+      changes: [
+        { path: 'content/new.md', kind: 'create', content: Buffer.from('sample\n') },
+        { path: 'version.txt', kind: 'update', content: Buffer.from('v2\n') },
+      ],
+    });
+    await applyPlan(root, plan);
+    expect(await readFile(join(root, 'content/new.md'), 'utf8')).toBe('sample\n');
+    expect(await readFile(join(root, 'version.txt'), 'utf8')).toBe('v2\n');
   });
 
   it('omits identical existing protected content', async () => {
