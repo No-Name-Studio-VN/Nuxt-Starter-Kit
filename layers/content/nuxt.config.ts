@@ -4,11 +4,11 @@ import { DOCS_CONFIG } from './docs.config';
 const { resolve } = createResolver(import.meta.url);
 
 const routeRules = {
-    '/_studio/**': { ssr: true },
-    '/__nuxt_studio/**': { ssr: true },
-    '/admin/studio/login': { ssr: true, index: false },
-    '/admin/studio/login/**': { ssr: true, index: false },
-  };
+  '/_studio/**': { ssr: true },
+  '/__nuxt_studio/**': { ssr: true },
+  '/admin/studio/login': { ssr: true, index: false },
+  '/admin/studio/login/**': { ssr: true, index: false },
+};
 
 export default defineNuxtConfig({
   modules: [
@@ -22,10 +22,25 @@ export default defineNuxtConfig({
   css: [resolve('./app/assets/css/content.css')],
   runtimeConfig: { public: { docs: DOCS_CONFIG } },
   i18n: {
-    locales: [{ code: 'en', file: 'en.json' }, { code: 'vi', file: 'vi.json' }],
+    locales: [
+      { code: 'en', file: 'en.json' },
+      { code: 'vi', file: 'vi.json' },
+    ],
   },
   workerRoutes: { internalPrefixes: ['/__nuxt_content/'] },
-  nitro: { prerender: { routes: ['/blogs', '/en/blogs', '/rss.xml'] } },
+  nitro: {
+    prerender: {
+      routes: ['/blogs', '/en/blogs', '/rss.xml'],
+      ignore: [
+        '/_studio',
+        '/_studio/**',
+        '/__nuxt_studio',
+        '/__nuxt_studio/**',
+        '/admin/studio/login',
+        '/admin/studio/login/**',
+      ],
+    },
+  },
   routeRules,
   content: {
     build: {
@@ -110,5 +125,4 @@ export default defineNuxtConfig({
       branch: 'main',
     },
   },
-
 });

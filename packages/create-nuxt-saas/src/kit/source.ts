@@ -100,12 +100,12 @@ export async function openKit(
     );
   }
   if (!shaPattern.test(commit)) throw unavailable('Expected a full 40-character SHA.');
-  const dir = await mkdtemp(join(tmpdir(), 'nsk-kit-'));
+  const dir = await mkdtemp(join(tmpdir(), 'nuxt-saas-kit-'));
   const cleanup = () => rm(dir, { recursive: true, force: true });
   try {
     if (source.kind === 'local') {
       // Keep the archive outside the snapshot so only tracked kit files remain.
-      const archiveDir = await mkdtemp(join(tmpdir(), 'nsk-kit-archive-'));
+      const archiveDir = await mkdtemp(join(tmpdir(), 'nuxt-saas-kit-archive-'));
       try {
         const archive = join(archiveDir, 'kit.tar');
         try {

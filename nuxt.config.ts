@@ -129,23 +129,14 @@ export default defineNuxtConfig({
       },
     },
     prerender: {
-      // Public pages are served as static files; the Worker renders the rest
-      // (auth, dashboard, admin) and routes listed here that fail to prerender
-      // (see app/modules/worker-routes.ts). 404.html is what Cloudflare serves
-      // for unknown URLs.
+      // Public pages are served as static files; the Worker renders routes that
+      // fail to prerender (see app/modules/worker-routes.ts). 404.html is what
+      // Cloudflare serves for unknown URLs.
       routes: ['/', '/en', '/404.html', '/robots.txt'],
       // A page that fails to prerender stays on the Worker and is reported by
       // app/modules/worker-routes.ts instead of failing the build.
       failOnError: false,
-      ignore: [
-        '/_studio',
-        '/_studio/**',
-        '/__nuxt_studio',
-        '/__nuxt_studio/**',
-        '/api/**', // Ignore ALL API routes (not just /api/studio/**)
-        '/admin/studio/login', // Login page should also be SSR
-        '/admin/studio/login/**', // Login page with any sub-paths
-      ],
+      ignore: ['/api/**'],
     },
     typescript: {
       tsConfig: {

@@ -147,7 +147,7 @@ jobs:
       - name: Check for module leaks
         working-directory: ${{ runner.temp }}/generated
         run: |
-          ! grep -rIl "nsk" . --exclude-dir=node_modules || exit 1
+          ! grep -rIl 'n[s]k' . --exclude-dir=node_modules || exit 1
           SELECTED="$(node -p "require('./.nuxt-saas.json').modules.join(' ')")"
           for MODULE in "$GITHUB_WORKSPACE"/layers/*/module.json; do
             ID="$(basename "$(dirname "$MODULE")")"

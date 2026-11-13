@@ -76,14 +76,30 @@ A comprehensive, production-ready SaaS starter kit built with Nuxt 4, featuring 
 - Node.js 26.x or higher
 - pnpm 12.14.0
 
-### Installation
-
-1. Clone the repository:
+### Create a project
 
 ```bash
-git clone https://github.com/No-Name-Studio-VN/nuxt-template.git
-cd nuxt-template
+npm create nuxt-saas@latest my-app
 ```
+
+Select the modules you need. Base is always included; each selected feature lives in
+`layers/<id>/` and its dependencies are included automatically. To create a base-only project
+without prompts, pass `-- --yes`; to select modules explicitly, use
+`-- --yes --modules auth,pwa`. The generated app uses pnpm (Node.js 22+ for the CLI).
+
+The [CLI README](packages/create-nuxt-saas/README.md) covers all commands, upgrade/conflict handling
+and module authoring. Projects created with CLI 2.x must be regenerated, not upgraded to 3.0.
+
+### Work on the full kit
+
+Cloning this repository includes every layer:
+
+```bash
+git clone https://github.com/No-Name-Studio-VN/Nuxt-Starter-Kit.git
+cd Nuxt-Starter-Kit
+```
+
+1. Enter the repository as shown above.
 
 2. Install dependencies:
 
@@ -121,27 +137,36 @@ The app will be available at `http://localhost:3000`.
 
 ## 📁 Project Structure
 
+```text
+Nuxt-Starter-Kit/
+├── app/                   # Base UI, pages, plugins and extension registries
+├── i18n/                  # Generic base translations
+├── public/                # Base static assets
+├── server/                # Base deployment support; kit-only migrations
+├── shared/                # Base shared constants and validation schemas
+├── types/                 # Base types and augmentable extension interfaces
+├── layers/
+│   ├── auth/              # module.json, Nuxt config, app, server, schemas, types
+│   ├── database/          # Database infrastructure
+│   ├── content/           # Docs/blog configuration and UI
+│   └── ...                # Other optional modules
+├── content/               # Root Markdown, included only with content
+├── packages/create-nuxt-saas/ # CLI (not copied into generated projects)
+└── nuxt.config.ts         # Base config; Nuxt auto-registers selected layers
 ```
-nuxt-template/
-├── app/
-│   ├── assets/css/        # style sheets and Tailwind config
-│   ├── components/        # Vue components
-│   ├── composables/       # Vue composables
-│   ├── constants/         # App constants and configurations
-│   ├── layouts/           # Page layouts (default, dashboard, empty)
-│   ├── lib/               # Utility functions
-│   ├── middleware/        # Route middleware
-│   ├── pages/             # File-based routing
-│   └── plugins/           # Nuxt plugins
-├── public/                # Static assets
-├── server/
-│   ├── api/               # API routes
-│   ├── database/          # Database schema and migrations
-│   └── utils/             # Server utilities
-├── types/                 # TypeScript type definitions
-├── nuxt.config.ts         # Nuxt configuration
-├── pwa.config.ts          # PWA configuration
+
+Generated projects contain only base and selected layers. Database migrations are not copied;
+run `pnpm db:generate` for the selected schemas. Keep `.nuxt-saas.json` in version control:
+add/remove use its recorded kit commit, while upgrade moves to a new commit.
+
+```bash
+pnpm dlx create-nuxt-saas@latest add auth
+pnpm dlx create-nuxt-saas@latest upgrade --check
+pnpm dlx create-nuxt-saas@latest upgrade
 ```
+
+Apply commands require a clean git tree. Review the preview and follow the printed install,
+environment and migration steps.
 
 ## ☁️ Deployment
 

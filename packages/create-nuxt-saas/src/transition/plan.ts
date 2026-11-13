@@ -56,7 +56,7 @@ async function merge(
   user: TreeFile,
   target: TreeFile,
 ): Promise<FileChange> {
-  const directory = await mkdtemp(join(tmpdir(), 'nsk-transition-'));
+  const directory = await mkdtemp(join(tmpdir(), 'nuxt-saas-transition-'));
   try {
     const oursPath = join(directory, 'ours');
     const basePath = join(directory, 'base');
