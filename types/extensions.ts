@@ -1,0 +1,43 @@
+import type { Component } from 'vue';
+
+export interface ExtensionSlots {
+  'app:root': true;
+  'home:hero': true;
+  'header:actions': true;
+}
+
+export type ExtensionSlotName = keyof ExtensionSlots;
+
+export interface ExtensionEntry {
+  id: string;
+  order: number;
+  component: Component;
+}
+
+export interface NavRecord {
+  id: string;
+  order: number;
+  labelKey: string;
+  to: string;
+  icon?: Component;
+  descriptionKey?: string;
+  target?: string;
+  showLinkIcon?: boolean;
+  links?: {
+    labelKey: string;
+    to: string;
+    target?: string;
+    descriptionKey?: string;
+    icon?: string;
+  }[];
+}
+
+export interface NavMenus {
+  header: NavRecord;
+}
+
+export type NavMenu = keyof NavMenus;
+
+export type NavRegistry = {
+  [M in NavMenu]?: Map<string, NavMenus[M]>;
+};

@@ -1,6 +1,9 @@
 @import url('global.css');
 
 @import 'tailwindcss';
+/* Nuxt runs Vite from app/, so Tailwind's automatic detection never reaches the
+   layers' templates. A project without a layers/ folder simply has nothing there. */
+@source '../../../layers';
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));

@@ -7,7 +7,7 @@ import { computed, defineComponent, reactive } from 'vue';
 import { compileScript, parse } from 'vue/compiler-sfc';
 
 const source = readFileSync(
-  new URL('../app/components/content/CtFileTree.vue', import.meta.url),
+  new URL('../layers/content/app/components/content/CtFileTree.vue', import.meta.url),
   'utf8',
 );
 const { descriptor } = parse(source);
@@ -110,7 +110,10 @@ for (const [path, count] of [
 test('docs navigation and GitHub CTA translation keys exist in both locales', () => {
   for (const locale of ['en', 'vi']) {
     const messages = JSON.parse(
-      readFileSync(new URL(`../i18n/locales/${locale}.json`, import.meta.url), 'utf8'),
+      readFileSync(
+        new URL(`../layers/content/i18n/locales/${locale}.json`, import.meta.url),
+        'utf8',
+      ),
     );
     for (const key of ['docs', 'blog', 'previous', 'next']) assert.ok(messages.nav[key]);
     assert.ok(messages.cta.star_on_github);

@@ -1,107 +1,77 @@
-import { assertCleanWorkingTree } from '../git/repo';
-import { readManifest } from '../manifest/io';
-import type { Registry } from '../registry/schema';
-import { localKitOption, resolveRevision } from '../sources/resolveRevision';
-import type { ApplyResult } from '../upgrade/apply';
-import { applyUpgrade } from '../upgrade/apply';
-import type { ActionType } from '../upgrade/plan';
-import { planUpgrade, summarizePlan } from '../upgrade/plan';
+import { CliError } from '../errors';
+import { resolveSelection } from '../kit/modules';
+import type { KitSnapshot } from '../kit/source';
+import { assertCleanTree } from '../project/git';
+import { readState, unresolvedConflicts, writeState } from '../project/state';
+import { render } from '../render/render';
+import { applyPlan } from '../transition/apply';
+import { followUpsFor } from '../transition/followUps';
+import { planTransition } from '../transition/plan';
+import type { TransitionReport } from './modules';
 
-export interface UpgradeOptions {
+export async function runUpgrade(opts: {
   projectRoot: string;
-  registry: Registry;
+  from: KitSnapshot;
+  to: KitSnapshot;
   check: boolean;
   force: boolean;
-  resolveLocalKit?: (revision: string) => string | undefined;
-}
-
-export interface UpgradeReport {
-  fromRevision: string;
-  toRevision: string;
-  upToDate: boolean;
-  summary: Record<ActionType, number>;
-  moduleUpdates: Array<{ id: string; from: string; to: string }>;
-  applied: ApplyResult | null;
-  conflicted: string[];
-  notes: string[];
-}
-
-const EMPTY_SUMMARY: Record<ActionType, number> = {
-  skip: 0,
-  add: 0,
-  overwrite: 0,
-  merge: 0,
-  conflict: 0,
-  delete: 0,
-  orphan: 0,
-};
-
-export async function runUpgrade(options: UpgradeOptions): Promise<UpgradeReport> {
-  const manifest = await readManifest(options.projectRoot);
-  // Previewing is read-only, so it works on a dirty tree; applying does not.
-  if (!options.check) {
-    await assertCleanWorkingTree(options.projectRoot, { force: options.force });
+}): Promise<TransitionReport & { upToDate: boolean }> {
+  const state = await readState(opts.projectRoot);
+  const unresolved = await unresolvedConflicts(opts.projectRoot, state);
+  if (unresolved.length > 0) {
+    throw new CliError(`Resolve these conflicts before continuing: ${unresolved.join(', ')}.`);
   }
-
-  // Where the registry's channel points today. Comparing the project against the
-  // channel's name rather than its tip would report every project as current.
-  const targetRevision = await resolveRevision({
-    template: options.registry.kit.template,
-    revision: options.registry.kit.revision,
-    ...localKitOption(options.resolveLocalKit, options.registry.kit.revision),
-  });
-
-  if (manifest.kit.revision === targetRevision) {
+  if (opts.from.commit !== state.commit) {
+    throw new CliError(
+      `Kit commit ${opts.from.commit} does not match project commit ${state.commit}. Fetch the recorded commit before upgrading.`,
+    );
+  }
+  if (opts.from.commit === opts.to.commit && state.kit === opts.to.template) {
     return {
-      fromRevision: manifest.kit.revision,
-      toRevision: targetRevision,
+      changes: [],
+      conflicts: [],
+      followUps: [],
+      addedModules: [],
+      removedModules: [],
+      applied: false,
       upToDate: true,
-      summary: EMPTY_SUMMARY,
-      moduleUpdates: [],
-      applied: null,
-      conflicted: [],
-      notes: ['Already on the latest kit revision.'],
     };
   }
 
-  const plan = await planUpgrade({
-    projectRoot: options.projectRoot,
-    registry: options.registry,
-    targetRevision,
-    ...(options.resolveLocalKit === undefined ? {} : { resolveLocalKit: options.resolveLocalKit }),
+  const known = new Set(opts.to.modules.map((module) => module.id));
+  const missing = state.modules.filter((id) => !known.has(id)).sort();
+  if (missing.length > 0) {
+    throw new CliError(`Installed modules missing from the target kit: ${missing.join(', ')}.`);
+  }
+  const installed = new Set(state.modules);
+  const modules = resolveSelection(opts.to.modules, state.modules).sort();
+  if (!opts.check) await assertCleanTree(opts.projectRoot, opts.force);
+
+  const base = await render(opts.from, state.modules, state.identity);
+  const target = await render(opts.to, modules, state.identity);
+  const plan = await planTransition(opts.projectRoot, base, target);
+  const conflicts = plan.changes
+    .filter((change) => change.kind === 'conflict')
+    .map((change) => change.path)
+    .sort();
+  const report: TransitionReport & { upToDate: boolean } = {
+    changes: plan.changes,
+    conflicts,
+    followUps: followUpsFor(base, target, plan.changes, modules),
+    addedModules: modules.filter((id) => !installed.has(id)),
+    removedModules: [],
+    applied: !opts.check,
+    upToDate: false,
+  };
+  if (opts.check) return report;
+
+  await applyPlan(opts.projectRoot, plan);
+  await writeState(opts.projectRoot, {
+    ...state,
+    kit: opts.to.template,
+    commit: opts.to.commit,
+    modules,
+    conflicts,
   });
-
-  try {
-    const notes: string[] = [];
-    if (plan.renderVersionChanged) {
-      notes.push(
-        'This project was generated by an older renderer; review the merge results closely.',
-      );
-    }
-    for (const id of plan.droppedModuleIds) {
-      notes.push(`Module "${id}" is no longer in the registry; its files were left untouched.`);
-    }
-    for (const id of plan.addedModuleIds) {
-      notes.push(`Module "${id}" was installed because another module now requires it.`);
-    }
-
-    const report: UpgradeReport = {
-      fromRevision: plan.fromRevision,
-      toRevision: plan.toRevision,
-      upToDate: false,
-      summary: summarizePlan(plan),
-      moduleUpdates: plan.moduleUpdates,
-      applied: null,
-      conflicted: plan.actions
-        .filter((action) => action.type === 'conflict')
-        .map((action) => action.path),
-      notes,
-    };
-
-    if (options.check) return report;
-    report.applied = await applyUpgrade(plan, options.registry);
-    return report;
-  } finally {
-    await plan.cleanup();
-  }
+  return report;
 }

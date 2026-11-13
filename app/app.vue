@@ -1,8 +1,6 @@
 <template>
   <Toaster position="top-center" />
-  <!-- <nsk:pwa> -->
-  <NuxtPwaAssets />
-  <!-- </nsk:pwa> -->
+  <ExtensionSlot name="app:root" />
   <NuxtLoadingIndicator :color="false" class="z-100 bg-primary/80" />
   <TooltipProvider>
     <NuxtLayout>
@@ -18,9 +16,6 @@ import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'vue-sonner';
 
 const isOnline = useOnline();
-// <nsk:pwa>
-const { $pwa } = useNuxtApp();
-// </nsk:pwa>
 
 watch(isOnline, (online, wasOnline) => {
   if (!online) {
@@ -36,25 +31,4 @@ watch(isOnline, (online, wasOnline) => {
     });
   }
 });
-
-// <nsk:pwa>
-onMounted(() => {
-  if ($pwa?.offlineReady) {
-    toast.success('App is ready to work offline.');
-  }
-
-  if ($pwa?.needRefresh) {
-    toast.warning('A new version is available.', {
-      action: {
-        label: 'Update',
-        onClick: () => {
-          $pwa.updateServiceWorker();
-          window.location.reload();
-        },
-      },
-      duration: Infinity,
-    });
-  }
-});
-// </nsk:pwa>
 </script>

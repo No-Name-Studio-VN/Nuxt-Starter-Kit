@@ -1,141 +1,80 @@
-import { lstat, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { glob } from 'tinyglobby';
-import { CliError } from '../errors';
-import { stripUnselectedBlocks } from '../markers/strip';
-import type { RegistryModule } from '../registry/schema';
-import { hashContent, readTextFile, writeTextFile } from '../util/fs';
+import { z } from 'zod';
+import type { KitSnapshot } from '../kit/source';
 import { resolveInside, toPosixPath } from '../util/paths';
-import { applyPlaceholders, assertKnownPlaceholders, type Placeholders } from './placeholders';
+import { composeEnvExample, composePackageJson, composeWrangler, type Claims } from './compose';
 
-/** Kit metadata that describes the kit but is never part of a generated project. */
-const NEVER_RENDERED = new Set(['registry.json']);
-
-export interface RenderedFile {
-  path: string;
-  moduleId: string;
-  hash: string;
+export interface TreeFile {
+  content: Buffer;
+  binary: boolean;
 }
 
-export interface RenderOptions {
-  kitRoot: string;
-  /**
-   * Every module the revision's registry defines. Ownership is a property of the
-   * kit, not of the selection: if it were resolved over the selected modules
-   * alone, a directory glob would swallow the files a module left out claims
-   * individually and render them into a project that never asked for them.
-   */
-  registryModules: RegistryModule[];
-  /** The modules this project installs. */
-  modules: RegistryModule[];
-  placeholders: Placeholders;
-  destinationRoot: string;
+export type Tree = Map<string, TreeFile>;
+
+export interface ProjectIdentity {
+  name: string;
+  description: string;
 }
 
-/**
- * Whether a pattern names an existing file outright.
- *
- * Checking the filesystem rather than scanning for glob metacharacters is what
- * makes Nuxt's route files claimable at all: `app/pages/[...slug].vue` reads as a
- * bracket expression to any globber, matching a single character from `.slug`
- * and never the file itself.
- */
-async function namesAnExistingFile(kitRoot: string, pattern: string): Promise<boolean> {
-  try {
-    const stats = await lstat(resolveInside(kitRoot, pattern, 'Kit path'));
-    return stats.isFile();
-  } catch {
-    return false;
-  }
-}
+const kitConfigSchema = z.object({ exclude: z.array(z.string()) });
 
-/**
- * Maps every kit path a module claims to the module that claims it, failing on a
- * pattern that matches nothing and on two modules claiming the same file.
- * Exported so the kit coverage check can ask the same question rendering asks.
- *
- * Naming a file exactly claims it out of whatever directory glob also covers it —
- * that is how `pwa` owns one component inside `base`'s components directory
- * without `base` having to enumerate the several hundred files it keeps. Two
- * patterns of the same kind claiming one file is still ambiguous, and still an
- * error.
- */
-export async function resolveOwnership(
-  kitRoot: string,
-  modules: RegistryModule[],
-): Promise<Map<string, string>> {
-  const byGlob = new Map<string, string>();
-  const byExactPath = new Map<string, string>();
-
-  for (const module of modules) {
-    for (const pattern of module.paths) {
-      const isLiteral = await namesAnExistingFile(kitRoot, pattern);
-      const matches = isLiteral
-        ? [toPosixPath(pattern)]
-        : await glob(pattern, {
-            cwd: kitRoot,
-            dot: true,
-            onlyFiles: true,
-            followSymbolicLinks: false,
-          });
-      if (matches.length === 0) {
-        throw new CliError(
-          `Module "${module.id}" declares path "${pattern}", which matches no file in the kit.`,
-        );
-      }
-      const claims = isLiteral ? byExactPath : byGlob;
-      for (const match of matches) {
-        if (NEVER_RENDERED.has(match)) continue;
-        const existingOwner = claims.get(match);
-        if (existingOwner && existingOwner !== module.id) {
-          throw new CliError(
-            `File "${match}" is claimed by both "${existingOwner}" and "${module.id}".`,
-          );
-        }
-        claims.set(match, module.id);
-      }
+export async function render(
+  kit: KitSnapshot,
+  selected: string[],
+  identity: ProjectIdentity,
+): Promise<Tree> {
+  const cliRoot = join(kit.dir, 'packages/create-nuxt-saas');
+  const parsed: unknown = JSON.parse(await readFile(join(cliRoot, 'kit.json'), 'utf8'));
+  const config = kitConfigSchema.parse(parsed);
+  const selectedIds = new Set(selected);
+  const dropped = kit.modules.filter((module) => !selectedIds.has(module.id));
+  const drop: Claims = {
+    dependencies: new Set(dropped.flatMap((module) => module.dependencies)),
+    devDependencies: new Set(dropped.flatMap((module) => module.devDependencies)),
+    scripts: new Set(dropped.flatMap((module) => module.scripts)),
+  };
+  const dropEnv = new Set(dropped.flatMap((module) => module.env));
+  const dropBindings = new Set(dropped.flatMap((module) => module.bindings));
+  const paths = await glob('**/*', {
+    cwd: kit.dir,
+    dot: true,
+    onlyFiles: true,
+    followSymbolicLinks: false,
+    ignore: [
+      ...config.exclude,
+      '**/.DS_Store',
+      'README.md',
+      ...dropped.flatMap((module) => [`layers/${module.id}/**`, ...module.rootFiles]),
+    ],
+  });
+  const tree: Tree = new Map();
+  for (const path of paths.map(toPosixPath).sort()) {
+    let content = await readFile(resolveInside(kit.dir, path, 'Kit file'));
+    if (path === 'package.json') {
+      content = Buffer.from(composePackageJson(content.toString('utf8'), drop, identity));
+    } else if (path === '.env.example') {
+      content = Buffer.from(composeEnvExample(content.toString('utf8'), dropEnv));
+    } else if (path === 'wrangler.jsonc') {
+      content = Buffer.from(composeWrangler(content.toString('utf8'), dropBindings, identity));
     }
+    tree.set(path, { content, binary: content.includes(0) });
   }
-
-  return new Map([...byGlob, ...byExactPath]);
-}
-
-/**
- * Produces the exact file tree a module selection belongs to: owned files copied
- * verbatim, unselected marker blocks deleted, placeholder tokens substituted.
- * Nothing else — upgrades re-render old revisions with this same function and
- * diff the result, so any nondeterminism here corrupts merges later.
- */
-export async function renderKit(options: RenderOptions): Promise<RenderedFile[]> {
-  const { kitRoot, modules, registryModules, placeholders, destinationRoot } = options;
-  assertKnownPlaceholders(placeholders);
-
-  const selectedIds = new Set(modules.map((module) => module.id));
-  const owners = await resolveOwnership(kitRoot, registryModules);
-  const rendered: RenderedFile[] = [];
-
-  const ownedPaths = [...owners.entries()]
-    .filter(([, moduleId]) => selectedIds.has(moduleId))
-    .sort(([left], [right]) => left.localeCompare(right));
-
-  for (const [path, moduleId] of ownedPaths) {
-    const source = resolveInside(kitRoot, path, 'Kit file');
-    const destination = resolveInside(destinationRoot, path, 'Generated file');
-    await mkdir(dirname(destination), { recursive: true });
-
-    const contents = await readTextFile(source);
-    if (contents === null) {
-      const raw = await readFile(source);
-      await writeFile(destination, raw);
-      rendered.push({ path, moduleId, hash: hashContent(raw) });
-      continue;
-    }
-
-    const stripped = stripUnselectedBlocks(contents, selectedIds, path);
-    const substituted = applyPlaceholders(stripped, placeholders);
-    await writeTextFile(destination, substituted);
-    rendered.push({ path, moduleId, hash: hashContent(substituted) });
-  }
-
-  return rendered;
+  const modules =
+    kit.modules
+      .filter((module) => selectedIds.has(module.id) && !module.internal)
+      .sort((left, right) => left.id.localeCompare(right.id))
+      .map((module) => `- **${module.title}** — ${module.description}`)
+      .join('\n') || '- None (base only)';
+  const values: Record<string, string> = { ...identity, modules };
+  const template = await readFile(join(cliRoot, 'templates/README.md'), 'utf8');
+  const content = Buffer.from(
+    template.replace(
+      /\{\{(name|description|modules)\}\}/g,
+      (match, key: string) => values[key] ?? match,
+    ),
+  );
+  tree.set('README.md', { content, binary: content.includes(0) });
+  return new Map([...tree].sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)));
 }

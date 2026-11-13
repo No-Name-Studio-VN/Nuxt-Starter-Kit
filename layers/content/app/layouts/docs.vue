@@ -1,0 +1,84 @@
+<template>
+  <div>
+    <LayoutBanner v-if="config.banner.enable" />
+    <LayoutHeader />
+    <div
+      v-if="!page?.fullpage && baseRouteName !== 'index'"
+      class="min-h-screen"
+      :class="{ 'border-b': config.footer.border }"
+    >
+      <div
+        class="flex-1 items-start px-4 md:grid md:gap-6 md:px-8 lg:gap-10"
+        :class="[
+          config.main.padded && 'container',
+          (page?.aside ?? true) &&
+            'md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]',
+        ]"
+      >
+        <aside
+          v-if="page?.aside ?? true"
+          class="fixed z-30 -ml-2 hidden w-full shrink-0 overflow-y-auto top-25.5 md:sticky md:block"
+          :class="[
+            config.aside.useLevel && config.aside.levelStyle === 'aside'
+              ? 'h-[calc(100vh-3.5rem)] md:top-15.25'
+              : 'h-[calc(100vh-6rem)] md:top-25.25',
+          ]"
+        >
+          <LayoutAside :is-mobile="false" />
+        </aside>
+        <slot />
+      </div>
+    </div>
+    <div v-else class="min-h-screen">
+      <slot />
+    </div>
+    <BackToTop />
+    <LayoutFooter />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { usePageData } from '#layers/content/app/composables/usePageData';
+
+const route = useRoute();
+const { page } = usePageData();
+const routePath = computed(() => route.path);
+
+// Resolve page flags before rendering the shell. Fetching in the child page is
+// too late for SSR and causes the sidebar/fullpage columns to change on hydration.
+const { data: pageData } = await useAsyncData(
+  `page-${routePath.value}`,
+  async () => {
+    const data = await queryCollection('content').path(routePath.value).first();
+    // Retry without the trailing slash only when there is one to strip.
+    if (!data && routePath.value.length > 1 && routePath.value.endsWith('/')) {
+      return await queryCollection('content').path(routePath.value.slice(0, -1)).first();
+    }
+    return data;
+  },
+  { watch: [routePath] },
+);
+watch(
+  pageData,
+  (value) => {
+    page.value = value ?? null;
+  },
+  { immediate: true },
+);
+
+const config = useDocsConfig();
+const { themeClass, radius, setClassTheme } = useThemes();
+
+const baseRouteName = computed(() => useRouteBaseName()(route));
+
+useHead({
+  bodyAttrs: {
+    class: themeClass.value,
+    style: `--radius: ${radius.value}rem;`,
+  },
+});
+
+onMounted(() => {
+  setClassTheme();
+});
+</script>

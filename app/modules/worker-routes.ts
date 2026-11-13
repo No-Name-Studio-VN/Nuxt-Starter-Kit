@@ -1,11 +1,11 @@
 /**
  * Nuxt Module: Worker Routes
  *
- * Content pages are prerendered, so the Cloudflare Worker is only needed for the
- * server handlers and the pages that cannot be static (auth, dashboards, ...).
+ * Static pages are prerendered, so the Cloudflare Worker is only needed for the
+ * server handlers and the pages that cannot be static.
  * Without this module, any path without a static file (bots probing /.env,
- * /wp-login.php, ...) reached the Worker and fell through to the catch-all docs
- * page, paying a full SSR plus content queries per request and blowing the
+ * /wp-login.php, ...) reached the Worker and fell through to the catch-all page
+ * route, paying a full SSR plus its data queries per request and blowing the
  * Workers CPU limit.
  *
  * After prerendering, this module lists the server handlers and the pages without
@@ -36,16 +36,13 @@ const MAX_WORKER_FIRST_RULE_LENGTH = 100;
 
 /**
  * Handlers that must not be reachable from the edge: Nuxt's error page render,
- * server component islands (unused here) and @nuxt/content's query endpoints.
- * Browsers query content through WASM SQLite on the prerendered dumps; the few
- * without WebAssembly (e.g. Safari Lockdown Mode) lose client-side content
- * queries, which is accepted to keep the endpoint off the Worker.
+ * server component islands (unused here) and internal prefixes contributed by layers.
  */
-function isInternalRoute(route: string): boolean {
+function isInternalRoute(route: string, internalPrefixes: string[]): boolean {
   return (
     route === '/__nuxt_error' ||
     route.startsWith('/__nuxt_island') ||
-    route.startsWith('/__nuxt_content/')
+    internalPrefixes.some((prefix) => route.startsWith(prefix))
   );
 }
 
@@ -173,6 +170,7 @@ function listWorkerRoutes(
   redirectSources: Set<string>,
   pagePaths: string[],
   unrendered: string[],
+  internalPrefixes: string[],
 ): WorkerRoutes {
   const globs = new Set<string>();
   const regExpSources: Record<string, Set<string>> = {};
@@ -214,7 +212,8 @@ function listWorkerRoutes(
     ...nitro.options.handlers,
   ]) {
     // Middleware and the Nuxt renderer ('/**') run for every path; pages are static.
-    if (!route || middleware || route === '/**' || isInternalRoute(route)) continue;
+    if (!route || middleware || route === '/**' || isInternalRoute(route, internalPrefixes))
+      continue;
     if (!isBundled(nitro, env)) continue;
 
     const matcher = new RegExp(`^${routeToRegExpSource(route)}/?$`);
@@ -268,6 +267,7 @@ export default defineNuxtModule({
 
   defaults: {
     enabled: true,
+    internalPrefixes: new Array<string>(),
   },
 
   setup(options, nuxt) {
@@ -346,13 +346,20 @@ export default defineNuxtModule({
 
       // Runs once every module has finished prerendering (the sitemap writes its
       // files from its own prerender:done hook), the public dir has been copied
-      // and the PWA service worker written, and before the preset writes
+      // and a layer's service worker written, and before the preset writes
       // wrangler.json from `nitro.options.cloudflare.wrangler` in `compiled`.
       nuxt.hook('nitro:build:public-assets', async () => {
         const { publicDir } = nitro.options.output;
         const staticPaths = await listStaticPaths(publicDir);
         const redirectSources = await listRedirectSources(publicDir);
-        workerRoutes = listWorkerRoutes(nitro, staticPaths, redirectSources, pagePaths, unrendered);
+        workerRoutes = listWorkerRoutes(
+          nitro,
+          staticPaths,
+          redirectSources,
+          pagePaths,
+          unrendered,
+          options.internalPrefixes,
+        );
         assertValidGlobs(workerRoutes.globs);
 
         // An array (even a short one) is what makes Cloudflare apply

@@ -34,16 +34,11 @@
 
           <!-- Desktop Navigation -->
           <nav class="hidden md:flex items-center gap-0.5">
-            <LayoutHeaderNav />
+            <HeaderNav />
 
             <Separator orientation="vertical" class="mx-3 h-4 bg-border/60" />
 
-            <LayoutSearchButton
-              :enable="headerSearch.enable"
-              :in-aside="headerSearch.inAside"
-              :style="'button'"
-              :placeholder="headerSearch.placeholder"
-            />
+            <ExtensionSlot name="header:actions" />
 
             <!-- Language Switcher Dropdown -->
             <LangSwitcher v-if="i18nEnabled" />
@@ -87,12 +82,7 @@
 
           <!-- Mobile Controls -->
           <div class="flex items-center gap-0.5 md:hidden">
-            <LayoutSearchButton
-              :enable="headerSearch.enable"
-              :in-aside="headerSearch.inAside"
-              :style="'button'"
-              :placeholder="headerSearch.placeholder"
-            />
+            <ExtensionSlot name="header:actions" />
 
             <LangSwitcher v-if="i18nEnabled" />
 
@@ -455,7 +445,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import CtIcon from '@/components/content/CtIcon.vue';
+import CtIcon from '@/components/SiteIcon.vue';
 import { GitHubIcon, XIcon } from 'vue3-simple-icons';
 import {
   Menu,
@@ -475,7 +465,6 @@ import { APP_MANIFEST } from '#shared/constants/manifest';
 const config = useConfig();
 
 const headerNav = computed(() => config.value.header.nav);
-const headerSearch = computed(() => config.value.search);
 
 const activeSubmenu = ref<number | null>(null);
 
@@ -493,8 +482,8 @@ function closeSubmenu() {
 }
 
 const { locale, availableLocales } = useI18n();
-// Read straight from i18n rather than through useI18nDocs: this layout only wants
-// the flag, and useI18nDocs also reads the content navigation.
+// Read directly from i18n: this layout only needs to know whether multiple
+// locales are available, without loading a layer's navigation.
 const i18nEnabled = availableLocales.length > 1;
 const isMobileMenuOpen = ref(false);
 

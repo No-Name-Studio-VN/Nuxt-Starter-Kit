@@ -1,151 +1,282 @@
-import { readFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import type * as FileSystem from 'node:fs/promises';
+import {
+  cp,
+  lstat,
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { promisify } from 'node:util';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runInit } from '../../src/commands/init';
-import { readManifest } from '../../src/manifest/io';
-import { hashContent, listFiles, writeTextFile } from '../../src/util/fs';
-import { FIXTURE_KIT_V1_ROOT, loadFixtureRegistry, makeTempDir } from '../support/fixtureKit';
-import { must } from '../support/must';
+import { CliError } from '../../src/errors';
+import { DEFAULT_TEMPLATE, openKit, type KitSnapshot } from '../../src/kit/source';
+import { readState } from '../../src/project/state';
+import { pathExists, writeTextFile } from '../../src/util/fs';
+import { createFixtureKit, makeTempDir } from '../support/fixtureKit';
 
-async function init(moduleIds: string[], targetDir?: string) {
-  const registry = await loadFixtureRegistry();
-  return runInit({
-    registry,
-    targetDir: targetDir ?? join(await makeTempDir('init'), 'my-app'),
-    moduleIds,
-    placeholders: { PROJECT_NAME: 'my-app', PROJECT_DESCRIPTION: 'Test' },
-    localKitRoot: FIXTURE_KIT_V1_ROOT,
-  });
+// Keep real IO except when exercising otherwise-unreachable publication failures.
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const fs = await importOriginal<typeof FileSystem>();
+  return { ...fs, rename: vi.fn(fs.rename), cp: vi.fn(fs.cp) };
+});
+
+const run = promisify(execFile);
+const identity = { name: 'my-app', description: 'My project' };
+let fixture: Awaited<ReturnType<typeof createFixtureKit>>;
+let kit: KitSnapshot;
+let parent: string;
+let target: string;
+
+beforeAll(async () => {
+  fixture = await createFixtureKit();
+  kit = await openKit(
+    { kind: 'local', path: fixture.root, allowDirty: false },
+    fixture.v1,
+    DEFAULT_TEMPLATE,
+  );
+});
+afterAll(async () => {
+  await kit?.cleanup();
+  if (fixture) await rm(fixture.root, { recursive: true, force: true });
+});
+beforeEach(async () => {
+  parent = await makeTempDir('init');
+  target = join(parent, 'my-app');
+  vi.stubEnv('GIT_CONFIG_GLOBAL', '/dev/null');
+  vi.stubEnv('GIT_CONFIG_NOSYSTEM', '1');
+  vi.stubEnv('GIT_AUTHOR_NAME', 'Fixture Author');
+  vi.stubEnv('GIT_AUTHOR_EMAIL', 'fixture@example.invalid');
+  vi.stubEnv('GIT_COMMITTER_NAME', 'Fixture Author');
+  vi.stubEnv('GIT_COMMITTER_EMAIL', 'fixture@example.invalid');
+});
+afterEach(async () => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+  const fs = await vi.importActual<typeof FileSystem>('node:fs/promises');
+  vi.mocked(rename).mockImplementation(fs.rename);
+  vi.mocked(cp).mockImplementation(fs.cp);
+  await rm(parent, { recursive: true, force: true });
+});
+
+function init(requested: string[] = [], git = false) {
+  return runInit({ target, identity, requested, kit, git });
+}
+async function temporarySiblings(): Promise<string[]> {
+  return (await readdir(parent)).filter((path) => path.startsWith('.nuxt-saas-'));
 }
 
 describe('runInit', () => {
-  it('generates the selected modules plus their dependencies', async () => {
-    const result = await init(['pwa']);
-    expect(result.moduleIds).toEqual(['base', 'pwa']);
-    expect(await listFiles(result.projectRoot)).toEqual([
-      '.nuxt-saas/manifest.json',
-      'app/app.vue',
-      'app/components/InstallPrompter.vue',
-      'app/legacy.ts',
-      'app/pages/index.vue',
-      'nuxt.config.ts',
-      'package.json',
+  it('scaffolds the beta dependency closure at v1, including state, binary files and a git commit', async () => {
+    const report = await init(['beta'], true);
+    expect(report).toEqual({
+      target,
+      modules: ['alpha', 'beta'],
+      git: 'committed',
+      followUps: [
+        'pnpm install',
+        'pnpm db:generate',
+        'cp .env.example .env and fill: SITE_URL, ALPHA_KEY',
+      ],
+    });
+    expect(await readFile(join(target, 'layers/alpha/app/pages/alpha.vue'), 'utf8')).toContain(
+      'Alpha v1',
+    );
+    expect(
+      await readFile(join(target, 'layers/beta/server/db/schema.sqlite.ts'), 'utf8'),
+    ).toContain('version: 1');
+    expect(await pathExists(join(target, 'layers/docs'))).toBe(false);
+    expect(await readFile(join(target, 'public/logo.png'))).toEqual(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0x0d, 0x0a]),
+    );
+    expect(await readState(target)).toEqual({
+      version: 3,
+      kit: DEFAULT_TEMPLATE,
+      commit: fixture.v1,
+      modules: ['alpha', 'beta'],
+      identity,
+      conflicts: [],
+    });
+    const { stdout: status } = await run('git', ['-C', target, 'status', '--porcelain']);
+    expect(status).toBe('');
+    const { stdout: tracked } = await run('git', ['-C', target, 'ls-files', '.nuxt-saas.json']);
+    expect(tracked.trim()).toBe('.nuxt-saas.json');
+    expect(await temporarySiblings()).toEqual([]);
+  });
+
+  it('initializes base only in an existing empty directory without git', async () => {
+    await mkdir(target);
+    expect(await init()).toEqual({
+      target,
+      modules: [],
+      git: 'skipped',
+      followUps: ['pnpm install', 'cp .env.example .env and fill: SITE_URL'],
+    });
+    expect(await pathExists(join(target, '.git'))).toBe(false);
+    expect(await pathExists(join(target, 'layers'))).toBe(false);
+    expect((await readState(target)).modules).toEqual([]);
+    expect(await temporarySiblings()).toEqual([]);
+  });
+
+  it('creates missing parent directories for a nested target', async () => {
+    target = join(parent, 'apps/web/my-app');
+    expect((await init()).target).toBe(target);
+    expect((await readState(target)).identity).toEqual(identity);
+    expect(await readFile(join(target, 'app/pages/index.vue'), 'utf8')).toContain('Home v1');
+    expect(await readdir(join(parent, 'apps/web'))).toEqual(['my-app']);
+  });
+
+  it.each(['apps', 'apps/web'])(
+    'reports a CliError when a file blocks parent creation at %s',
+    async (blocked) => {
+      const blockedPath = join(parent, blocked);
+      await writeTextFile(blockedPath, 'mine\n');
+      target = join(parent, 'apps/web/my-app');
+      const creating = init();
+      await expect(creating).rejects.toThrow(CliError);
+      await expect(creating).rejects.toThrow(join(parent, 'apps/web'));
+      expect(await readFile(blockedPath, 'utf8')).toBe('mine\n');
+      expect(await temporarySiblings()).toEqual([]);
+    },
+  );
+
+  it('reports all-modules follow-ups on the fixture', async () => {
+    const report = await init(['alpha', 'beta', 'docs']);
+    expect(report.modules).toEqual(['alpha', 'beta', 'docs']);
+    expect(report.followUps).toEqual([
+      'pnpm install',
+      'pnpm db:generate',
+      'cp .env.example .env and fill: SITE_URL, ALPHA_KEY',
     ]);
+    expect(await readFile(join(target, 'content/hello.md'), 'utf8')).toBe('# Hello\n');
   });
 
-  it('writes a manifest describing what was installed', async () => {
-    const result = await init(['content']);
-    const manifest = await readManifest(result.projectRoot);
-    expect(manifest.modules.map((module) => module.id)).toEqual(['base', 'content']);
-    expect(manifest.kit.revision).toBe('v1');
-    expect(manifest.placeholders.PROJECT_NAME).toBe('my-app');
-    expect(Object.keys(must(manifest.modules[1]).files)).toEqual(['content.config.ts']);
+  it('skips a nested repository when the parent already is a git work tree', async () => {
+    await run('git', ['-C', parent, 'init']);
+    expect((await init([], true)).git).toBe('skipped');
+    expect(await pathExists(join(target, '.git'))).toBe(false);
   });
 
-  it('merges structured fragments of installed modules into package.json', async () => {
-    const result = await init(['content', 'pwa']);
-    const packageJson = JSON.parse(
-      await readFile(join(result.projectRoot, 'package.json'), 'utf8'),
-    );
-    expect(packageJson.dependencies).toEqual({
-      '@nuxt/content': '^3.0.0',
-      '@vite-pwa/nuxt': '^1.0.0',
+  it('normalizes identity names with spaces and capitals without changing the directory name', async () => {
+    target = join(parent, 'My Great App');
+    const report = await runInit({
+      target,
+      identity: { name: 'My Great App', description: 'Named project' },
+      requested: [],
+      kit,
+      git: false,
     });
-    expect(packageJson.name).toBe('my-app');
+    const pkg: unknown = JSON.parse(await readFile(join(target, 'package.json'), 'utf8'));
+    expect(pkg).toMatchObject({ name: 'my-great-app', description: 'Named project' });
+    expect((await readState(target)).identity.name).toBe('my-great-app');
+    expect(report.target).toBe(target);
   });
 
-  it("drops unselected modules' entries from shared JSON files", async () => {
-    const result = await init(['base']);
-    const packageJson = JSON.parse(
-      await readFile(join(result.projectRoot, 'package.json'), 'utf8'),
-    );
-    expect(packageJson.dependencies).toEqual({});
+  it('refuses non-empty targets without changing their contents', async () => {
+    await writeTextFile(join(target, '.keep'), 'mine\n');
+    const creating = init();
+    await expect(creating).rejects.toThrow(CliError);
+    await expect(creating).rejects.toThrow('not empty');
+    expect(await readdir(target)).toEqual(['.keep']);
+    expect(await readFile(join(target, '.keep'), 'utf8')).toBe('mine\n');
+    expect(await temporarySiblings()).toEqual([]);
   });
 
-  it('keeps an entry a selected module still declares', async () => {
-    const result = await init(['content']);
-    const packageJson = JSON.parse(
-      await readFile(join(result.projectRoot, 'package.json'), 'utf8'),
-    );
-    expect(packageJson.dependencies).toEqual({ '@nuxt/content': '^3.0.0' });
+  it('does not replace an existing file target', async () => {
+    await writeFile(target, 'mine');
+    await expect(init()).rejects.toThrow('not empty');
+    expect(await readFile(target, 'utf8')).toBe('mine');
+    expect(await temporarySiblings()).toEqual([]);
   });
 
-  // The kit cannot hold {{PROJECT_NAME}} in this field and still install, so the
-  // module declares it and the structured pass substitutes on the way in.
-  it('substitutes placeholders in structured values', async () => {
-    const result = await init(['base']);
-    const packageJson = JSON.parse(
-      await readFile(join(result.projectRoot, 'package.json'), 'utf8'),
-    );
-    expect(packageJson.name).toBe('my-app');
-  });
+  it.each(['directory', 'dangling'])(
+    'refuses a %s target symlink without following it',
+    async (kind) => {
+      const outside = join(parent, 'outside');
+      if (kind === 'directory') await mkdir(outside);
+      await symlink(outside, target);
+      await expect(init()).rejects.toThrow(CliError);
+      expect((await lstat(target)).isSymbolicLink()).toBe(true);
+      if (kind === 'directory') expect(await readdir(outside)).toEqual([]);
+      else expect(await pathExists(outside)).toBe(false);
+      expect(await temporarySiblings()).toEqual([]);
+    },
+  );
 
-  it('surfaces module notes', async () => {
-    const result = await init(['pwa']);
-    expect(result.notes).toContain('Generate PWA icons before deploying.');
-  });
-
-  it('refuses to generate into a non-empty directory, naming what is in the way', async () => {
-    const targetDir = await makeTempDir('init-existing');
-    await writeTextFile(join(targetDir, 'README.md'), 'mine');
-    await expect(init(['base'], targetDir)).rejects.toThrow(/already contains README\.md/);
-  });
-
-  it('summarises the count once too many entries are in the way', async () => {
-    const targetDir = await makeTempDir('init-crowded');
-    for (const name of ['a.txt', 'b.txt', 'c.txt', 'd.txt', 'e.txt']) {
-      await writeTextFile(join(targetDir, name), 'mine');
-    }
-    await expect(init(['base'], targetDir)).rejects.toThrow(
-      /already contains a\.txt, b\.txt, c\.txt, and 2 more/,
-    );
-  });
-
-  it('generates into an existing empty directory', async () => {
-    const targetDir = await makeTempDir('init-empty');
-    const result = await init(['base'], targetDir);
-    expect(result.projectRoot).toBe(targetDir);
-  });
-});
-
-describe('manifest hashes', () => {
-  it('records the post-merge hash of structured targets', async () => {
-    const result = await init(['content']);
-    const manifest = await readManifest(result.projectRoot);
-    const recorded = must(manifest.modules.find((module) => module.id === 'base')).files[
-      'package.json'
-    ];
-    const onDisk = hashContent(await readFile(join(result.projectRoot, 'package.json'), 'utf8'));
-    expect(recorded).toBe(onDisk);
-  });
-
-  it('records the render hash of untouched files', async () => {
-    const result = await init(['content']);
-    const manifest = await readManifest(result.projectRoot);
-    const recorded = must(manifest.modules.find((module) => module.id === 'base')).files[
-      'nuxt.config.ts'
-    ];
-    const onDisk = hashContent(await readFile(join(result.projectRoot, 'nuxt.config.ts'), 'utf8'));
-    expect(recorded).toBe(onDisk);
-  });
-});
-
-describe('structured provenance', () => {
-  it('records what each module contributed to shared JSON files', async () => {
-    const result = await init(['content', 'pwa']);
-    const manifest = await readManifest(result.projectRoot);
-    const content = must(manifest.modules.find((module) => module.id === 'content'));
-    const pwa = must(manifest.modules.find((module) => module.id === 'pwa'));
-    expect(content.structured['package.json']).toEqual({
-      dependencies: { '@nuxt/content': '^3.0.0' },
+  it('cleans up a render failure, leaving neither target nor a temporary sibling', async () => {
+    const creating = runInit({
+      target,
+      identity,
+      requested: ['beta'],
+      kit: { ...kit, dir: join(parent, 'missing-kit') },
+      git: false,
     });
-    expect(pwa.structured['package.json']).toEqual({
-      dependencies: { '@vite-pwa/nuxt': '^1.0.0' },
+    await expect(creating).rejects.toThrow(join(parent, 'missing-kit'));
+    expect(await pathExists(target)).toBe(false);
+    expect(await temporarySiblings()).toEqual([]);
+  });
+
+  it('leaves an empty target untouched when rendering fails', async () => {
+    await mkdir(target);
+    await expect(
+      runInit({
+        target,
+        identity,
+        requested: [],
+        kit: { ...kit, dir: join(parent, 'missing-kit') },
+        git: false,
+      }),
+    ).rejects.toThrow(join(parent, 'missing-kit'));
+    expect(await readdir(target)).toEqual([]);
+    expect(await temporarySiblings()).toEqual([]);
+  });
+
+  it('refuses unknown modules before publishing any files', async () => {
+    await expect(init(['missing'])).rejects.toThrow('Unknown module');
+    expect(await pathExists(target)).toBe(false);
+    expect(await temporarySiblings()).toEqual([]);
+  });
+
+  it('cleans up when publication fails for a reason other than EXDEV', async () => {
+    const fs = await vi.importActual<typeof FileSystem>('node:fs/promises');
+    vi.mocked(rename).mockImplementation(async (from, to) => {
+      if (to === target) throw Object.assign(new Error('rename denied'), { code: 'EACCES' });
+      await fs.rename(from, to);
     });
-    // Stored as authored: the token, not the substituted value, so an upgrade can
-    // still tell what the module put there.
-    expect(must(manifest.modules.find((module) => module.id === 'base')).structured).toEqual({
-      'package.json': { name: '{{PROJECT_NAME}}' },
+    await expect(init()).rejects.toThrow('rename denied');
+    expect(await pathExists(target)).toBe(false);
+    expect(await temporarySiblings()).toEqual([]);
+  });
+
+  it('falls back to copying on EXDEV and removes the staging directory', async () => {
+    const fs = await vi.importActual<typeof FileSystem>('node:fs/promises');
+    vi.mocked(rename).mockImplementation(async (from, to) => {
+      if (to === target) throw Object.assign(new Error('cross-device'), { code: 'EXDEV' });
+      await fs.rename(from, to);
     });
+    expect((await init()).git).toBe('skipped');
+    expect((await readState(target)).commit).toBe(fixture.v1);
+    expect(await temporarySiblings()).toEqual([]);
+  });
+
+  it('removes a partial copy when the EXDEV fallback fails', async () => {
+    const fs = await vi.importActual<typeof FileSystem>('node:fs/promises');
+    vi.mocked(rename).mockImplementation(async (from, to) => {
+      if (to === target) throw Object.assign(new Error('cross-device'), { code: 'EXDEV' });
+      await fs.rename(from, to);
+    });
+    vi.mocked(cp).mockImplementationOnce(async () => {
+      await writeTextFile(join(target, 'partial.txt'), 'partial');
+      throw new Error('copy failed');
+    });
+    await expect(init()).rejects.toThrow('copy failed');
+    expect(await pathExists(target)).toBe(false);
+    expect(await temporarySiblings()).toEqual([]);
   });
 });
