@@ -1,6 +1,6 @@
 name: CLI matrix
 
-# Generates a project for each module combination the registry supports and
+# Generates a project for each supported module combination and
 # typechecks it. This is the only guard against undeclared coupling: a base file
 # importing a module's symbol compiles fine in the kit, where every module is
 # present, and fails here.
@@ -14,6 +14,7 @@ on:
       - '.github/workflows/cli-matrix.yml'
       - 'package.json'
       - 'nuxt.config.ts'
+      - 'layers/**'
       - 'app/**'
       - 'server/**'
       - 'shared/**'
@@ -63,7 +64,6 @@ jobs:
         run: pnpm run typecheck
 
   generate:
-    if: false # re-enabled in Task 22
     name: ${{ matrix.name }}
     needs: unit
     runs-on: ubuntu-latest
@@ -74,7 +74,7 @@ jobs:
           # base alone is the load-bearing row: it is the only one that proves
           # the frontend foundation carries no server code it cannot run without.
           - name: base
-            modules: base
+            modules: ''
           - name: base + pwa
             modules: pwa
           - name: base + content
@@ -98,7 +98,10 @@ jobs:
           - name: base + email verification
             modules: auth-email-verification
           - name: all modules
-            modules: content,pwa,admin-users,admin-kv,feature-flags,auth-2fa,auth-passkeys,auth-email-verification
+            modules: admin,admin-kv,admin-users,auth,auth-2fa,auth-email-verification,auth-passkeys,content,database,feature-flags,pwa
+          - name: lifecycle (auth + add admin-users)
+            modules: auth
+            lifecycle: true
     steps:
       - uses: actions/checkout@v4
 
@@ -124,12 +127,35 @@ jobs:
             "$RUNNER_TEMP/generated" \
             --yes \
             --kit . \
+            --no-git \
             --modules '${{ matrix.modules }}'
 
       # husky's install step expects a repository, and pnpm runs it during install.
       - name: Initialise a repository
         working-directory: ${{ runner.temp }}/generated
         run: git init --quiet
+
+      - name: Add admin-users to an existing auth project
+        if: matrix.lifecycle == true
+        working-directory: ${{ runner.temp }}/generated
+        run: |
+          git add -A
+          git -c user.name=ci -c user.email=ci@local commit -qm init
+          node "$GITHUB_WORKSPACE/packages/create-nuxt-saas/bin/nuxt-saas.mjs" add admin-users \
+            --kit "$GITHUB_WORKSPACE"
+
+      - name: Check for module leaks
+        working-directory: ${{ runner.temp }}/generated
+        run: |
+          ! grep -rIl "nsk" . --exclude-dir=node_modules || exit 1
+          SELECTED="$(node -p "require('./.nuxt-saas.json').modules.join(' ')")"
+          for MODULE in "$GITHUB_WORKSPACE"/layers/*/module.json; do
+            ID="$(basename "$(dirname "$MODULE")")"
+            case " $SELECTED " in
+              *" $ID "*) ;;
+              *) test ! -d "layers/$ID" ;;
+            esac
+          done
 
       - name: Install the generated project
         working-directory: ${{ runner.temp }}/generated
@@ -140,3 +166,11 @@ jobs:
       - name: Typecheck the generated project
         working-directory: ${{ runner.temp }}/generated
         run: pnpm run typecheck
+
+      - name: Generate database migrations when selected
+        working-directory: ${{ runner.temp }}/generated
+        run: |
+          if [ "$(node -p "require('./.nuxt-saas.json').modules.includes('database')")" = true ]; then
+            pnpm db:generate
+            test -n "$(ls server/db/migrations/sqlite/*.sql)"
+          fi
