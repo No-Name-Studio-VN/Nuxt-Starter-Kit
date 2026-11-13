@@ -51,12 +51,23 @@ describe('assertCleanTree', () => {
     await expect(assertCleanTree(root, false)).rejects.toThrow('commit or stash');
   });
 
-  it('checks the containing work tree, not just files below projectRoot', async () => {
-    await writeTextFile(join(root, 'file.txt'), 'initial\n');
+  it('ignores dirty files outside the project in a containing work tree', async () => {
+    const project = join(root, 'packages/my-app');
+    await writeTextFile(join(root, 'other.txt'), 'initial\n');
+    await writeTextFile(join(project, 'file.txt'), 'initial\n');
     await initRepository(root);
-    await mkdir(join(root, 'nested'));
-    await writeTextFile(join(root, 'file.txt'), 'dirty\n');
-    await expect(assertCleanTree(join(root, 'nested'), false)).rejects.toThrow('commit or stash');
+    await writeTextFile(join(root, 'other.txt'), 'dirty\n');
+    await writeTextFile(join(root, 'packages/other-app/untracked.txt'), 'untracked\n');
+    await expect(assertCleanTree(project, false)).resolves.toBeUndefined();
+  });
+
+  it('still rejects dirty files inside a project nested in a containing work tree', async () => {
+    const project = join(root, 'packages/my-app');
+    await writeTextFile(join(root, 'other.txt'), 'initial\n');
+    await writeTextFile(join(project, 'file.txt'), 'initial\n');
+    await initRepository(root);
+    await writeTextFile(join(project, 'file.txt'), 'dirty\n');
+    await expect(assertCleanTree(project, false)).rejects.toThrow('commit or stash');
   });
 });
 

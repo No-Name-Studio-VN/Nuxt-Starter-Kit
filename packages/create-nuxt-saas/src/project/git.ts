@@ -22,7 +22,7 @@ export async function assertCleanTree(projectRoot: string, force: boolean): Prom
       'This project needs git before it can be managed. Initialize a repository or use --force.',
     );
   }
-  const { stdout } = await run('git', ['-C', projectRoot, 'status', '--porcelain'], {
+  const { stdout } = await run('git', ['-C', projectRoot, 'status', '--porcelain', '--', '.'], {
     timeout: 15_000,
   });
   if (stdout.trim())

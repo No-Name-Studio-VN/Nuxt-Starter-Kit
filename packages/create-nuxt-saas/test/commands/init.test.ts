@@ -124,6 +124,28 @@ describe('runInit', () => {
     expect(await temporarySiblings()).toEqual([]);
   });
 
+  it('creates missing parent directories for a nested target', async () => {
+    target = join(parent, 'apps/web/my-app');
+    expect((await init()).target).toBe(target);
+    expect((await readState(target)).identity).toEqual(identity);
+    expect(await readFile(join(target, 'app/pages/index.vue'), 'utf8')).toContain('Home v1');
+    expect(await readdir(join(parent, 'apps/web'))).toEqual(['my-app']);
+  });
+
+  it.each(['apps', 'apps/web'])(
+    'reports a CliError when a file blocks parent creation at %s',
+    async (blocked) => {
+      const blockedPath = join(parent, blocked);
+      await writeTextFile(blockedPath, 'mine\n');
+      target = join(parent, 'apps/web/my-app');
+      const creating = init();
+      await expect(creating).rejects.toThrow(CliError);
+      await expect(creating).rejects.toThrow(join(parent, 'apps/web'));
+      expect(await readFile(blockedPath, 'utf8')).toBe('mine\n');
+      expect(await temporarySiblings()).toEqual([]);
+    },
+  );
+
   it('reports all-modules follow-ups on the fixture', async () => {
     const report = await init(['alpha', 'beta', 'docs']);
     expect(report.modules).toEqual(['alpha', 'beta', 'docs']);

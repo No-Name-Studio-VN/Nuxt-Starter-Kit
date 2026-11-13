@@ -62,13 +62,23 @@ export async function runInit(opts: {
   git: boolean;
 }): Promise<InitReport> {
   const target = resolve(opts.target);
-  await checkTarget(target);
   const modules = resolveSelection(opts.kit.modules, opts.requested).sort();
   const identity = {
     name: sanitizeProjectName(opts.identity.name),
     description: opts.identity.description,
   };
-  const temporary = await mkdtemp(join(dirname(target), '.nuxt-saas-'));
+  const parent = dirname(target);
+  let temporary: string;
+  try {
+    await mkdir(parent, { recursive: true });
+    await checkTarget(target);
+    temporary = await mkdtemp(join(parent, '.nuxt-saas-'));
+  } catch (error) {
+    if (error instanceof CliError) throw error;
+    throw new CliError(
+      `Unable to prepare project directory ${parent}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
   try {
     const tree = await render(opts.kit, modules, identity);
     for (const [path, file] of tree) {
