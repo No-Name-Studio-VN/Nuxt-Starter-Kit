@@ -13,6 +13,7 @@ export default createConfigForNuxt({
       '**/dist-ssr/**',
       '**/coverage/**',
       'app/components/ui/**',
+      'layers/*/app/components/ui/**',
       'content/**',
       'skills/**',
       'server/db/migrations/**',
