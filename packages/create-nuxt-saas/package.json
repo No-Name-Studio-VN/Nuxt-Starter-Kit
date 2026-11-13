@@ -39,7 +39,7 @@
   },
   "scripts": {
     "build": "unbuild",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc6 --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
