@@ -1,3 +1,4 @@
+import type { SafeUser } from '#layers/auth/types/auth';
 import type { UpdateProfileInput } from '#layers/auth/shared/schemas/userSchema';
 
 export interface LinkedAccount {
@@ -8,16 +9,13 @@ export interface LinkedAccount {
   linkedAt: Date;
 }
 
-export interface UserProfileModel {
-  id: number;
-  username: string;
-  name: string;
-  email: string;
-  emailVerified: boolean;
+export interface UserProfileModel extends Pick<
+  SafeUser,
+  'id' | 'username' | 'name' | 'email' | 'emailVerified' | 'isAdmin'
+> {
   createdAt: Date;
   lastLoginAt: Date;
   hasPassword: boolean;
-  isAdmin: boolean;
   linkedAccounts: LinkedAccount[];
 }
 

@@ -1,6 +1,19 @@
 import type { tables } from '#layers/database/server/utils/db';
 
 export type User = typeof tables.users.$inferSelect;
+export type SafeUser = Pick<
+  User,
+  | 'id'
+  | 'username'
+  | 'name'
+  | 'email'
+  | 'emailVerified'
+  | 'isAdmin'
+  | 'isLocked'
+  | 'lastLoginAt'
+  | 'createdAt'
+  | 'updatedAt'
+>;
 export type DBLockScreen = typeof tables.userLockScreen.$inferSelect;
 export type DBAuthToken = typeof tables.authTokens.$inferSelect;
 export type DBOAuthAccount = typeof tables.oauthAccounts.$inferSelect;

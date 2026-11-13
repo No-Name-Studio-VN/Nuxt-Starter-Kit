@@ -232,7 +232,8 @@ import type {
   AdminUserCreateFormInput,
   AdminUserEditFormInput,
 } from '#layers/admin-users/shared/schemas/adminUserSchema';
-import type { User } from '#layers/auth/types/auth';
+import type { SafeUser } from '#layers/auth/types/auth';
+import type { AdminUserModel } from '#layers/admin-users/types/adminUsers';
 import { adminUserRoutes } from '#layers/admin-users/shared/adminUserRoutes';
 import type { ApiResponse } from '#layers/server-core/types/api';
 import { InfoIcon, Trash2Icon, UserPlus } from '@lucide/vue';
@@ -244,7 +245,7 @@ type UserFormValues = AdminUserCreateFormInput &
   Pick<AdminUserEditFormInput, 'id' | 'emailVerified'>;
 
 interface TableRowWithOriginal {
-  original: User;
+  original: SafeUser;
 }
 
 const dataTableRef = ref<{
@@ -253,7 +254,7 @@ const dataTableRef = ref<{
     resetRowSelection: () => void;
   };
 }>();
-const users = ref<User[]>([]);
+const users = ref<SafeUser[]>([]);
 const loading = ref(false);
 const showDialog = ref(false);
 const editingUserId = ref<number | null>(null);
@@ -297,7 +298,7 @@ const onSubmit = handleSubmit(async (values) => {
         isAdmin: values.isAdmin,
       };
 
-      const response = await apiRequest<ApiResponse<User>>(
+      const response = await apiRequest<ApiResponse<{ user: AdminUserModel }>>(
         adminUserRoutes.adminUser(editingUserId.value),
         {
           method: 'PUT',
@@ -317,7 +318,7 @@ const onSubmit = handleSubmit(async (values) => {
         isAdmin: values.isAdmin,
       };
 
-      const response = await apiRequest<ApiResponse<User>>(adminUserRoutes.ADMIN_USERS, {
+      const response = await apiRequest<ApiResponse<AdminUserModel>>(adminUserRoutes.ADMIN_USERS, {
         method: 'POST',
         body: payload,
       });
@@ -360,7 +361,7 @@ const columns = computed(() => createColumns(handleEdit, handleDeleteConfirm));
 async function fetchUsers() {
   try {
     loading.value = true;
-    const res = await apiRequest<ApiResponse<User[]>>(adminUserRoutes.ADMIN_USERS);
+    const res = await apiRequest<ApiResponse<SafeUser[]>>(adminUserRoutes.ADMIN_USERS);
     if (res.success && res.data) {
       users.value = res.data;
     } else {
@@ -383,7 +384,7 @@ function openAddDialog() {
   showDialog.value = true;
 }
 
-function handleEdit(user: User) {
+function handleEdit(user: SafeUser) {
   editingUserId.value = user.id;
   resetForm({
     values: {

@@ -1,9 +1,9 @@
 import { eq, inArray } from 'drizzle-orm';
-import type { User } from '#layers/auth/types/auth';
+import type { SafeUser, User } from '#layers/auth/types/auth';
 import { IDatabaseService } from '#layers/database/types/db/database-service';
 import type { CreateUserInput, UserUpdateInput } from '#layers/auth/shared/schemas/userSchema';
 
-class UserService extends IDatabaseService<User> {
+class UserService extends IDatabaseService<SafeUser> {
   private static instance: UserService;
 
   private get db() {
@@ -55,8 +55,23 @@ class UserService extends IDatabaseService<User> {
   /**
    * Get all users
    */
-  async getList(): Promise<User[]> {
-    const users = await this.db.select().from(tables.users).all();
+  async getList(): Promise<SafeUser[]> {
+    // Keep this allowlist explicit so new secret columns cannot reach clients.
+    const users = await this.db
+      .select({
+        id: tables.users.id,
+        username: tables.users.username,
+        name: tables.users.name,
+        email: tables.users.email,
+        emailVerified: tables.users.emailVerified,
+        isAdmin: tables.users.isAdmin,
+        isLocked: tables.users.isLocked,
+        lastLoginAt: tables.users.lastLoginAt,
+        createdAt: tables.users.createdAt,
+        updatedAt: tables.users.updatedAt,
+      })
+      .from(tables.users)
+      .all();
 
     return users;
   }

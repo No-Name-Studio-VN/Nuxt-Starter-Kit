@@ -1,9 +1,6 @@
-export interface AdminUserModel {
-  id: number;
-  username: string;
-  name: string;
-  email: string;
-  isAdmin: boolean;
-  isLocked: boolean;
-  emailVerified: boolean;
-}
+import type { SafeUser } from '#layers/auth/types/auth';
+
+export type AdminUserModel = Pick<
+  SafeUser,
+  'id' | 'username' | 'name' | 'email' | 'isAdmin' | 'isLocked' | 'emailVerified'
+>;

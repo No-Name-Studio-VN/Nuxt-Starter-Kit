@@ -10,13 +10,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from '@lucide/vue';
-import type { User } from '#layers/auth/types/auth';
+import type { SafeUser } from '#layers/auth/types/auth';
 import { formatRelativeTime } from '@/lib/utils';
 
 export function createColumns(
-  onEdit: (user: User) => void,
+  onEdit: (user: SafeUser) => void,
   onDelete: (userId: number) => void,
-): ColumnDef<StockFeatures, User>[] {
+): ColumnDef<StockFeatures, SafeUser>[] {
   return [
     {
       id: 'select',
