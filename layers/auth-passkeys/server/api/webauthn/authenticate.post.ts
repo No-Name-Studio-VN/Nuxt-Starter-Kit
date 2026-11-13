@@ -1,9 +1,10 @@
+import { getClientSafeWebAuthnResponse } from '#layers/auth-passkeys/server/utils/webauthnResponse';
 import { eq } from 'drizzle-orm';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import { useKV } from '#layers/server-core/server/utils/kv';
 import userService from '#layers/auth/server/utils/database/user';
 
-export default defineWebAuthnAuthenticateEventHandler({
+const handler = defineWebAuthnAuthenticateEventHandler({
   async storeChallenge(event, challenge, attemptId) {
     await useKV().set(`auth:challenge:${attemptId}`, challenge, { ttl: 60 });
   },
@@ -27,7 +28,13 @@ export default defineWebAuthnAuthenticateEventHandler({
       return [];
     }
 
-    return useDB().select().from(tables.credentials).where(eq(tables.credentials.userId, user.id));
+    return useDB()
+      .select({
+        id: tables.credentials.id,
+        transports: tables.credentials.transports,
+      })
+      .from(tables.credentials)
+      .where(eq(tables.credentials.userId, user.id));
   },
   async getCredential(event, credentialID) {
     const credential = await useDB().query.credentials.findFirst({
@@ -58,4 +65,9 @@ export default defineWebAuthnAuthenticateEventHandler({
       },
     });
   },
+});
+
+export default defineEventHandler(async (event) => {
+  const response: unknown = await handler(event);
+  return getClientSafeWebAuthnResponse(response);
 });

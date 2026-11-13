@@ -1,9 +1,10 @@
+import { getClientSafeWebAuthnResponse } from '#layers/auth-passkeys/server/utils/webauthnResponse';
 import { eq } from 'drizzle-orm';
 import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
 import { useKV } from '#layers/server-core/server/utils/kv';
 import { webauthnRegisterUserSchema } from '#layers/auth-passkeys/shared/schemas/passkeySchema';
 
-export default defineWebAuthnRegisterEventHandler({
+const handler = defineWebAuthnRegisterEventHandler({
   async storeChallenge(event, challenge, attemptId) {
     await useKV().set(`auth:challenge:${attemptId}`, challenge, { ttl: 60 });
   },
@@ -93,4 +94,9 @@ export default defineWebAuthnRegisterEventHandler({
       .innerJoin(tables.credentials, eq(tables.credentials.userId, tables.users.id))
       .where(eq(tables.users.username, userName.toLowerCase().trim()));
   },
+});
+
+export default defineEventHandler(async (event) => {
+  const response: unknown = await handler(event);
+  return getClientSafeWebAuthnResponse(response);
 });
