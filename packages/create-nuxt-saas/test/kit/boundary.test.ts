@@ -68,7 +68,7 @@ describe('kit layer boundaries', () => {
     ).toEqual(['./user', './value', './all', './setup', './view.vue', './helper']);
   });
 
-  it('attributes layer paths before transitional marker ownership', () => {
+  it('attributes ownership only by layer path, never by old markers', () => {
     expect(ownerOf('layers/example/app/page.vue')).toBe('example');
     expect(
       importOwners('layers/example/x.ts', "// <nsk:other>\nimport 'pkg';\n// </nsk:other>")[0]
@@ -80,14 +80,12 @@ describe('kit layer boundaries', () => {
           'unknown.ts',
           `${comment} <nsk:auth>\nimport 'pkg';\n${comment} </nsk:auth>`,
         )[0]?.owner,
-      ).toBe('auth');
+      ).toBe('base');
     }
   });
 
-  it('keeps the registry owner of a root file its module left behind', () => {
-    // R14 transitional ownership; removed in Task 15 with the registry fallback.
-    // AppSidebar moved in Task 13; this plugin retains its registry owner (R10/R14).
-    expect(ownerOf('server/plugins/sentry-cloudflare-plugin.ts')).toBe('server-core');
+  it('attributes every root file to base after the peel', () => {
+    expect(ownerOf('server/plugins/sentry-cloudflare-plugin.ts')).toBe('base');
     expect(ownerOf('app/app.vue')).toBe('base');
   });
 
