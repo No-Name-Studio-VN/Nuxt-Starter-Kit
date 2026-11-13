@@ -1,0 +1,22 @@
+{
+  "exclude": [
+    "packages/**",
+    "docs/**",
+    "tests/**",
+    "test/unit/security/**",
+    "CLAUDE.MD",
+    "CLAUDE.md",
+    ".claude/**",
+    ".serena/**",
+    ".whitesource",
+    ".github/workflows/release.yml",
+    ".github/workflows/cli-matrix.yml",
+    ".github/workflows/cli-release.yml",
+    "pnpm-lock.yaml",
+    "server/db/migrations/**",
+    ".husky/_/**",
+    ".superpowers/**",
+    ".slim/**",
+    ".ignore"
+  ]
+}
