@@ -37,6 +37,7 @@ describe('two-commit fixture kit', () => {
       [
         'M\t.env.example',
         'D\tREADME.md',
+        'D\tobsolete.txt',
         'M\tapp/pages/index.vue',
         'A\tapp/pages/new.vue',
         'M\tlayers/alpha/app/pages/alpha.vue',

@@ -86,9 +86,10 @@ export async function createFixtureKit(): Promise<{ root: string; v1: string; v2
     await writeTextFile(join(root, 'wrangler.jsonc'), wrangler);
     await writeTextFile(
       join(root, 'app/pages/index.vue'),
-      '<template>\n  <h1>Home v1</h1>\n</template>\n',
+      '<template>\n  <h1>Home v1</h1>\n  <main>\n    <p>Welcome to the fixture.</p>\n    <p>Choose a module to begin.</p>\n  </main>\n  <footer>Fixture footer</footer>\n</template>\n',
     );
     await writeTextFile(join(root, 'README.md'), '# Fixture kit\n');
+    await writeTextFile(join(root, 'obsolete.txt'), 'Removed in v2\n');
     await writeTextFile(join(root, 'docs/x.md'), '# Excluded documentation\n');
     await mkdir(join(root, 'public'), { recursive: true });
     await writeFile(
@@ -130,7 +131,7 @@ export async function createFixtureKit(): Promise<{ root: string; v1: string; v2
 
     await writeTextFile(
       join(root, 'app/pages/index.vue'),
-      '<template>\n  <h1>Home v2</h1>\n</template>\n',
+      '<template>\n  <h1>Home v2</h1>\n  <main>\n    <p>Welcome to the fixture.</p>\n    <p>Choose a module to begin.</p>\n  </main>\n  <footer>Fixture footer</footer>\n</template>\n',
     );
     await writeTextFile(
       join(root, 'layers/alpha/app/pages/alpha.vue'),
@@ -141,6 +142,7 @@ export async function createFixtureKit(): Promise<{ root: string; v1: string; v2
       '<template><h1>New in v2</h1></template>\n',
     );
     await rm(join(root, 'README.md'));
+    await rm(join(root, 'obsolete.txt'));
     await writeTextFile(
       join(root, 'layers/beta/server/db/schema.sqlite.ts'),
       "export const betaTable = { name: 'beta', version: 2 };\n",
