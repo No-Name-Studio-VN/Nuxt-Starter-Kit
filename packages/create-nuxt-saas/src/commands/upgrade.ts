@@ -26,7 +26,7 @@ export async function runUpgrade(opts: {
       `Kit commit ${opts.from.commit} does not match project commit ${state.commit}. Fetch the recorded commit before upgrading.`,
     );
   }
-  if (opts.from.commit === opts.to.commit) {
+  if (opts.from.commit === opts.to.commit && state.kit === opts.to.template) {
     return {
       changes: [],
       conflicts: [],
@@ -66,6 +66,12 @@ export async function runUpgrade(opts: {
   if (opts.check) return report;
 
   await applyPlan(opts.projectRoot, plan);
-  await writeState(opts.projectRoot, { ...state, commit: opts.to.commit, modules, conflicts });
+  await writeState(opts.projectRoot, {
+    ...state,
+    kit: opts.to.template,
+    commit: opts.to.commit,
+    modules,
+    conflicts,
+  });
   return report;
 }

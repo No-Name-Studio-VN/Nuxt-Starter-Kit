@@ -78,6 +78,18 @@ async function edit(path: string, oldText: string, newText: string): Promise<voi
 }
 
 describe('runUpgrade', () => {
+  it('records the target template when upgrading onto a fork', async () => {
+    await init();
+    await upgrade(false, false, { ...v2, template: 'github:fork/repo#custom' });
+    expect((await readState(projectRoot)).kit).toBe('github:fork/repo#custom');
+  });
+
+  it('records a template switch even when the fork shares the same commit', async () => {
+    await init();
+    await upgrade(false, false, { ...v1, template: 'github:fork/repo' });
+    expect((await readState(projectRoot)).kit).toBe('github:fork/repo');
+  });
+
   it('makes untouched init@v1(beta) + upgrade byte-identical to init@v2(beta)', async () => {
     expect((await init()).git).toBe('committed');
     const reference = join(parent, 'reference');
