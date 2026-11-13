@@ -27,8 +27,7 @@
     "test:nuxt": "vitest run --project nuxt",
     "test:unit": "vitest run --project unit",
     "test:watch": "vitest",
-    "typecheck": "nuxt typecheck",
-    "typecheck:test": "tsc --noEmit -p test/tsconfig.json"
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@codemirror/lang-json": "^6.0.2",
@@ -76,7 +75,6 @@
     "nuxt": "^4.6.2",
     "nuxt-auth-utils": "^0.5.32",
     "nuxt-component-meta": "^0.19.0",
-    "nuxt-content-git": "^7.0.0",
     "nuxt-security": "^2.6.0",
     "nuxt-studio": "^1.8.0",
     "otpauth": "^9.5.2",

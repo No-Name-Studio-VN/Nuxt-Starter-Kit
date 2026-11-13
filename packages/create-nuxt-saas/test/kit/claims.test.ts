@@ -19,6 +19,18 @@ const claimSections: Array<
 > = ['dependencies', 'devDependencies', 'scripts', 'env', 'bindings', 'rootFiles'];
 
 describe('kit module claims', () => {
+  it('never declares the same package as both a dependency and a devDependency', async () => {
+    const packageJson: unknown = JSON.parse(await readFile(join(kitRoot, 'package.json'), 'utf8'));
+    const rootPackage = packageSchema.parse(packageJson);
+    const duplicates = Object.keys(rootPackage.dependencies).filter((name) =>
+      Object.hasOwn(rootPackage.devDependencies, name),
+    );
+    expect(
+      duplicates,
+      `Packages declared in both dependency sections: ${duplicates.join(', ')}`,
+    ).toEqual([]);
+  });
+
   it('claims existing root entries and never shares a claim between modules', async () => {
     const modules = await readLayerModules();
     const packageJson: unknown = JSON.parse(await readFile(join(kitRoot, 'package.json'), 'utf8'));
