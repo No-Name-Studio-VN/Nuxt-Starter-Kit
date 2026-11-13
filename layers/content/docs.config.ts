@@ -1,6 +1,38 @@
 import { APP_MANIFEST } from '../../shared/constants/manifest';
 
 export const DOCS_CONFIG = {
+  headerNav: [
+    {
+      title: 'nav.docs',
+      to: '/docs',
+      target: '_self',
+      showLinkIcon: false,
+    },
+    {
+      title: 'Products',
+      links: [
+        {
+          title: 'Bot No Name',
+          to: '/botnoname',
+          description:
+            'A multifunctional, user-friendly, and intuitive Discord Bot. Ticket, Giveaway, Music, Moderation, Games and more.',
+          icon: 'lucide:bot',
+        },
+        {
+          title: 'Nuxt Starter Kit',
+          to: '/products/nuxt-starter-kit/getting-started/introduction',
+          description: 'Fully equipped Technical Starter Pack for busy Nuxters.',
+          icon: 'lucide:rocket',
+        },
+      ],
+    },
+    {
+      title: 'nav.blog',
+      to: '/blogs',
+      target: '_self',
+      showLinkIcon: false,
+    },
+  ],
   banner: {
     enable: false,
     showClose: true,
