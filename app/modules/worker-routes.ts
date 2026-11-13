@@ -1,11 +1,11 @@
 /**
  * Nuxt Module: Worker Routes
  *
- * Content pages are prerendered, so the Cloudflare Worker is only needed for the
- * server handlers and the pages that cannot be static (auth, dashboards, ...).
+ * Static pages are prerendered, so the Cloudflare Worker is only needed for the
+ * server handlers and the pages that cannot be static.
  * Without this module, any path without a static file (bots probing /.env,
- * /wp-login.php, ...) reached the Worker and fell through to the catch-all docs
- * page, paying a full SSR plus content queries per request and blowing the
+ * /wp-login.php, ...) reached the Worker and fell through to the catch-all page
+ * route, paying a full SSR plus its data queries per request and blowing the
  * Workers CPU limit.
  *
  * After prerendering, this module lists the server handlers and the pages without
@@ -346,7 +346,7 @@ export default defineNuxtModule({
 
       // Runs once every module has finished prerendering (the sitemap writes its
       // files from its own prerender:done hook), the public dir has been copied
-      // and the PWA service worker written, and before the preset writes
+      // and a layer's service worker written, and before the preset writes
       // wrangler.json from `nitro.options.cloudflare.wrangler` in `compiled`.
       nuxt.hook('nitro:build:public-assets', async () => {
         const { publicDir } = nitro.options.output;

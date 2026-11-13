@@ -13,3 +13,7 @@ Follow-up commands:
 
 - `pnpm db:generate` after selecting modules or changing a schema, to generate your migrations.
 - `pnpm deploy:db` to apply them to the remote D1 database after `pnpm deploy`.
+
+Running `pnpm deploy` then `pnpm deploy:db` applies migrations after the new code is live.
+For a schema-changing release, either apply migrations first or keep the changes
+backwards-compatible.

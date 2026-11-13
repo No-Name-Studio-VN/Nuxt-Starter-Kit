@@ -52,7 +52,11 @@ export async function readKitModule(kitRoot: string, id: string): Promise<KitMod
 
 export async function readKitModules(kitRoot: string): Promise<KitModule[]> {
   const layersRoot = join(kitRoot, 'layers');
-  const entries = await readdir(layersRoot, { withFileTypes: true });
+  const entries = await readdir(layersRoot, { withFileTypes: true }).catch((error: unknown) => {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
+    const message = error instanceof Error ? error.message : 'unknown error';
+    throw new CliError(`Unable to read modules at ${layersRoot}: ${message}`);
+  });
   const modules: KitModule[] = [];
 
   for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {

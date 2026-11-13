@@ -118,6 +118,19 @@ describe('readKitModules', () => {
     await expect(readKitModules(kitRoot)).rejects.toThrow(/layers\/a\/module\.json/);
   });
 
+  it('returns no modules when the layers directory is missing', async () => {
+    await rm(join(kitRoot, 'layers'), { recursive: true });
+    expect(await readKitModules(kitRoot)).toEqual([]);
+  });
+
+  it('wraps other layers directory read errors and identifies the path', async () => {
+    const layersRoot = join(kitRoot, 'layers');
+    await rm(layersRoot, { recursive: true });
+    await writeTextFile(layersRoot, 'not a directory');
+    await expect(readKitModules(kitRoot)).rejects.toThrow(CliError);
+    await expect(readKitModules(kitRoot)).rejects.toThrow(layersRoot);
+  });
+
   it('returns no modules for an empty layers directory', async () => {
     await rm(join(kitRoot, 'layers'), { recursive: true });
     await mkdir(join(kitRoot, 'layers'));

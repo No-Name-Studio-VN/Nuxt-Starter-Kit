@@ -160,6 +160,15 @@ describe('render real kit', () => {
           join(kit.dir, 'packages/create-nuxt-saas', path),
         );
       }
+      await mkdir(join(kit.dir, 'test/unit/render-regression'), { recursive: true });
+      for (const extension of ['ts', 'mjs', 'js']) {
+        for (const suffix of ['test', 'spec']) {
+          await writeFile(
+            join(kit.dir, `test/unit/render-regression/example.${suffix}.${extension}`),
+            'export {};\n',
+          );
+        }
+      }
       const excludedInput: unknown = JSON.parse(
         await readFile(join(root, 'packages/create-nuxt-saas/kit.json'), 'utf8'),
       );
@@ -197,7 +206,9 @@ describe('render real kit', () => {
         expect(tree.has('.nuxtrc')).toBe(true);
         expect(tree.has('test/unit/setup/h3Globals.ts')).toBe(true);
         expect(tree.has('test/unit/mocks/hubDb.ts')).toBe(true);
-        expect([...tree.keys()].some((path) => path.startsWith('test/unit/security/'))).toBe(false);
+        expect(
+          [...tree.keys()].filter((path) => /^test\/.*\.(?:test|spec)\.[^/]+$/.test(path)),
+        ).toEqual([]);
         expect(pkg.scripts).not.toHaveProperty('typecheck:test');
         const worker: unknown = parse(text(tree, 'wrangler.jsonc'));
         expect(worker).toMatchObject({ name: 'my-app' });

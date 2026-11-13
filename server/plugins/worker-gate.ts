@@ -4,7 +4,7 @@ import { workerPagePattern, workerRoutePatterns } from '#worker-routes';
  * Hands every request that no server handler or Worker-rendered page answers
  * back to Cloudflare's asset layer, which serves the prerendered 404.html.
  * Without this, such requests fall through to the Nuxt renderer and pay a full
- * SSR of the catch-all docs page.
+ * SSR of the catch-all page route.
  *
  * Normally the asset layer never routes them to the Worker in the first place
  * (see app/modules/worker-routes.ts). This keeps the Worker cheap if one gets
