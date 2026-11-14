@@ -1,0 +1,6 @@
+{
+  "title": "Admin KV browser",
+  "description": "Admin screens and APIs for browsing and editing Workers KV entries.",
+  "requires": ["admin"],
+  "dependencies": ["pretty-bytes", "@codemirror/lang-json", "codemirror"]
+}

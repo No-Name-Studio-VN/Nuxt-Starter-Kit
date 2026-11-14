@@ -1,0 +1,6 @@
+{
+  "auth": {
+    "verify_email_title": "Verify your email",
+    "verify_email_description": "Verify your email address to finish setting up your account."
+  }
+}

@@ -4,5 +4,5 @@ export default defineBuildConfig({
   entries: ['src/cli'],
   clean: true,
   declaration: false,
-  rollup: { inlineDependencies: false, esbuild: { target: 'node22' } },
+  rollup: { inlineDependencies: true, esbuild: { target: 'node22' } },
 });

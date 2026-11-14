@@ -1,0 +1,27 @@
+{
+  "exclude": [
+    "packages/**",
+    "docs/**",
+    "tests/**",
+    "test/**/*.test.ts",
+    "test/**/*.spec.ts",
+    "test/**/*.test.mjs",
+    "test/**/*.spec.mjs",
+    "test/**/*.test.js",
+    "test/**/*.spec.js",
+    "CLAUDE.MD",
+    "CLAUDE.md",
+    ".claude/**",
+    ".serena/**",
+    ".whitesource",
+    ".github/workflows/release.yml",
+    ".github/workflows/cli-matrix.yml",
+    ".github/workflows/cli-release.yml",
+    "pnpm-lock.yaml",
+    "server/db/migrations/**",
+    ".husky/_/**",
+    ".superpowers/**",
+    ".slim/**",
+    ".ignore"
+  ]
+}

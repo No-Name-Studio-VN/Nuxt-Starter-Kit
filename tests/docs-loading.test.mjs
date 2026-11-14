@@ -15,7 +15,10 @@ import {
 import { compileScript, parse } from 'vue/compiler-sfc';
 import { Window } from 'happy-dom';
 
-const source = readFileSync(new URL('../app/composables/useDocsToc.ts', import.meta.url), 'utf8');
+const source = readFileSync(
+  new URL('../layers/content/app/composables/useDocsToc.ts', import.meta.url),
+  'utf8',
+);
 const compiled = stripTypeScriptTypes(source)
   .replace(/^import .*;$/gm, '')
   .replace('export function useDocsToc', 'function useDocsToc');
@@ -169,7 +172,7 @@ test('component-generated headings still work when the parsed Markdown TOC is em
 
 test('sidebar keeps its hydration skeleton, then distinguishes loading from empty navigation', () => {
   const source = readFileSync(
-    new URL('../app/components/layout/Aside.vue', import.meta.url),
+    new URL('../layers/content/app/components/layout/Aside.vue', import.meta.url),
     'utf8',
   );
   const { descriptor } = parse(source);
@@ -187,7 +190,7 @@ test('sidebar keeps its hydration skeleton, then distinguishes loading from empt
     'shallowRef',
     'onMounted',
     'useRoute',
-    'useConfig',
+    'useDocsConfig',
     'useI18n',
     'useContentHelpers',
     'usePageData',

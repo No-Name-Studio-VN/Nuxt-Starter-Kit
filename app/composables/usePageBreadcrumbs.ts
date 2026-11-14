@@ -1,7 +1,7 @@
 import { onMounted, useId, type MaybeRefOrGetter } from 'vue';
 import type { NavigationItem } from '~~/types';
 import type { BreadcrumbItemType } from '~~/types/common';
-import { findPageBreadcrumbs } from '@/utils/navigation';
+import { findPageBreadcrumbs } from '@/utils/breadcrumbs';
 
 interface PageBreadcrumbOverride {
   path: string;

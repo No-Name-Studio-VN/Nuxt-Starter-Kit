@@ -1,0 +1,58 @@
+{
+  "docs": {
+    "loading_navigation": "Loading navigation…",
+    "loading_toc": "Loading table of contents…",
+    "toc": {
+      "title": "On this page"
+    },
+    "editlink": {
+      "title": "Edit this page"
+    },
+    "issuelink": {
+      "title": "Create an issue"
+    }
+  },
+  "blog": {
+    "badge": "Blog",
+    "title": "Stories & Insights",
+    "subtitle": "Tutorials, engineering deep-dives, and design thinking from our team.",
+    "search_placeholder": "Search articles...",
+    "filter_all": "All",
+    "featured": "Featured",
+    "read_article": "Read article",
+    "min_read": "{time} min read",
+    "articles_count": "{count} article | {count} articles",
+    "no_results_title": "No articles found",
+    "no_results_description": "Try adjusting your search or filter to find what you're looking for.",
+    "clear_filters": "Clear filters",
+    "seo_title": "Blog — No Name Studio",
+    "seo_description": "Insights, tutorials, and updates from No Name Studio."
+  },
+  "search": {
+    "title": "Search...",
+    "document": "Search documentation..."
+  },
+  "nav": {
+    "docs": "Docs",
+    "blog": "Blog",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "errors": {
+    "adblock": "Please support us by disabling your ad blocker.",
+    "no_result": "No results found.",
+    "empty_page": "Empty page",
+    "not_found": {
+      "title": "Not Found",
+      "description": "The page you are looking for does not exist. Try searching for what you need below."
+    }
+  },
+  "cta": {
+    "start_writing": "Start writing in {fileLink} to see this page taking shape.",
+    "read_more": "Read more at",
+    "search_pages": "Try searching for pages",
+    "star_on_github": "Star on GitHub",
+    "need_help": "Need help?",
+    "contact": "Contact support"
+  }
+}

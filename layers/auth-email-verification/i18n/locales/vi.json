@@ -1,0 +1,6 @@
+{
+  "auth": {
+    "verify_email_title": "Xác minh email",
+    "verify_email_description": "Xác minh địa chỉ email để hoàn tất thiết lập tài khoản của bạn."
+  }
+}

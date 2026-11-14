@@ -1,0 +1,5 @@
+{
+  "title": "Admin users panel",
+  "description": "Admin screens and APIs for listing, editing, locking and deleting users.",
+  "requires": ["admin"]
+}

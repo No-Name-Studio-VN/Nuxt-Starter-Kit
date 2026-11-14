@@ -1,0 +1,7 @@
+{
+  "errors": {
+    "offline_title": "You're offline",
+    "offline_description": "Check your internet connection and try again.",
+    "try_again": "Try again"
+  }
+}

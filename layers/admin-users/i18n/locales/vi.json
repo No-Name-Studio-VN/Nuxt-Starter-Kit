@@ -1,0 +1,8 @@
+{
+  "admin": {
+    "users": {
+      "title": "Quản lý người dùng",
+      "desc": "Quản lý tài khoản người dùng, quyền truy cập và trạng thái tài khoản."
+    }
+  }
+}

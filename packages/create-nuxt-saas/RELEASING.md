@@ -1,110 +1,94 @@
 # Releasing create-nuxt-saas
 
-Publishing runs on [npm trusted publishing][tp]: GitHub mints a short-lived OIDC
-token for `.github/workflows/cli-release.yml` and npm exchanges it for publish
-rights. There is no `NPM_TOKEN` in this repository, and there should never be one.
+## 3.0.0: clean break
 
-npm is closing the alternative. From **early August 2026** granular access tokens
-that bypass 2FA lose account, package and organization management; from
-**January 2027** they cannot publish at all, only read private packages and stage
-a publish for a human to approve. ([changelog][gat])
+3.0.0 copies selected Nuxt layers instead of editing module fragments in shared files. Module
+metadata lives in each layer's `module.json`; dependency versions and configuration values stay in
+the kit's root files. The CLI renders two revisions and uses one three-way text merge for
+add/remove/upgrade, including `package.json`.
+
+Project state is now `.nuxt-saas.json` (`version: 3`), with a full kit commit SHA and tracked
+conflicts, not per-file hashes. Conflicts advance state to the target and exit 1. `--yes` without
+`--modules` generates base only. `status`, `diff`, `--registry` and `--base-kit` are removed;
+`upgrade --check` previews transitions. Local kits use `--allow-dirty-kit`, but still render a
+committed tree. Generated projects do not include kit migrations; users run `pnpm db:generate`.
+
+There is **no migration of 2.x projects**. When only the old `.nuxt-saas/manifest.json` exists, project
+commands stop with this exact message:
+
+> This project was created by create-nuxt-saas 2.x, which this version cannot manage. Generate a new project with `npm create nuxt-saas@latest` and move your code across.
+
+Keep this release on major version 3; do not publish it as a 2.x update. The CLI and kit version
+numbers are separate: `cli-v3.0.0` releases the CLI, while plain `v*` tags use the kit release workflow.
 
 ## Cutting a release
 
-```bash
-cd packages/create-nuxt-saas
-npm version 1.0.1 --no-git-tag-version   # or 1.1.0 / 2.0.0
-git commit -am "release: create-nuxt-saas 1.0.1"
-git tag cli-v1.0.1
-git push origin main --tags
-```
-
-The workflow refuses to publish unless the tag version and `package.json` agree,
-so the tag, the committed version and the version on npm cannot drift apart.
-
-`workflow_dispatch` runs the whole pipeline and stops at `npm pack --dry-run`,
-which is the way to check a release without publishing one.
-
-## One-time setup
-
-Three things cannot be scripted from this repository. Each is done once.
-
-### 1. Bootstrap the package on npm
-
-npm will not let you configure a trusted publisher for a package that does not
-exist yet — that is what stops someone claiming a name they do not own. So the
-very first version has to come from a logged-in machine:
+The CLI package already declares `3.0.0`. After the change is reviewed and merged to `main`, verify
+that version and tag the release commit:
 
 ```bash
-cd packages/create-nuxt-saas
-npm login          # completes 2FA in the browser
-npm run build
-npm publish        # prompts for your 2FA code
+pnpm --dir packages/create-nuxt-saas test
+pnpm --dir packages/create-nuxt-saas run typecheck
+pnpm --dir packages/create-nuxt-saas run build
+node -p "require('./packages/create-nuxt-saas/package.json').version"
+git tag cli-v3.0.0
+git push origin cli-v3.0.0
 ```
 
-Every release after this one goes through the workflow.
+For later releases, update `packages/create-nuxt-saas/package.json` and the workspace lockfile with
+pnpm, commit both, then tag the matching version. Do not change the root kit version for a CLI-only
+release. Never bypass commit hooks.
 
-### 2. Register the trusted publisher
+`.github/workflows/cli-release.yml` runs for `cli-v*` tags and manual dispatches. It:
 
-On npmjs.com → the package → **Settings** → **Trusted publisher**, or from the
-CLI (npm 11.15.0+, requires 2FA):
+1. Uses Node 26 and pnpm 12.14.0; ensures npm is at least 11.5.1 for trusted publishing.
+2. Installs with `pnpm --filter create-nuxt-saas install --frozen-lockfile`.
+3. Checks that the tag version equals the CLI package version (on tag runs).
+4. Runs CLI tests, typecheck and build. Runtime dependencies are bundled into `dist/`.
+5. Packs the package, installs the tarball outside the checkout and runs a base-only init from the
+   checked-out kit, asserting `.nuxt-saas.json` exists.
+6. On tag runs, clears stale npm auth lines, checks the registry and runs `npm publish`.
+   Manual dispatch instead ends with `npm pack --dry-run`, without publishing.
+
+The tarball contains `bin/`, `dist/` and the README, not the kit or a bundled module catalog.
+The separate CLI matrix checks generated module combinations; confirm it is green before tagging.
+A manual release-workflow run is the way to validate packaging and the smoke test without publishing.
+
+## Trusted publishing setup
+
+Publishing uses [npm trusted publishing][tp]. GitHub mints a short-lived OIDC identity for the workflow;
+there is no `NPM_TOKEN` to maintain. The job has `id-token: write` and uses the `npm-publish` environment.
+
+For an existing npm package, configure its **Settings → Trusted publisher** with:
+
+| Field                | Value                             |
+| -------------------- | --------------------------------- |
+| Organization or user | `No-Name-Studio-VN`               |
+| Repository           | `Nuxt-Starter-Kit`                |
+| Workflow filename    | `cli-release.yml` (filename only) |
+| Environment          | `npm-publish`                     |
+
+The environment must match the workflow. In GitHub repository **Settings → Environments →
+npm-publish**, configure required reviewers if a human should approve each publish. Merely naming
+the environment does not enable an approval gate. Remove obsolete npm publish-token secrets once
+trusted publishing is configured.
+
+Only a brand-new package needs an initial authenticated publish before its trusted publisher can be
+configured. This package already exists; do not repeat that bootstrap for 3.0.0.
+
+Do not add `registry-url` to `actions/setup-node`. It writes an npm auth-token entry that can interfere
+with OIDC authentication when no token is set. The default npm registry is already correct. See
+[npm/documentation#1960][bug]. `publishConfig.access` supplies public access; the workflow does not
+pass `--access` or `--provenance` (trusted publishing supplies provenance).
+
+## Verifying a release
 
 ```bash
-npm trust github create-nuxt-saas \
-  --file cli-release.yml \
-  --repo No-Name-Studio-VN/Nuxt-Starter-Kit \
-  --env npm-publish
+npm view create-nuxt-saas version dist-tags
 ```
 
-| Field | Value |
-| --- | --- |
-| Organization or user | `No-Name-Studio-VN` |
-| Repository | `Nuxt-Starter-Kit` |
-| Workflow filename | `cli-release.yml` — the filename alone, not a path |
-| Environment | `npm-publish` |
-
-The environment must match the `environment:` key in the workflow. If you drop
-one, drop both, or the OIDC claim will not match and the publish will be refused.
-
-Once this is in place, delete any npm token that still exists for this package —
-including the `NPM_TOKEN` repository secret, which the workflow no longer reads.
-
-### 3. Add the human approval step
-
-The workflow already runs in a `npm-publish` environment, which GitHub creates on
-its first run. To make a person approve each publish:
-
-**Settings** → **Environments** → **npm-publish** → enable **Required reviewers**
-and add yourself. Optionally restrict deployment branches to `main` and the
-`cli-v*` tag pattern.
-
-Until a reviewer is configured the environment exists but gates nothing, so the
-workflow publishes unattended. That is safe — the OIDC token is scoped to this
-one workflow — but the approval step is what the npm changelog recommends
-alongside it.
-
-## The trap worth knowing about
-
-Do not add `registry-url` to `actions/setup-node`. It writes
-`//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` into `.npmrc`, and with no
-token set that expands to an empty value. npm reads it as "auth is already
-configured", never starts the OIDC exchange, and fails with `ENEEDAUTH` — at the
-moment you are trying to ship. npm's own documented example still carries this
-([npm/documentation#1960][bug]), and `setup-node` has no opt-out for the line as
-of v4. registry.npmjs.org is the default registry, so the input is not needed.
-
-## Verifying it worked
-
-```bash
-npm view create-nuxt-saas         # version and dist-tags
-npm audit signatures              # inside a project that installed it
-```
-
-The npm package page shows a provenance badge linking back to the workflow run
-that built the tarball. Trusted publishing generates those attestations
-automatically, which is why the workflow passes neither `--provenance` nor
-`--access`; `publishConfig.access` in `package.json` covers the latter.
+Check that the package's provenance links to the expected workflow run, then smoke-test the published
+version in a fresh directory. Users regenerate 2.x projects rather than running a 3.0.0 upgrade in them.
 
 [tp]: https://docs.npmjs.com/trusted-publishers
-[gat]: https://github.blog/changelog/2026-07-08-npm-install-time-security-and-gat-bypass2fa-deprecation/
 [bug]: https://github.com/npm/documentation/issues/1960

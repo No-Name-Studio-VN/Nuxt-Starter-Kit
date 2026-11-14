@@ -1,0 +1,10 @@
+{
+  "auth": {
+    "two_factor": {
+      "use_backup_code": "Sử dụng mã dự phòng",
+      "use_authenticator": "Sử dụng ứng dụng xác thực",
+      "backup_code": "Mã dự phòng",
+      "backup_code_description": "Nhập một trong các mã dự phòng gồm 8 ký tự của bạn. Mỗi mã chỉ có thể sử dụng một lần."
+    }
+  }
+}

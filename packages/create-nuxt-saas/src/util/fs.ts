@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { lstat, mkdir, readdir, readFile, rename, rmdir, writeFile } from 'node:fs/promises';
-import { basename, dirname, resolve } from 'node:path';
+import { basename, dirname, relative, resolve, sep } from 'node:path';
 import { CliError } from '../errors';
 
 export async function pathExists(path: string): Promise<boolean> {
@@ -11,6 +11,27 @@ export async function pathExists(path: string): Promise<boolean> {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return false;
     throw error;
   }
+}
+
+/** Inspect below the project root, allowing the root itself to be a symlink. */
+export async function hasSymbolicLink(root: string, filePath: string): Promise<boolean> {
+  let current = resolve(root);
+  const segments = relative(current, filePath).split(sep).filter(Boolean);
+  for (const segment of segments) {
+    current = resolve(current, segment);
+    try {
+      if ((await lstat(current)).isSymbolicLink()) return true;
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        'code' in error &&
+        (error.code === 'ENOENT' || error.code === 'ENOTDIR')
+      )
+        return false;
+      throw error;
+    }
+  }
+  return false;
 }
 
 export async function listFiles(root: string): Promise<string[]> {
@@ -49,7 +70,7 @@ export async function pruneEmptyDirectories(root: string, directory: string): Pr
   const stop = resolve(root);
   let current = resolve(directory);
 
-  while (current !== stop && current.startsWith(`${stop}/`)) {
+  while (current !== stop && current.startsWith(stop.endsWith(sep) ? stop : `${stop}${sep}`)) {
     try {
       await rmdir(current);
     } catch {

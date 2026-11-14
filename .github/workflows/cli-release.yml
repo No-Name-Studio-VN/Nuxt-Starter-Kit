@@ -27,11 +27,6 @@ on:
     tags:
       - 'cli-v*'
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Build and pack without publishing'
-        type: boolean
-        default: true
 
 permissions:
   contents: read
@@ -72,7 +67,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       # Node 26 already ships a new enough npm, but the runner image decides that,
-      # not us. npm is used only for trusted publishing; pnpm installs and builds.
+      # not us. pnpm installs and builds; npm packs, smoke-tests and publishes.
       - name: Ensure npm supports trusted publishing
         run: |
           REQUIRED=11.5.1
@@ -108,12 +103,17 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      # The published tarball is what users run, so check the built CLI works and
-      # that the registry travelled with it.
-      - name: Smoke-test the built package
+      # Install the published artifact outside the checkout so missing bundled
+      # files cannot be masked by the CLI's development dependencies.
+      - name: Smoke-test the packed package
         run: |
-          node bin/nuxt-saas.mjs modules
-          test -f registry/registry.json
+          SMOKE_DIR="$(mktemp -d "$RUNNER_TEMP/cli-smoke.XXXXXX")"
+          trap 'rm -rf "$SMOKE_DIR"' EXIT
+          npm pack --pack-destination "$SMOKE_DIR"
+          cd "$SMOKE_DIR"
+          npm install --no-audit --no-fund ./create-nuxt-saas-*.tgz
+          npx nuxt-saas init smoke --yes --kit "$GITHUB_WORKSPACE"
+          test -f smoke/.nuxt-saas.json
 
       # Belt and braces for the trap above: any leftover auth line, from a cached
       # .npmrc or a future action change, silently disables OIDC. Assert the

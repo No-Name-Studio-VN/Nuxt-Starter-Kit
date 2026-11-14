@@ -1,4 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue';
+import type { PageBreadcrumbItem } from './index';
 
 export interface SeoCollectionItem {
   name: string;
@@ -16,6 +17,8 @@ export interface UseSeoOptions {
   ogImage?: MaybeRefOrGetter<string | undefined>;
   /** Published date for article schema */
   publishedAt?: MaybeRefOrGetter<string | undefined>;
+  /** Breadcrumb items for BreadcrumbList schema */
+  breadcrumbs?: MaybeRefOrGetter<PageBreadcrumbItem[] | undefined>;
   /** Modified date for article schema */
   modifiedAt?: MaybeRefOrGetter<string | undefined>;
   /** Collection items for CollectionPage schema (e.g. blog listing) */

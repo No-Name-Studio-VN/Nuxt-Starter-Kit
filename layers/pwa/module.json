@@ -1,0 +1,16 @@
+{
+  "title": "Progressive web app",
+  "description": "Installable app assets, service worker, offline fallback and page tracking.",
+  "requires": [],
+  "dependencies": [
+    "@vite-pwa/nuxt",
+    "workbox-core",
+    "workbox-precaching",
+    "workbox-routing",
+    "workbox-strategies",
+    "workbox-cacheable-response",
+    "workbox-expiration",
+    "workbox-broadcast-update"
+  ],
+  "devDependencies": ["@vite-pwa/assets-generator"]
+}

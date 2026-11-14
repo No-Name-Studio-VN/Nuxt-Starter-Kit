@@ -1,0 +1,48 @@
+import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
+import userService from '#layers/auth/server/utils/database/user';
+import authTokenService from '#layers/auth/server/utils/database/authToken';
+import { sendPasswordResetEmail } from '#layers/auth/server/utils/email';
+import { AuthTokenType } from '#layers/auth/shared/constants/authTokens';
+import { forgotPasswordSchema } from '#layers/auth/shared/schemas/userSchema';
+
+export default defineEventHandler(async (event) => {
+  const result = await readValidatedBody(event, (body) => forgotPasswordSchema.safeParse(body));
+  if (!result.success) {
+    throw apiError({
+      status: 400,
+      statusText: 'Bad Request',
+      message: 'Valid email and security verification are required.',
+      code: 'VALIDATION_ERROR',
+      fieldErrors: zodErrorToFieldErrors(result.error),
+    });
+  }
+
+  const tokenValidation = await verifyTurnstileToken(result.data['cf-turnstile-response']);
+  if (!tokenValidation.success) {
+    throw apiError({
+      status: 400,
+      statusText: 'Bad Request',
+      message: 'Security verification failed. Please try again.',
+      code: 'CAPTCHA_VERIFICATION_FAILED',
+    });
+  }
+
+  const user = await userService.getByEmail(result.data.email);
+
+  // Always return success to prevent email enumeration
+  if (!user) {
+    return success({});
+  }
+
+  const hasRecent = await authTokenService.hasRecentToken(user.id, AuthTokenType.PasswordReset);
+  if (hasRecent) {
+    // Still return success to prevent timing attacks
+    return success({});
+  }
+
+  await authTokenService.invalidateUserTokens(user.id, AuthTokenType.PasswordReset);
+  const token = await authTokenService.createToken(user.id, AuthTokenType.PasswordReset);
+  await sendPasswordResetEmail(user.email, user.username, token);
+
+  return success({});
+});
