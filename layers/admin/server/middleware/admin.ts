@@ -4,7 +4,8 @@ import { adminRoutes } from '#layers/admin/shared/adminRoutes';
 
 export default defineEventHandler(async (event) => {
   const path = getRequestURL(event).pathname;
-  if (path === adminRoutes.ADMIN_TASKS_SEED_ADMIN) return;
+  // The bootstrap handler authenticates with its configured seed secret, before an admin exists.
+  if (event.method === 'POST' && path === adminRoutes.ADMIN_SEED) return;
 
   if (path.startsWith(adminRoutes.ADMIN_API_PREFIX)) {
     const session = await requireUserSession(event);
