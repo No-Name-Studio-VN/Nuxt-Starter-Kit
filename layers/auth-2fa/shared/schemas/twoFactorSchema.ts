@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { commonSchemaFragments } from '#shared/schemas/common';
 import { userIdSchema } from '#layers/auth/shared/schemas/userSchema';
 import { userTwoFactor } from '../../server/db/schema.sqlite';
-import { TOTP_LENGTH } from '../constants/totp';
+import { BACKUP_CODE_LENGTH, TOTP_LENGTH } from '../constants/totp';
 
 export const createUserTwoFactorSchema = createInsertSchema(userTwoFactor, {
   userId: userIdSchema,
@@ -18,8 +18,18 @@ export const updateUserTwoFactorSchema = createUpdateSchema(userTwoFactor, {
 export type UserTwoFactorUpdateInput = z.infer<typeof updateUserTwoFactorSchema>;
 
 export function totpCodeSchema(error = `Authenticator code must be ${TOTP_LENGTH} digits`) {
-  return z.string().length(TOTP_LENGTH, error);
+  return z
+    .string()
+    .length(TOTP_LENGTH, error)
+    .regex(/^\d{6}$/, error);
 }
+
+export const backupCodeSchema = z
+  .string()
+  .length(BACKUP_CODE_LENGTH, 'Backup code must be 8 uppercase letters or digits')
+  .regex(/^[A-Z0-9]{8}$/, 'Backup code must be 8 uppercase letters or digits');
+
+export const twoFactorCodeSchema = z.union([totpCodeSchema(), backupCodeSchema]);
 
 export const setupTotpSchema = z.object({
   password: z.string().min(1, 'Password is required to setup 2FA'),
@@ -37,11 +47,11 @@ export const verifyTotpSchema = z.object({
   code: totpCodeSchema('Authenticator code must be 6 digits'),
 });
 
-export const validateTotpSchema = verifyTotpSchema;
-
-export const loginTwoFactorSchema = z.object({
-  code: totpCodeSchema('Code must be 6 digits'),
+export const validateTotpSchema = z.object({
+  code: twoFactorCodeSchema,
 });
+
+export const loginTwoFactorSchema = validateTotpSchema;
 
 export const twoFactorVerifyFormSchema = z.object({
   verificationCode: totpCodeSchema('Verification code must be 6 digits'),

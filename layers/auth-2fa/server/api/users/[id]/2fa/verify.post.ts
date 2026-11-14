@@ -9,6 +9,7 @@ import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwo
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import type { TwoFactorVerifyPayload } from '#layers/auth-2fa/types/twoFactor';
 import { verifyTotpSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
+import { generateBackupCodes } from '#layers/auth-2fa/server/utils/backupCodes';
 
 export default defineEventHandler(async (event) => {
   const userId = await getAuthorizedUserId(event);
@@ -54,9 +55,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Code is verified, enable 2FA and generate 10 block backup codes
-  const cryptoStr = () => Math.random().toString(36).substring(2, 10).toUpperCase();
-  const backupCodes = Array.from({ length: 10 }, () => cryptoStr());
+  // Code is verified; enable 2FA and issue ten single-use backup codes.
+  const backupCodes = generateBackupCodes();
   const now = new Date();
 
   // Two services, two writes, so enabling 2FA comes last: if the lock-screen

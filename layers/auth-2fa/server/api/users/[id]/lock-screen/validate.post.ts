@@ -7,7 +7,7 @@ import {
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
 import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwoFactor';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
-import { MAX_TOTP_ATTEMPTS } from '#layers/auth-2fa/shared/constants/totp';
+import { MAX_TOTP_ATTEMPTS, TOTP_LENGTH } from '#layers/auth-2fa/shared/constants/totp';
 import type { LockScreenValidationPayload } from '#layers/auth-2fa/types/twoFactor';
 import { validateTotpSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
 
@@ -58,25 +58,12 @@ export default defineEventHandler(async (event) => {
     secret: OTPAuth.Secret.fromBase32(twoFactor.secret),
   });
 
-  // We allow a window of 1 (30 seconds before and after)
-  const delta = totp.validate({ token: code, window: 1 });
-  let isCorrect = delta !== null;
+  // We allow a TOTP window of 1 (30 seconds before and after).
+  const isCorrect =
+    code.length === TOTP_LENGTH
+      ? totp.validate({ token: code, window: 1 }) !== null
+      : await userTwoFactorService.consumeBackupCode(userId, code);
   const now = new Date();
-
-  // Also check if it's a backup code if regular TOTP fails
-  if (!isCorrect && twoFactor.backupCodes && twoFactor.backupCodes.length > 0) {
-    const backupIndex = twoFactor.backupCodes.indexOf(code);
-    if (backupIndex !== -1) {
-      isCorrect = true;
-      // Remove the used backup code
-      const newBackupCodes = [...twoFactor.backupCodes];
-      newBackupCodes.splice(backupIndex, 1);
-      await userTwoFactorService.update({
-        userId,
-        backupCodes: newBackupCodes,
-      });
-    }
-  }
 
   if (isCorrect) {
     // Reset failed attempts on success

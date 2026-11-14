@@ -1,4 +1,4 @@
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { DBTwoFactor } from '#layers/auth-2fa/types/twoFactor';
 import { IDatabaseService } from '#layers/database/types/db/database-service';
 import type {
@@ -55,6 +55,36 @@ class UserTwoFactorService extends IDatabaseService<DBTwoFactor> {
       .where(eq(tables.userTwoFactor.userId, data.userId))
       .returning()
       .get();
+  }
+
+  /**
+   * Consume against the current database row, not a previously read snapshot.
+   * One conditional write prevents concurrent login/unlock requests from reusing
+   * a code or restoring a different code consumed by another request.
+   */
+  async consumeBackupCode(userId: number, code: string): Promise<boolean> {
+    const result = await this.db
+      .update(tables.userTwoFactor)
+      .set({
+        backupCodes: sql`(
+          SELECT json_group_array(value)
+          FROM json_each(${tables.userTwoFactor.backupCodes})
+          WHERE value != ${code}
+        )`,
+      })
+      .where(
+        and(
+          eq(tables.userTwoFactor.userId, userId),
+          eq(tables.userTwoFactor.enabled, true),
+          sql`EXISTS (
+          SELECT 1 FROM json_each(${tables.userTwoFactor.backupCodes})
+          WHERE value = ${code}
+        )`,
+        ),
+      )
+      .returning({ userId: tables.userTwoFactor.userId })
+      .get();
+    return result !== undefined;
   }
 
   /**

@@ -2,6 +2,7 @@
 import { REGEXP_ONLY_DIGITS } from 'vue-input-otp';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '../ui/input-otp';
 import { TOTP_LENGTH } from '#layers/auth-2fa/shared/constants/totp';
+import { backupCodeSchema, totpCodeSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
 import { twoFactorRoutes } from '#layers/auth-2fa/shared/twoFactorRoutes';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
@@ -12,7 +13,15 @@ import type { LoginStepEmits, LoginStepProps } from '#layers/auth/types/loginSte
 const props = defineProps<LoginStepProps>();
 const emit = defineEmits<LoginStepEmits>();
 
+const { t } = useI18n();
 const totpCode = ref('');
+const useBackupCode = ref(false);
+const authenticatorCodeSchema = totpCodeSchema();
+const isCodeValid = computed(
+  () =>
+    (useBackupCode.value ? backupCodeSchema : authenticatorCodeSchema).safeParse(totpCode.value)
+      .success,
+);
 const isLoading = ref(false);
 const error = ref('');
 const isShaking = ref(false);
@@ -24,8 +33,18 @@ function triggerShakeAnimation() {
   }, 600);
 }
 
+function toggleCodeMode() {
+  useBackupCode.value = !useBackupCode.value;
+  totpCode.value = '';
+  error.value = '';
+}
+
+function updateBackupCode(value: string | number) {
+  totpCode.value = String(value).trim().toUpperCase();
+}
+
 const on2faSubmit = async () => {
-  if (totpCode.value.length !== TOTP_LENGTH) return;
+  if (isLoading.value || !isCodeValid.value) return;
   isLoading.value = true;
   error.value = '';
   try {
@@ -55,21 +74,45 @@ const on2faSubmit = async () => {
       Two-factor authentication
     </h1>
     <p id="two-factor-description" class="text-base text-muted-foreground">
-      Enter the code from your authenticator app.
+      <template v-if="useBackupCode">
+        {{ t('auth.two_factor.backup_code_description') }}
+      </template>
+      <template v-else> Enter the code from your authenticator app. </template>
     </p>
   </div>
 
-  <Alert v-if="error" variant="destructive">
+  <Alert v-if="error" id="two-factor-error" variant="destructive" role="alert">
     <AlertDescription>{{ error }}</AlertDescription>
   </Alert>
 
   <form class="space-y-6" @submit.prevent="on2faSubmit">
-    <div class="flex justify-center">
+    <Field v-if="useBackupCode" :data-invalid="!!error">
+      <FieldLabel for="two-factor-code">{{ t('auth.two_factor.backup_code') }}</FieldLabel>
+      <Input
+        id="two-factor-code"
+        :model-value="totpCode"
+        autocomplete="one-time-code"
+        autocapitalize="characters"
+        :spellcheck="false"
+        :disabled="isLoading"
+        :aria-invalid="!!error"
+        :aria-describedby="
+          error ? 'two-factor-description two-factor-error' : 'two-factor-description'
+        "
+        @update:model-value="updateBackupCode"
+      />
+    </Field>
+    <div v-else class="flex justify-center">
       <InputOTP
+        id="two-factor-code"
         v-model="totpCode"
         :class="cn([{ animateShake: isShaking }, 'justify-center'])"
         aria-labelledby="two-factor-title"
-        aria-describedby="two-factor-description"
+        :aria-describedby="
+          error ? 'two-factor-description two-factor-error' : 'two-factor-description'
+        "
+        :aria-invalid="!!error"
+        :disabled="isLoading"
         placeholder="○"
         :maxlength="TOTP_LENGTH"
         :pattern="REGEXP_ONLY_DIGITS"
@@ -85,15 +128,29 @@ const on2faSubmit = async () => {
         </InputOTPGroup>
       </InputOTP>
     </div>
-    <Button
-      type="submit"
-      class="w-full"
-      :is-loading="isLoading"
-      :disabled="totpCode.length !== TOTP_LENGTH"
-    >
+    <Button type="submit" class="w-full" :is-loading="isLoading" :disabled="!isCodeValid">
       Verify Code
     </Button>
-    <Button type="button" variant="ghost" class="w-full" @click="emit('cancel')">
+    <Button
+      type="button"
+      variant="link"
+      class="w-full"
+      :disabled="isLoading"
+      :aria-pressed="useBackupCode"
+      aria-controls="two-factor-code"
+      @click="toggleCodeMode"
+    >
+      {{
+        t(useBackupCode ? 'auth.two_factor.use_authenticator' : 'auth.two_factor.use_backup_code')
+      }}
+    </Button>
+    <Button
+      type="button"
+      variant="ghost"
+      class="w-full"
+      :disabled="isLoading"
+      @click="emit('cancel')"
+    >
       Back to login
     </Button>
   </form>
