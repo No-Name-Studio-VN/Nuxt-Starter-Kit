@@ -6,19 +6,13 @@
     "@nuxtjs/mdc",
     "shiki",
     "@nuxt/content",
+    "better-sqlite3",
     "nuxt-studio",
     "nuxt-component-meta",
     "feed",
     "minisearch"
   ],
-  "devDependencies": [
-    "nuxt-content-git"
-  ],
-  "env": [
-    "STUDIO_GITHUB_CLIENT_ID",
-    "STUDIO_GITHUB_CLIENT_SECRET"
-  ],
-  "rootFiles": [
-    "content/**"
-  ]
+  "devDependencies": ["nuxt-content-git"],
+  "env": ["STUDIO_GITHUB_CLIENT_ID", "STUDIO_GITHUB_CLIENT_SECRET"],
+  "rootFiles": ["content/**"]
 }

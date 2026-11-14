@@ -172,5 +172,7 @@ jobs:
         run: |
           if [ "$(node -p "require('./.nuxt-saas.json').modules.includes('database')")" = true ]; then
             pnpm db:generate
-            test -n "$(ls server/db/migrations/sqlite/*.sql)"
+            if [ -n "$(find layers -path 'layers/*/server/db/schema*.ts' -type f -print -quit)" ]; then
+              test -n "$(ls server/db/migrations/sqlite/*.sql)"
+            fi
           fi

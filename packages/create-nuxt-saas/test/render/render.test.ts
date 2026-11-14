@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'jsonc-parser';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
+import { readKitModules } from '../../src/kit/modules';
 import { DEFAULT_TEMPLATE, openKit, resolveCommit, type KitSnapshot } from '../../src/kit/source';
 import { render, type Tree } from '../../src/render/render';
 import { createFixtureKit } from '../support/fixtureKit';
@@ -128,6 +129,45 @@ describe('render fixture v1', () => {
     expect(text(tree, 'README.md')).not.toContain('**Alpha**');
   });
 
+  it.each([{ selected: ['alpha'] }, { selected: ['beta'] }, { selected: [] }])(
+    'keeps shared claims only when a claimer is selected: %j',
+    async ({ selected }) => {
+      const sharedKit = {
+        ...kit,
+        modules: kit.modules.map((module) =>
+          module.id === 'alpha' || module.id === 'beta'
+            ? {
+                ...module,
+                dependencies: [...module.dependencies, 'alpha-dep'],
+                devDependencies: ['shared-tool'],
+                scripts: ['alpha:run'],
+                env: ['ALPHA_KEY'],
+                bindings: [...module.bindings, 'DB'],
+              }
+            : module,
+        ),
+      };
+      const original = await readFile(join(kit.dir, 'package.json'), 'utf8');
+      const raw: unknown = JSON.parse(original);
+      const pkg = packageSchema.omit({ version: true }).parse(raw);
+      await writeFile(
+        join(kit.dir, 'package.json'),
+        JSON.stringify({ ...pkg, devDependencies: { 'shared-tool': '1.0.0' } }),
+      );
+      try {
+        const tree = await render(sharedKit, selected, identity);
+        const expected = selected.length > 0;
+        expect('alpha-dep' in packageJson(tree).dependencies).toBe(expected);
+        expect('shared-tool' in packageJson(tree).devDependencies).toBe(expected);
+        expect('alpha:run' in packageJson(tree).scripts).toBe(expected);
+        expect(envKeys(tree).includes('ALPHA_KEY')).toBe(expected);
+        expect(bindings(tree).includes('DB')).toBe(expected);
+      } finally {
+        await writeFile(join(kit.dir, 'package.json'), original);
+      }
+    },
+  );
+
   it('produces byte-identical trees with sorted POSIX paths, independent of selection order', async () => {
     const first = await render(kit, ['alpha', 'beta', 'docs'], identity);
     const second = await render(kit, ['docs', 'beta', 'alpha'], identity);
@@ -145,6 +185,23 @@ describe('render fixture v1', () => {
 });
 
 describe('render real kit', () => {
+  it('keeps better-sqlite3 and its pnpm build permission for content without database', async () => {
+    const root = fileURLToPath(new URL('../../../../', import.meta.url));
+    const source = { kind: 'local', path: root, allowDirty: true } satisfies Parameters<
+      typeof openKit
+    >[0];
+    const kit = await openKit(source, await resolveCommit(source), DEFAULT_TEMPLATE);
+    try {
+      const modules = await readKitModules(root);
+      const tree = await render({ ...kit, modules }, ['content'], identity);
+      expect(packageJson(tree).dependencies).toHaveProperty('better-sqlite3');
+      expect(tree.has('layers/database/module.json')).toBe(false);
+      expect(text(tree, 'pnpm-workspace.yaml')).toMatch(/^ {2}better-sqlite3: true$/m);
+    } finally {
+      await kit.cleanup();
+    }
+  });
+
   it('renders base and all modules without excluded files, claims or markers leaking', async () => {
     const root = fileURLToPath(new URL('../../../../', import.meta.url));
     const source = { kind: 'local', path: root, allowDirty: true } satisfies Parameters<

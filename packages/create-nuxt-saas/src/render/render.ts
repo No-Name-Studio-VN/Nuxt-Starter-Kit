@@ -30,13 +30,20 @@ export async function render(
   const config = kitConfigSchema.parse(parsed);
   const selectedIds = new Set(selected);
   const dropped = kit.modules.filter((module) => !selectedIds.has(module.id));
+  const kept = kit.modules.filter((module) => selectedIds.has(module.id));
+  function unselectedClaims(section: keyof Claims | 'env' | 'bindings'): Set<string> {
+    const retained = new Set(kept.flatMap((module) => module[section]));
+    return new Set(
+      dropped.flatMap((module) => module[section]).filter((name) => !retained.has(name)),
+    );
+  }
   const drop: Claims = {
-    dependencies: new Set(dropped.flatMap((module) => module.dependencies)),
-    devDependencies: new Set(dropped.flatMap((module) => module.devDependencies)),
-    scripts: new Set(dropped.flatMap((module) => module.scripts)),
+    dependencies: unselectedClaims('dependencies'),
+    devDependencies: unselectedClaims('devDependencies'),
+    scripts: unselectedClaims('scripts'),
   };
-  const dropEnv = new Set(dropped.flatMap((module) => module.env));
-  const dropBindings = new Set(dropped.flatMap((module) => module.bindings));
+  const dropEnv = unselectedClaims('env');
+  const dropBindings = unselectedClaims('bindings');
   const paths = await glob('**/*', {
     cwd: kit.dir,
     dot: true,

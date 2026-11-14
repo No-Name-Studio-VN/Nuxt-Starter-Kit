@@ -31,7 +31,7 @@ describe('kit module claims', () => {
     ).toEqual([]);
   });
 
-  it('claims existing root entries and never shares a claim between modules', async () => {
+  it('claims existing root entries while allowing shared module claims', async () => {
     const modules = await readLayerModules();
     const packageJson: unknown = JSON.parse(await readFile(join(kitRoot, 'package.json'), 'utf8'));
     const rootPackage = packageSchema.parse(packageJson);
@@ -48,20 +48,19 @@ describe('kit module claims', () => {
       ['env', envKeys],
       ['bindings', bindings],
     ]);
-    const owners = new Map<string, string>();
+    const rootFileOwners = new Map<string, string>();
     const violations: string[] = [];
 
     for (const module of modules) {
       for (const section of claimSections) {
         for (const name of module[section]) {
-          // A package name is the same claim in either dependency section.
-          const namespace = section === 'devDependencies' ? 'dependencies' : section;
-          const key = `${namespace}:${name}`;
-          const previous = owners.get(key);
-          if (previous && previous !== module.id) {
-            violations.push(`${module.id}:${section}:${name} also claimed by ${previous}`);
+          if (section === 'rootFiles') {
+            const previous = rootFileOwners.get(name);
+            if (previous && previous !== module.id) {
+              violations.push(`${module.id}:${section}:${name} also claimed by ${previous}`);
+            }
+            rootFileOwners.set(name, module.id);
           }
-          owners.set(key, module.id);
           const exists =
             section === 'rootFiles'
               ? (await trackedMatches(name)).length > 0
