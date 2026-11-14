@@ -146,6 +146,14 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    $server: {
+      build: {
+        rolldownOptions: {
+          // Nitro resolves shared externals from the SSR output, not Nuxt's package entry.
+          makeAbsoluteExternalsRelative: false,
+        },
+      },
+    },
     optimizeDeps: {
       include: ['clsx', 'reka-ui', 'tailwind-merge'],
     },
