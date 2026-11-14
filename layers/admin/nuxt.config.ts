@@ -10,6 +10,13 @@ const seedRules: NuxtSecurityRouteRules = {
 };
 
 export default defineNuxtConfig({
+  i18n: {
+    locales: [
+      { code: 'en', file: 'en.json' },
+      { code: 'vi', file: 'vi.json' },
+    ],
+  },
+
   runtimeConfig: {
     // Shared secret guarding the database seed endpoint.
     seed: {

@@ -1,5 +1,7 @@
 {
   "common": {
+    "go_home": "Về trang chủ",
+    "scroll_to_top": "Cuộn lên đầu trang",
     "privacy": "Chính sách bảo mật",
     "terms": "Điều khoản",
     "required": "bắt buộc",

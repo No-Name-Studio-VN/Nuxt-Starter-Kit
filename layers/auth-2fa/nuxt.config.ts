@@ -3,6 +3,13 @@ import { createResolver } from '@nuxt/kit';
 const { resolve } = createResolver(import.meta.url);
 
 export default defineNuxtConfig({
+  i18n: {
+    locales: [
+      { code: 'en', file: 'en.json' },
+      { code: 'vi', file: 'vi.json' },
+    ],
+  },
+
   // The shadcn input-otp folder has a barrel index.ts that would register as a fake
   // global component; ignore .ts files so only the .vue components are registered.
   components: [{ path: './components', ignore: ['**/*.ts'] }],

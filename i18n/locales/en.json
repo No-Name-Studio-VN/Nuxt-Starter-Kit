@@ -1,5 +1,7 @@
 {
   "common": {
+    "go_home": "Go home",
+    "scroll_to_top": "Scroll to top",
     "privacy": "Privacy",
     "terms": "Terms",
     "required": "required",

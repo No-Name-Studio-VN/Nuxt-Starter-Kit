@@ -1,0 +1,7 @@
+{
+  "errors": {
+    "offline_title": "Bạn đang ngoại tuyến",
+    "offline_description": "Kiểm tra kết nối internet rồi thử lại.",
+    "try_again": "Thử lại"
+  }
+}

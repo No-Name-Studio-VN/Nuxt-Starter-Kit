@@ -1,0 +1,8 @@
+{
+  "admin": {
+    "users": {
+      "title": "User management",
+      "desc": "Manage user accounts, access and account status."
+    }
+  }
+}

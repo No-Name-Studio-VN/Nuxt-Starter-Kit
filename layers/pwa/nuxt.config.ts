@@ -8,6 +8,13 @@ const require = createRequire(import.meta.url);
 export default defineNuxtConfig({
   modules: ['@vite-pwa/nuxt'],
 
+  i18n: {
+    locales: [
+      { code: 'en', file: 'en.json' },
+      { code: 'vi', file: 'vi.json' },
+    ],
+  },
+
   pwa: {
     pwaAssets: {
       config: resolve('./pwa-assets.config.ts'),

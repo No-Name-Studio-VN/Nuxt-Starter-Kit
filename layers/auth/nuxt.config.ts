@@ -5,6 +5,13 @@ const { resolve } = createResolver(import.meta.url);
 export default defineNuxtConfig({
   modules: ['nuxt-auth-utils', '@nuxtjs/turnstile'],
 
+  i18n: {
+    locales: [
+      { code: 'en', file: 'en.json' },
+      { code: 'vi', file: 'vi.json' },
+    ],
+  },
+
   runtimeConfig: {
     turnstile: {
       secretKey: '',

@@ -1,0 +1,26 @@
+{
+  "auth": {
+    "forgot_password": "Forgot password?",
+    "forgot_password_title": "Forgot your password?",
+    "forgot_password_description": "Enter your email address to receive a password reset link.",
+    "login_title": "Sign in",
+    "login_description": "Sign in to your account to continue.",
+    "oauth_popup_title": "Completing sign-in",
+    "oauth_popup_description": "Please wait while we finish signing you in.",
+    "register_title": "Create an account",
+    "register_description": "Create an account to get started.",
+    "reset_password_title": "Reset your password",
+    "reset_password_description": "Choose a new password for your account."
+  },
+  "common": {
+    "back": "Back",
+    "home": "Home",
+    "log_out": "Log out",
+    "sign_in": "Sign in",
+    "toggle_sidebar": "Toggle sidebar"
+  },
+  "nav": {
+    "open_breadcrumb": "Show breadcrumb navigation",
+    "quick_search": "Quick search"
+  }
+}

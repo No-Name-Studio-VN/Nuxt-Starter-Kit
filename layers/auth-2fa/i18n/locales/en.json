@@ -1,0 +1,10 @@
+{
+  "auth": {
+    "two_factor": {
+      "use_backup_code": "Use a backup code",
+      "use_authenticator": "Use authenticator app",
+      "backup_code": "Backup code",
+      "backup_code_description": "Enter one of your 8-character backup codes. Each code can only be used once."
+    }
+  }
+}
