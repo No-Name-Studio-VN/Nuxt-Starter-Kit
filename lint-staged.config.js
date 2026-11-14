@@ -19,13 +19,13 @@ export default {
   '*.{js,mjs,cjs,ts,mts,cts,vue}': [
     'oxlint --fix --config .oxlintrc.jsonc',
     'eslint --fix',
-    'oxfmt --write',
+    'oxfmt --write --no-error-on-unmatched-pattern',
   ],
   '*.{json,jsonc,css,scss,md,yaml,yml}': (files) => {
     const formatableFiles = files.filter((filePath) => !isGeneratedMigrationPath(filePath));
 
     return formatableFiles.length > 0
-      ? `oxfmt --write ${formatableFiles.map(quoteShellArgument).join(' ')}`
+      ? `oxfmt --write --no-error-on-unmatched-pattern ${formatableFiles.map(quoteShellArgument).join(' ')}`
       : [];
   },
 };
