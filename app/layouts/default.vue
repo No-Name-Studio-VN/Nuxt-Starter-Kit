@@ -1,26 +1,37 @@
 <template>
   <div class="min-h-screen bg-background text-foreground">
-    <!-- Floating Island Header -->
+    <!-- Full-width header morphs into a floating pill on scroll. -->
     <div
-      class="fixed top-0 inset-x-0 z-50 flex justify-center px-4 pt-4 transition-all duration-500 ease-out"
+      class="fixed top-0 inset-x-0 z-50 flex justify-center motion-reduce:transition-none"
+      :class="[
+        isScrolled ? 'px-4 pt-4' : 'p-0',
+        isHeaderReady ? 'transition-[padding] duration-800 ease-in-out' : 'transition-none',
+      ]"
     >
       <header
-        class="w-full max-w-5xl transition-all duration-500 ease-out"
-        :class="
-          cn(
-            'rounded-full border px-8 transition-all',
-            isScrolled
-              ? 'border-border bg-background/40 shadow-lg backdrop-blur-xs shadow-black/8 py-3'
-              : 'border-border/20 bg-background/60 py-4 backdrop-blur-xs',
-          )
-        "
+        class="w-full px-4 md:px-8 motion-reduce:transition-none"
+        :class="[
+          isScrolled
+            ? 'max-w-5xl rounded-full border border-border/60 bg-background/60 py-3 shadow-lg shadow-foreground/5 backdrop-blur-xs'
+            : 'max-w-full rounded-none border-0 border-b border-border/20 bg-transparent py-1 shadow-none backdrop-blur-none',
+          isHeaderReady
+            ? 'transition-[max-width,border-radius,padding,background-color,backdrop-filter,border-width,border-color,box-shadow] duration-800 ease-in-out'
+            : 'transition-none',
+        ]"
       >
         <div class="flex h-full items-center justify-between">
           <!-- Logo -->
           <NuxtLink
             to="/"
-            class="flex items-center gap-2.5 group transition-all duration-300"
-            :class="isScrolled ? 'scale-[0.97]' : 'scale-100'"
+            class="flex shrink-0 items-center gap-2.5 group motion-reduce:transition-none"
+            :class="[
+              isScrolled
+                ? 'scale-[0.97] border-r-0 pr-0 mr-0'
+                : 'scale-100 md:border-r md:border-border/20 md:pr-6 md:mr-6',
+              isHeaderReady
+                ? 'transition-[scale,border-width,padding,margin] duration-800 ease-in-out'
+                : 'transition-none',
+            ]"
           >
             <NuxtImg
               src="/favicon.svg"
@@ -158,7 +169,7 @@
                       <span
                         class="text-3xl font-semibold tracking-tight text-foreground transition-all duration-300 group-hover:text-primary group-active:scale-95"
                       >
-                        {{ $t(item.title) }}
+                        {{ $te(item.title) ? $t(item.title) : item.title }}
                       </span>
                       <ChevronRight
                         class="size-7 shrink-0 text-primary translate-x-3 transition-all duration-300 ease-out group-hover:translate-x-0"
@@ -182,7 +193,7 @@
                       <span
                         class="text-3xl font-semibold tracking-tight text-foreground transition-all duration-300 group-hover:text-primary group-active:scale-95"
                       >
-                        {{ $t(item.title) }}
+                        {{ $te(item.title) ? $t(item.title) : item.title }}
                       </span>
                       <ChevronRight
                         class="size-7 shrink-0 text-primary translate-x-3 transition-all duration-300 ease-out group-hover:translate-x-0"
@@ -222,7 +233,11 @@
                     class="size-5 transition-transform duration-300 group-hover:-translate-x-1"
                   />
                   <span class="text-lg font-medium">
-                    {{ $t(activeSubmenuNav?.title ?? '') }}
+                    {{
+                      $te(activeSubmenuNav?.title ?? '')
+                        ? $t(activeSubmenuNav?.title ?? '')
+                        : activeSubmenuNav?.title
+                    }}
                   </span>
                 </button>
 
@@ -246,10 +261,10 @@
                         <span
                           class="text-2xl font-semibold tracking-tight text-foreground transition-all duration-300 group-hover:text-primary group-active:scale-95"
                         >
-                          {{ $t(link.title || '') }}
+                          {{ $te(link.title ?? '') ? $t(link.title ?? '') : link.title }}
                         </span>
                         <p v-if="link.description" class="mt-0.5 text-sm text-muted-foreground">
-                          {{ $t(link.description) }}
+                          {{ $te(link.description) ? $t(link.description) : link.description }}
                         </p>
                       </div>
                     </div>
@@ -436,7 +451,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
+import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useWindowScroll } from '@vueuse/core';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -457,7 +472,6 @@ import {
   MoonIcon,
   MailIcon,
 } from '@lucide/vue';
-import { cn } from '@/lib/utils';
 import { Motion } from 'motion-v';
 import { defaultLocale } from '~~/i18n-constants';
 import { APP_MANIFEST } from '#shared/constants/manifest';
@@ -488,7 +502,21 @@ const i18nEnabled = availableLocales.length > 1;
 const isMobileMenuOpen = ref(false);
 
 const { y: scrollY } = useWindowScroll();
-const isScrolled = computed(() => scrollY.value > 300);
+const isScrolled = computed(() => scrollY.value > 150);
+const isHeaderReady = ref(false);
+let headerFrame = 0;
+
+// Apply the restored scroll position before enabling transitions, so a reload
+// part-way down the page snaps to the pill instead of animating into it.
+onMounted(async () => {
+  scrollY.value = window.scrollY;
+  await nextTick();
+  headerFrame = requestAnimationFrame(() => {
+    isHeaderReady.value = true;
+  });
+});
+
+onUnmounted(() => cancelAnimationFrame(headerFrame));
 
 // Close mobile menu on escape key
 onMounted(() => {
