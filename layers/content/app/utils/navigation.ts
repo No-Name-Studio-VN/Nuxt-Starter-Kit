@@ -44,6 +44,37 @@ export function navigationBadges(item?: NavigationItem | null): NavigationBadge[
   });
 }
 
+/**
+ * Pages in reading order, as @nuxt/content's `flattedData` (internal/surround.js)
+ * orders them: a folder counts as a page unless it is `page: false` or one of its
+ * children shares its path.
+ */
+function flattenPages<T extends { path: string; page?: unknown; children?: T[] }>(items: T[]): T[] {
+  return items.flatMap((item) => {
+    const children = item.children ? flattenPages(item.children) : [];
+    if (item.page === false || children.some((child) => child.path === item.path)) {
+      return children;
+    }
+    return [{ ...item, children: undefined }, ...children];
+  });
+}
+
+/**
+ * [previous, next] neighbours of `path` in an already-loaded navigation tree.
+ * Same result as `queryCollectionItemSurroundings(collection, path)` with the
+ * same fields, without querying and rebuilding the tree again.
+ */
+export function findSurroundings<T extends { path: string; page?: unknown; children?: T[] }>(
+  navigation: T[],
+  path: string,
+): [T | null, T | null] {
+  const pages = flattenPages(navigation);
+  const normalizedPath = path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
+  const index = pages.findIndex((item) => item.path === normalizedPath);
+  if (index === -1) return [null, null];
+  return [pages[index - 1] ?? null, pages[index + 1] ?? null];
+}
+
 export const flattenNavigation = (items?: NavigationItem[]): NavigationItem[] =>
   items?.flatMap((item) => (item.children ? flattenNavigation(item.children) : [item])) || [];
 

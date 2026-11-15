@@ -2,21 +2,22 @@
   <div>
     <LayoutBanner v-if="config.banner.enable" />
     <LayoutHeader />
-    <div
-      v-if="!page?.fullpage && baseRouteName !== 'index'"
-      class="min-h-screen"
-      :class="{ 'border-b': config.footer.border }"
-    >
+    <!--
+      Keep <slot /> at one fixed position. Moving it between v-if branches remounts
+      <NuxtPage> while its Suspense is still resolving the next route.
+    -->
+    <div class="min-h-screen" :class="{ 'border-b': showShell && config.footer.border }">
       <div
-        class="flex-1 items-start px-4 md:grid md:gap-6 md:px-8 lg:gap-10"
-        :class="[
-          config.main.padded && 'container',
-          (page?.aside ?? true) &&
-            'md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]',
-        ]"
+        :class="
+          showShell && [
+            'flex-1 items-start px-4 md:grid md:gap-6 md:px-8 lg:gap-10',
+            config.main.padded && 'container',
+            showAside && 'md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]',
+          ]
+        "
       >
         <aside
-          v-if="page?.aside ?? true"
+          v-if="showAside"
           class="fixed z-30 -ml-2 hidden w-full shrink-0 overflow-y-auto top-25.5 md:sticky md:block"
           :class="[
             config.aside.useLevel && config.aside.levelStyle === 'aside'
@@ -29,47 +30,31 @@
         <slot />
       </div>
     </div>
-    <div v-else class="min-h-screen">
-      <slot />
-    </div>
     <BackToTop />
     <LayoutFooter />
   </div>
 </template>
 
 <script setup lang="ts">
-import { usePageData } from '#layers/content/app/composables/usePageData';
+import { useDocsPageContent, usePageData } from '#layers/content/app/composables/usePageData';
 
 const route = useRoute();
 const { page } = usePageData();
-const routePath = computed(() => route.path);
 
-// Resolve page flags before rendering the shell. Fetching in the child page is
-// too late for SSR and causes the sidebar/fullpage columns to change on hydration.
-const { data: pageData } = await useAsyncData(
-  `page-${routePath.value}`,
-  async () => {
-    const data = await queryCollection('content').path(routePath.value).first();
-    // Retry without the trailing slash only when there is one to strip.
-    if (!data && routePath.value.length > 1 && routePath.value.endsWith('/')) {
-      return await queryCollection('content').path(routePath.value.slice(0, -1)).first();
-    }
-    return data;
-  },
-  { watch: [routePath] },
-);
-watch(
-  pageData,
-  (value) => {
-    page.value = value ?? null;
-  },
-  { immediate: true },
-);
+// Seed page flags before the shell renders: the page's own fetch runs too late on
+// SSR, and the sidebar/fullpage columns would change on hydration. This runs once
+// per layout mount; on client navigation each page publishes its own content.
+// Do not watch the route here: refetching from the layout swaps the shared page
+// while <NuxtPage> is mid-transition and crashes the renderer.
+const { data: initialPage } = await useDocsPageContent(route.path);
+page.value = initialPage.value ?? null;
 
 const config = useDocsConfig();
 const { themeClass, radius, setClassTheme } = useThemes();
 
 const baseRouteName = computed(() => useRouteBaseName()(route));
+const showShell = computed(() => !page.value?.fullpage && baseRouteName.value !== 'index');
+const showAside = computed(() => showShell.value && (page.value?.aside ?? true));
 
 useHead({
   bodyAttrs: {

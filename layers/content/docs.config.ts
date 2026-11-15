@@ -55,7 +55,7 @@ export const DOCS_CONFIG = {
     codeCopyToast: false,
     editLink: {
       enable: true,
-      pattern: 'https://github.com/No-Name-Studio-VN/Homepage/edit/main/www/content/:path',
+      pattern: 'https://github.com/No-Name-Studio-VN/Nuxt-Starter-Kit/edit/main/content/:path',
       text: 'docs.editlink.title',
       icon: 'lucide:square-pen',
       placement: ['docsFooter'],

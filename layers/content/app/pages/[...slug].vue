@@ -88,13 +88,21 @@
 <script setup lang="ts">
 // import { findPageHeadline } from '@nuxt/content/utils'
 import { CircleXIcon, SearchIcon } from '@lucide/vue';
-import { usePageData } from '#layers/content/app/composables/usePageData';
+import { useDocsPageContent, usePageData } from '#layers/content/app/composables/usePageData';
 
 const route = useRoute();
-const routePath = computed(() => route.path);
+// <NuxtPage> is keyed by path, so each instance renders exactly one path.
+const routePath = route.path;
 
-// The layout resolves page content before rendering; populate the secondary data here.
-const { page, navigation, surroundings } = usePageData();
+const { page: sharedPage, navigation, surroundings } = usePageData();
+
+// Step 1: This instance owns its content. It must not render from shared state:
+// while the next route resolves, shared state can still hold the previous page,
+// and swapping it mid-transition unmounts a suspended ContentRenderer.
+const { data: pageData } = await useDocsPageContent(routePath);
+const page = computed(() => pageData.value ?? null);
+// Publish before rendering so the layout, toc, and edit link match this page.
+sharedPage.value = page.value;
 
 // Unknown paths keep the not-found state below but answer 404, so crawlers drop
 // them and prerendering doesn't bake them into static 200 pages.
@@ -113,29 +121,13 @@ const { data: navData } = await useAsyncData('navigation', () => {
     'navBadges',
   ]);
 });
+// Step 3: Prev/next come from the tree above. queryCollectionItemSurroundings would
+// rebuild the whole navigation tree just to read two neighbours.
 watch(
   navData,
   (val) => {
     navigation.value = val ?? [];
-  },
-  { immediate: true },
-);
-
-// Step 3: Keep surroundings lazy to avoid extra SSR work on every content request
-const { data: surroundingsData } = useLazyAsyncData(
-  `surroundings-${routePath.value}`,
-  () => {
-    return queryCollectionItemSurroundings('content', routePath.value, {
-      fields: ['title', 'description', 'path', 'icon', 'navBadges'],
-    });
-  },
-  { watch: [routePath], immediate: !!page.value },
-);
-
-watch(
-  surroundingsData,
-  (val) => {
-    surroundings.value = val ?? null;
+    surroundings.value = page.value ? findSurroundings(val ?? [], routePath) : null;
   },
   { immediate: true },
 );
@@ -155,12 +147,10 @@ useSeo({
   title,
   description,
   type: 'article',
-  modifiedAt: computed(
-    () => {
-      const value = page.value && 'modifiedAt' in page.value ? page.value.modifiedAt : undefined;
-      return typeof value === 'string' ? value : undefined;
-    },
-  ),
+  modifiedAt: computed(() => {
+    const value = page.value && 'modifiedAt' in page.value ? page.value.modifiedAt : undefined;
+    return typeof value === 'string' ? value : undefined;
+  }),
   breadcrumbs:
     page.value && navigation.value
       ? computed(() => findPageBreadcrumbs(navigation.value ?? undefined, page.value?.path || ''))
