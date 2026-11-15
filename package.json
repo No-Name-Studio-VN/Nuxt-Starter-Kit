@@ -38,6 +38,7 @@
     "@nuxt/fonts": "^1.2.0",
     "@nuxt/image": "^2.2.1",
     "@nuxt/kit": "^4.6.4",
+    "@nuxt/scripts": "^1.3.12",
     "@nuxthub/core": "^0.10.12",
     "@nuxtjs/color-mode": "^4.1.0",
     "@nuxtjs/device": "^4.0.0",

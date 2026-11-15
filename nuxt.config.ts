@@ -19,6 +19,7 @@ export default defineNuxtConfig({
     '@sentry/nuxt/module',
     '@vee-validate/nuxt',
     'motion-v/nuxt',
+    '@nuxt/scripts',
     // Keep last: lists the handlers and pages every other module registered. Routes
     // everything else to static assets so unknown URLs never cost Worker CPU.
     '@/modules/worker-routes',
