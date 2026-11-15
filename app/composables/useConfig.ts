@@ -54,22 +54,22 @@ export function useConfig() {
       ...config,
       header: {
         ...config.header,
-        nav: [
-          ...config.header.nav,
-          ...getNavItems('header').map((item) => ({
-            title: item.labelKey,
-            to: item.to,
-            target: item.target,
-            showLinkIcon: item.showLinkIcon,
-            links: item.links?.map((link) => ({
-              title: link.labelKey,
-              to: link.to,
-              target: link.target,
-              description: link.descriptionKey,
-              icon: link.icon,
-            })),
-          })),
-        ],
+        nav:
+          config.header.nav.length > 0
+            ? config.header.nav
+            : getNavItems('header').map((item) => ({
+                title: item.labelKey,
+                to: item.to,
+                target: item.target,
+                showLinkIcon: item.showLinkIcon,
+                links: item.links?.map((link) => ({
+                  title: link.labelKey,
+                  to: link.to,
+                  target: link.target,
+                  description: link.descriptionKey,
+                  icon: link.icon,
+                })),
+              })),
       },
     };
   });

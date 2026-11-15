@@ -30,6 +30,7 @@ export const SITE_CONFIG = {
       triggerType: 'icon',
       dropdownType: 'select',
     },
+    // Empty uses installed modules' menus; entries replace them, e.g. [{ title: 'Members', to: '/members' }].
     nav: [],
     links: [
       {

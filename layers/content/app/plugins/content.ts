@@ -22,12 +22,6 @@ export default defineNuxtPlugin(() => {
       to: item.to ?? '',
       target: item.target,
       showLinkIcon: item.showLinkIcon,
-      links: item.links?.map((link) => ({
-        labelKey: link.title,
-        to: link.to,
-        descriptionKey: link.description,
-        icon: link.icon,
-      })),
     });
   });
 });
