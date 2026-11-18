@@ -11,9 +11,10 @@ struct UpgradeFlowSheet: View {
 
     @State private var phase: Phase = .review
     @State private var branchName: String?
-    @State private var isConfirmingRollback = false
-    /// Why the last "Switch back and delete branch" failed; the button stays so it can be retried.
+    /// Why the last "Switch back" failed; the button stays so it can be retried.
     @State private var rollbackError: PresentedError?
+    /// Why "Resolve with Claude" could not open Terminal; the button stays so it can be retried.
+    @State private var resolveError: PresentedError?
     @State private var contentHeight: CGFloat = 0
 
     private enum Phase {
@@ -56,15 +57,6 @@ struct UpgradeFlowSheet: View {
             case .idle, .failed: await model.loadPreview(project)
             case .loading, .loaded, nil: break
             }
-        }
-        .alert(
-            "Discard the upgrade's changes and delete \(failedBranch ?? "the branch")?",
-            isPresented: $isConfirmingRollback
-        ) {
-            Button("Discard and Delete Branch", role: .destructive) { rollBack() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This throws away everything the upgrade changed, switches back to \(rollbackRecord?.previous ?? "your previous branch") and deletes the upgrade branch.")
         }
     }
 
@@ -193,32 +185,39 @@ struct UpgradeFlowSheet: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
-        case .applied(let branch):
-            VStack(alignment: .leading, spacing: 6) {
+        case .applied(let branch, let report, _):
+            VStack(alignment: .leading, spacing: 10) {
                 Label("Upgrade applied on \(branch).", systemImage: "checkmark.circle.fill")
                     .font(.callout.weight(.medium))
                     .foregroundStyle(Theme.green)
-                Text("Review the changes and commit them when you are happy. Nothing is committed.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                if report.conflicts.isEmpty {
+                    Text("Review the changes and commit them when you are happy. Nothing is committed.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Some files conflict with your changes. Resolve them with Claude, or by hand. Nothing is committed.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                TransitionReportSummary(report: report)
+                if let resolveError { FailureView(resolveError) }
             }
         case .failed(let branch, let error):
             VStack(alignment: .leading, spacing: 10) {
                 FailureView(error)
                 if let rollbackError { FailureView(rollbackError) }
                 if let branch {
-                    AmberNote("Still on \(branch), which started from a clean working tree.")
+                    AmberNote(
+                        rollbackRecord?.keepsChanges == true
+                            ? "Still on \(branch). Your changes are untouched; switching back keeps them."
+                            : "Still on \(branch), the branch this upgrade created.")
                 }
             }
         }
     }
 
     // MARK: Footer
-
-    private var failedBranch: String? {
-        if case .finished(.failed(let branch, _)) = phase { return branch }
-        return nil
-    }
 
     private var canUpgrade: Bool { model.canUpgrade(project) }
 
@@ -256,11 +255,22 @@ struct UpgradeFlowSheet: View {
             case .running, .rollingBack:
                 Spacer()
             case .finished(.failed(let branch, _)):
-                if let branch, rollbackRecord?.branch == branch {
-                    secondaryButton("Switch back and delete branch") { isConfirmingRollback = true }
+                if let branch, let record = rollbackRecord, record.branch == branch {
+                    RollbackButton(project: project, record: record) { rollBack() }
                 }
                 Spacer()
                 secondaryButton("Close") { dismiss() }.keyboardShortcut(.cancelAction)
+            case .finished(.applied(let branch, let report, let prompt)) where !report.conflicts.isEmpty:
+                Spacer()
+                secondaryButton("Done") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button {
+                    resolve(branch: branch, prompt: prompt)
+                } label: {
+                    Label("Resolve with Claude", systemImage: "sparkles")
+                }
+                .buttonStyle(.glassProminent)
+                .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
+                .keyboardShortcut(.defaultAction)
             case .finished, .rolledBack:
                 Spacer()
                 Button("Done") { dismiss() }
@@ -281,9 +291,22 @@ struct UpgradeFlowSheet: View {
 
     private func start(withClaude: Bool) {
         rollbackError = nil
+        resolveError = nil
         phase = .running
         Task {
             phase = .finished(await model.runUpgrade(project, withClaude: withClaude))
+        }
+    }
+
+    private func resolve(branch: String, prompt: UpgradePromptInput) {
+        resolveError = nil
+        Task {
+            do {
+                try await model.launchUpgradeResolution(project, prompt: prompt)
+                phase = .finished(.launched(branch: branch))
+            } catch {
+                resolveError = PresentedError(error)
+            }
         }
     }
 

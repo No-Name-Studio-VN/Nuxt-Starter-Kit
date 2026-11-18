@@ -6,6 +6,8 @@ import KitManagerCore
 struct SnapshotLoader: Sendable {
     struct Input: Sendable {
         let latestMain: String?
+        /// Why `latestMain` is nil once the first fetch attempt has finished; nil while that is unknown.
+        let kitUnavailableReason: String?
         let mapping: ModuleMapping?
         let cliReady: Bool
         /// The configured kit checkout, nil when none is set.
@@ -65,6 +67,7 @@ struct SnapshotLoader: Sendable {
         snapshot.health = work.healthURL == nil ? nil : input.previousHealth
 
         if case .kitV3(let state) = kind {
+            snapshot.kitUnavailableReason = input.latestMain == nil ? input.kitUnavailableReason : nil
             await readKitHistory(of: state, input: input, into: &snapshot)
             let plan = RenderPlanner.plan(
                 RenderPlanner.Input(

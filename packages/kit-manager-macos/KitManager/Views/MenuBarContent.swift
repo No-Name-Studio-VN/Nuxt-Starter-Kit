@@ -90,7 +90,7 @@ struct MenuBarContent: View {
             }
             .buttonStyle(.plain)
             .help("Open \(row.name) in Kit Manager")
-            StatusBadge(status: row.status, isOffline: model.isOffline)
+            StatusBadge(status: row.status)
             ProjectActions(row: row, model: model, showsMenu: false)
         }
         .padding(.horizontal, 8)

@@ -138,7 +138,7 @@ struct ProjectsTableView: View {
             .width(min: 70, ideal: 90, max: 130)
 
             TableColumn("Status", value: \.statusRank) { row in
-                StatusBadge(status: row.status, isOffline: model.isOffline)
+                StatusBadge(status: row.status)
             }
             .width(min: 130, ideal: 160, max: 210)
 

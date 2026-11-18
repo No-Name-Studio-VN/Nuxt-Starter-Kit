@@ -15,6 +15,10 @@ final class AppModel {
     private(set) var latestLabel: String?
     private(set) var cliStatus: CLIStatus = .missingCheckout
     private(set) var fetchState: FetchState = .idle
+    /// True once the first kit fetch attempt has finished, whether or not it succeeded.
+    private(set) var hasCheckedKit = false
+    /// Why `origin/main` could not be read at the last attempt; nil when it could.
+    private(set) var latestMainFailure: String?
     private(set) var isBuildingCLI = false
     private(set) var buildFailure: String?
     private(set) var refreshingCount = 0
@@ -47,7 +51,7 @@ final class AppModel {
     /// Renders that failed for their current key, so the CLI is not re-run on every window activation.
     @ObservationIgnored private var failures: [UUID: RenderFailures] = [:]
     /// Upgrade branches created from a clean tree that have not finished successfully, so only they can be rolled back.
-    @ObservationIgnored var upgradeBranches: [UUID: UpgradeBranchRecord] = [:]
+    var upgradeBranches: [UUID: UpgradeBranchRecord] = [:]
     @ObservationIgnored private var fetchTimer: Task<Void, Never>?
     @ObservationIgnored private var didBootstrap = false
 
@@ -114,8 +118,9 @@ final class AppModel {
         rebuildServices()
         launcher.removeStaleFiles()
         MigrationWorkspace.removeStale()
+        // Fetch first, so the first pass renders against the fresh `origin/main` instead of twice.
+        await fetchAndReadMain()
         await refreshAll()
-        await fetchKit()
         restartFetchTimer()
     }
 
@@ -127,8 +132,10 @@ final class AppModel {
         catalogue = []
         mapping = nil
         catalogueCommit = nil
+        latestMainFailure = nil
+        hasCheckedKit = false
+        await fetchAndReadMain()
         await refreshAll()
-        await fetchKit()
     }
 
     func refreshCLIStatus() {
@@ -151,7 +158,14 @@ final class AppModel {
     // MARK: Kit fetch
 
     func fetchKit() async {
-        guard fetchState != .fetching else { return }
+        if await fetchAndReadMain() { await refreshAll() }
+    }
+
+    /// Fetches the kit checkout and reads `origin/main`. Returns whether anything the projects depend on
+    /// changed: the commit, or the reason it cannot be read.
+    @discardableResult
+    private func fetchAndReadMain() async -> Bool {
+        guard fetchState != .fetching else { return false }
         fetchState = .fetching
         do {
             try await kit.fetch()
@@ -161,11 +175,10 @@ final class AppModel {
             logger.info("kit fetch failed: \(error.localizedDescription, privacy: .public)")
             fetchState = .offline
         }
-        let before = latestMain
+        let before = (latestMain, kitUnavailableReason)
         await updateLatestMain()
-        if latestMain != before {
-            await refreshAll()
-        }
+        hasCheckedKit = true
+        return before != (latestMain, kitUnavailableReason)
     }
 
     func restartFetchTimer() {
@@ -180,7 +193,13 @@ final class AppModel {
     }
 
     private func updateLatestMain() async {
-        latestMain = try? await kit.latestMain()
+        do {
+            latestMain = try await kit.latestMain()
+            latestMainFailure = nil
+        } catch {
+            latestMain = nil
+            latestMainFailure = error.localizedDescription
+        }
         await updateLatestLabel()
         if let latestMain { await loadCatalogue(at: latestMain) }
     }
@@ -213,17 +232,21 @@ final class AppModel {
 
     var isRefreshing: Bool { refreshingCount > 0 }
 
-    /// True only once a fetch has failed and no `origin/main` is known; before the first attempt
-    /// finishes the status reads "checking".
-    var isOffline: Bool { fetchState == .offline && latestMain == nil }
+    /// Why no project can be compared with the kit, once the first fetch attempt has finished and
+    /// `origin/main` is still unreadable (wrong kit path, fork, `master` default, not a repository, offline
+    /// with nothing fetched). Until then the status reads "checking".
+    var kitUnavailableReason: String? {
+        guard hasCheckedKit, latestMain == nil else { return nil }
+        let detail = latestMainFailure ?? "origin/main could not be read."
+        guard fetchState == .offline else { return detail }
+        return "The kit could not be fetched and no origin/main is known yet. \(detail)"
+    }
 
     /// Local refresh: no fetch. One project's failure never blocks the others. `force` also retries
     /// renders that failed earlier; window activation does not.
     func refreshAll(force: Bool = false) async {
         refreshCLIStatus()
-        latestMain = try? await kit.latestMain()
-        await updateLatestLabel()
-        if let latestMain { await loadCatalogue(at: latestMain) }
+        await updateLatestMain()
         let ids = fetchProjects().map(\.id)
         let known = Set(ids)
         for id in snapshots.keys where !known.contains(id) { snapshots[id] = nil }
@@ -265,7 +288,8 @@ final class AppModel {
 
     private func refreshPass(_ ref: ProjectRef) async {
         let input = SnapshotLoader.Input(
-            latestMain: latestMain, mapping: mapping, cliReady: cliStatus == .ready,
+            latestMain: latestMain, kitUnavailableReason: kitUnavailableReason, mapping: mapping,
+            cliReady: cliStatus == .ready,
             kitRoot: AppSettings.kitPath.isEmpty ? nil : URL(filePath: AppSettings.kitPath),
             previousHealth: snapshots[ref.id]?.health, previewFailure: failures[ref.id]?.preview,
             inspectFailure: failures[ref.id]?.inspect)

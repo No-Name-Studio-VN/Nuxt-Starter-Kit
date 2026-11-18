@@ -21,7 +21,7 @@ struct CLIBanner: View {
                     Text(failure)
                         .font(.caption)
                         .foregroundStyle(Theme.red)
-                        .lineLimit(3)
+                        .lineLimit(8)
                         .textSelection(.enabled)
                 }
             }

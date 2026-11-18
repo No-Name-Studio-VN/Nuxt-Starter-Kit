@@ -3,8 +3,6 @@ import SwiftUI
 
 struct StatusBadge: View {
     let status: ProjectStatus
-    /// True while the kit has never been fetched, so "checking" really means "offline".
-    var isOffline = false
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
@@ -127,14 +125,12 @@ struct StatusBadge: View {
             Appearance(
                 title: "Check failed", detail: nil, symbol: "exclamationmark.circle", tone: .grey,
                 help: "Could not compare with the latest kit: \(message)")
+        case .kitUnavailable(let reason):
+            Appearance(
+                title: "Kit unavailable", detail: "no origin/main", symbol: "exclamationmark.triangle.fill", tone: .amber,
+                help: "Cannot compare with the latest kit: \(reason)")
         case .checking:
-            if isOffline {
-                Appearance(
-                    title: "Offline", detail: "no kit fetched", symbol: "wifi.slash", tone: .grey,
-                    help: "Offline: the kit has not been fetched yet")
-            } else {
-                Appearance(title: "Checking", detail: nil, symbol: nil, tone: .grey, help: "Checking status")
-            }
+            Appearance(title: "Checking", detail: nil, symbol: nil, tone: .grey, help: "Checking status")
         }
     }
 

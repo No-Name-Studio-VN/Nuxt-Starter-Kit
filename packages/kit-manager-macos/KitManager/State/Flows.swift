@@ -104,16 +104,15 @@ extension AppModel {
             guard report.applied else {
                 return .failed(branch: branch, error: PresentedError(message: "The nuxt-saas CLI did not apply the upgrade."))
             }
-            guard withClaude else {
-                upgradeBranches[project.id] = nil
-                return .applied(branch: branch)
-            }
             let input = UpgradePromptInput(
                 projectName: ProjectRow(project: project, snapshot: snapshot).name,
                 fromLabel: snapshot.versionLabel ?? String(state.commit.prefix(7)), toLabel: targetLabel,
                 report: report, scripts: snapshot.package?.scripts ?? [])
-            let file = try launcher.writePrompt(PromptBuilder.upgrade(input))
-            try await launcher.openTerminal(at: url, command: .claudePrompt(file: file))
+            guard withClaude else {
+                upgradeBranches[project.id] = nil
+                return .applied(branch: branch, report: report, prompt: input)
+            }
+            try await launchUpgradeResolution(project, prompt: input)
             upgradeBranches[project.id] = nil
             return .launched(branch: branch)
         } catch {
@@ -121,24 +120,38 @@ extension AppModel {
         }
     }
 
+    /// Opens Terminal with Claude on the upgrade prompt (it says not to commit).
+    func launchUpgradeResolution(_ project: Project, prompt: UpgradePromptInput) async throws {
+        let file = try launcher.writePrompt(PromptBuilder.upgrade(prompt))
+        try await launcher.openTerminal(at: project.url, command: .claudePrompt(file: file))
+    }
+
+    /// The paths with uncommitted changes right now, read from git, for telling the user what a
+    /// discard would throw away. Empty when git cannot say.
+    func uncommittedPaths(_ project: Project) async -> [String] {
+        (try? await git.dirtyPaths(project.url)) ?? []
+    }
+
     /// The CLI found nothing to upgrade, so the new branch should be empty. Goes back to `previous` and
-    /// deletes the branch without discarding anything; if a file appeared meanwhile, nothing is touched
-    /// and the failure offers the confirmed rollback instead.
+    /// deletes the branch without discarding anything. If a file appeared meanwhile it is the user's own
+    /// work, so nothing is touched and the only way back offered is a plain switch that keeps it.
     private func abandonUpToDate(_ project: Project, branch: String, previous: String) async -> UpgradeOutcome {
         do {
             try await git.abandonBranch(project.url, branch: branch, returningTo: previous)
             upgradeBranches[project.id] = nil
             return Self.failure(.upToDate)
         } catch GitError.uncommittedChanges {
-            let message = "The project is already up to date, but files changed while the upgrade ran. Nothing was discarded."
+            upgradeBranches[project.id] = UpgradeBranchRecord(branch: branch, previous: previous, keepsChanges: true)
+            let message = "The project is already up to date, but there are uncommitted changes. They are yours, so nothing was discarded."
             return .failed(branch: branch, error: PresentedError(message: message))
         } catch {
             return .failed(branch: branch, error: PresentedError(error))
         }
     }
 
-    /// Discards the upgrade's changes, switches back to `previous` and deletes `branch`. Refused for a
-    /// branch this app did not create from a clean tree, since discarding is only lossless there.
+    /// Switches back to `previous` and deletes `branch`, discarding every uncommitted change on it, unless
+    /// the branch holds the user's own edits: then it only switches. Refused for a branch this app did not
+    /// create from a clean tree, since discarding is only lossless there.
     func rollBackUpgrade(_ project: Project, branch: String, previous: String) async throws {
         let url = project.url
         do {
@@ -149,10 +162,12 @@ extension AppModel {
             case .discardSwitchAndDelete:
                 try await git.discardChanges(url)
                 try await git.switchTo(url, branch: previous)
+                try await git.deleteBranch(url, branch: branch)
+            case .switchKeepingChanges:
+                try await git.switchBackKeepingChanges(url, branch: branch, returningTo: previous)
             case .deleteOnly:
-                break
+                try await git.deleteBranch(url, branch: branch)
             }
-            try await git.deleteBranch(url, branch: branch)
             upgradeBranches[project.id] = nil
         } catch {
             await refresh(project, force: true)

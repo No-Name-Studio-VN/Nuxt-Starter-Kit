@@ -75,6 +75,17 @@ struct RootView: View {
         case .migration(let project):
             if let snapshot = model.snapshots[project.id] {
                 MigrationFlowSheet(project: project, snapshot: snapshot, catalogue: model.catalogue)
+            } else {
+                ContentUnavailableView {
+                    Label("Project not read yet", systemImage: "questionmark.folder")
+                } description: {
+                    Text("Kit Manager has not finished reading this project, so it cannot prepare a migration. Try again in a moment.")
+                } actions: {
+                    Button("Close") { model.flow = nil }
+                        .keyboardShortcut(.cancelAction)
+                }
+                .frame(width: 440, height: 240)
+                .background(Theme.canvas)
             }
         }
     }

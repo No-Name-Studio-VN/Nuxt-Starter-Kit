@@ -22,6 +22,7 @@ struct UpgradeSection: View {
         GlassCard("Upgrade") {
             VStack(alignment: .leading, spacing: 14) {
                 headline
+                if let record = model.rollbackRecord(for: project), model.flow == nil { interruptedUpgrade(record) }
                 if !unresolvedConflicts.isEmpty { unresolved }
                 if showsPreview {
                     preview
@@ -78,6 +79,21 @@ struct UpgradeSection: View {
             note("Kit commit \(sha) is not on main in your kit checkout, so the version and commits behind are unknown. Previews fetch it from the recorded template.")
         case .checkFailed(let message):
             FailureView(message: message)
+        case .kitUnavailable(let reason):
+            VStack(alignment: .leading, spacing: 6) {
+                Label("Cannot compare with the latest kit", systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(Theme.amber)
+                note(reason)
+                note("Check the kit path in Settings: it needs an origin remote with a main branch.")
+                HStack(spacing: 10) {
+                    Button("Fetch again") { Task { await model.fetchKit() } }
+                        .quietGlassButton()
+                        .disabled(model.fetchState == .fetching)
+                    SettingsLink { Text("Open Settings") }
+                        .quietGlassButton()
+                }
+            }
         case .checking:
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
@@ -131,11 +147,29 @@ struct UpgradeSection: View {
         }
     }
 
+    /// The way back stays here after the upgrade sheet is closed on a failure.
+    private func interruptedUpgrade(_ record: UpgradeBranchRecord) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            AmberNote("The last upgrade stopped on \(record.branch), which Kit Manager created from \(record.previous).")
+            RollbackButton(project: project, record: record) {
+                Task {
+                    do {
+                        try await model.rollBackUpgrade(project, branch: record.branch, previous: record.previous)
+                    } catch {
+                        model.errorMessage = error.localizedDescription
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: Preview
 
     private var showsPreview: Bool {
-        if case .upToDate = status { return false }
-        return true
+        switch status {
+        case .upToDate, .kitUnavailable: false
+        default: true
+        }
     }
 
     @ViewBuilder

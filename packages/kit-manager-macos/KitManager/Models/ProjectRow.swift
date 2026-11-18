@@ -66,6 +66,7 @@ struct ProjectRow: Identifiable {
         case .invalid: 8
         case .unresolvedConflicts: 7
         case .behind: 6
+        case .kitUnavailable: 5
         case .needsMigration: 4
         case .checkFailed: 3
         case .pinned: 3
