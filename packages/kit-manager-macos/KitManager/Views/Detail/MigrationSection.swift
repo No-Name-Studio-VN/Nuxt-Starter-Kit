@@ -1,7 +1,7 @@
 import KitManagerCore
 import SwiftUI
 
-/// What migrating a non-kit project involves, with the buttons that start it.
+/// Explains what moving a project onto the kit involves and starts the existing flow.
 struct MigrationSection: View {
     let project: Project
     let snapshot: ProjectSnapshot
@@ -13,44 +13,53 @@ struct MigrationSection: View {
     private var explanation: String {
         switch snapshot.kind {
         case .kitLegacy:
-            PromptBuilder.legacyGuidance
+            "This project was made with kit 2.x. To move onto the current kit, create a fresh kit project with `npm create nuxt-saas@latest` and move your code across."
         case .nuxt:
-            "This is a plain Nuxt project that was not created from the kit. Migration generates a fresh kit project and ports this one across, on a new kit-migration branch."
+            "This is a plain Nuxt app. Claude creates a fresh kit project and moves your code across on a new kit-migration branch."
         case .other:
-            "This project was not created from the kit. Migration generates a fresh kit project and ports this one across, on a new kit-migration branch."
+            "There's no Nuxt app in this folder to move onto the kit. You can still start a fresh kit project if you want to adapt this project."
         case .kitV3, .missing, .invalidState:
             ""
         }
     }
 
     var body: some View {
-        GlassCard("Migration") {
-            VStack(alignment: .leading, spacing: 14) {
+        Section("Move onto the Kit") {
+            VStack(alignment: .leading, spacing: 4) {
+                if case .other = snapshot.kind {
+                    Text("Not a Nuxt project")
+                }
                 Text(explanation)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 10) {
-                    Button {
-                        copyPrompt()
-                    } label: {
-                        Label(didCopy ? "Copied" : "Copy migration prompt", systemImage: didCopy ? "checkmark" : "doc.on.doc")
-                    }
-                    .buttonStyle(.glass)
-                    Button {
-                        model.flow = .migration(project)
-                    } label: {
-                        Label("Migrate with Claude…", systemImage: "sparkles")
-                    }
-                    .buttonStyle(.glassProminent)
-                    .help("Choose the modules and folder name, then open Claude")
-                }
-                if let failure { FailureView(failure) }
             }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) { actions }
+                VStack(alignment: .trailing, spacing: 8) { actions }
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            if let failure { FailureView(failure) }
         }
     }
 
-    /// Copies the prompt with the suggested modules and the default folder name.
+    @ViewBuilder
+    private var actions: some View {
+        Button {
+            copyPrompt()
+        } label: {
+            Label(didCopy ? "Copied" : "Copy migration prompt", systemImage: didCopy ? "checkmark" : "doc.on.doc")
+        }
+        .buttonStyle(.glass)
+        .fixedSize()
+        Button("Move with Claude…", systemImage: "sparkles") {
+            model.flow = .migration(project)
+        }
+        .buttonStyle(.glassProminent)
+        .fixedSize()
+        .help("Choose the modules and folder name, then open Claude")
+    }
+
     private func copyPrompt() {
         failure = nil
         let selected = ModuleSuggester.suggest(dependencies: snapshot.package?.dependencies ?? [], catalogue: model.catalogue)

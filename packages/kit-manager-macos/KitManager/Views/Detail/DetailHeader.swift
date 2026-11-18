@@ -1,102 +1,63 @@
 import KitManagerCore
 import SwiftUI
 
-/// Name, path, classification and the open buttons.
+/// The project's icon, name, path, status and open controls.
 struct DetailHeader: View {
-    let project: Project
-    let snapshot: ProjectSnapshot?
+    let row: ProjectRow
     let onLocate: () -> Void
 
-    @Environment(AppModel.self) private var model
-
     var body: some View {
-        let row = ProjectRow(project: project, snapshot: snapshot)
-        GlassCard {
+        Section {
             ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 16) {
-                    info(row)
-                    Spacer(minLength: 16)
-                    actions(row)
+                HStack(spacing: 0) {
+                    info
+                    Spacer(minLength: 12)
+                    actions(controlSize: .small)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
                 VStack(alignment: .leading, spacing: 14) {
-                    info(row)
-                    actions(row)
+                    info
+                    actions(controlSize: .regular)
                 }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 6)
+        }
+    }
+
+    private var info: some View {
+        HStack(spacing: 14) {
+            ProjectIcon(name: row.name, size: 60)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(row.name)
+                    .font(.title2.bold())
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .accessibilityAddTraits(.isHeader)
+                Text(row.displayPath)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .textSelection(.enabled)
+                    .help(row.project.path)
+                HStack(spacing: 8) {
+                    StatusPill(status: row.snapshot?.isKitSource == true ? .kitSource : row.status)
+                    if row.isKitProject {
+                        Text("Kit \(row.kitLabel)")
+                            .font(row.kitIsCommit ? .callout.monospaced() : .callout)
+                            .foregroundStyle(.secondary)
+                            .help("Kit version")
+                            .accessibilityLabel("Kit version \(row.kitLabel)")
+                    }
+                }
+                .padding(.top, 2)
             }
         }
     }
 
-    private func info(_ row: ProjectRow) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(row.name)
-                .font(.title.weight(.semibold))
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .accessibilityAddTraits(.isHeader)
-            Text(row.displayPath)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .textSelection(.enabled)
-                .help(row.project.path)
-            HStack(spacing: 8) {
-                StatusPill(status: row.status)
-                if row.isKitProject {
-                    Text(row.kitLabel)
-                        .font(row.kitIsCommit ? .callout.monospaced() : .callout.weight(.medium))
-                        .help("Kit version")
-                        .accessibilityLabel("Kit version \(row.kitLabel)")
-                }
-                if !row.modules.isEmpty {
-                    ModuleChips(modules: row.modules, limit: 5)
-                }
-            }
-        }
-    }
-
-    private func actions(_ row: ProjectRow) -> some View {
-        // Read here, not inside the menu: a menu's content is built outside this view's environment.
-        let flowItem = model.flowMenuItem(for: project)
-        return GlassEffectContainer(spacing: 6) {
-            HStack(spacing: 6) {
-                openButton("VS Code", symbol: "chevron.left.forwardslash.chevron.right", row: row) {
-                    await model.openInVSCode(project)
-                }
-                openButton("Terminal", symbol: "terminal", row: row) {
-                    await model.openTerminal(project, command: .shell)
-                }
-                openButton("Claude", symbol: "sparkles", row: row) {
-                    await model.openTerminal(project, command: .claude)
-                }
-                Menu {
-                    ProjectMenuItems(
-                        model: model, project: project, isMissing: row.isMissing, flowItem: flowItem, onLocate: onLocate)
-                } label: {
-                    Label("More actions", systemImage: "ellipsis")
-                        .labelStyle(.iconOnly)
-                        .frame(width: 18, height: 18)
-                }
-                .menuStyle(.button)
-                .buttonStyle(.glass)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .help("More actions")
-            }
-        }
-        .disabled(snapshot == nil)
-    }
-
-    private func openButton(
-        _ title: String, symbol: String, row: ProjectRow, action: @escaping () async -> Void
-    ) -> some View {
-        Button {
-            Task { await action() }
-        } label: {
-            Label(title, systemImage: symbol)
-        }
-        .buttonStyle(.glass)
-        .disabled(row.isMissing)
-        .help("Open in \(title)")
+    private func actions(controlSize: ControlSize) -> some View {
+        OpenButtons(project: row.project, row: row, onLocate: onLocate, compact: false, preferredControlSize: controlSize)
     }
 }

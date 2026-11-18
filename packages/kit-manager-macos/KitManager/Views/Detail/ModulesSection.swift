@@ -1,19 +1,14 @@
 import KitManagerCore
 import SwiftUI
 
-/// Installed modules with their descriptions, and Add… / Remove, which open `ModuleChangeSheet`.
+/// Installed modules and the entry point to the module change sheet.
 struct ModulesSection: View {
     let project: Project
     let snapshot: ProjectSnapshot
 
     @Environment(AppModel.self) private var model
-    @State private var request: Request?
-
-    private struct Request: Identifiable {
-        let id = UUID()
-        let action: ModuleAction
-        let initial: Set<String>
-    }
+    @State private var isManaging = false
+    @State private var initialRemoval: String?
 
     private var installed: [String] { snapshot.kitState?.modules ?? [] }
 
@@ -38,82 +33,78 @@ struct ModulesSection: View {
     private var canChange: Bool { model.cliStatus == .ready }
 
     var body: some View {
-        GlassCard("Modules") {
-            VStack(alignment: .leading, spacing: 12) {
+        Section {
+            if installed.isEmpty {
+                Text("No optional modules installed.").foregroundStyle(.secondary)
+            } else {
+                ForEach(installed, id: \.self) { id in row(id) }
+            }
+            HStack {
+                Spacer()
+                Button("Add or Remove Modules…") { manageModules() }
+                    .buttonStyle(.glass)
+                    .disabled(!canChange || (available.isEmpty && removable.isEmpty))
+                    .help(canChange ? "Add modules or remove installed modules" : "Build the nuxt-saas CLI first")
+            }
+        } header: {
+            Text("Modules")
+        } footer: {
+            VStack(alignment: .leading, spacing: 4) {
                 if let dirty = snapshot.git?.dirtyCount, dirty > 0 {
-                    AmberNote(
-                        "\(dirty) uncommitted change\(dirty == 1 ? "" : "s"). You can preview a module change, but applying needs a clean tree.")
-                }
-                if installed.isEmpty {
-                    Text("No modules installed.").font(.callout).foregroundStyle(.secondary)
-                } else {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(installed.enumerated()), id: \.element) { index, id in
-                            if index > 0 { Divider() }
-                            row(id)
-                        }
+                    Label {
+                        Text("\(dirty) unsaved \(dirty == 1 ? "change" : "changes"). You can preview a module change, but must commit or stash your changes before applying it.")
+                    } icon: {
+                        Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
                     }
+                    .font(.callout)
                 }
                 if model.catalogue.isEmpty {
-                    Text("Descriptions and available modules load once the nuxt-saas CLI is ready.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text("Module descriptions and available modules load once the nuxt-saas CLI is ready.")
                 } else {
                     Text("\(available.count) more available")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
-        } trailing: {
-            Button {
-                request = Request(action: .add, initial: [])
-            } label: {
-                Label("Add…", systemImage: "plus")
-            }
-            .quietGlassButton()
-            .disabled(!canChange || available.isEmpty)
-            .help(canChange ? "Add modules" : "Build the nuxt-saas CLI first")
         }
-        .sheet(item: $request) { request in
-            ModuleChangeSheet(
-                project: project, action: request.action,
-                choices: request.action == .add ? available : removable, initial: request.initial)
+        .sheet(isPresented: $isManaging) {
+            ModuleChangeSheet(project: project, additions: available, removals: removable, initialRemoval: initialRemoval)
         }
     }
 
     private func row(_ id: String) -> some View {
         let info = catalogue[id]
+        let title = info?.title ?? id
         let isRemovable = removable.contains { $0.id == id }
-        return HStack(alignment: .top, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(info?.title ?? id).font(.callout.weight(.medium))
-                    if info?.title != nil && info?.title != id {
-                        Text(id).font(.caption.monospaced()).foregroundStyle(.secondary)
-                    }
-                }
+        return HStack(spacing: 10) {
+            SettingsIcon(symbol: ModuleAppearance.symbol(for: id), color: ModuleAppearance.color(for: id))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
                 if let description = info?.description, !description.isEmpty {
                     Text(description)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            Spacer(minLength: 8)
+            Spacer(minLength: 0)
+        }
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+        .contextMenu {
             if isRemovable {
-                Button {
-                    request = Request(action: .remove, initial: [id])
-                } label: {
-                    Text("Remove").font(.caption)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Remove \(info?.title ?? id)")
-                .disabled(!canChange)
-                .help("Remove \(info?.title ?? id)")
+                Button("Remove \(title)") { manageModules(removing: id) }
+                    .disabled(!canChange)
+                    .help("Remove \(title)")
             }
         }
-        .padding(.vertical, 7)
-        .accessibilityElement(children: .contain)
+        .accessibilityActions {
+            if canChange && isRemovable {
+                Button("Remove \(title)") { manageModules(removing: id) }
+            }
+        }
+    }
+
+    private func manageModules(removing id: String? = nil) {
+        initialRemoval = id
+        isManaging = true
     }
 }

@@ -1,8 +1,7 @@
 import KitManagerCore
 import SwiftUI
 
-/// Where the project stands against the kit, what an upgrade would change, and the
-/// Upgrade with Claude button.
+/// Kit version status, update cost, and the controls for previewing or starting an update.
 struct UpgradeSection: View {
     let project: Project
     let snapshot: ProjectSnapshot
@@ -10,147 +9,201 @@ struct UpgradeSection: View {
     @Environment(AppModel.self) private var model
 
     private var status: ProjectStatus { ProjectStatus(snapshot: snapshot) }
+    private var versionLabel: String { snapshot.versionLabel ?? snapshot.kitState.map { String($0.commit.prefix(7)) } ?? "—" }
+    private var latestLabel: String { model.latestLabel ?? model.latestMain.map { String($0.prefix(7)) } ?? "—" }
 
-    /// The CLI's own answer once `inspect` has loaded, otherwise what `.nuxt-saas.json` recorded.
+    /// Inspect supersedes the conflict paths recorded at the time of the last update.
     private var unresolvedConflicts: [String] {
         snapshot.inspect.value?.conflicts.unresolved ?? snapshot.kitState?.conflicts ?? []
     }
 
-    private var isPreviewing: Bool { snapshot.preview == .loading }
-
     var body: some View {
-        GlassCard("Upgrade") {
-            VStack(alignment: .leading, spacing: 14) {
-                headline
-                if let record = model.rollbackRecord(for: project), model.flow == nil { interruptedUpgrade(record) }
-                if !unresolvedConflicts.isEmpty { unresolved }
-                if showsPreview {
-                    preview
-                    upgradeButton
+        Section {
+            statusRow
+            if let record = model.rollbackRecord(for: project), model.flow == nil {
+                interruptedUpdate(record)
+            }
+            if showsPreview {
+                DisclosureGroup("Details") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        preview
+                        Button("Preview Again", systemImage: "arrow.clockwise") {
+                            Task { await model.loadPreview(project) }
+                        }
+                        .buttonStyle(.glass)
+                        .disabled(snapshot.preview == .loading || model.cliStatus != .ready)
+                        .help(model.cliStatus == .ready ? "Render the update again" : "Build the nuxt-saas CLI first")
+                    }
                 }
             }
-        } trailing: {
-            // Nothing to preview when the project is already up to date.
-            if showsPreview {
-                Button {
-                    Task { await model.loadPreview(project) }
-                } label: {
-                    Label(snapshot.preview.value == nil ? "Preview" : "Preview again", systemImage: "arrow.clockwise")
+            if snapshot.usesDefaultTemplate, (snapshot.behind ?? 0) > 0 {
+                DisclosureGroup("What's new in this update") {
+                    ChangelogSection(snapshot: snapshot)
                 }
-                .quietGlassButton()
-                .disabled(isPreviewing || model.cliStatus != .ready)
-                .help(model.cliStatus == .ready ? "Render the upgrade again" : "Build the nuxt-saas CLI first")
+            }
+        } header: {
+            Text("Kit Update")
+        } footer: {
+            if !unresolvedConflicts.isEmpty {
+                Text("Fix the conflict markers in these files before updating again.")
+            } else if status != .upToDate, !canUpgrade {
+                Text(blockedReason)
+            } else if case .behind = status {
+                Text("Claude applies the update on a new branch and walks you through anything that needs merging. Your current branch is not touched.")
             }
         }
     }
 
-    // MARK: Headline
+    // MARK: Status
 
     @ViewBuilder
-    private var headline: some View {
+    private var statusRow: some View {
         switch status {
         case .behind(let count, _):
-            HStack(alignment: .firstTextBaseline, spacing: 16) {
-                versionPath
-                Spacer(minLength: 12)
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text("\(count)")
-                        .font(.system(size: 34, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(Color.accentColor)
-                    Text(count == 1 ? "commit behind" : "commits behind")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(count) commits behind")
-            }
+            updateBanner(count: count)
         case .upToDate:
-            Label("Up to date with the latest kit", systemImage: "checkmark.circle.fill")
-                .font(.callout.weight(.medium))
-                .foregroundStyle(Color.green)
-            versionText(snapshot.versionLabel, fallback: snapshot.kitState?.commit).font(.title3)
+            Label {
+                Text("You're on the latest kit (\(versionLabel))")
+            } icon: {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+            }
         case .unresolvedConflicts:
-            if snapshot.behind != nil { versionPath }
+            unresolved
+            updateButtonRow
         case .pinned(let ref):
-            note("Upgrades follow the pinned ref \(ref), not main. Previews render that ref from its repository, so they need network access.")
+            blockedUpdateRow("Kit updates won't follow new releases while this project is locked to \(ref). Previews use that ref and need a network connection.")
         case .otherTemplate:
-            note("This project was generated from another template, so there is no kit version to compare. Previews use the recorded template and need network access.")
+            blockedUpdateRow("This project was made from another template, so there's no kit version to compare. Previews use that template and need a network connection.")
         case .commitNotOnMain(let sha):
-            note("Kit commit \(sha) is not on main in your kit checkout, so the version and commits behind are unknown. Previews fetch it from the recorded template.")
+            blockedUpdateRow("Kit commit \(sha) isn't on main in your kit checkout, so we can't compare versions. Previews fetch it from the recorded template.")
         case .checkFailed(let message):
             FailureView(message: message)
+            updateButtonRow
         case .kitUnavailable(let reason):
             VStack(alignment: .leading, spacing: 6) {
-                Label("Cannot compare with the latest kit", systemImage: "exclamationmark.triangle.fill")
-                    .font(.callout.weight(.medium))
-                    .foregroundStyle(.orange)
+                Label(status.title, systemImage: status.symbol)
                 note(reason)
                 note("Check the kit path in Settings: it needs an origin remote with a main branch.")
-                HStack(spacing: 10) {
-                    Button("Fetch again") { Task { await model.fetchKit() } }
-                        .quietGlassButton()
-                        .disabled(model.fetchState == .fetching)
-                    SettingsLink { Text("Open Settings") }
-                        .quietGlassButton()
+            }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    kitRecoveryActions
+                    Spacer(minLength: 0)
+                    updateButton
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) { kitRecoveryActions }
+                    updateButtonRow
                 }
             }
         case .checking:
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
-                Text("Checking against the latest kit…").font(.callout).foregroundStyle(.secondary)
+                note("Checking against the latest kit…")
             }
+            updateButtonRow
         case .missing, .invalid, .kitSource, .needsMigration:
             EmptyView()
         }
     }
 
-    private var versionPath: some View {
-        HStack(spacing: 8) {
-            versionText(snapshot.versionLabel, fallback: snapshot.kitState?.commit)
-            Image(systemName: "arrow.right").foregroundStyle(.secondary).accessibilityLabel("to")
-            versionText(model.latestLabel, fallback: model.latestMain)
-        }
-        .font(.title3)
+    @ViewBuilder
+    private var kitRecoveryActions: some View {
+        Button("Fetch Again") { Task { await model.fetchKit() } }
+            .buttonStyle(.glass)
+            .fixedSize()
+            .disabled(model.fetchState == .fetching)
+        SettingsLink { Text("Open Settings") }
+            .buttonStyle(.glass)
+            .fixedSize()
     }
 
-    private func versionText(_ label: String?, fallback: String?) -> some View {
-        Group {
-            if let label {
-                Text(label).fontWeight(.medium)
-            } else if let fallback {
-                Text(String(fallback.prefix(7))).font(.body.monospaced())
-            } else {
-                Text("—").foregroundStyle(.secondary)
+    private func updateBanner(count: Int) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                bannerInfo(count: count)
+                Spacer(minLength: 8)
+                updateButton
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                bannerInfo(count: count)
+                updateButtonRow
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func bannerInfo(count: Int) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 34))
+                .foregroundStyle(.white, Color.accentColor)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Kit \(latestLabel) is available").font(.headline)
+                let changes = count == 1 ? "1 change" : "\(count) changes"
+                note("You're on \(versionLabel) · \(changes)")
+                    .accessibilityLabel("You're on \(versionLabel). \(changes) since your version.")
+                if let report = snapshot.preview.value {
+                    previewCost(report)
+                }
             }
         }
     }
 
-    private func note(_ text: String) -> some View {
-        Text(text)
-            .font(.callout)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
+    private func previewCost(_ report: TransitionReport) -> some View {
+        let changed = report.changes.filter { $0.kind != .keepEdited && $0.kind != .keepProtected }
+        let merges = changed.count { $0.kind == .merge }
+        let conflicts = report.conflicts.count
+        return HStack(spacing: 12) {
+            Label(changed.count == 1 ? "1 file" : "\(changed.count) files", systemImage: "doc")
+            Label("\(merges) to merge", systemImage: "arrow.triangle.merge")
+            Label(
+                conflicts == 0 ? "No conflicts" : conflicts == 1 ? "1 conflict" : "\(conflicts) conflicts",
+                systemImage: conflicts == 0 ? "checkmark.seal" : "exclamationmark.triangle"
+            )
+            .foregroundStyle(conflicts == 0 ? Color.green : .red)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .padding(.top, 2)
     }
 
     private var unresolved: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label(
-                "\(unresolvedConflicts.count) unresolved conflict\(unresolvedConflicts.count == 1 ? "" : "s") from an earlier upgrade",
-                systemImage: "exclamationmark.triangle.fill"
-            )
-            .font(.callout.weight(.medium))
-            .foregroundStyle(Color.red)
+            HStack(spacing: 10) {
+                Label(status.title, systemImage: status.symbol)
+                    .foregroundStyle(.red)
+                Spacer(minLength: 0)
+                Button("Fix with Claude", systemImage: "sparkles") {
+                    Task { await model.openTerminal(project, command: .claude) }
+                }
+                .buttonStyle(.glass)
+            }
+            if snapshot.behind != nil {
+                HStack(spacing: 8) {
+                    Text(versionLabel)
+                    Image(systemName: "arrow.right").accessibilityLabel("to")
+                    Text(latestLabel)
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            }
             ForEach(unresolvedConflicts, id: \.self) { path in
                 Text(path).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
             }
-            note("Resolve the conflict markers in these files before upgrading again.")
         }
     }
 
-    /// The way back stays here after the upgrade sheet is closed on a failure.
-    private func interruptedUpgrade(_ record: UpgradeBranchRecord) -> some View {
+    /// Rollback remains available after an interrupted update's sheet closes.
+    private func interruptedUpdate(_ record: UpgradeBranchRecord) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            AmberNote("The last upgrade stopped on \(record.branch), which Kit Manager created from \(record.previous).")
+            Label {
+                Text("The last update stopped on \(record.branch), which Kit Manager created from \(record.previous).")
+            } icon: {
+                Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
+            }
+            .font(.callout)
             RollbackButton(project: project, record: record) {
                 Task {
                     do {
@@ -161,6 +214,21 @@ struct UpgradeSection: View {
                 }
             }
         }
+    }
+
+    private func blockedUpdateRow(_ message: String) -> some View {
+        HStack(spacing: 10) {
+            note(message)
+            Spacer(minLength: 0)
+            updateButton
+        }
+    }
+
+    private func note(_ text: String) -> some View {
+        Text(text)
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: Preview
@@ -178,29 +246,27 @@ struct UpgradeSection: View {
         case .idle:
             note(
                 model.cliStatus == .ready
-                    ? "No preview yet. Preview renders the upgrade without changing anything."
-                    : "Upgrade previews need the built nuxt-saas CLI.")
+                    ? "No preview yet. A preview shows what the update would do without changing anything."
+                    : "Update previews need the built nuxt-saas CLI.")
         case .loading:
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
-                Text("Previewing upgrade…").font(.callout).foregroundStyle(.secondary)
+                note("Previewing update…")
             }
         case .failed(let message):
             FailureView(message: message)
         case .loaded(let report, let stale):
-            VStack(alignment: .leading, spacing: 10) {
-                if report.upToDate == true {
-                    note("Nothing to upgrade.")
-                } else {
-                    ChangeSummaryChips(changes: report.changes)
-                    ChangeFileList(changes: report.changes)
-                    followUps(report.followUps)
-                }
-                if stale {
-                    Label("Computed for an earlier state of the project. Preview again to refresh.", systemImage: "clock")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+            if report.upToDate == true {
+                note("Nothing to update.")
+            } else {
+                ChangeSummaryChips(changes: report.changes)
+                ChangeFileList(changes: report.changes)
+                followUps(report.followUps)
+            }
+            if stale {
+                Label("Computed for an earlier state of the project. Preview again to refresh.", systemImage: "clock")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -221,29 +287,34 @@ struct UpgradeSection: View {
         }
     }
 
-    // MARK: Action
-
-    private var precondition: UpgradePrecondition { model.upgradePrecondition(project) }
+    // MARK: Update
 
     private var canUpgrade: Bool { model.canUpgrade(project) }
 
-    private var upgradeButton: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button {
-                model.flow = .upgrade(project)
-            } label: {
-                Label("Upgrade with Claude", systemImage: "sparkles")
-            }
-            .buttonStyle(.glassProminent)
-            .disabled(!canUpgrade)
-            .help(canUpgrade ? "Review the upgrade, then apply it on a new branch" : blockedReason)
-            if !canUpgrade, precondition != .unresolvedConflicts {
-                AmberNote(blockedReason)
-            }
+    private var updateButtonRow: some View {
+        HStack {
+            Spacer(minLength: 0)
+            updateButton
         }
     }
 
+    private var updateButton: some View {
+        Button("Update with Claude", systemImage: "sparkles") {
+            model.flow = .upgrade(project)
+        }
+        .buttonStyle(.glassProminent)
+        .fixedSize()
+        .disabled(!canUpgrade)
+        .help(canUpgrade ? "Review the update, then apply it on a new branch" : blockedReason)
+    }
+
     private var blockedReason: String {
-        precondition.reason ?? "Build the nuxt-saas CLI first"
+        let precondition = model.upgradePrecondition(project)
+        return switch precondition {
+        case .notKitV3: "Only projects made with kit v3 can be updated."
+        case .unresolvedConflicts: "Fix the conflicts left by an earlier update first."
+        case .notOnMain: "This project can't be updated here because its kit commit isn't on main or it uses another template."
+        default: precondition.reason ?? "Build the nuxt-saas CLI first"
+        }
     }
 }

@@ -5,13 +5,14 @@ import SwiftUI
 /// and is disabled while the working tree has uncommitted changes.
 struct ModuleChangeSheet: View {
     let project: Project
-    let action: ModuleAction
 
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
 
-    /// Fixed when the sheet opens, so ticked rows do not vanish once the change is applied.
-    @State private var choices: [ModuleChoice]
+    /// Fixed when the sheet opens, so applied modules do not disappear from the picker.
+    @State private var additions: [ModuleChoice]
+    @State private var removals: [ModuleChoice]
+    @State private var action: ModuleAction
     @State private var selection: Set<String>
     @State private var phase: ModuleChangePhase = .idle
     /// Bumped by "Plan again" to re-run the `--check` for the same selection.
@@ -20,17 +21,15 @@ struct ModuleChangeSheet: View {
     @State private var isResolving = false
     @State private var resolveError: PresentedError?
 
-    init(project: Project, action: ModuleAction, choices: [ModuleChoice], initial: Set<String>) {
+    init(project: Project, additions: [ModuleChoice], removals: [ModuleChoice], initialRemoval: String?) {
         self.project = project
-        self.action = action
-        _choices = State(initialValue: choices)
-        _selection = State(initialValue: initial)
+        _additions = State(initialValue: additions)
+        _removals = State(initialValue: removals)
+        _action = State(initialValue: initialRemoval != nil || additions.isEmpty ? .remove : .add)
+        _selection = State(initialValue: initialRemoval.map { [$0] } ?? [])
     }
 
-    private struct PlanRequest: Hashable {
-        let selection: Set<String>
-        let attempt: Int
-    }
+    private var choices: [ModuleChoice] { action == .add ? additions : removals }
 
     private var ids: [String] { selection.sorted() }
 
@@ -48,6 +47,14 @@ struct ModuleChangeSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("\(verb) modules").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
+            if !additions.isEmpty && !removals.isEmpty {
+                Picker("Module action", selection: Binding(get: { action }, set: selectAction)) {
+                    Text("Add").tag(ModuleAction.add)
+                    Text("Remove").tag(ModuleAction.remove)
+                }
+                .pickerStyle(.segmented)
+                .disabled(isLocked)
+            }
             ScrollView {
                 picker
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -63,7 +70,7 @@ struct ModuleChangeSheet: View {
         }
         .padding(20)
         .frame(width: 540)
-        .task(id: PlanRequest(selection: selection, attempt: planAttempt)) { await runPreview() }
+        .task(id: ModulePlanRequest(action: action, selection: selection, attempt: planAttempt)) { await runPreview() }
     }
 
     // MARK: Pieces
@@ -185,6 +192,13 @@ struct ModuleChangeSheet: View {
 
     // MARK: Actions
 
+    private func selectAction(_ newAction: ModuleAction) {
+        guard action != newAction, !isLocked else { return }
+        action = newAction
+        selection = []
+        phase = .idle
+    }
+
     private func runPreview() async {
         if isLocked { return }
         if selection.isEmpty {
@@ -193,9 +207,10 @@ struct ModuleChangeSheet: View {
         }
         phase = .previewing
         let planned = ids
-        let result = await model.previewModuleChange(project, action: action, ids: planned)
-        // A newer selection cancelled this one.
-        guard !Task.isCancelled else { return }
+        let plannedAction = action
+        let result = await model.previewModuleChange(project, action: plannedAction, ids: planned)
+        // A newer selection or action superseded this plan.
+        guard !Task.isCancelled, action == plannedAction, ids == planned else { return }
         switch result {
         case .success(let report): phase = .planned(report, ids: planned)
         case .failure(let error): phase = .failed(PresentedError(error))

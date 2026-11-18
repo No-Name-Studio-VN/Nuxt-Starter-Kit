@@ -1,8 +1,7 @@
 import KitManagerCore
 import SwiftUI
 
-/// Kit commits since the project's recorded commit, grouped by module. Only commits that touch
-/// the base or an installed module show until "Show all kit commits" is on.
+/// Kit changes since the project’s recorded commit, grouped by module.
 struct ChangelogSection: View {
     let snapshot: ProjectSnapshot
 
@@ -16,30 +15,25 @@ struct ChangelogSection: View {
 
     var body: some View {
         let groups = ChangelogGrouper.groups(commits: snapshot.changelog, installed: installed, showAll: showAll)
-        GlassCard("What's new") {
-            VStack(alignment: .leading, spacing: 14) {
-                if snapshot.changelog.isEmpty {
-                    empty
-                } else if groups.isEmpty {
-                    Text("None of the new kit commits touch the base or your modules.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(groups) { group in
-                        groupView(group)
-                    }
-                }
-            }
-        } trailing: {
-            Toggle("Show all kit commits", isOn: $showAll)
+        VStack(alignment: .leading, spacing: 14) {
+            Toggle("Show all kit changes", isOn: $showAll)
                 .toggleStyle(.switch)
                 .controlSize(.small)
                 .font(.caption)
+            if snapshot.changelog.isEmpty {
+                empty
+            } else if groups.isEmpty {
+                Text("None of the new kit changes touch the base or your modules.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(groups) { group in
+                    groupView(group)
+                }
+            }
         }
     }
 
-    /// Nothing to list. The snapshot is built before this card shows, so there is no loading state:
-    /// the cause is a failed `git log`, a missing module catalogue, or genuinely nothing.
     @ViewBuilder
     private var empty: some View {
         if let failure = snapshot.changelogFailure {
@@ -72,7 +66,7 @@ struct ChangelogSection: View {
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
             ForEach(shown) { commit in
-                CommitRow(commit: commit)
+                commitRow(commit)
             }
             if group.commits.count > Self.collapsedCount {
                 Button(
@@ -81,9 +75,47 @@ struct ChangelogSection: View {
                     if isExpanded { expanded.remove(group.id) } else { expanded.insert(group.id) }
                 }
                 .buttonStyle(.plain)
-                    .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .font(.caption)
             }
         }
+    }
+
+    private func commitRow(_ commit: KitCommit) -> some View {
+        let (type, color): (String, Color) = switch commit.type {
+        case "feat": ("New", .accentColor)
+        case "fix": ("Fix", .orange)
+        default: ("Change", .secondary)
+        }
+        let modules = ChangelogGrouper.ordered(Array(commit.modules)).joined(separator: ", ")
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(type)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(color)
+                .frame(minWidth: 42, alignment: .leading)
+            if commit.breaking {
+                Image(systemName: "exclamationmark.triangle")
+                    .foregroundStyle(.red)
+                    .help("Breaking change")
+                    .accessibilityLabel("Breaking change")
+            }
+            Text(commit.title)
+                .font(.callout)
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if !modules.isEmpty {
+                Text(modules)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .help(modules)
+            }
+            Text(commit.date.formatted(.relative(presentation: .named)))
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
     }
 }

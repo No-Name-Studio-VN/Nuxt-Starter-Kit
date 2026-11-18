@@ -41,7 +41,12 @@ struct RootView: View {
         }
         .frame(minWidth: 900, minHeight: 560)
         .modifier(ProjectImporter(request: $importRequest, isScanning: $isScanning))
-        .task { await model.bootstrap() }
+        .task {
+            await model.bootstrap()
+            #if DEBUG
+            DebugLaunchOptions.apply(to: model, projects: projects)
+            #endif
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await model.refreshAll() } }
         }

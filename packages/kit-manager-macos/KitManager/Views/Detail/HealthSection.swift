@@ -1,7 +1,7 @@
 import KitManagerCore
 import SwiftUI
 
-/// Git, env and deployment at a glance. `.env` values are never read here: only key names.
+/// Source control, environment key names, and website health at a glance.
 struct HealthSection: View {
     let project: Project
     let snapshot: ProjectSnapshot
@@ -10,190 +10,221 @@ struct HealthSection: View {
     @State private var draftURL = ""
     @State private var urlError: String?
     @State private var isChecking = false
-    @State private var isWide = true
 
-    private static let envKeyLimit = 8
     private static let routeLimit = 4
 
     var body: some View {
-        GlassCard("Health") {
-            // Three columns when the card is wide enough; measured, because a long status line would
-            // make an ideal-size check fall back to one column too early.
-            Group {
-                if isWide {
-                    HStack(alignment: .top, spacing: 24) {
-                        column("Git") { git }
-                        column("Env") { env }
-                        column("Deployment") { deployment }
-                    }
-                } else {
-                    VStack(alignment: .leading, spacing: 20) {
-                        column("Git") { git }
-                        column("Env") { env }
-                        column("Deployment") { deployment }
-                    }
-                }
-            }
-            .onGeometryChange(for: Bool.self) { $0.size.width >= 700 } action: { isWide = $0 }
+        Section("Health") {
+            sourceControl
+            environment
+            website
         }
         .onAppear { draftURL = project.productionURL ?? "" }
     }
 
-    private func column<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.callout.weight(.semibold))
-            content()
+    private func row<Value: View>(
+        _ title: String, symbol: String, color: Color, status: Color, @ViewBuilder value: () -> Value
+    ) -> some View {
+        let icon = SettingsIcon(symbol: symbol, color: color).accessibilityHidden(true)
+        let dot = Circle().fill(status).frame(width: 8, height: 8).accessibilityHidden(true)
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                icon
+                Text(title).fixedSize()
+                Spacer(minLength: 4)
+                value().foregroundStyle(.secondary)
+                dot
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 10) {
+                    icon
+                    Text(title)
+                    Spacer()
+                    dot
+                }
+                value()
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 32)
+            }
         }
-        .frame(minWidth: 220, maxWidth: .infinity, alignment: .topLeading)
+        .accessibilityElement(children: .combine)
     }
 
-    // MARK: Git
+    // MARK: Source control
 
     @ViewBuilder
-    private var git: some View {
+    private var sourceControl: some View {
         if let git = snapshot.git {
-            DetailRow("Branch") {
-                Text(git.branch ?? "detached").font(.callout.monospaced()).lineLimit(1).truncationMode(.middle)
-            }
-            DetailRow("Changes") {
-                if git.dirtyCount == 0 {
-                    Text("Clean")
-                } else {
-                    Label("\(git.dirtyCount) uncommitted", systemImage: "circle.fill")
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(Color.orange, Color.primary)
+            DisclosureGroup {
+                LabeledContent("Last commit", value: git.lastCommitDate?.formatted(.relative(presentation: .named)) ?? "—")
+                LabeledContent("Upstream") {
+                    if let ahead = git.ahead, let behind = git.behind {
+                        Text("↑\(ahead) ahead · ↓\(behind) behind").monospacedDigit()
+                    } else {
+                        Text("No upstream").foregroundStyle(.secondary)
+                    }
                 }
-            }
-            DetailRow("Upstream") {
-                if let ahead = git.ahead, let behind = git.behind {
-                    Text("↑\(ahead) ahead · ↓\(behind) behind").monospacedDigit()
-                } else {
-                    Text("No upstream").foregroundStyle(.secondary)
-                }
-            }
-            DetailRow("Last commit") {
-                if let date = git.lastCommitDate {
-                    Text(date.formatted(.relative(presentation: .named)))
-                } else {
-                    Text("—").foregroundStyle(.secondary)
+            } label: {
+                row("Source Control", symbol: "arrow.triangle.branch", color: .indigo, status: git.dirtyCount > 0 ? .orange : .green) {
+                    HStack(spacing: 5) {
+                        Text(git.branch ?? "detached")
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .help(git.branch ?? "Detached HEAD")
+                        Text(git.dirtyCount == 0 ? "· No unsaved changes" : "· \(git.dirtyCount) unsaved")
+                            .fixedSize(horizontal: true, vertical: false)
+                        if let ahead = git.ahead, let behind = git.behind {
+                            Text("↑\(ahead) ↓\(behind)")
+                                .monospacedDigit()
+                                .fixedSize()
+                                .accessibilityLabel("\(ahead) ahead, \(behind) behind")
+                        }
+                    }
                 }
             }
         } else {
-            Text("Not a git repository").font(.callout).foregroundStyle(.secondary)
+            row("Source Control", symbol: "arrow.triangle.branch", color: .indigo, status: .secondary) {
+                Text("Not a git repository")
+            }
         }
     }
 
-    // MARK: Env
+    // MARK: Environment
 
     @ViewBuilder
-    private var env: some View {
-        if let env = snapshot.env {
-            if !env.hasExample {
-                Text("No .env.example to compare against").font(.callout).foregroundStyle(.secondary)
-            } else if !env.hasEnv {
-                Label("No .env file", systemImage: "exclamationmark.circle")
-                    .font(.callout)
-                    .foregroundStyle(Color.orange)
-            } else if env.missing.isEmpty {
-                Label("All keys defined", systemImage: "checkmark.circle.fill")
-                    .font(.callout)
-                    .foregroundStyle(Color.green)
-            } else {
-                Label("\(env.missing.count) missing", systemImage: "exclamationmark.circle")
-                    .font(.callout)
-                    .foregroundStyle(Color.orange)
+    private var environment: some View {
+        if let env = snapshot.env, env.hasExample, !env.missing.isEmpty {
+            DisclosureGroup {
                 VStack(alignment: .leading, spacing: 2) {
-                    ForEach(env.missing.prefix(Self.envKeyLimit), id: \.self) { key in
+                    ForEach(env.missing, id: \.self) { key in
                         Text(key).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
-                    }
-                    if env.missing.count > Self.envKeyLimit {
-                        Text("+\(env.missing.count - Self.envKeyLimit) more").font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 .textSelection(.enabled)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Missing keys: \(env.missing.joined(separator: ", "))")
+            } label: {
+                environmentRow
             }
         } else {
-            Text("—").foregroundStyle(.secondary)
+            environmentRow
         }
     }
 
-    // MARK: Deployment
+    private var environmentRow: some View {
+        let (value, status): (String, Color)
+        if let env = snapshot.env {
+            if !env.hasExample {
+                (value, status) = ("No .env.example", .secondary)
+            } else if !env.hasEnv {
+                (value, status) = ("No .env file", .orange)
+            } else if !env.missing.isEmpty {
+                (value, status) = ("\(env.missing.count) missing", .orange)
+            } else {
+                (value, status) = ("All keys set", .green)
+            }
+        } else {
+            (value, status) = ("—", .secondary)
+        }
+        return row("Environment", symbol: "key.fill", color: .gray, status: status) {
+            Text(value)
+        }
+    }
+
+    // MARK: Website
 
     private var resolvedURL: URL? {
         ProductionURL.resolve(wrangler: snapshot.wrangler, override: project.productionURL)
     }
 
-    @ViewBuilder
-    private var deployment: some View {
-        if let name = snapshot.wrangler?.workerName {
-            DetailRow("Worker") { Text(name).font(.callout.monospaced()).lineLimit(1).truncationMode(.middle) }
-        } else if snapshot.wrangler == nil {
-            Text("No wrangler.jsonc").font(.callout).foregroundStyle(.secondary)
-        }
-        if let routes = snapshot.wrangler?.routes, !routes.isEmpty {
-            DetailRow(routes.count == 1 ? "Route" : "Routes") {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(routes.prefix(Self.routeLimit), id: \.self) { route in
-                        Text(route).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
-                    }
-                    if routes.count > Self.routeLimit {
-                        Text("+\(routes.count - Self.routeLimit) more").font(.caption).foregroundStyle(.secondary)
-                    }
+    private var websiteStatusColor: Color {
+        guard resolvedURL != nil, !isChecking, let health = snapshot.health else { return .secondary }
+        return health.isUp ? .green : .red
+    }
+
+    private var website: some View {
+        DisclosureGroup {
+            if let name = snapshot.wrangler?.workerName {
+                LabeledContent("Worker") {
+                    Text(name).font(.callout.monospaced()).lineLimit(1).truncationMode(.middle)
                 }
-                .textSelection(.enabled)
-                .help(routes.joined(separator: "\n"))
+            } else if snapshot.wrangler == nil {
+                Text("No wrangler.jsonc").font(.callout).foregroundStyle(.secondary)
             }
-        }
-        if let url = resolvedURL {
-            DetailRow("URL") {
-                Text(url.absoluteString)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+            if let routes = snapshot.wrangler?.routes, !routes.isEmpty {
+                LabeledContent(routes.count == 1 ? "Route" : "Routes") {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        ForEach(routes.prefix(Self.routeLimit), id: \.self) { route in
+                            Text(route).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
+                        }
+                        if routes.count > Self.routeLimit {
+                            Text("+\(routes.count - Self.routeLimit) more").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
                     .textSelection(.enabled)
-            }
-            DetailRow("Status") { status }
-            Button {
-                isChecking = true
-                Task {
-                    await model.checkHealth(project)
-                    isChecking = false
+                    .help(routes.joined(separator: "\n"))
                 }
-            } label: {
-                Label("Check now", systemImage: "arrow.clockwise")
             }
-            .quietGlassButton()
-            .disabled(isChecking)
+            if let url = resolvedURL {
+                LabeledContent("URL") {
+                    Text(url.absoluteString)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
+                }
+                if let health = snapshot.health, health.statusCode == nil, let error = health.error {
+                    Label(error, systemImage: "wifi.exclamationmark")
+                        .font(.callout)
+                        .foregroundStyle(.red)
+                }
+            }
+            urlOverride
+            if resolvedURL != nil {
+                HStack {
+                    Spacer()
+                    Button("Check Now", systemImage: "arrow.clockwise") {
+                        isChecking = true
+                        Task {
+                            await model.checkHealth(project)
+                            isChecking = false
+                        }
+                    }
+                    .buttonStyle(.glass)
+                    .disabled(isChecking)
+                }
+            }
+        } label: {
+            row("Website", symbol: "globe", color: .blue, status: websiteStatusColor) {
+                HStack(spacing: 5) {
+                    if let host = resolvedURL?.host() {
+                        Text(host)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .help(resolvedURL?.absoluteString ?? host)
+                        Text("·").accessibilityHidden(true)
+                    }
+                    websiteStatus
+                }
+            }
         }
-        urlOverride
     }
 
     @ViewBuilder
-    private var status: some View {
+    private var websiteStatus: some View {
         if isChecking {
-            HStack(spacing: 6) {
-                ProgressView().controlSize(.mini)
-                Text("Checking…").foregroundStyle(.secondary)
-            }
-        } else if let health = snapshot.health {
+            ProgressView().controlSize(.mini)
+            Text("Checking…")
+        } else if resolvedURL != nil, let health = snapshot.health {
             if let code = health.statusCode {
-                HStack(spacing: 6) {
-                    Circle().fill(health.isUp ? Color.green : Color.red).frame(width: 7, height: 7)
-                    Text("\(code)").monospacedDigit()
-                    if let latency = health.latency {
-                        Text("· \(Self.milliseconds(latency)) ms").monospacedDigit().foregroundStyle(.secondary)
-                    }
+                Text("\(code)").fixedSize().accessibilityLabel("\(health.isUp ? "Up" : "Down"), status \(code)")
+                if let latency = health.latency {
+                    Text("· \(Self.milliseconds(latency)) ms").monospacedDigit().fixedSize()
                 }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(health.isUp ? "Up" : "Down"), status \(code)")
             } else {
-                Label(health.error ?? "Unreachable", systemImage: "wifi.exclamationmark")
-                    .foregroundStyle(Color.red)
-                    .lineLimit(2)
+                Text("Unreachable")
             }
         } else {
-            Text("Not checked").foregroundStyle(.secondary)
+            Text("Not checked")
         }
     }
 
@@ -213,7 +244,7 @@ struct HealthSection: View {
                     .onSubmit(saveURL)
                     .onChange(of: draftURL) { urlError = nil }
                 Button("Save", action: saveURL)
-                    .quietGlassButton()
+                    .buttonStyle(.glass)
                     .disabled(draftURL.trimmingCharacters(in: .whitespacesAndNewlines) == (project.productionURL ?? ""))
             }
             if let urlError {
