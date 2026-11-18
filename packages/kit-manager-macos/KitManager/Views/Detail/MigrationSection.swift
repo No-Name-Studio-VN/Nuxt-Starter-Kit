@@ -1,9 +1,14 @@
 import KitManagerCore
 import SwiftUI
 
-/// What migrating a non-kit project involves. The buttons are wired in the next step.
+/// What migrating a non-kit project involves, with the buttons that start it.
 struct MigrationSection: View {
+    let project: Project
     let snapshot: ProjectSnapshot
+
+    @Environment(AppModel.self) private var model
+    @State private var didCopy = false
+    @State private var failure: PresentedError?
 
     private var explanation: String {
         switch snapshot.kind {
@@ -11,7 +16,9 @@ struct MigrationSection: View {
             PromptBuilder.legacyGuidance
         case .nuxt:
             "This is a plain Nuxt project that was not created from the kit. Migration generates a fresh kit project and ports this one across, on a new kit-migration branch."
-        case .kitV3, .other, .missing, .invalidState:
+        case .other:
+            "This project was not created from the kit. Migration generates a fresh kit project and ports this one across, on a new kit-migration branch."
+        case .kitV3, .missing, .invalidState:
             ""
         }
     }
@@ -25,24 +32,37 @@ struct MigrationSection: View {
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 10) {
                     Button {
+                        copyPrompt()
                     } label: {
-                        Label("Copy migration prompt", systemImage: "doc.on.doc")
+                        Label(didCopy ? "Copied" : "Copy migration prompt", systemImage: didCopy ? "checkmark" : "doc.on.doc")
                     }
                     .buttonStyle(.glass)
                     .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
-                    .disabled(true)
                     Button {
+                        model.flow = .migration(project)
                     } label: {
-                        Label("Migrate with Claude", systemImage: "sparkles")
+                        Label("Migrate with Claude…", systemImage: "sparkles")
                     }
                     .buttonStyle(.glassProminent)
                     .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
-                    .disabled(true)
-                    Text("Available in the next step")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    .help("Choose the modules and folder name, then open Claude")
                 }
+                if let failure { FailureView(failure) }
             }
+        }
+    }
+
+    /// Copies the prompt with the suggested modules and the default folder name.
+    private func copyPrompt() {
+        failure = nil
+        let selected = ModuleSuggester.suggest(dependencies: snapshot.package?.dependencies ?? [], catalogue: model.catalogue)
+        let folder = MigrationFolderName.defaultName(packageName: snapshot.package?.name, folderName: project.url.lastPathComponent)
+        do {
+            try model.copyMigrationPrompt(project, folderName: folder, selected: selected)
+            didCopy = true
+        } catch {
+            didCopy = false
+            failure = PresentedError(error)
         }
     }
 }

@@ -68,6 +68,14 @@ public struct GitInspector: Sendable {
         try await git(root, ["branch", "-d", branch])
     }
 
+    /// Throws away every uncommitted change: `git reset --hard` plus `git clean -fd` for untracked files
+    /// and directories (ignored files such as `node_modules` stay). Destructive; the caller must know
+    /// that nothing worth keeping is in the working tree.
+    public func discardChanges(_ root: URL) async throws {
+        try await git(root, ["reset", "--hard"])
+        try await git(root, ["clean", "-fd"])
+    }
+
     // MARK: - Helpers
 
     @discardableResult

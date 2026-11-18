@@ -130,27 +130,7 @@ struct ModuleChangeSheet: View {
                 .tracking(0.8)
                 .textCase(.uppercase)
                 .foregroundStyle(.secondary)
-            ChangeSummaryChips(changes: report.changes)
-            ChangeFileList(changes: report.changes, limit: 6)
-            if !report.conflicts.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Label(
-                        "\(report.conflicts.count) conflict\(report.conflicts.count == 1 ? "" : "s")",
-                        systemImage: "exclamationmark.triangle.fill"
-                    )
-                    .font(.callout.weight(.medium))
-                    .foregroundStyle(Theme.red)
-                    ForEach(report.conflicts, id: \.self) { path in
-                        Text(path).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
-                    }
-                }
-            }
-            if !report.followUps.isEmpty {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Follow-ups").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                    ForEach(report.followUps, id: \.self) { Text($0).font(.callout) }
-                }
-            }
+            TransitionReportSummary(report: report)
             if let resolveError { FailureView(resolveError) }
         }
     }

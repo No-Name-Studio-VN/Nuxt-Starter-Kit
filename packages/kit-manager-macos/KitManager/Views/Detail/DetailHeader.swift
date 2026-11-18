@@ -56,7 +56,9 @@ struct DetailHeader: View {
     }
 
     private func actions(_ row: ProjectRow) -> some View {
-        GlassEffectContainer(spacing: 6) {
+        // Read here, not inside the menu: a menu's content is built outside this view's environment.
+        let flowItem = model.flowMenuItem(for: project)
+        return GlassEffectContainer(spacing: 6) {
             HStack(spacing: 6) {
                 openButton("VS Code", symbol: "chevron.left.forwardslash.chevron.right", row: row) {
                     await model.openInVSCode(project)
@@ -68,7 +70,8 @@ struct DetailHeader: View {
                     await model.openTerminal(project, command: .claude)
                 }
                 Menu {
-                    ProjectMenuItems(project: project, isMissing: row.isMissing, onLocate: onLocate)
+                    ProjectMenuItems(
+                        project: project, isMissing: row.isMissing, flowItem: flowItem, onLocate: onLocate)
                 } label: {
                     Label("More actions", systemImage: "ellipsis")
                         .labelStyle(.iconOnly)

@@ -35,19 +35,17 @@ extension AppModel {
         }
     }
 
-    /// Writes an upgrade-style prompt from an applied module change and opens Claude on it in Terminal.
+    /// Writes a prompt for the conflicts an applied module change left, and opens Claude on it in Terminal.
     func resolveModuleConflicts(
         _ project: Project, report: TransitionReport, action: ModuleAction, ids: [String]
     ) async throws {
         guard report.applied else { throw ModuleChangeError.notApplied }
         guard let snapshot = snapshots[project.id] else { throw ModuleChangeError.projectUnknown }
-        let label = snapshot.versionLabel ?? String(report.to.prefix(7))
-        let verb = action == .add ? "adding" : "removing"
-        let input = UpgradePromptInput(
+        let input = ModuleChangePromptInput(
             projectName: ProjectRow(project: project, snapshot: snapshot).name,
-            fromLabel: label, toLabel: "\(label), after \(verb) \(ids.joined(separator: ", "))",
+            versionLabel: snapshot.versionLabel ?? String(report.to.prefix(7)), action: action, moduleIDs: ids,
             report: report, scripts: snapshot.package?.scripts ?? [])
-        let file = try launcher.writePrompt(PromptBuilder.upgrade(input))
+        let file = try launcher.writePrompt(PromptBuilder.moduleChange(input))
         try await launcher.openTerminal(at: project.url, command: .claudePrompt(file: file))
     }
 

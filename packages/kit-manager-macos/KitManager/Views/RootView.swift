@@ -30,6 +30,9 @@ struct RootView: View {
             if phase == .active { Task { await model.refreshAll() } }
         }
         .onChange(of: selection) { path = [] }
+        .sheet(item: Bindable(model).flow) { request in
+            flowSheet(for: request)
+        }
         .alert(
             "Something went wrong",
             isPresented: Binding(
@@ -38,6 +41,18 @@ struct RootView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(model.errorMessage ?? "")
+        }
+    }
+
+    @ViewBuilder
+    private func flowSheet(for request: FlowRequest) -> some View {
+        switch request {
+        case .upgrade(let project):
+            UpgradeFlowSheet(project: project)
+        case .migration(let project):
+            if let snapshot = model.snapshots[project.id] {
+                MigrationFlowSheet(project: project, snapshot: snapshot, catalogue: model.catalogue)
+            }
         }
     }
 

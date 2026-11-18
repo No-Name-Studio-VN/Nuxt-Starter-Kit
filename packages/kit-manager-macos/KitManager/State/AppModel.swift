@@ -20,6 +20,8 @@ final class AppModel {
     private(set) var refreshingCount = 0
     /// Shown in an alert; the view clears it.
     var errorMessage: String?
+    /// The upgrade or migration sheet to present, if any.
+    var flow: FlowRequest?
 
     @ObservationIgnored private let context: ModelContext
     @ObservationIgnored private let logger = Logger(subsystem: "studio.nonamestudio.KitManager", category: "AppModel")
@@ -38,6 +40,8 @@ final class AppModel {
     @ObservationIgnored private var rerunRequested: Set<UUID> = []
     /// Renders that failed for their current key, so the CLI is not re-run on every window activation.
     @ObservationIgnored private var failures: [UUID: RenderFailures] = [:]
+    /// Upgrade branches created from a clean tree that have not finished successfully, so only they can be rolled back.
+    @ObservationIgnored var upgradeBranches: [UUID: UpgradeBranchRecord] = [:]
     @ObservationIgnored private var fetchTimer: Task<Void, Never>?
     @ObservationIgnored private var didBootstrap = false
 

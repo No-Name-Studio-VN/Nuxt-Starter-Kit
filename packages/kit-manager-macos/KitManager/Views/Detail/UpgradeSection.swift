@@ -1,7 +1,7 @@
 import KitManagerCore
 import SwiftUI
 
-/// Where the project stands against the kit, what an upgrade would change, and the (not yet wired)
+/// Where the project stands against the kit, what an upgrade would change, and the
 /// Upgrade with Claude button.
 struct UpgradeSection: View {
     let project: Project
@@ -189,19 +189,28 @@ struct UpgradeSection: View {
 
     // MARK: Action
 
+    private var precondition: UpgradePrecondition { model.upgradePrecondition(project) }
+
+    private var canUpgrade: Bool { precondition == .ready && model.cliStatus == .ready }
+
     private var upgradeButton: some View {
-        HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             Button {
+                model.flow = .upgrade(project)
             } label: {
                 Label("Upgrade with Claude", systemImage: "sparkles")
             }
             .buttonStyle(.glassProminent)
             .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
-            .disabled(true)
-            .help("Available in the next step")
-            Text("Available in the next step")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .disabled(!canUpgrade)
+            .help(canUpgrade ? "Review the upgrade, then apply it on a new branch" : blockedReason)
+            if !canUpgrade, precondition != .unresolvedConflicts {
+                AmberNote(blockedReason)
+            }
         }
+    }
+
+    private var blockedReason: String {
+        precondition.reason ?? "Build the nuxt-saas CLI first"
     }
 }

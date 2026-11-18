@@ -151,7 +151,8 @@ struct ProjectsTableView: View {
             Button("Open Details", systemImage: "arrow.right.circle") { path.append(project.id) }
             Divider()
             ProjectMenuItems(
-                project: project, isMissing: model.snapshots[project.id].map(isMissing) ?? false
+                project: project, isMissing: model.snapshots[project.id].map(isMissing) ?? false,
+                flowItem: model.flowMenuItem(for: project)
             ) {
                 locating = project
                 present(.locate)

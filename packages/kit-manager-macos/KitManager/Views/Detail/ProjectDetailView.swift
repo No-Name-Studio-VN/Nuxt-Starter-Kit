@@ -101,6 +101,7 @@ struct ProjectDetailView: View {
         var cards: [Card] = [.health]
         if !snapshot.isKitSource, case .kitLegacy = snapshot.kind { cards.append(.migration) }
         if !snapshot.isKitSource, case .nuxt = snapshot.kind { cards.append(.migration) }
+        if !snapshot.isKitSource, case .other = snapshot.kind { cards.append(.migration) }
         return cards
     }
 
@@ -112,7 +113,7 @@ struct ProjectDetailView: View {
         case .modules: ModulesSection(project: project, snapshot: snapshot)
         case .customisation: CustomisationSection(project: project, snapshot: snapshot)
         case .health: HealthSection(project: project, snapshot: snapshot)
-        case .migration: MigrationSection(snapshot: snapshot)
+        case .migration: MigrationSection(project: project, snapshot: snapshot)
         }
     }
 

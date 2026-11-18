@@ -4,17 +4,44 @@ public enum PromptBuilder {
     public static let legacyGuidance =
         "This project was created by create-nuxt-saas 2.x, which this version cannot manage. Generate a new project with `npm create nuxt-saas@latest` and move your code across."
 
-    public static func upgrade(_ input: UpgradePromptInput) -> String {
-        let report = input.report
-        let changes = report.changes.map { "- \($0.kind.rawValue) \($0.path)" }
-        let conflicts = report.conflicts.map { "- \($0)" }
-        let followUps = report.followUps.map { "- \($0)" }
+    /// How many changed files a prompt lists; the rest are summarised so `claude "$(cat file)"` stays small.
+    public static let maxListedChanges = 200
 
+    public static func upgrade(_ input: UpgradePromptInput) -> String {
         var lines = [
             "# Upgrade \(input.projectName) to the latest kit",
             "",
             "This project was upgraded from kit \(input.fromLabel) → \(input.toLabel). The changes are already applied to the working tree.",
             "",
+        ]
+        lines += resolutionBody(report: input.report, scripts: input.scripts)
+        return lines.joined(separator: "\n") + "\n"
+    }
+
+    /// For conflicts left behind by adding or removing modules, which is not a kit upgrade.
+    public static func moduleChange(_ input: ModuleChangePromptInput) -> String {
+        let verb = input.action == .add ? "adding" : "removing"
+        let modules = input.moduleIDs.joined(separator: ", ")
+        var lines = [
+            "# Resolve the conflicts from \(verb) \(modules) in \(input.projectName)",
+            "",
+            "The nuxt-saas CLI just changed this project's modules by \(verb) \(modules). The project stays on kit \(input.versionLabel). The changes are already applied to the working tree.",
+            "",
+        ]
+        lines += resolutionBody(report: input.report, scripts: input.scripts)
+        return lines.joined(separator: "\n") + "\n"
+    }
+
+    /// The change list, conflicts, follow-ups and instructions that every applied transition shares.
+    private static func resolutionBody(report: TransitionReport, scripts: Set<String>) -> [String] {
+        var changes = report.changes.prefix(maxListedChanges).map { "- \($0.kind.rawValue) \($0.path)" }
+        if report.changes.count > maxListedChanges {
+            changes.append("- …and \(report.changes.count - maxListedChanges) more")
+        }
+        let conflicts = report.conflicts.map { "- \($0)" }
+        let followUps = report.followUps.map { "- \($0)" }
+
+        var lines = [
             "## Changes",
             "",
         ]
@@ -53,13 +80,13 @@ public enum PromptBuilder {
             "2. Run the follow-ups.",
         ]
         var step = 3
-        if let checks = checkInstruction(scripts: input.scripts) {
+        if let checks = checkInstruction(scripts: scripts) {
             lines.append("\(step). \(checks)")
             step += 1
         }
         lines.append("\(step). Never hand-edit generated migration SQL or snapshots.")
         lines.append("\(step + 1). Do not commit; leave the changes for review.")
-        return lines.joined(separator: "\n") + "\n"
+        return lines
     }
 
     public static func migration(_ input: MigrationPromptInput) -> String {

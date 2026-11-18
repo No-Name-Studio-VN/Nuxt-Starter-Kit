@@ -5,6 +5,8 @@ import SwiftUI
 struct ProjectMenuItems: View {
     let project: Project
     let isMissing: Bool
+    /// Worked out by the caller, which has the environment; a menu's own content is built without it.
+    let flowItem: FlowMenuItem
     let onLocate: () -> Void
 
     @Environment(AppModel.self) private var model
@@ -24,6 +26,17 @@ struct ProjectMenuItems: View {
             }
             Button("Continue Claude Session", systemImage: "arrow.clockwise") {
                 Task { await model.openTerminal(project, command: .claudeContinue) }
+            }
+            switch flowItem {
+            case .none:
+                EmptyView()
+            case .upgrade(let isEnabled):
+                Divider()
+                Button("Upgrade with Claude…", systemImage: "sparkles") { model.flow = .upgrade(project) }
+                    .disabled(!isEnabled)
+            case .migrate:
+                Divider()
+                Button("Migrate with Claude…", systemImage: "sparkles") { model.flow = .migration(project) }
             }
             Divider()
             Button("Reveal in Finder", systemImage: "folder") {

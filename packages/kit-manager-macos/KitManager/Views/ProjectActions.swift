@@ -20,7 +20,7 @@ struct ProjectActions: View {
                 iconButton("Start Claude in Terminal", symbol: "sparkles") {
                     await model.openTerminal(row.project, command: .claude)
                 }
-                menu
+                menu(flowItem: model.flowMenuItem(for: row.project))
             }
         }
         .disabled(row.snapshot == nil)
@@ -41,9 +41,10 @@ struct ProjectActions: View {
         .help(title)
     }
 
-    private var menu: some View {
+    private func menu(flowItem: FlowMenuItem) -> some View {
         Menu {
-            ProjectMenuItems(project: row.project, isMissing: row.isMissing, onLocate: onLocate)
+            ProjectMenuItems(
+                project: row.project, isMissing: row.isMissing, flowItem: flowItem, onLocate: onLocate)
         } label: {
             Label("More actions", systemImage: "ellipsis")
                 .labelStyle(.iconOnly)
