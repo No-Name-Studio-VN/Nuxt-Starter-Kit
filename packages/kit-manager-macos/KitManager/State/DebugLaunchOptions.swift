@@ -2,8 +2,15 @@
 import Foundation
 
 /// Debug builds only: `-KMDebugPage modules|whatsNew|attention` and `-KMDebugProject <name>` open a page or
-/// project at launch, so screenshots of each screen can be taken without clicking.
+/// project at launch. `-KMDebugModule <id>` and `-KMDebugRelease <tag|Unreleased>` select a detail.
 enum DebugLaunchOptions {
+    static var moduleSelection: String? { UserDefaults.standard.string(forKey: "KMDebugModule") }
+
+    static var releaseSelection: String? {
+        let tag = UserDefaults.standard.string(forKey: "KMDebugRelease")
+        return tag == "Unreleased" ? "" : tag
+    }
+
     @MainActor
     static func apply(to model: AppModel, projects: [Project]) {
         let defaults = UserDefaults.standard

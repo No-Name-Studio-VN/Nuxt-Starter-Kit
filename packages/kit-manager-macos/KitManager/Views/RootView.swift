@@ -15,9 +15,17 @@ struct RootView: View {
     @State private var importRequest: ImportRequest?
     @State private var isScanning = false
 
+    private var moduleColumns: [ModuleMatrix.Column] {
+        ModuleMatrix.columns(from: projects.compactMap { project in
+            model.snapshots[project.id].map { (id: project.id, snapshot: $0) }
+        })
+    }
+
     var body: some View {
+        let columns = model.sidebar == .modules || moduleSelection != nil ? moduleColumns : []
+        let rows = columns.isEmpty ? [] : ModuleMatrix.rows(catalogue: model.catalogue, columns: columns)
         Group {
-            if projects.isEmpty {
+            if projects.isEmpty && model.sidebar.isProjectList {
                 NavigationSplitView {
                     SidebarView(projectCount: 0)
                 } detail: {
@@ -27,9 +35,9 @@ struct RootView: View {
                 NavigationSplitView {
                     SidebarView(projectCount: projects.count)
                 } content: {
-                    content
+                    content(moduleRows: rows, kitProjectCount: columns.count)
                 } detail: {
-                    detail
+                    detail(moduleRows: rows)
                         .toolbar {
                             if model.sidebar.isProjectList {
                                 ProjectListToolbar(isScanning: isScanning, importRequest: $importRequest)
@@ -45,6 +53,14 @@ struct RootView: View {
             await model.bootstrap()
             #if DEBUG
             DebugLaunchOptions.apply(to: model, projects: projects)
+            if model.sidebar == .modules, let id = DebugLaunchOptions.moduleSelection,
+                !moduleColumns.isEmpty, model.catalogue.contains(where: { $0.id == id })
+            {
+                moduleSelection = id
+            }
+            if model.sidebar == .whatsNew, let id = DebugLaunchOptions.releaseSelection {
+                releaseSelection = id
+            }
             #endif
         }
         .onChange(of: scenePhase) { _, phase in
@@ -52,6 +68,9 @@ struct RootView: View {
         }
         .onChange(of: projects.map(\.id)) { _, ids in
             if let id = model.selectedProjectID, !ids.contains(id) { model.selectedProjectID = nil }
+        }
+        .onChange(of: rows.map(\.id)) { _, ids in
+            if let id = moduleSelection, !ids.contains(id) { moduleSelection = nil }
         }
         .onChange(of: model.sidebar) { _, item in
             if !item.isProjectList { model.selectedProjectID = nil }
@@ -81,25 +100,44 @@ struct RootView: View {
     }
 
     @ViewBuilder
-    private var content: some View {
+    private func content(moduleRows: [ModuleMatrix.Row], kitProjectCount: Int) -> some View {
         switch model.sidebar {
         case .allProjects, .needsAttention, .status:
             ProjectListView(
                 projects: projects, searchText: searchText, importRequest: $importRequest)
         case .modules:
-            ModulesListView(selection: $moduleSelection)
+            ModulesListView(rows: moduleRows, kitProjectCount: kitProjectCount, selection: $moduleSelection)
         case .whatsNew:
             ReleasesListView(selection: $releaseSelection, releases: $releases)
         }
     }
 
     @ViewBuilder
-    private var detail: some View {
-        if let id = model.selectedProjectID, let project = projects.first(where: { $0.id == id }) {
-            ProjectDetailView(project: project)
-                .id(id)
-        } else {
-            OverviewView(projects: projects, importRequest: $importRequest, isScanning: isScanning)
+    private func detail(moduleRows: [ModuleMatrix.Row]) -> some View {
+        switch model.sidebar {
+        case .allProjects, .needsAttention, .status:
+            if let id = model.selectedProjectID, let project = projects.first(where: { $0.id == id }) {
+                ProjectDetailView(project: project)
+                    .id(id)
+            } else {
+                OverviewView(projects: projects, importRequest: $importRequest, isScanning: isScanning)
+            }
+        case .modules:
+            if let id = moduleSelection, let row = moduleRows.first(where: { $0.id == id }) {
+                ModuleDetailView(row: row, projects: projects)
+                    .id(id)
+            } else {
+                ContentUnavailableView("Select a module", systemImage: SidebarItem.modules.symbol)
+            }
+        case .whatsNew:
+            if model.canLoadKitChangelog, model.changelogAnchor != nil, let id = releaseSelection,
+                let release = releases.value?.first(where: { $0.id == id })
+            {
+                ReleaseDetailView(release: release, projects: projects)
+                    .id(id)
+            } else {
+                ContentUnavailableView("Select a release", systemImage: "shippingbox")
+            }
         }
     }
 
