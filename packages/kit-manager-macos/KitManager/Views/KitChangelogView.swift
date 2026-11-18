@@ -14,11 +14,19 @@ struct KitChangelogView: View {
         let anchor: String?
         let latestMain: String?
         let modules: Int
+        let isFetchPending: Bool
         let attempt: Int
     }
 
     private var loadKey: LoadKey {
-        LoadKey(anchor: model.changelogAnchor, latestMain: model.latestMain, modules: model.catalogue.count, attempt: attempt)
+        LoadKey(
+            anchor: model.changelogAnchor, latestMain: model.latestMain, modules: model.catalogue.count,
+            isFetchPending: isFetchPending, attempt: attempt)
+    }
+
+    /// No fetch has finished yet, so a missing `origin/main` may still turn up.
+    private var isFetchPending: Bool {
+        model.fetchState == .idle || model.fetchState == .fetching
     }
 
     var body: some View {
@@ -35,7 +43,7 @@ struct KitChangelogView: View {
             return
         }
         guard model.latestMain != nil else {
-            state = .failed("The kit has not been fetched yet, so there is no main branch to read.")
+            state = isFetchPending ? .loading : .failed("The kit has no main branch to read. Check the kit path in Settings and fetch again.")
             return
         }
         if state.value == nil { state = .loading }

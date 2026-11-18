@@ -1,3 +1,4 @@
+import AppKit
 import KitManagerCore
 import SwiftData
 import SwiftUI
@@ -8,6 +9,7 @@ struct KitManagerApp: App {
     static let mainWindowID = "main"
 
     private let container: ModelContainer
+    @Environment(\.openWindow) private var openWindow
     @State private var model: AppModel
 
     init() {
@@ -30,7 +32,12 @@ struct KitManagerApp: App {
             CommandGroup(after: .toolbar) {
                 Button("Refresh All Projects") { Task { await model.refreshAll(force: true) } }
                     .keyboardShortcut("r")
-                Button("Quick Switcher…") { model.isSwitcherPresented = true }
+                // The switcher is a sheet of the main window, so make sure there is one to show it.
+                Button("Quick Switcher…") {
+                    openWindow(id: Self.mainWindowID)
+                    NSApp.activate()
+                    model.isSwitcherPresented = true
+                }
                     .keyboardShortcut("k")
                     .disabled(model.flow != nil)
             }

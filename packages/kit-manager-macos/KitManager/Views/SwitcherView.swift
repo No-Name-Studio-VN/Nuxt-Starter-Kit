@@ -52,7 +52,7 @@ struct SwitcherView: View {
                 .accessibilityLabel("Search projects")
                 .onKeyPress(.downArrow) { move(1, in: rows, from: current) }
                 .onKeyPress(.upArrow) { move(-1, in: rows, from: current) }
-                .onKeyPress(keys: [.return]) { press in
+                .onKeyPress(keys: [.return], phases: .down) { press in
                     guard let current else { return .handled }
                     if press.modifiers.contains(.command) {
                         onClaude(current.project)

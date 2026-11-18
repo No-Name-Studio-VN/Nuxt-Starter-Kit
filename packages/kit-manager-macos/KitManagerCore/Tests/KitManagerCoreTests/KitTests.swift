@@ -238,6 +238,9 @@ struct KitTests {
         defer { fixture.temp.remove() }
         try await git(fixture.work, ["tag", "v1.1.0", fixture.shas[1]])
         try await git(fixture.work, ["tag", "release-candidate", fixture.shas[2]])
+        // Starts with "v" but is not a version.
+        try await git(fixture.work, ["tag", "vendor-x", fixture.shas[1]])
+        try await git(fixture.work, ["tag", "vendor-y", fixture.shas[3]])
         try await git(fixture.work, ["push", "origin", "--tags"])
         let repository = fixture.repository
         try await repository.fetch()

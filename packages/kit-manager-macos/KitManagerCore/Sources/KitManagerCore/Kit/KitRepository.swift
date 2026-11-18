@@ -70,20 +70,21 @@ public struct KitRepository: Sendable {
             .compactMap { Self.parseRecord(String($0), mapping: mapping) }
     }
 
-    /// Version tags (`v*`) that point at a commit of `sha..origin/main`, by commit SHA. One
+    /// Version tags (`v` and a digit, then anything) that point at a commit of `sha..origin/main`, by commit SHA. One
     /// `git log` pass with decorations, so it stays cheap on a long history.
     public func releaseTags(from sha: String) async throws -> [String: [String]] {
         try requirePlainRevision(sha)
         let output = try await text([
-            "log", "--decorate-refs=refs/tags/v*", "--format=%H%x1f%D", "\(sha)..\(Self.mainRef)",
+            "log", "--decorate-refs=refs/tags/v[0-9]*", "--format=%H%x1f%D", "\(sha)..\(Self.mainRef)",
         ])
         var tags: [String: [String]] = [:]
         for line in output.split(separator: "\n") {
             let fields = line.split(separator: "\u{1f}", maxSplits: 1, omittingEmptySubsequences: false)
             guard fields.count == 2 else { continue }
+            // `v1.2.3`: a "v" and a digit, so a tag such as `vendor-x` is not a release.
             let names = fields[1].split(separator: ", ").compactMap { reference -> String? in
-                guard reference.hasPrefix("tag: v") else { return nil }
-                return String(reference.dropFirst("tag: ".count))
+                guard let match = reference.wholeMatch(of: /tag: (v\d\S*)/) else { return nil }
+                return String(match.1)
             }
             if !names.isEmpty { tags[String(fields[0])] = names }
         }
