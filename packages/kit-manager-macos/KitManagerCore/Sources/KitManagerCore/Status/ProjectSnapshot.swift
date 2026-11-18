@@ -17,12 +17,15 @@ public struct ProjectSnapshot: Sendable, Equatable {
     public var preview: Loadable<TransitionReport>
     public var inspect: Loadable<InspectReport>
     public var changelog: [KitCommit]
+    /// Why the changelog could not be read, when `git log` failed.
+    public var changelogFailure: String?
 
     public init(
         kind: ProjectKind, isKitSource: Bool = false, package: PackageInfo? = nil, git: GitStatus? = nil, env: EnvCheck? = nil,
         wrangler: WranglerInfo? = nil, health: SiteHealth? = nil, availability: CommitAvailability? = nil,
         versionLabel: String? = nil, behind: Int? = nil, kitCheckFailure: String? = nil, preview: Loadable<TransitionReport> = .idle,
-        inspect: Loadable<InspectReport> = .idle, changelog: [KitCommit] = []
+        inspect: Loadable<InspectReport> = .idle, changelog: [KitCommit] = [],
+        changelogFailure: String? = nil
     ) {
         self.kind = kind
         self.isKitSource = isKitSource
@@ -38,6 +41,7 @@ public struct ProjectSnapshot: Sendable, Equatable {
         self.preview = preview
         self.inspect = inspect
         self.changelog = changelog
+        self.changelogFailure = changelogFailure
     }
 
     /// True only for a v3 project whose recorded template is the kit itself, on `main`.

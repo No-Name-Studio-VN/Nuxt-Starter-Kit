@@ -101,7 +101,11 @@ struct SnapshotLoader: Sendable {
         case .failure(let error): snapshot.kitCheckFailure = error.localizedDescription
         }
         if let behind = snapshot.behind, behind > 0, let mapping = input.mapping {
-            snapshot.changelog = (try? await kit.commits(from: state.commit, mapping: mapping)) ?? []
+            do {
+                snapshot.changelog = try await kit.commits(from: state.commit, mapping: mapping)
+            } catch {
+                snapshot.changelogFailure = error.localizedDescription
+            }
         }
     }
 

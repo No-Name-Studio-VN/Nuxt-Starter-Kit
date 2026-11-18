@@ -10,23 +10,31 @@ struct HealthSection: View {
     @State private var draftURL = ""
     @State private var urlError: String?
     @State private var isChecking = false
+    @State private var isWide = true
 
     private static let envKeyLimit = 8
+    private static let routeLimit = 4
 
     var body: some View {
         GlassCard("Health") {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 24) {
-                    column("Git") { git }
-                    column("Env") { env }
-                    column("Deployment") { deployment }
-                }
-                VStack(alignment: .leading, spacing: 20) {
-                    column("Git") { git }
-                    column("Env") { env }
-                    column("Deployment") { deployment }
+            // Three columns when the card is wide enough; measured, because a long status line would
+            // make an ideal-size check fall back to one column too early.
+            Group {
+                if isWide {
+                    HStack(alignment: .top, spacing: 24) {
+                        column("Git") { git }
+                        column("Env") { env }
+                        column("Deployment") { deployment }
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 20) {
+                        column("Git") { git }
+                        column("Env") { env }
+                        column("Deployment") { deployment }
+                    }
                 }
             }
+            .onGeometryChange(for: Bool.self) { $0.size.width >= 700 } action: { isWide = $0 }
         }
         .onAppear { draftURL = project.productionURL ?? "" }
     }
@@ -124,6 +132,20 @@ struct HealthSection: View {
         } else if snapshot.wrangler == nil {
             Text("No wrangler.jsonc").font(.callout).foregroundStyle(.secondary)
         }
+        if let routes = snapshot.wrangler?.routes, !routes.isEmpty {
+            DetailRow(routes.count == 1 ? "Route" : "Routes") {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(routes.prefix(Self.routeLimit), id: \.self) { route in
+                        Text(route).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
+                    }
+                    if routes.count > Self.routeLimit {
+                        Text("+\(routes.count - Self.routeLimit) more").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .textSelection(.enabled)
+                .help(routes.joined(separator: "\n"))
+            }
+        }
         if let url = resolvedURL {
             DetailRow("URL") {
                 Text(url.absoluteString)
@@ -171,7 +193,7 @@ struct HealthSection: View {
                     .lineLimit(2)
             }
         } else {
-            ProgressView().controlSize(.mini)
+            Text("Not checked").foregroundStyle(.secondary)
         }
     }
 

@@ -4,8 +4,9 @@ import KitManagerCore
 enum ModuleChangePhase {
     case idle
     case previewing
-    case planned(TransitionReport)
+    /// `ids` are the modules the plan was made for; Apply uses exactly these.
+    case planned(TransitionReport, ids: [String])
     case failed(PresentedError)
     case applying
-    case applied(TransitionReport)
+    case applied(TransitionReport, ids: [String])
 }

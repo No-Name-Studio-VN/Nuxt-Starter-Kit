@@ -14,6 +14,8 @@ struct ModuleChangeSheet: View {
     @State private var choices: [ModuleChoice]
     @State private var selection: Set<String>
     @State private var phase: ModuleChangePhase = .idle
+    /// Bumped by "Plan again" to re-run the `--check` for the same selection.
+    @State private var planAttempt = 0
     @State private var pickerHeight: CGFloat = 0
     @State private var isResolving = false
     @State private var resolveError: PresentedError?
@@ -23,6 +25,11 @@ struct ModuleChangeSheet: View {
         self.action = action
         _choices = State(initialValue: choices)
         _selection = State(initialValue: initial)
+    }
+
+    private struct PlanRequest: Hashable {
+        let selection: Set<String>
+        let attempt: Int
     }
 
     private var ids: [String] { selection.sorted() }
@@ -57,7 +64,7 @@ struct ModuleChangeSheet: View {
         .padding(20)
         .frame(width: 540)
         .background(Theme.canvas)
-        .task(id: selection) { await runPreview() }
+        .task(id: PlanRequest(selection: selection, attempt: planAttempt)) { await runPreview() }
     }
 
     // MARK: Pieces
@@ -109,9 +116,9 @@ struct ModuleChangeSheet: View {
                 ProgressView().controlSize(.small)
                 Text("Applying…").font(.callout).foregroundStyle(.secondary)
             }
-        case .planned(let report):
+        case .planned(let report, _):
             reportView(report, applied: false)
-        case .applied(let report):
+        case .applied(let report, _):
             reportView(report, applied: true)
         }
     }
@@ -150,10 +157,10 @@ struct ModuleChangeSheet: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
-            if case .applied(let report) = phase {
+            if case .applied(let report, let appliedIDs) = phase {
                 if !report.conflicts.isEmpty {
                     Button {
-                        resolve(report)
+                        resolve(report, ids: appliedIDs)
                     } label: {
                         Label("Resolve with Claude", systemImage: "sparkles")
                     }
@@ -176,7 +183,12 @@ struct ModuleChangeSheet: View {
                     .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                     .keyboardShortcut(.cancelAction)
                     .disabled(isApplying)
-                Button("Apply") { apply() }
+                if case .failed = phase, !selection.isEmpty {
+                    Button("Plan again") { planAttempt += 1 }
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
+                }
+                Button("Apply") { applyPlanned() }
                     .buttonStyle(.glassProminent)
                     .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                     .keyboardShortcut(.defaultAction)
@@ -206,30 +218,31 @@ struct ModuleChangeSheet: View {
             return
         }
         phase = .previewing
-        let result = await model.previewModuleChange(project, action: action, ids: ids)
+        let planned = ids
+        let result = await model.previewModuleChange(project, action: action, ids: planned)
         // A newer selection cancelled this one.
         guard !Task.isCancelled else { return }
         switch result {
-        case .success(let report): phase = .planned(report)
+        case .success(let report): phase = .planned(report, ids: planned)
         case .failure(let error): phase = .failed(PresentedError(error))
         }
     }
 
-    private func apply() {
+    /// Applies the plan on screen, with the modules it was made for rather than the live selection.
+    private func applyPlanned() {
+        guard case .planned(_, let planned) = phase else { return }
         phase = .applying
-        let ids = ids
         Task {
-            switch await model.applyModuleChange(project, action: action, ids: ids) {
-            case .success(let report): phase = .applied(report)
+            switch await model.applyModuleChange(project, action: action, ids: planned) {
+            case .success(let report): phase = .applied(report, ids: planned)
             case .failure(let error): phase = .failed(PresentedError(error))
             }
         }
     }
 
-    private func resolve(_ report: TransitionReport) {
+    private func resolve(_ report: TransitionReport, ids: [String]) {
         isResolving = true
         resolveError = nil
-        let ids = ids
         Task {
             do {
                 try await model.resolveModuleConflicts(project, report: report, action: action, ids: ids)

@@ -29,14 +29,17 @@ struct UpgradeSection: View {
                 }
             }
         } trailing: {
-            Button {
-                Task { await model.loadPreview(project) }
-            } label: {
-                Label(snapshot.preview.value == nil ? "Preview" : "Preview again", systemImage: "arrow.clockwise")
+            // Nothing to preview when the project is already up to date.
+            if showsPreview {
+                Button {
+                    Task { await model.loadPreview(project) }
+                } label: {
+                    Label(snapshot.preview.value == nil ? "Preview" : "Preview again", systemImage: "arrow.clockwise")
+                }
+                .quietGlassButton()
+                .disabled(isPreviewing || model.cliStatus != .ready)
+                .help(model.cliStatus == .ready ? "Render the upgrade again" : "Build the nuxt-saas CLI first")
             }
-            .quietGlassButton()
-            .disabled(isPreviewing || model.cliStatus != .ready)
-            .help(model.cliStatus == .ready ? "Render the upgrade again" : "Build the nuxt-saas CLI first")
         }
     }
 
@@ -64,7 +67,7 @@ struct UpgradeSection: View {
             Label("Up to date with the latest kit", systemImage: "checkmark.circle.fill")
                 .font(.callout.weight(.medium))
                 .foregroundStyle(Theme.green)
-            versionPath
+            versionText(snapshot.versionLabel, fallback: snapshot.kitState?.commit).font(.title3)
         case .unresolvedConflicts:
             if snapshot.behind != nil { versionPath }
         case .pinned(let ref):

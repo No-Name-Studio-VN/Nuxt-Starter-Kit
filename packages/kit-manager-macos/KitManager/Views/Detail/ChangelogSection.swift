@@ -38,17 +38,22 @@ struct ChangelogSection: View {
         }
     }
 
+    /// Nothing to list. The snapshot is built before this card shows, so there is no loading state:
+    /// the cause is a failed `git log`, a missing module catalogue, or genuinely nothing.
     @ViewBuilder
     private var empty: some View {
-        if model.cliStatus == .ready {
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text("Reading the kit history…").font(.callout).foregroundStyle(.secondary)
-            }
+        if let failure = snapshot.changelogFailure {
+            FailureView(message: failure)
+        } else if model.catalogue.isEmpty {
+            Text(
+                model.cliStatus == .ready
+                    ? "The kit's module list could not be read, so commits cannot be mapped to modules. Refresh to try again."
+                    : "The changelog is mapped to modules through the nuxt-saas CLI, which is not ready."
+            )
+            .font(.callout)
+            .foregroundStyle(.secondary)
         } else {
-            Text("The changelog is mapped to modules through the nuxt-saas CLI, which is not ready.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
+            Text("No kit changes since this commit.").font(.callout).foregroundStyle(.secondary)
         }
     }
 
