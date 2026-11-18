@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const totp = new OTPAuth.TOTP({
-    issuer: 'Gromet Reader',
+    issuer: 'Nuxt Starter Kit',
     algorithm: 'SHA1',
     digits: 6,
     period: 30,

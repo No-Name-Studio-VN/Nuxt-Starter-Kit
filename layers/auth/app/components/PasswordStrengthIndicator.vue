@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Progress } from '@/components/ui/progress';
-import { Check, X } from '@lucide/vue';
+import { Check } from '@lucide/vue';
 import type { PasswordStrength } from '#layers/auth/types/password';
 
 const props = withDefaults(
@@ -17,68 +17,56 @@ const props = withDefaults(
 
 const progressValue = computed(() => props.strength.score);
 
+// Short labels keep the checklist to one or two lines so auth forms fit without scrolling.
 const checkItems = computed(() => [
-  {
-    label: 'At least 8 characters',
-    passed: props.strength.checks.length,
-  },
-  {
-    label: 'One uppercase letter (A-Z)',
-    passed: props.strength.checks.uppercase,
-  },
-  {
-    label: 'One lowercase letter (a-z)',
-    passed: props.strength.checks.lowercase,
-  },
-  {
-    label: 'One number (0-9)',
-    passed: props.strength.checks.number,
-  },
-  {
-    label: 'One special character (!@#$...)',
-    passed: props.strength.checks.special,
-  },
+  { id: 'length', label: '8+ chars', passed: props.strength.checks.length },
+  { id: 'uppercase', label: 'Uppercase', passed: props.strength.checks.uppercase },
+  { id: 'lowercase', label: 'Lowercase', passed: props.strength.checks.lowercase },
+  { id: 'number', label: 'Number', passed: props.strength.checks.number },
+  { id: 'special', label: 'Symbol', passed: props.strength.checks.special },
 ]);
 </script>
 
 <template>
-  <div v-if="password" class="space-y-3">
-    <!-- Progress Bar -->
-    <div class="space-y-1.5">
+  <div v-if="password" class="space-y-2">
+    <div class="flex items-center gap-3">
       <Progress
         :model-value="progressValue"
-        class="h-2 transition-all duration-300"
+        class="h-1 flex-1 transition-all duration-300"
         :style="{ '--progress-color': strength.color }"
+        :aria-label="`Password strength ${strength.score}%`"
       />
-      <div class="flex items-center justify-between text-xs">
-        <span class="font-medium transition-colors duration-300" :style="{ color: strength.color }">
-          {{ strength.feedback }}
-        </span>
-        <span class="text-muted-foreground"> {{ strength.score }}% </span>
-      </div>
+      <span
+        class="shrink-0 text-xs font-medium transition-colors duration-300"
+        :style="{ color: strength.color }"
+        aria-live="polite"
+      >
+        {{ strength.feedback }}
+      </span>
     </div>
 
-    <!-- Requirements Checklist -->
-    <div v-if="showDetails" class="space-y-1.5 text-xs">
-      <p class="text-muted-foreground font-medium">Password Requirements:</p>
-      <ul class="space-y-1">
-        <li
-          v-for="(item, index) in checkItems"
-          :key="index"
-          class="flex items-center gap-2 transition-colors duration-200"
-          :class="item.passed ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
-        >
-          <Check v-if="item.passed" class="size-3.5 shrink-0" />
-          <X v-else class="size-3.5 shrink-0" />
-          <span>{{ item.label }}</span>
-        </li>
-      </ul>
-    </div>
+    <ul
+      v-if="showDetails"
+      class="flex flex-wrap gap-x-3 gap-y-1 text-xs"
+      aria-label="Password requirements"
+    >
+      <li
+        v-for="item in checkItems"
+        :key="item.id"
+        class="flex items-center gap-1 transition-colors duration-200"
+        :class="item.passed ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
+      >
+        <Check v-if="item.passed" aria-hidden="true" class="size-3 shrink-0" />
+        <span v-else aria-hidden="true" class="size-1 shrink-0 rounded-full bg-current mx-1" />
+        <span>{{ item.label }}</span>
+        <span class="sr-only">{{ item.passed ? '(met)' : '(not met)' }}</span>
+      </li>
+    </ul>
   </div>
 </template>
 
 <style scoped>
 :deep([data-slot='progress-indicator']) {
-  background-color: var(--progress-color, hsl(var(--primary)));
+  background-color: var(--progress-color, var(--primary));
 }
 </style>

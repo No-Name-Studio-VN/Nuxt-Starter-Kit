@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AuthPageLayout from '#layers/auth/app/components/auth/AuthPageLayout.vue';
-import { Lock, Eye, EyeOff, KeyRound } from '@lucide/vue';
+import { Eye, EyeOff, KeyRound } from '@lucide/vue';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { resetPasswordFormSchema } from '#layers/auth/shared/schemas/userSchema';
 import { calculatePasswordStrength } from '#layers/auth/app/utils/passwordValidation';
@@ -67,7 +67,7 @@ const onSubmit = handleSubmit(async (formValues) => {
 definePageMeta({
   title: 'auth.reset_password_title',
   breadcrumb: 'auth.reset_password_breadcrumb',
-  layout: 'empty',
+  layout: false,
 });
 
 useSeo({
@@ -78,131 +78,135 @@ useSeo({
 </script>
 
 <template>
-  <AuthPageLayout quote="Choose a fresh key and step right back into your library.">
-    <div class="space-y-5">
-      <div class="space-y-3 text-center">
-        <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10">
-          <KeyRound aria-hidden="true" class="size-6 text-primary" />
-        </div>
-        <div class="space-y-1">
-          <h1 class="text-2xl font-bold tracking-tight">Set a new password</h1>
-          <p class="text-base text-muted-foreground">Enter your new password below.</p>
-        </div>
+  <AuthPageLayout page="reset-password">
+    <div class="space-y-4">
+      <div class="flex size-10 items-center justify-center rounded-md border bg-background/60">
+        <KeyRound aria-hidden="true" class="size-5" />
       </div>
-
-      <Alert v-if="error" variant="destructive">
-        <AlertDescription>{{ error }}</AlertDescription>
-      </Alert>
-
-      <Alert v-if="success">
-        <AlertDescription>
-          Password reset successfully. You can now sign in with your new password.
-        </AlertDescription>
-      </Alert>
-
-      <Alert v-if="!token" variant="destructive">
-        <AlertDescription>
-          Invalid reset link. Please
-          <NuxtLink :to="{ path: '/auth/forgot-password' }" class="underline font-medium">
-            request a new one </NuxtLink
-          >.
-        </AlertDescription>
-      </Alert>
-
-      <form v-if="token && !success" class="space-y-4" @submit.prevent="onSubmit">
-        <VeeField v-slot="{ field, errors }" name="password">
-          <Field :data-invalid="!!errors.length" class="space-y-2">
-            <FieldLabel for="new-password" class="text-sm font-medium"> New Password </FieldLabel>
-            <div class="relative">
-              <Lock aria-hidden="true" class="absolute left-3 top-3 size-4" />
-              <Input
-                id="new-password"
-                :model-value="field.value"
-                :type="showPassword ? 'text' : 'password'"
-                placeholder="Enter new password"
-                class="h-11 px-9"
-                :disabled="isSubmitting"
-                :aria-invalid="!!errors.length"
-                autocomplete="new-password"
-                @update:model-value="field.onChange"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
-                :aria-label="showPassword ? 'Hide password' : 'Show password'"
-                :aria-pressed="showPassword"
-                @click="showPassword = !showPassword"
-              >
-                <Eye v-if="!showPassword" aria-hidden="true" class="size-4" />
-                <EyeOff v-else aria-hidden="true" class="size-4" />
-              </Button>
-            </div>
-            <FieldError v-if="errors.length" :errors="errors" />
-            <PasswordStrengthIndicator
-              :password="values.password || ''"
-              :strength="passwordStrength"
-            />
-          </Field>
-        </VeeField>
-
-        <VeeField v-slot="{ field, errors }" name="confirmPassword">
-          <Field :data-invalid="!!errors.length" class="space-y-2">
-            <FieldLabel for="confirm-new-password" class="text-sm font-medium">
-              Confirm New Password
-            </FieldLabel>
-            <div class="relative">
-              <Lock aria-hidden="true" class="absolute left-3 top-3 size-4" />
-              <Input
-                id="confirm-new-password"
-                :model-value="field.value"
-                :type="showConfirmPassword ? 'text' : 'password'"
-                placeholder="Confirm new password"
-                class="h-11 px-9"
-                :disabled="isSubmitting"
-                :aria-invalid="!!errors.length"
-                autocomplete="new-password"
-                @update:model-value="field.onChange"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
-                :aria-label="
-                  showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'
-                "
-                :aria-pressed="showConfirmPassword"
-                @click="showConfirmPassword = !showConfirmPassword"
-              >
-                <Eye v-if="!showConfirmPassword" aria-hidden="true" class="size-4" />
-                <EyeOff v-else aria-hidden="true" class="size-4" />
-              </Button>
-            </div>
-            <FieldError v-if="errors.length" :errors="errors" />
-          </Field>
-        </VeeField>
-
-        <Button
-          type="submit"
-          class="h-11 w-full"
-          :disabled="!isFormValid"
-          :is-loading="isSubmitting"
-        >
-          Reset Password
-        </Button>
-
-        <p v-if="values.password && passwordStrength.score < 80" class="text-center text-xs">
-          Password must be strong to reset
-        </p>
-      </form>
-
-      <div class="text-center">
-        <NuxtLink to="/auth/login" class="text-sm font-medium text-primary hover:underline">
-          Back to Sign In
-        </NuxtLink>
+      <div class="space-y-1.5">
+        <h1 class="text-2xl font-semibold tracking-tight">Set a new password</h1>
+        <p class="text-sm text-muted-foreground">Enter your new password below.</p>
       </div>
     </div>
+
+    <Alert v-if="error" variant="destructive" role="alert">
+      <AlertDescription>{{ error }}</AlertDescription>
+    </Alert>
+
+    <Alert
+      v-if="success"
+      role="status"
+      class="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
+    >
+      <AlertDescription class="text-green-700 dark:text-green-300">
+        Password reset successfully. You can now sign in with your new password.
+      </AlertDescription>
+    </Alert>
+
+    <Alert v-if="!token" variant="destructive" role="alert">
+      <AlertDescription>
+        <p>
+          This reset link is invalid or has expired.
+          <NuxtLink
+            :to="{ path: '/auth/forgot-password' }"
+            class="font-medium underline underline-offset-4"
+          >
+            Request a new one</NuxtLink
+          >.
+        </p>
+      </AlertDescription>
+    </Alert>
+
+    <form v-if="token && !success" class="flex flex-col gap-4" @submit.prevent="onSubmit">
+      <VeeField v-slot="{ field, errors }" name="password">
+        <Field :data-invalid="!!errors.length">
+          <FieldLabel for="new-password">New password</FieldLabel>
+          <div class="relative">
+            <Input
+              id="new-password"
+              :model-value="field.value"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="Enter new password"
+              class="h-10 pr-10"
+              :disabled="isSubmitting"
+              :aria-invalid="!!errors.length"
+              autocomplete="new-password"
+              @update:model-value="field.onChange"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="absolute inset-y-0 right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              :aria-label="showPassword ? 'Hide password' : 'Show password'"
+              :aria-pressed="showPassword"
+              @click="showPassword = !showPassword"
+            >
+              <Eye v-if="!showPassword" aria-hidden="true" class="size-4" />
+              <EyeOff v-else aria-hidden="true" class="size-4" />
+            </Button>
+          </div>
+          <FieldError v-if="errors.length" :errors="errors" />
+          <PasswordStrengthIndicator
+            :password="values.password || ''"
+            :strength="passwordStrength"
+          />
+        </Field>
+      </VeeField>
+
+      <VeeField v-slot="{ field, errors }" name="confirmPassword">
+        <Field :data-invalid="!!errors.length">
+          <FieldLabel for="confirm-new-password">Confirm new password</FieldLabel>
+          <div class="relative">
+            <Input
+              id="confirm-new-password"
+              :model-value="field.value"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              placeholder="Confirm new password"
+              class="h-10 pr-10"
+              :disabled="isSubmitting"
+              :aria-invalid="!!errors.length"
+              autocomplete="new-password"
+              @update:model-value="field.onChange"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="absolute inset-y-0 right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              :aria-label="
+                showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'
+              "
+              :aria-pressed="showConfirmPassword"
+              @click="showConfirmPassword = !showConfirmPassword"
+            >
+              <Eye v-if="!showConfirmPassword" aria-hidden="true" class="size-4" />
+              <EyeOff v-else aria-hidden="true" class="size-4" />
+            </Button>
+          </div>
+          <FieldError v-if="errors.length" :errors="errors" />
+        </Field>
+      </VeeField>
+
+      <Button type="submit" class="h-10 w-full" :disabled="!isFormValid" :is-loading="isSubmitting">
+        Reset password
+      </Button>
+
+      <p
+        v-if="values.password && passwordStrength.score < 80"
+        class="text-center text-xs text-muted-foreground"
+      >
+        Password must be strong to reset
+      </p>
+    </form>
+
+    <p class="text-center text-sm text-muted-foreground">
+      <NuxtLink
+        to="/auth/login"
+        class="font-medium text-foreground underline-offset-4 hover:underline"
+      >
+        Back to sign in
+      </NuxtLink>
+    </p>
   </AuthPageLayout>
 </template>

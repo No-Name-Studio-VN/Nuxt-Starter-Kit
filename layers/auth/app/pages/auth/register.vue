@@ -3,7 +3,7 @@ import AuthPageLayout from '#layers/auth/app/components/auth/AuthPageLayout.vue'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Lock, Mail, UserIcon } from '@lucide/vue';
+import { Eye, EyeOff } from '@lucide/vue';
 import PasswordStrengthIndicator from '#layers/auth/app/components/PasswordStrengthIndicator.vue';
 import { registerUserSchema } from '#layers/auth/shared/schemas/userSchema';
 import { calculatePasswordStrength } from '#layers/auth/app/utils/passwordValidation';
@@ -17,6 +17,7 @@ import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import type { ApiResponse } from '#layers/server-core/types/api';
 import type { OAuthUrlPayload } from '#layers/auth/types/auth';
 
+const siteConfig = useConfig();
 const route = useRoute();
 const requestUrl = useRequestURL();
 const showPassword = ref(false);
@@ -98,7 +99,7 @@ const { handleSubmit, values, meta, setFieldValue } = form;
 definePageMeta({
   title: 'auth.register_title',
   breadcrumb: 'auth.register_breadcrumb',
-  layout: 'empty',
+  layout: false,
 });
 
 useSeo({
@@ -222,196 +223,188 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <AuthPageLayout quote="Build a library that feels like yours from the first page.">
-    <div class="space-y-1">
-      <h1 class="text-2xl font-bold tracking-tight">Create account</h1>
-      <p class="text-base text-muted-foreground">
-        Join Gromet Reader and start your reading journey.
-      </p>
+  <AuthPageLayout page="register">
+    <div class="space-y-1.5">
+      <h1 class="text-2xl font-semibold tracking-tight">Create an account</h1>
+      <p class="text-sm text-muted-foreground">Get started with {{ siteConfig.site.name }}.</p>
     </div>
 
-    <Alert v-if="error" variant="destructive">
+    <Alert v-if="error" variant="destructive" role="alert">
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
 
-    <!-- OAuth Sign Up -->
-    <div class="space-y-3">
-      <template v-for="provider in AVAILABLE_PROVIDERS" :key="provider.id">
-        <Button
-          type="button"
-          variant="outline"
-          class="w-full active:scale-[0.98]"
-          :is-loading="oauthLoadingProvider === provider.id"
-          :disabled="isLoading || oauthLoadingProvider !== null"
-          @click="signUpWithProvider(provider.id)"
-        >
-          <div class="size-4 flex items-center justify-center">
-            <OAuthIcon :provider="provider.id" />
-          </div>
-          Sign up with {{ provider.name }}
-        </Button>
-      </template>
+    <div v-if="AVAILABLE_PROVIDERS.length" class="flex flex-col gap-2">
+      <Button
+        v-for="provider in AVAILABLE_PROVIDERS"
+        :key="provider.id"
+        type="button"
+        variant="outline"
+        class="h-10 w-full"
+        :is-loading="oauthLoadingProvider === provider.id"
+        :disabled="isLoading || oauthLoadingProvider !== null"
+        @click="signUpWithProvider(provider.id)"
+      >
+        <div class="flex size-4 items-center justify-center">
+          <OAuthIcon :provider="provider.id" />
+        </div>
+        Continue with {{ provider.name }}
+      </Button>
+    </div>
 
-      <div class="flex items-center gap-2 py-1">
-        <div class="h-px flex-1 bg-border" />
-        <span class="text-xs uppercase text-muted-foreground">Or sign up with email</span>
-        <div class="h-px flex-1 bg-border" />
-      </div>
+    <div v-if="AVAILABLE_PROVIDERS.length" class="flex items-center gap-3">
+      <div class="h-px flex-1 bg-border" />
+      <span class="text-xs text-muted-foreground">or</span>
+      <div class="h-px flex-1 bg-border" />
     </div>
 
     <form
       :action="authRoutes.AUTH_REGISTER_PASSWORD"
       method="POST"
-      class="space-y-4"
+      class="flex flex-col gap-4"
       @submit.prevent="onSubmit"
     >
-      <VeeField v-slot="{ field, errors }" name="username">
-        <Field :data-invalid="!!errors.length" class="space-y-2">
-          <FieldLabel for="username" class="text-sm font-medium"> Username </FieldLabel>
-          <div class="relative">
-            <UserIcon class="absolute left-3 top-3 size-4 text-muted-foreground" />
+      <div class="grid gap-4 sm:grid-cols-2">
+        <VeeField v-slot="{ field, errors }" name="username">
+          <Field :data-invalid="!!errors.length">
+            <FieldLabel for="username">Username</FieldLabel>
             <Input
               id="username"
               :model-value="field.value"
               name="username"
               type="text"
+              autocomplete="username"
+              autocapitalize="none"
+              :spellcheck="false"
               placeholder="Enter your username"
-              class="h-11 pl-9"
+              class="h-10"
               :aria-invalid="!!errors.length"
               :disabled="isLoading"
               @update:model-value="field.onChange"
             />
-          </div>
-          <FieldError v-if="errors.length" :errors="errors" />
-        </Field>
-      </VeeField>
+            <FieldError v-if="errors.length" :errors="errors" />
+          </Field>
+        </VeeField>
 
-      <VeeField v-slot="{ field, errors }" name="name">
-        <Field :data-invalid="!!errors.length" class="space-y-2">
-          <FieldLabel for="name" class="text-sm font-medium"> Display Name </FieldLabel>
-          <div class="relative">
-            <UserIcon class="absolute left-3 top-3 size-4 text-muted-foreground" />
+        <VeeField v-slot="{ field, errors }" name="name">
+          <Field :data-invalid="!!errors.length">
+            <FieldLabel for="name">Display name</FieldLabel>
             <Input
               id="name"
               :model-value="field.value"
               name="name"
               type="text"
+              autocomplete="name"
               placeholder="Enter your display name"
-              class="h-11 pl-9"
+              class="h-10"
               :aria-invalid="!!errors.length"
               :disabled="isLoading"
               @update:model-value="field.onChange"
             />
-          </div>
-          <FieldError v-if="errors.length" :errors="errors" />
-        </Field>
-      </VeeField>
+            <FieldError v-if="errors.length" :errors="errors" />
+          </Field>
+        </VeeField>
+      </div>
 
       <VeeField v-slot="{ field, errors }" name="email">
-        <Field :data-invalid="!!errors.length" class="space-y-2">
-          <FieldLabel for="email" class="text-sm font-medium"> Email </FieldLabel>
-          <div class="relative">
-            <Mail class="absolute left-3 top-3 size-4 text-muted-foreground" />
-            <Input
-              id="email"
-              :model-value="field.value"
-              name="email"
-              type="email"
-              placeholder="Enter your email"
-              class="h-11 pl-9"
-              :aria-invalid="!!errors.length"
-              :disabled="isLoading"
-              @update:model-value="field.onChange"
-            />
-          </div>
-          <FieldError v-if="errors.length" :errors="errors" />
-        </Field>
-      </VeeField>
-
-      <VeeField v-slot="{ field, errors }" name="password">
-        <Field :data-invalid="!!errors.length" class="space-y-2">
-          <FieldLabel for="password" class="text-sm font-medium"> Password </FieldLabel>
-          <div class="relative">
-            <Lock class="absolute left-3 top-3 size-4 text-muted-foreground" />
-            <Input
-              id="password"
-              :model-value="field.value"
-              name="password"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="Enter your password"
-              class="h-11 px-9"
-              :aria-invalid="!!errors.length"
-              :disabled="isLoading"
-              @update:model-value="field.onChange"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
-              :aria-label="showPassword ? 'Hide password' : 'Show password'"
-              :aria-pressed="showPassword"
-              @click="showPassword = !showPassword"
-            >
-              <Eye v-if="!showPassword" class="size-4" aria-hidden="true" />
-              <EyeOff v-else class="size-4" aria-hidden="true" />
-            </Button>
-          </div>
-          <!-- Password Strength Indicator -->
-          <PasswordStrengthIndicator
-            :password="values.password || ''"
-            :strength="passwordStrength"
+        <Field :data-invalid="!!errors.length">
+          <FieldLabel for="email">Email</FieldLabel>
+          <Input
+            id="email"
+            :model-value="field.value"
+            name="email"
+            type="email"
+            autocomplete="email"
+            placeholder="Enter your email"
+            class="h-10"
+            :aria-invalid="!!errors.length"
+            :disabled="isLoading"
+            @update:model-value="field.onChange"
           />
-        </Field>
-      </VeeField>
-
-      <VeeField v-slot="{ field, errors }" name="confirm-password">
-        <Field :data-invalid="!!errors.length" class="space-y-2">
-          <FieldLabel for="confirmPassword" class="text-sm font-medium">
-            Confirm Password
-          </FieldLabel>
-          <div class="relative">
-            <Lock class="absolute left-3 top-3 size-4 text-muted-foreground" />
-            <Input
-              id="confirmPassword"
-              :model-value="field.value"
-              name="confirm-password"
-              :type="showConfirmPassword ? 'text' : 'password'"
-              placeholder="Confirm your password"
-              class="h-11 px-9"
-              :aria-invalid="!!errors.length"
-              :disabled="isLoading"
-              @update:model-value="field.onChange"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
-              :aria-label="
-                showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'
-              "
-              :aria-pressed="showConfirmPassword"
-              @click="showConfirmPassword = !showConfirmPassword"
-            >
-              <Eye v-if="!showConfirmPassword" class="size-4" aria-hidden="true" />
-              <EyeOff v-else class="size-4" aria-hidden="true" />
-            </Button>
-          </div>
           <FieldError v-if="errors.length" :errors="errors" />
         </Field>
       </VeeField>
 
-      <NuxtTurnstile v-model="turnstileToken" />
+      <div class="flex flex-col gap-2">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <VeeField v-slot="{ field, errors }" name="password">
+            <Field :data-invalid="!!errors.length">
+              <FieldLabel for="password">Password</FieldLabel>
+              <div class="relative">
+                <Input
+                  id="password"
+                  :model-value="field.value"
+                  name="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  placeholder="Create a password"
+                  class="h-10 pr-10"
+                  :aria-invalid="!!errors.length"
+                  :disabled="isLoading"
+                  @update:model-value="field.onChange"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  class="absolute inset-y-0 right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                  :aria-pressed="showPassword"
+                  @click="showPassword = !showPassword"
+                >
+                  <Eye v-if="!showPassword" aria-hidden="true" class="size-4" />
+                  <EyeOff v-else aria-hidden="true" class="size-4" />
+                </Button>
+              </div>
+            </Field>
+          </VeeField>
+
+          <VeeField v-slot="{ field, errors }" name="confirm-password">
+            <Field :data-invalid="!!errors.length">
+              <FieldLabel for="confirmPassword">Confirm password</FieldLabel>
+              <div class="relative">
+                <Input
+                  id="confirmPassword"
+                  :model-value="field.value"
+                  name="confirm-password"
+                  :type="showConfirmPassword ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  placeholder="Repeat password"
+                  class="h-10 pr-10"
+                  :aria-invalid="!!errors.length"
+                  :disabled="isLoading"
+                  @update:model-value="field.onChange"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  class="absolute inset-y-0 right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                  :aria-label="
+                    showConfirmPassword
+                      ? 'Hide password confirmation'
+                      : 'Show password confirmation'
+                  "
+                  :aria-pressed="showConfirmPassword"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
+                  <Eye v-if="!showConfirmPassword" aria-hidden="true" class="size-4" />
+                  <EyeOff v-else aria-hidden="true" class="size-4" />
+                </Button>
+              </div>
+              <FieldError v-if="errors.length" :errors="errors" />
+            </Field>
+          </VeeField>
+        </div>
+        <PasswordStrengthIndicator :password="values.password || ''" :strength="passwordStrength" />
+      </div>
+
+      <NuxtTurnstile
+        v-model="turnstileToken"
+        :options="{ size: 'flexible', appearance: 'interaction-only' }"
+      />
       <input type="hidden" name="redirect-to" :value="redirectTo" />
-      <Button
-        type="submit"
-        class="h-11 w-full active:scale-[0.98]"
-        :disabled="!isFormValid"
-        :is-loading="isLoading"
-      >
-        <Lock class="size-4" />
-        Create Account
+      <Button type="submit" class="h-10 w-full" :disabled="!isFormValid" :is-loading="isLoading">
+        Create account
       </Button>
       <p
         v-if="values.password && passwordStrength.score < 80"
@@ -421,12 +414,22 @@ onBeforeUnmount(() => {
       </p>
     </form>
 
-    <div class="space-y-3 text-center">
-      <div class="text-xs text-muted-foreground">
+    <div class="space-y-3">
+      <p class="text-center text-sm text-muted-foreground">
+        Already have an account?
+        <NuxtLink
+          to="/auth/login"
+          class="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          Sign in
+        </NuxtLink>
+      </p>
+
+      <p class="text-center text-xs text-muted-foreground text-balance">
         By creating an account, you agree to our
         <NuxtLink
           to="https://nnsvn.me/terms"
-          class="underline underline-offset-4 hover:text-primary"
+          class="underline underline-offset-4 hover:text-foreground"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -435,20 +438,13 @@ onBeforeUnmount(() => {
         and
         <NuxtLink
           to="https://nnsvn.me/privacy"
-          class="underline underline-offset-4 hover:text-primary"
+          class="underline underline-offset-4 hover:text-foreground"
           target="_blank"
           rel="noopener noreferrer"
         >
           Privacy Policy
         </NuxtLink>
-      </div>
-
-      <div class="text-sm text-muted-foreground">
-        Already have an account?
-        <NuxtLink to="/auth/login" class="font-medium text-primary hover:underline">
-          Sign In
-        </NuxtLink>
-      </div>
+      </p>
     </div>
   </AuthPageLayout>
 </template>

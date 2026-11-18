@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const totp = new OTPAuth.TOTP({
-    issuer: 'Gromet Reader',
+    issuer: 'Nuxt Starter Kit',
     label: 'Lock Screen',
     algorithm: 'SHA1',
     digits: 6,

@@ -17,7 +17,7 @@ export function calculatePasswordStrength(password: string): PasswordStrength {
         number: false,
         special: false,
       },
-      color: 'hsl(var(--destructive))',
+      color: 'var(--destructive)',
     };
   }
 
@@ -70,7 +70,7 @@ export function calculatePasswordStrength(password: string): PasswordStrength {
   if (score < 40) {
     level = 'weak';
     feedback = 'Weak password - add more variety';
-    color = 'hsl(var(--destructive))';
+    color = 'var(--destructive)';
   } else if (score < 60) {
     level = 'fair';
     feedback = 'Fair password - could be stronger';
