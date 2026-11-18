@@ -10,12 +10,20 @@ public struct ShellEnvironment: Sendable, Equatable {
     }
 
     /// The current process environment with `PATH` replaced by the resolved one.
-    /// `GIT_TERMINAL_PROMPT=0` makes git fail instead of waiting on a credential prompt nobody can answer.
+    /// `GIT_TERMINAL_PROMPT=0` makes git fail instead of waiting on a credential prompt nobody can answer;
+    /// `GIT_SSH_COMMAND` does the same for an ssh password or passphrase prompt.
     public var variables: [String: String] {
         var environment = ProcessInfo.processInfo.environment
         environment["PATH"] = path
         environment["GIT_TERMINAL_PROMPT"] = "0"
+        environment["GIT_SSH_COMMAND"] = Self.batchSSHCommand(existing: environment["GIT_SSH_COMMAND"])
         return environment
+    }
+
+    /// `ssh -o BatchMode=yes`, appended to an ssh command the user already configured.
+    static func batchSSHCommand(existing: String?) -> String {
+        guard let existing, !existing.isEmpty else { return "ssh -o BatchMode=yes" }
+        return "\(existing) -o BatchMode=yes"
     }
 
     /// Asks the user's login shell for its `PATH`, because a Dock-launched app inherits only a

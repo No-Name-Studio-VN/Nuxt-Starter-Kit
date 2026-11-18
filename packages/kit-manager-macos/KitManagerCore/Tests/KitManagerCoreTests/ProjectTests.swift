@@ -292,6 +292,29 @@ struct ProjectTests {
         #expect(committed != second)
     }
 
+    @Test func fingerprintOfAProjectInsideALargerRepositoryTracksItsDirtyFiles() async throws {
+        let temp = try TempDirectory()
+        defer { temp.remove() }
+        let repo = try await makeRepository(in: temp)
+        try temp.write("repo/apps/site/page.vue", "one")
+        try temp.write("repo/apps/site/other.vue", "other")
+        try await git(repo, ["add", "-A"])
+        try await git(repo, ["commit", "-m", "add site"])
+        let project = repo.appending(path: "apps/site")
+        let inspector = GitInspector(runner: realRunner)
+        let clean = try await inspector.fingerprint(project)
+
+        let page = project.appending(path: "page.vue")
+        try Data("two".utf8).write(to: page)
+        let first = try await inspector.fingerprint(project)
+        #expect(first != clean)
+
+        // Same size, later mtime: only the stat of the (repo-root-relative) dirty path tells the edits apart.
+        try Data("tre".utf8).write(to: page)
+        try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: 60)], ofItemAtPath: page.path)
+        #expect(try await inspector.fingerprint(project) != first)
+    }
+
     @Test func fingerprintSeesEditsInsideUntrackedDirectory() async throws {
         let temp = try TempDirectory()
         defer { temp.remove() }

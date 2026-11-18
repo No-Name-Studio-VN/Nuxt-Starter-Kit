@@ -80,6 +80,18 @@ struct ProcessTests {
         #expect(environment.variables["GIT_TERMINAL_PROMPT"] == "0")
     }
 
+    @Test func neverPromptsForSSHPasswordsOrPassphrases() {
+        let environment = ShellEnvironment(path: ShellEnvironment.fallbackPath)
+        let command = environment.variables["GIT_SSH_COMMAND"]
+        #expect(command?.contains("-o BatchMode=yes") == true)
+        #expect(ShellEnvironment.batchSSHCommand(existing: nil) == "ssh -o BatchMode=yes")
+        // A command the user configured keeps working, just without prompts.
+        #expect(
+            ShellEnvironment.batchSSHCommand(existing: "ssh -i ~/.ssh/work")
+                == "ssh -i ~/.ssh/work -o BatchMode=yes")
+        #expect(ShellEnvironment.batchSSHCommand(existing: "") == "ssh -o BatchMode=yes")
+    }
+
     @Test func describesProcessErrors() {
         #expect(ProcessError.timedOut.errorDescription == "The command timed out.")
         #expect(ProcessError.launchFailed("no such file").errorDescription == "Could not start the command: no such file")

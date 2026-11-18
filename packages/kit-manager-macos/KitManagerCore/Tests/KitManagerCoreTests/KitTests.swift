@@ -54,6 +54,15 @@ private func makeMapping() -> ModuleMapping {
         modules: [moduleInfo("auth-2fa"), moduleInfo("content", rootFiles: ["content/**"])])
 }
 
+private actor RecordingRunner: ProcessRunning {
+    private(set) var calls: [[String]] = []
+
+    func run(_ executable: String, _ arguments: [String], in directory: URL?, timeout: Duration) async throws -> ProcessResult {
+        calls.append(arguments)
+        return ProcessResult(exitCode: 0, stdout: Data(), stderr: Data())
+    }
+}
+
 @Suite("Kit repository")
 struct KitTests {
     // MARK: Parsing
@@ -180,6 +189,12 @@ struct KitTests {
         #expect(try await repository.commitsBehind(fixture.shas[3]) == 0)
         #expect(try await repository.latestMain() == fixture.shas[3])
         #expect(await repository.availability(of: fixture.shas[1]) == .onMain)
+    }
+
+    @Test func fetchFollowsTheSpecWithoutPruning() async throws {
+        let runner = RecordingRunner()
+        try await KitRepository(root: URL(filePath: "/tmp/kit"), runner: runner).fetch()
+        #expect(await runner.calls == [["--no-optional-locks", "-C", "/tmp/kit", "fetch", "origin", "--tags"]])
     }
 
     @Test func fetchPicksUpNewOriginCommits() async throws {

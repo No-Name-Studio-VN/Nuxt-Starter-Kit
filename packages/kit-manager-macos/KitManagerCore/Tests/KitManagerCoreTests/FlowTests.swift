@@ -71,7 +71,7 @@ struct FlowTests {
         #expect(precondition(readySnapshot(kit: "github:someone/fork")) == .notOnMain)
         #expect(precondition(readySnapshot(availability: .notOnMain, behind: nil)) == .notOnMain)
         #expect(precondition(readySnapshot(availability: nil, behind: nil)) == .notOnMain)
-        #expect(precondition(readySnapshot(), latestMain: nil) == .notOnMain)
+        #expect(precondition(readySnapshot(), latestMain: nil) == .kitUnavailable)
         #expect(precondition(readySnapshot(behind: 0)) == .upToDate)
         #expect(precondition(readySnapshot(git: nil)) == .noBranch)
         #expect(precondition(readySnapshot(git: gitStatus(branch: nil))) == .noBranch)
@@ -79,10 +79,11 @@ struct FlowTests {
 
         #expect(
             UpgradePrecondition.pinned(ref: "v3.0.2").reason
-                == "Pinned to v3.0.2. Change the template ref in .nuxt-saas.json to upgrade.")
+                == "Pinned to v3.0.2. Run nuxt-saas upgrade --template github:No-Name-Studio-VN/Nuxt-Starter-Kit in the project to follow main again.")
         #expect(UpgradePrecondition.dirtyTree.reason == "Commit or stash your changes first.")
         for blocked: UpgradePrecondition in [
-            .notKitV3, .unresolvedConflicts, .dirtyTree, .notOnMain, .upToDate, .noBranch, .pinned(ref: "x"),
+            .notKitV3, .unresolvedConflicts, .dirtyTree, .notOnMain, .kitUnavailable, .upToDate, .noBranch,
+            .pinned(ref: "x"),
         ] {
             #expect(blocked.reason?.isEmpty == false)
         }
@@ -261,6 +262,77 @@ struct FlowTests {
             }
             #expect(!reason.isEmpty)
         }
+    }
+
+    @Test func rollbackThatKeepsChangesNeverDiscards() {
+        let record = UpgradeBranchRecord(branch: "kit-upgrade/v3.1.0", previous: "main", keepsChanges: true)
+        func plan(current: String?) -> UpgradeRollback.Step {
+            UpgradeRollback.plan(record: record, branch: "kit-upgrade/v3.1.0", previous: "main", current: current)
+        }
+        #expect(plan(current: "kit-upgrade/v3.1.0") == .switchKeepingChanges)
+        #expect(plan(current: "main") == .deleteOnly)
+        guard case .refuse = plan(current: "feature/x") else {
+            Issue.record("expected a refusal away from both branches")
+            return
+        }
+        // The flag is part of what the caller must present: a plain record never plans the safe path.
+        let plain = UpgradeBranchRecord(branch: "kit-upgrade/v3.1.0", previous: "main")
+        #expect(
+            UpgradeRollback.plan(record: plain, branch: "kit-upgrade/v3.1.0", previous: "main", current: "kit-upgrade/v3.1.0")
+                == .discardSwitchAndDelete)
+    }
+
+    @Test func discardSummaryListsPathsAndCountsTheRest() {
+        #expect(UpgradeRollback.discardSummary(paths: []) == "No uncommitted changes.")
+        #expect(UpgradeRollback.discardSummary(paths: ["a.txt", "b/c.txt"]) == "a.txt\nb/c.txt")
+        let many = (1...12).map { "f\($0).txt" }
+        let summary = UpgradeRollback.discardSummary(paths: many, limit: 3)
+        #expect(summary == "f1.txt\nf2.txt\nf3.txt\nand 9 more")
+    }
+
+    @Test func switchBackKeepingChangesPreservesTheUsersEdits() async throws {
+        let temp = try TempDirectory()
+        defer { temp.remove() }
+        let repo = try await makeRepository(in: temp)
+        let inspector = GitInspector(runner: realRunner)
+        try await inspector.createAndSwitch(repo, branch: "kit-upgrade/v3.1.0")
+        try Data("edited by the user\n".utf8).write(to: repo.appending(path: "a.txt"))
+        try temp.write("repo/notes.txt", "mine")
+
+        try await inspector.switchBackKeepingChanges(repo, branch: "kit-upgrade/v3.1.0", returningTo: "main")
+
+        #expect(try await inspector.status(repo).branch == "main")
+        #expect(try await inspector.localBranches(repo) == ["main"])
+        #expect(try String(contentsOf: repo.appending(path: "a.txt"), encoding: .utf8) == "edited by the user\n")
+        #expect(try String(contentsOf: repo.appending(path: "notes.txt"), encoding: .utf8) == "mine")
+    }
+
+    @Test func switchBackKeepingChangesRefusesWhenItWouldOverwriteAnEdit() async throws {
+        let temp = try TempDirectory()
+        defer { temp.remove() }
+        let repo = try await makeRepository(in: temp)
+        let inspector = GitInspector(runner: realRunner)
+        try await inspector.createAndSwitch(repo, branch: "kit-upgrade/v3.1.0")
+        try Data("committed upgrade\n".utf8).write(to: repo.appending(path: "a.txt"))
+        try await git(repo, ["commit", "-am", "upgrade"])
+        try Data("my edit\n".utf8).write(to: repo.appending(path: "a.txt"))
+
+        await #expect(throws: GitError.self) {
+            try await inspector.switchBackKeepingChanges(repo, branch: "kit-upgrade/v3.1.0", returningTo: "main")
+        }
+
+        #expect(try await inspector.status(repo).branch == "kit-upgrade/v3.1.0")
+        #expect(try String(contentsOf: repo.appending(path: "a.txt"), encoding: .utf8) == "my edit\n")
+    }
+
+    @Test func dirtyPathsListsEditedStagedAndUntrackedFiles() async throws {
+        let temp = try TempDirectory()
+        defer { temp.remove() }
+        let repo = try await makeRepository(in: temp)
+        try Data("edited\n".utf8).write(to: repo.appending(path: "a.txt"))
+        try temp.write("repo/new-dir/c.txt", "untracked")
+        let paths = try await GitInspector(runner: realRunner).dirtyPaths(repo)
+        #expect(Set(paths) == ["a.txt", "new-dir/c.txt"])
     }
 
     // MARK: Abandoning a clean upgrade branch

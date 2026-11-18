@@ -37,14 +37,24 @@ public struct GitInspector: Sendable {
         // `all` lists untracked files one by one instead of collapsing a new directory into one entry.
         let status = try await git(root, ["status", "--porcelain=v2", "-z", "--untracked-files=all"]).stdout
 
+        // Porcelain paths are relative to the repository root, which is above `root` for a project in a subfolder.
+        let top = try await repositoryRoot(root)
+
         var hasher = SHA256()
         hasher.update(data: head)
         hasher.update(data: Data([0]))
         hasher.update(data: status)
         for path in PorcelainV2(status).paths {
-            hasher.update(data: Data("\(path)\0\(fileSignature(root.appending(path: path)))\0".utf8))
+            hasher.update(data: Data("\(path)\0\(fileSignature(top.appending(path: path)))\0".utf8))
         }
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// Repository-root-relative paths of every changed, staged and untracked file, for telling the user
+    /// what a discard would throw away.
+    public func dirtyPaths(_ root: URL) async throws -> [String] {
+        let status = try await git(root, ["status", "--porcelain=v2", "-z", "--untracked-files=all"]).stdout
+        return PorcelainV2(status).paths
     }
 
     public func localBranches(_ root: URL) async throws -> Set<String> {
@@ -76,6 +86,14 @@ public struct GitInspector: Sendable {
         try await deleteBranch(root, branch: branch)
     }
 
+    /// Switches back to `previous` and deletes `branch` without touching the working tree: git carries
+    /// uncommitted changes across the switch or refuses when they would be overwritten, in which case
+    /// nothing has changed. The branch is deleted with `-d`.
+    public func switchBackKeepingChanges(_ root: URL, branch: String, returningTo previous: String) async throws {
+        try await switchTo(root, branch: previous)
+        try await deleteBranch(root, branch: branch)
+    }
+
     /// Throws away every uncommitted change: `git reset --hard` plus `git clean -fd` for untracked files
     /// and directories (ignored files such as `node_modules` stay). Destructive; the caller must know
     /// that nothing worth keeping is in the working tree.
@@ -96,6 +114,12 @@ public struct GitInspector: Sendable {
                 stderr: String(decoding: result.stderr, as: UTF8.self))
         }
         return result
+    }
+
+    private func repositoryRoot(_ root: URL) async throws -> URL {
+        let output = try await git(root, ["rev-parse", "--show-toplevel"]).stdout
+        let path = String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        return URL(filePath: path)
     }
 
     private func validate(_ branch: String) throws {

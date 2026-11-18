@@ -16,4 +16,10 @@ public struct RenderJob: Sendable, Equatable {
         CacheKey(
             fingerprint: fingerprint, recordedCommit: recordedCommit, targetCommit: target ?? resolvedTarget ?? "")
     }
+
+    /// Inspect reads only the recorded commit and the working tree, so a moving `origin/main` must not
+    /// invalidate it: its key has no target.
+    public func inspectCacheKey(fingerprint: String) -> CacheKey {
+        CacheKey(fingerprint: fingerprint, recordedCommit: recordedCommit, targetCommit: "")
+    }
 }

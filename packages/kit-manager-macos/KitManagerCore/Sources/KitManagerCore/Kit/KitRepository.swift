@@ -19,7 +19,7 @@ public struct KitRepository: Sendable {
     }
 
     public func fetch() async throws {
-        try await git(["fetch", "origin", "--tags", "--prune"], timeout: .seconds(120))
+        try await git(["fetch", "origin", "--tags"], timeout: .seconds(120))
     }
 
     public func latestMain() async throws -> String {

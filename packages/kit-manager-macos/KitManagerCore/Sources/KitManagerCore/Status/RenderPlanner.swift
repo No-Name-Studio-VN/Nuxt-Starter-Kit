@@ -42,7 +42,7 @@ public enum RenderPlanner {
         let canRender = input.cliReady && input.fingerprint != nil && localTarget != nil
 
         let inspectKey = input.fingerprint.map {
-            CacheKey(fingerprint: $0, recordedCommit: input.state.commit, targetCommit: localTarget ?? "")
+            CacheKey(fingerprint: $0, recordedCommit: input.state.commit, targetCommit: "")
         }
         let inspect = resolve(
             cached: input.cachedInspect, failure: input.inspectFailure, key: inspectKey, canRender: canRender)

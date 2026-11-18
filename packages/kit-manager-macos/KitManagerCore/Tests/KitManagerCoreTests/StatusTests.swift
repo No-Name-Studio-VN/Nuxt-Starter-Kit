@@ -113,6 +113,27 @@ struct StatusTests {
         #expect(ProjectStatus(snapshot: snapshot(availability: .onMain, behind: nil)) == .checking)
     }
 
+    @Test func unreadableMainIsTerminalInsteadOfChecking() {
+        // The first fetch finished but origin/main still cannot be read: not "checking" forever.
+        var unavailable = snapshot(availability: nil, behind: nil)
+        unavailable.kitUnavailableReason = "fatal: Needed a single revision"
+        #expect(ProjectStatus(snapshot: unavailable) == .kitUnavailable("fatal: Needed a single revision"))
+
+        // Specific git failures and a known behind count win over the generic reason.
+        var failed = snapshot(availability: .onMain, behind: nil)
+        failed.kitCheckFailure = "git rev-list failed"
+        failed.kitUnavailableReason = "ignored"
+        #expect(ProjectStatus(snapshot: failed) == .checkFailed("git rev-list failed"))
+        var known = snapshot(behind: 0)
+        known.kitUnavailableReason = "ignored"
+        #expect(ProjectStatus(snapshot: known) == .upToDate)
+
+        // Other statuses are not affected.
+        var fork = snapshot(kit: "github:someone/fork")
+        fork.kitUnavailableReason = "x"
+        #expect(ProjectStatus(snapshot: fork) == .otherTemplate)
+    }
+
     @Test func otherTemplateWhenKitIsAFork() {
         #expect(ProjectStatus(snapshot: snapshot(kit: "github:someone/fork")) == .otherTemplate)
     }
@@ -148,6 +169,19 @@ struct StatusTests {
         var offline = snapshot()
         offline.health = SiteHealth(statusCode: nil, latency: nil, error: "timed out")
         #expect(AttentionReason.reasons(for: offline) == [.siteDown])
+    }
+
+    @Test func checkFailedAndUnavailableKitNeedAttention() {
+        var failed = snapshot(availability: .onMain, behind: nil)
+        failed.kitCheckFailure = "git rev-list failed"
+        #expect(AttentionReason.reasons(for: failed) == [.checkFailed])
+
+        var unavailable = snapshot(availability: nil, behind: nil)
+        unavailable.kitUnavailableReason = "no origin/main"
+        #expect(AttentionReason.reasons(for: unavailable) == [.kitUnavailable])
+
+        // Still checking, not yet a problem.
+        #expect(AttentionReason.reasons(for: snapshot(availability: nil, behind: nil)).isEmpty)
     }
 
     @Test func previewSummaryCounts() {

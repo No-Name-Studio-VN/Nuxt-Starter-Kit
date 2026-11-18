@@ -13,6 +13,8 @@ public enum ProjectStatus: Sendable, Equatable {
     case behind(Int, UpgradePreview)
     /// git could not answer for a commit that is on main; carries the error.
     case checkFailed(String)
+    /// `origin/main` of the kit checkout cannot be read, so there is nothing to compare with; carries why.
+    case kitUnavailable(String)
     case checking
 
     /// Picks the first case that applies, in the order declared above.
@@ -40,6 +42,8 @@ public enum ProjectStatus: Sendable, Equatable {
                 self = behind == 0 ? .upToDate : .behind(behind, UpgradePreview(snapshot.preview))
             } else if let failure = snapshot.kitCheckFailure {
                 self = .checkFailed(failure)
+            } else if let reason = snapshot.kitUnavailableReason {
+                self = .kitUnavailable(reason)
             } else {
                 self = .checking
             }

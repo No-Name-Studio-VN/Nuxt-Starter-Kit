@@ -5,9 +5,11 @@ public enum UpgradePrecondition: Sendable, Equatable {
     case unresolvedConflicts
     /// Pinned to a tag or branch other than `main`; the upgrade only ever targets `origin/main`.
     case pinned(ref: String)
-    /// The kit commit is not on `main` in the local checkout, the template is another repository
-    /// (a local `--to` cannot render those), or the latest `main` is not known yet.
+    /// The kit commit is not on `main` in the local checkout, or the template is another repository
+    /// (a local `--to` cannot render those).
     case notOnMain
+    /// `origin/main` of the kit checkout cannot be read (not fetched yet, wrong checkout, no remote).
+    case kitUnavailable
     case upToDate
     /// Not a git repository, no commits, or a detached HEAD: there is no branch to come back to.
     case noBranch
@@ -23,7 +25,9 @@ public enum UpgradePrecondition: Sendable, Equatable {
             self = .unresolvedConflicts
         } else if let ref = state.pinnedRef {
             self = .pinned(ref: ref)
-        } else if latestMain == nil || !snapshot.usesDefaultTemplate || snapshot.availability != .onMain {
+        } else if latestMain == nil {
+            self = .kitUnavailable
+        } else if !snapshot.usesDefaultTemplate || snapshot.availability != .onMain {
             self = .notOnMain
         } else if snapshot.behind == 0 {
             self = .upToDate
@@ -41,9 +45,12 @@ public enum UpgradePrecondition: Sendable, Equatable {
         switch self {
         case .notKitV3: "Only projects created from the kit (v3) can be upgraded."
         case .unresolvedConflicts: "Resolve the conflicts left by an earlier upgrade first."
-        case .pinned(let ref): "Pinned to \(ref). Change the template ref in .nuxt-saas.json to upgrade."
+        case .pinned(let ref):
+            "Pinned to \(ref). Run nuxt-saas upgrade --template \(KitState.defaultTemplate) in the project to follow main again."
         case .notOnMain:
             "The project's kit commit is not on main in your kit checkout, or its template is not the kit, so it cannot be upgraded here."
+        case .kitUnavailable:
+            "The latest kit (origin/main) cannot be read from your kit checkout. Check the kit path in Settings and that it has an origin remote with a main branch."
         case .upToDate: "Already up to date with the latest kit."
         case .noBranch: "Check out a branch first. The project is not on a git branch."
         case .dirtyTree: "Commit or stash your changes first."

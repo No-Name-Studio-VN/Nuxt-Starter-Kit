@@ -11,6 +11,7 @@ private actor StubRunner: ProcessRunning {
 
     private let result: ProcessResult
     private(set) var calls: [Call] = []
+    private(set) var timeouts: [Duration] = []
 
     init(result: ProcessResult) {
         self.result = result
@@ -26,6 +27,7 @@ private actor StubRunner: ProcessRunning {
 
     func run(_ executable: String, _ arguments: [String], in directory: URL?, timeout: Duration) async throws -> ProcessResult {
         calls.append(Call(executable: executable, arguments: arguments))
+        timeouts.append(timeout)
         return result
     }
 }
@@ -308,8 +310,43 @@ struct CLITests {
         let kit = try FakeKit(built: false)
         defer { kit.remove() }
         let runner = StubRunner(stdout: "", stderr: "build exploded\n", exitCode: 1)
-        await #expect(throws: CLIFailure.unparsable(stderr: "build exploded", exitCode: 1)) {
+        await #expect(throws: CLIFailure.buildFailed(stderr: "build exploded", exitCode: 1)) {
             try await NuxtSaasCLI(kitRoot: kit.root, runner: runner).build()
         }
+    }
+
+    @Test func buildFailureReadsAsABuildFailureNotUnreadableOutput() {
+        let message = CLIFailure.buildFailed(stderr: "tsc: error TS2304", exitCode: 2).errorDescription
+        #expect(message == "Building the nuxt-saas CLI failed (pnpm build exited with 2): tsc: error TS2304")
+        #expect(CLIFailure.buildFailed(stderr: "", exitCode: 1).errorDescription?.hasSuffix("no error output") == true)
+        #expect(message?.contains("unreadable") == false)
+    }
+
+    @Test func writingRunsGetALongerTimeoutThanReadOnlyOnes() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let transition = try fixture("transition")
+        let runner = StubRunner(stdout: transition)
+        let cli = NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+
+        _ = try await cli.upgrade(project: project, to: sha, source: .local, check: true)
+        _ = try await cli.upgrade(project: project, to: sha, source: .local, check: false)
+        _ = try await cli.changeModules(.add, ids: ["auth"], project: project, check: true)
+        _ = try await cli.changeModules(.remove, ids: ["auth"], project: project, check: false)
+
+        #expect(
+            await runner.timeouts == [.seconds(120), .seconds(15 * 60), .seconds(120), .seconds(15 * 60)])
+    }
+
+    @Test func inspectAndModulesKeepTheShortTimeout() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let inspectRunner = StubRunner(stdout: try fixture("inspect"))
+        _ = try await NuxtSaasCLI(kitRoot: kit.root, runner: inspectRunner).inspect(project: project, source: .recorded)
+        #expect(await inspectRunner.timeouts == [.seconds(120)])
+
+        let modulesRunner = StubRunner(stdout: try fixture("modules"))
+        _ = try await NuxtSaasCLI(kitRoot: kit.root, runner: modulesRunner).modules(at: sha)
+        #expect(await modulesRunner.timeouts == [.seconds(120)])
     }
 }

@@ -60,7 +60,7 @@ struct RenderPlannerTests {
 
     @Test func matchingKeyReusesResultsWithoutRendering() {
         let plan = RenderPlanner.plan(
-            input(preview: cached(report(), key()), inspect: cached(inspectReport(), key())))
+            input(preview: cached(report(), key()), inspect: cached(inspectReport(), key(target: ""))))
         #expect(plan.preview == .loaded(report(), stale: false))
         #expect(plan.inspect == .loaded(inspectReport(), stale: false))
         #expect(plan.previewJob == nil)
@@ -71,17 +71,33 @@ struct RenderPlannerTests {
         key(fingerprint: "f2"), key(recordedCommit: "other"), key(target: "bbbb"),
     ])
     func eachKeyMismatchIsStaleAndRendersAgain(mismatched: CacheKey) {
-        let plan = RenderPlanner.plan(
-            input(preview: cached(report(), mismatched), inspect: cached(inspectReport(), mismatched)))
+        let plan = RenderPlanner.plan(input(preview: cached(report(), mismatched)))
         #expect(plan.preview == .loaded(report(), stale: true))
-        #expect(plan.inspect == .loaded(inspectReport(), stale: true))
         #expect(plan.previewJob != nil)
+    }
+
+    @Test(arguments: [
+        key(fingerprint: "f2", target: ""), key(recordedCommit: "other", target: ""),
+    ])
+    func inspectIsStaleOnlyWhenTheWorkingTreeOrRecordedCommitChanges(mismatched: CacheKey) {
+        let plan = RenderPlanner.plan(input(inspect: cached(inspectReport(), mismatched)))
+        #expect(plan.inspect == .loaded(inspectReport(), stale: true))
         #expect(plan.inspectJob != nil)
     }
 
+    @Test func movingMainDoesNotRerunInspect() {
+        // Inspect renders only the recorded commit, so a result computed against an older main is still fresh.
+        let older = cached(inspectReport(), key(target: ""))
+        let plan = RenderPlanner.plan(input(latestMain: "cccccccccccccccccccccccccccccccccccccccc", inspect: older))
+        #expect(plan.inspect == .loaded(inspectReport(), stale: false))
+        #expect(plan.inspectJob == nil)
+    }
+
     @Test func failureForTheCurrentKeyIsShownAndNotRetried() {
-        let failure = CachedFailure(key: key(), message: "boom")
-        let plan = RenderPlanner.plan(input(previewFailure: failure, inspectFailure: failure))
+        let plan = RenderPlanner.plan(
+            input(
+                previewFailure: CachedFailure(key: key(), message: "boom"),
+                inspectFailure: CachedFailure(key: key(target: ""), message: "boom")))
         #expect(plan.preview == .failed("boom"))
         #expect(plan.inspect == .failed("boom"))
         #expect(plan.previewJob == nil)
@@ -89,7 +105,7 @@ struct RenderPlannerTests {
     }
 
     @Test func failureForAnotherKeyIsRetried() {
-        let failure = CachedFailure(key: key(fingerprint: "old"), message: "boom")
+        let failure = CachedFailure(key: key(fingerprint: "old", target: ""), message: "boom")
         let plan = RenderPlanner.plan(input(previewFailure: failure, inspectFailure: failure))
         #expect(plan.preview == .loading)
         #expect(plan.previewJob != nil)
@@ -195,6 +211,13 @@ struct RenderPlannerTests {
         let plan = RenderPlanner.plan(input(kit: "\(defaultKit)#v3.0.2", behind: nil))
         #expect(plan.previewJob == nil)
         #expect(plan.inspectJob == RenderJob(recordedCommit: recorded, source: .local, target: main))
+    }
+
+    @Test func inspectCacheKeyIgnoresTheTarget() {
+        let local = RenderJob(recordedCommit: recorded, source: .local, target: main)
+        #expect(local.inspectCacheKey(fingerprint: "f1") == key(target: ""))
+        let remote = RenderJob(recordedCommit: recorded, source: .recorded, target: nil)
+        #expect(remote.inspectCacheKey(fingerprint: "f1") == key(target: ""))
     }
 
     @Test func jobCacheKeyUsesTheReportTargetOnlyForRecordedSource() {

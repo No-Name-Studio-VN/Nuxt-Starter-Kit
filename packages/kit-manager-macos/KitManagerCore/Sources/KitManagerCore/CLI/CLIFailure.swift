@@ -14,6 +14,8 @@ public enum CLIFailure: Error, Equatable {
     case reported(message: String, kind: String)
     /// The CLI printed something that is not a JSON document (a Node crash, a missing `node`, a stale build).
     case unparsable(stderr: String, exitCode: Int32)
+    /// `pnpm build` failed; its stderr is the useful part.
+    case buildFailed(stderr: String, exitCode: Int32)
     case unsupportedSchema(Int)
     case unavailable(CLIStatus)
 }
@@ -26,6 +28,9 @@ extension CLIFailure: LocalizedError {
         case .unparsable(let stderr, let exitCode):
             let detail = stderr.isEmpty ? "no error output" : stderr
             return "The nuxt-saas CLI returned unreadable output (exit \(exitCode)): \(detail)"
+        case .buildFailed(let stderr, let exitCode):
+            let detail = stderr.isEmpty ? "no error output" : stderr
+            return "Building the nuxt-saas CLI failed (pnpm build exited with \(exitCode)): \(detail)"
         case .unsupportedSchema(let schema):
             return "The nuxt-saas CLI returned JSON schema \(schema), which this app does not support."
         case .unavailable(let status):

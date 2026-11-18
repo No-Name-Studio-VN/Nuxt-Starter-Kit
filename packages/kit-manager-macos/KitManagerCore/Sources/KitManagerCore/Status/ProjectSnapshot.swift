@@ -14,6 +14,9 @@ public struct ProjectSnapshot: Sendable, Equatable {
     public var behind: Int?
     /// Why availability, version or behind count could not be read, when git failed on a commit that is on main.
     public var kitCheckFailure: String?
+    /// Why `origin/main` could not be read once the first fetch attempt has finished (wrong kit path,
+    /// no remote, no `main` branch, offline with nothing fetched); nil while that is still unknown or when it is known.
+    public var kitUnavailableReason: String?
     public var preview: Loadable<TransitionReport>
     public var inspect: Loadable<InspectReport>
     public var changelog: [KitCommit]
@@ -23,7 +26,8 @@ public struct ProjectSnapshot: Sendable, Equatable {
     public init(
         kind: ProjectKind, isKitSource: Bool = false, package: PackageInfo? = nil, git: GitStatus? = nil, env: EnvCheck? = nil,
         wrangler: WranglerInfo? = nil, health: SiteHealth? = nil, availability: CommitAvailability? = nil,
-        versionLabel: String? = nil, behind: Int? = nil, kitCheckFailure: String? = nil, preview: Loadable<TransitionReport> = .idle,
+        versionLabel: String? = nil, behind: Int? = nil, kitCheckFailure: String? = nil,
+        kitUnavailableReason: String? = nil, preview: Loadable<TransitionReport> = .idle,
         inspect: Loadable<InspectReport> = .idle, changelog: [KitCommit] = [],
         changelogFailure: String? = nil
     ) {
@@ -38,6 +42,7 @@ public struct ProjectSnapshot: Sendable, Equatable {
         self.versionLabel = versionLabel
         self.behind = behind
         self.kitCheckFailure = kitCheckFailure
+        self.kitUnavailableReason = kitUnavailableReason
         self.preview = preview
         self.inspect = inspect
         self.changelog = changelog

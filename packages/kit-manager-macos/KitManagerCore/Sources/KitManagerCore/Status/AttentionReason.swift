@@ -7,6 +7,10 @@ public enum AttentionReason: Sendable, Hashable {
     case missingEnvKeys(Int)
     case siteDown
     case invalid
+    /// git could not compare the project with the kit.
+    case checkFailed
+    /// The kit's `origin/main` cannot be read, so no project can be compared.
+    case kitUnavailable
 
     public static func reasons(for snapshot: ProjectSnapshot) -> Set<AttentionReason> {
         var reasons: Set<AttentionReason> = []
@@ -17,7 +21,9 @@ public enum AttentionReason: Sendable, Hashable {
         case .needsMigration(let source): if source != .other { reasons.insert(.migration) }
         case .unresolvedConflicts: reasons.insert(.conflicts)
         case .behind: reasons.insert(.behind)
-        case .kitSource, .pinned, .otherTemplate, .commitNotOnMain, .upToDate, .checkFailed, .checking: break
+        case .checkFailed: reasons.insert(.checkFailed)
+        case .kitUnavailable: reasons.insert(.kitUnavailable)
+        case .kitSource, .pinned, .otherTemplate, .commitNotOnMain, .upToDate, .checking: break
         }
         if let missing = snapshot.env?.missing.count, missing > 0 {
             reasons.insert(.missingEnvKeys(missing))

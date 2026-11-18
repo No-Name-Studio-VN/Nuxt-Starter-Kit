@@ -17,7 +17,10 @@ public struct NuxtSaasCLI: Sendable {
     public static let minimumVersion = "3.1.0"
 
     private static let supportedSchema = 1
-    private static let commandTimeout = Duration.seconds(120)
+    /// Read-only runs: `--check`, inspect and modules.
+    static let commandTimeout = Duration.seconds(120)
+    /// Runs that write to the project (install, merge, then `pnpm install` follow-ups) take far longer.
+    static let writeTimeout = Duration.seconds(15 * 60)
     private static let buildTimeout = Duration.seconds(300)
 
     private let kitRoot: URL
@@ -60,7 +63,7 @@ public struct NuxtSaasCLI: Sendable {
         let result = try await runner.run(
             "pnpm", ["--dir", "packages/create-nuxt-saas", "build"], in: kitRoot, timeout: Self.buildTimeout)
         guard result.exitCode == 0 else {
-            throw CLIFailure.unparsable(stderr: Self.text(result.stderr), exitCode: result.exitCode)
+            throw CLIFailure.buildFailed(stderr: Self.text(result.stderr), exitCode: result.exitCode)
         }
     }
 
@@ -88,13 +91,13 @@ public struct NuxtSaasCLI: Sendable {
         var arguments = ["upgrade", "--json", "--dir", project.path] + kitArguments(for: source)
         if let commit { arguments += ["--to", commit] }
         if check { arguments.append("--check") }
-        return try await execute(arguments, as: TransitionReport.self)
+        return try await execute(arguments, as: TransitionReport.self, timeout: check ? Self.commandTimeout : Self.writeTimeout)
     }
 
     public func changeModules(_ action: ModuleAction, ids: [String], project: URL, check: Bool) async throws -> TransitionReport {
         var arguments = [action.rawValue, ids.joined(separator: ","), "--json", "--dir", project.path] + localKitArguments
         if check { arguments.append("--check") }
-        return try await execute(arguments, as: TransitionReport.self)
+        return try await execute(arguments, as: TransitionReport.self, timeout: check ? Self.commandTimeout : Self.writeTimeout)
     }
 
     // MARK: Execution
@@ -110,10 +113,12 @@ public struct NuxtSaasCLI: Sendable {
         }
     }
 
-    private func execute<Report: Decodable>(_ arguments: [String], as type: Report.Type) async throws -> Report {
+    private func execute<Report: Decodable>(
+        _ arguments: [String], as type: Report.Type, timeout: Duration = commandTimeout
+    ) async throws -> Report {
         let current = status()
         guard current == .ready else { throw CLIFailure.unavailable(current) }
-        let result = try await runner.run("node", [scriptPath] + arguments, in: nil, timeout: Self.commandTimeout)
+        let result = try await runner.run("node", [scriptPath] + arguments, in: nil, timeout: timeout)
         return try Self.decode(result, as: type)
     }
 

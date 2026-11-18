@@ -4,9 +4,12 @@ public struct UpgradeBranchRecord: Sendable, Equatable {
     public let branch: String
     /// The branch that was checked out when the upgrade started.
     public let previous: String
+    /// The branch holds edits the user made, not only the upgrade's, so rolling back must never discard.
+    public let keepsChanges: Bool
 
-    public init(branch: String, previous: String) {
+    public init(branch: String, previous: String, keepsChanges: Bool = false) {
         self.branch = branch
         self.previous = previous
+        self.keepsChanges = keepsChanges
     }
 }
