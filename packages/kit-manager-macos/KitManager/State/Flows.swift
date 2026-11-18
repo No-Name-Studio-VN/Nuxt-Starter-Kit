@@ -11,13 +11,23 @@ extension AppModel {
         return UpgradePrecondition(snapshot: snapshot, latestMain: latestMain)
     }
 
+    /// True when the upgrade can start: every precondition holds and the CLI is built.
+    func canUpgrade(_ project: Project) -> Bool {
+        upgradePrecondition(project) == .ready && cliStatus == .ready
+    }
+
+    /// The upgrade branch this app created and has not finished with; the only branch a rollback may discard.
+    func rollbackRecord(for project: Project) -> UpgradeBranchRecord? {
+        upgradeBranches[project.id]
+    }
+
     /// Upgrade… for kit v3 projects that are behind, Migrate… for the others. The kit checkout itself has neither.
     func flowMenuItem(for project: Project) -> FlowMenuItem {
         guard let snapshot = snapshots[project.id], !snapshot.isKitSource else { return .none }
         switch snapshot.kind {
         case .kitV3:
             let precondition = upgradePrecondition(project)
-            return precondition == .upToDate ? .none : .upgrade(isEnabled: precondition == .ready && cliStatus == .ready)
+            return precondition == .upToDate ? .none : .upgrade(isEnabled: canUpgrade(project))
         case .kitLegacy, .nuxt, .other:
             return .migrate
         case .missing, .invalidState:
@@ -89,9 +99,7 @@ extension AppModel {
                 try await cli.upgrade(project: url, to: target, source: .local, check: false)
             }
             if report.upToDate == true {
-                // Nothing changed on the new branch, so undoing it is lossless.
-                try await rollBackUpgrade(project, branch: branch, previous: previous)
-                return Self.failure(.upToDate)
+                return await abandonUpToDate(project, branch: branch, previous: previous)
             }
             guard report.applied else {
                 return .failed(branch: branch, error: PresentedError(message: "The nuxt-saas CLI did not apply the upgrade."))
@@ -113,20 +121,36 @@ extension AppModel {
         }
     }
 
+    /// The CLI found nothing to upgrade, so the new branch should be empty. Goes back to `previous` and
+    /// deletes the branch without discarding anything; if a file appeared meanwhile, nothing is touched
+    /// and the failure offers the confirmed rollback instead.
+    private func abandonUpToDate(_ project: Project, branch: String, previous: String) async -> UpgradeOutcome {
+        do {
+            try await git.abandonBranch(project.url, branch: branch, returningTo: previous)
+            upgradeBranches[project.id] = nil
+            return Self.failure(.upToDate)
+        } catch GitError.uncommittedChanges {
+            let message = "The project is already up to date, but files changed while the upgrade ran. Nothing was discarded."
+            return .failed(branch: branch, error: PresentedError(message: message))
+        } catch {
+            return .failed(branch: branch, error: PresentedError(error))
+        }
+    }
+
     /// Discards the upgrade's changes, switches back to `previous` and deletes `branch`. Refused for a
     /// branch this app did not create from a clean tree, since discarding is only lossless there.
     func rollBackUpgrade(_ project: Project, branch: String, previous: String) async throws {
-        guard upgradeBranches[project.id] == UpgradeBranchRecord(branch: branch, previous: previous) else {
-            throw FlowError.rollbackRefused("\(branch) was not created by this upgrade, so it will not be discarded.")
-        }
         let url = project.url
         do {
             let current = try await git.status(url).branch
-            if current == branch {
+            switch UpgradeRollback.plan(record: upgradeBranches[project.id], branch: branch, previous: previous, current: current) {
+            case .refuse(let reason):
+                throw FlowError.rollbackRefused(reason)
+            case .discardSwitchAndDelete:
                 try await git.discardChanges(url)
                 try await git.switchTo(url, branch: previous)
-            } else if current != previous {
-                throw FlowError.rollbackRefused("Switch to \(previous) or \(branch) first.")
+            case .deleteOnly:
+                break
             }
             try await git.deleteBranch(url, branch: branch)
             upgradeBranches[project.id] = nil
@@ -147,8 +171,7 @@ extension AppModel {
         let folder = folderName.trimmingCharacters(in: .whitespacesAndNewlines)
         if let problem = MigrationFolderName.problem(with: folder) { throw FlowError.invalidFolderName(problem) }
 
-        let directory = FileManager.default.temporaryDirectory.appending(path: "kit-manager-migration-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let directory = try MigrationWorkspace.create()
         let input = MigrationPromptInput(
             projectName: ProjectRow(project: project, snapshot: snapshot).name, folderName: folder, source: source,
             catalogue: catalogue, selected: catalogue.filter { !$0.internal }.map(\.id).filter(selected.contains), temporaryDirectory: directory)

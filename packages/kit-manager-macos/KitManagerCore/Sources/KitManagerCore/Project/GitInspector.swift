@@ -68,6 +68,14 @@ public struct GitInspector: Sendable {
         try await git(root, ["branch", "-d", branch])
     }
 
+    /// Switches back to `previous` and deletes `branch`, but only when the working tree is clean, so it
+    /// never discards anything. Throws `GitError.uncommittedChanges` otherwise.
+    public func abandonBranch(_ root: URL, branch: String, returningTo previous: String) async throws {
+        guard try await status(root).dirtyCount == 0 else { throw GitError.uncommittedChanges }
+        try await switchTo(root, branch: previous)
+        try await deleteBranch(root, branch: branch)
+    }
+
     /// Throws away every uncommitted change: `git reset --hard` plus `git clean -fd` for untracked files
     /// and directories (ignored files such as `node_modules` stay). Destructive; the caller must know
     /// that nothing worth keeping is in the working tree.

@@ -191,7 +191,7 @@ struct UpgradeSection: View {
 
     private var precondition: UpgradePrecondition { model.upgradePrecondition(project) }
 
-    private var canUpgrade: Bool { precondition == .ready && model.cliStatus == .ready }
+    private var canUpgrade: Bool { model.canUpgrade(project) }
 
     private var upgradeButton: some View {
         VStack(alignment: .leading, spacing: 8) {

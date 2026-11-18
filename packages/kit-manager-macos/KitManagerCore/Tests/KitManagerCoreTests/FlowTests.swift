@@ -221,24 +221,139 @@ struct FlowTests {
         #expect(prompt.contains("- src/conflict-249.ts"))
     }
 
-    // MARK: Migration folder name
+    // MARK: Rollback provenance
 
-    @Test func folderNameValidation() {
-        #expect(MigrationFolderName.problem(with: "my-app") == nil)
-        #expect(MigrationFolderName.problem(with: "  my app ") == nil)
-        #expect(MigrationFolderName.problem(with: "") != nil)
-        #expect(MigrationFolderName.problem(with: "   ") != nil)
-        #expect(MigrationFolderName.problem(with: "a/b") != nil)
-        #expect(MigrationFolderName.problem(with: ".") != nil)
-        #expect(MigrationFolderName.problem(with: "..") != nil)
-        #expect(MigrationFolderName.problem(with: "a\0b") != nil)
+    @Test func rollbackPlanFollowsTheRecordAndTheCurrentBranch() {
+        let record = UpgradeBranchRecord(branch: "kit-upgrade/v3.1.0", previous: "main")
+        func plan(
+            record: UpgradeBranchRecord? = record, branch: String = "kit-upgrade/v3.1.0", previous: String = "main",
+            current: String?
+        ) -> UpgradeRollback.Step {
+            UpgradeRollback.plan(record: record, branch: branch, previous: previous, current: current)
+        }
+        // Still on the upgrade branch: this is the only case that discards changes.
+        #expect(plan(current: "kit-upgrade/v3.1.0") == .discardSwitchAndDelete)
+        // Already back on the previous branch: nothing to discard, just delete.
+        #expect(plan(current: "main") == .deleteOnly)
+        // Anywhere else, or detached: refused, nothing is touched.
+        for current in ["feature/x", nil] as [String?] {
+            guard case .refuse = plan(current: current) else {
+                Issue.record("expected a refusal for \(current ?? "detached HEAD")")
+                continue
+            }
+        }
     }
 
-    @Test func folderNameDefaultsToPackageNameThenFolder() {
+    @Test func rollbackPlanRefusesWithoutAMatchingRecord() {
+        let record = UpgradeBranchRecord(branch: "kit-upgrade/v3.1.0", previous: "main")
+        let cases: [(UpgradeBranchRecord?, String, String)] = [
+            (nil, "kit-upgrade/v3.1.0", "main"),
+            (record, "kit-upgrade/other", "main"),
+            (record, "kit-upgrade/v3.1.0", "develop"),
+            (record, "main", "main"),
+        ]
+        for (candidate, branch, previous) in cases {
+            // Even when the current branch is the requested one, a branch the app did not create is never discarded.
+            let step = UpgradeRollback.plan(record: candidate, branch: branch, previous: previous, current: branch)
+            guard case .refuse(let reason) = step else {
+                Issue.record("expected a refusal for \(branch) / \(previous)")
+                continue
+            }
+            #expect(!reason.isEmpty)
+        }
+    }
+
+    // MARK: Abandoning a clean upgrade branch
+
+    @Test func abandonBranchSwitchesBackAndDeletesWithoutDiscarding() async throws {
+        let temp = try TempDirectory()
+        defer { temp.remove() }
+        let repo = try await makeRepository(in: temp)
+        let inspector = GitInspector(runner: realRunner)
+        try await inspector.createAndSwitch(repo, branch: "kit-upgrade/v3.1.0")
+
+        try await inspector.abandonBranch(repo, branch: "kit-upgrade/v3.1.0", returningTo: "main")
+
+        #expect(try await inspector.localBranches(repo) == ["main"])
+        #expect(try await inspector.status(repo).branch == "main")
+    }
+
+    @Test func abandonBranchRefusesAndKeepsAFileCreatedMeanwhile() async throws {
+        let temp = try TempDirectory()
+        defer { temp.remove() }
+        let repo = try await makeRepository(in: temp)
+        let inspector = GitInspector(runner: realRunner)
+        try await inspector.createAndSwitch(repo, branch: "kit-upgrade/v3.1.0")
+        try temp.write("repo/notes.txt", "written by the user")
+        try Data("edited\n".utf8).write(to: repo.appending(path: "a.txt"))
+
+        await #expect(throws: GitError.uncommittedChanges) {
+            try await inspector.abandonBranch(repo, branch: "kit-upgrade/v3.1.0", returningTo: "main")
+        }
+
+        #expect(try await inspector.status(repo).branch == "kit-upgrade/v3.1.0")
+        #expect(try await inspector.localBranches(repo).contains("kit-upgrade/v3.1.0"))
+        #expect(try String(contentsOf: repo.appending(path: "notes.txt"), encoding: .utf8) == "written by the user")
+        #expect(try String(contentsOf: repo.appending(path: "a.txt"), encoding: .utf8) == "edited\n")
+    }
+
+    // MARK: Migration folder name
+
+    @Test func folderNameFollowsNpmPackageNameRules() {
+        for valid in ["my-app", "a", "my_app", "app.v2", "a1", String(repeating: "a", count: 214)] {
+            #expect(MigrationFolderName.problem(with: valid) == nil, "\(valid) should be valid")
+        }
+        let invalid = [
+            "", "   ", "My-App", "my app", "a/b", ".", "..", ".hidden", "_private", "a\0b", "naïve",
+            "a;rm -rf x", "$(id)", "a'b", "a\"b", "a`b", "a&b", "a|b", "a\nb",
+            String(repeating: "a", count: 215),
+        ]
+        for name in invalid {
+            #expect(MigrationFolderName.problem(with: name) != nil, "\(name) should be invalid")
+        }
+        // Surrounding whitespace is trimmed by the caller before use, so it is not itself a problem.
+        #expect(MigrationFolderName.problem(with: "  my-app ") == nil)
+    }
+
+    @Test func folderNameDefaultsToASanitisedPackageNameThenFolder() {
         #expect(MigrationFolderName.defaultName(packageName: "acme-site", folderName: "checkout") == "acme-site")
         #expect(MigrationFolderName.defaultName(packageName: nil, folderName: "checkout") == "checkout")
         #expect(MigrationFolderName.defaultName(packageName: "  ", folderName: "checkout") == "checkout")
         // A scoped package name has a slash, which a folder name cannot.
         #expect(MigrationFolderName.defaultName(packageName: "@acme/site", folderName: "checkout") == "site")
+        #expect(MigrationFolderName.defaultName(packageName: nil, folderName: "My Cool App") == "my-cool-app")
+        #expect(MigrationFolderName.defaultName(packageName: nil, folderName: ".dotfolder") == "dotfolder")
+        #expect(MigrationFolderName.defaultName(packageName: nil, folderName: "naïve  site") == "na-ve-site")
+        #expect(MigrationFolderName.defaultName(packageName: nil, folderName: "___") == "project")
+        #expect(MigrationFolderName.defaultName(packageName: nil, folderName: "ÄÖÜ") == "project")
+        #expect(MigrationFolderName.defaultName(packageName: nil, folderName: String(repeating: "a", count: 300)).count == 214)
+        for input in ["My Cool App", ".x", "a$(id)", "ÄÖÜ", "-lead", "trail-", "UPPER_case.v2"] {
+            let name = MigrationFolderName.defaultName(packageName: nil, folderName: input)
+            #expect(MigrationFolderName.problem(with: name) == nil, "\(input) -> \(name)")
+        }
+    }
+
+    // MARK: Migration workspace
+
+    @Test func migrationWorkspaceIsCreatedAndStaleOnesAreRemoved() throws {
+        let temp = try TempDirectory()
+        defer { temp.remove() }
+        let fresh = try MigrationWorkspace.create(in: temp.url)
+        #expect(FileManager.default.fileExists(atPath: fresh.path))
+        #expect(fresh.lastPathComponent.hasPrefix("kit-manager-migration-"))
+
+        let old = try MigrationWorkspace.create(in: temp.url)
+        try temp.write("\(old.lastPathComponent)/generated/file.txt", "x")
+        try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: -200_000)], ofItemAtPath: old.path)
+        // Something that is not ours, however old, stays.
+        try temp.write("other-old/file.txt", "x")
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -200_000)], ofItemAtPath: temp.url.appending(path: "other-old").path)
+
+        MigrationWorkspace.removeStale(in: temp.url)
+
+        #expect(FileManager.default.fileExists(atPath: fresh.path))
+        #expect(!FileManager.default.fileExists(atPath: old.path))
+        #expect(FileManager.default.fileExists(atPath: temp.url.appending(path: "other-old").path))
     }
 }

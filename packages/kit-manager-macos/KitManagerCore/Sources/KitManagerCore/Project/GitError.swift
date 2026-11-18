@@ -6,6 +6,8 @@ public enum GitError: Error, Equatable, LocalizedError {
     case invalidBranchName(String)
     /// A revision that git would read as an option (leading dash).
     case invalidRevision(String)
+    /// The working tree has changes that the operation would not preserve.
+    case uncommittedChanges
 
     public var errorDescription: String? {
         switch self {
@@ -17,6 +19,8 @@ public enum GitError: Error, Equatable, LocalizedError {
             return "Invalid branch name: \(name)"
         case .invalidRevision(let revision):
             return "Invalid revision: \(revision)"
+        case .uncommittedChanges:
+            return "The working tree has uncommitted changes."
         }
     }
 }

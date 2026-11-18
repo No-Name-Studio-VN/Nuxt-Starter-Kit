@@ -107,6 +107,7 @@ final class AppModel {
         environment = await ShellEnvironment.resolve(shell: ProcessInfo.processInfo.environment["SHELL"])
         rebuildServices()
         launcher.removeStaleFiles()
+        MigrationWorkspace.removeStale()
         await refreshAll()
         await fetchKit()
         restartFetchTimer()

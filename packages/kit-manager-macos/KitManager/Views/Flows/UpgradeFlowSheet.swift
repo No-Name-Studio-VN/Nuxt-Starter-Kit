@@ -11,9 +11,9 @@ struct UpgradeFlowSheet: View {
 
     @State private var phase: Phase = .review
     @State private var branchName: String?
-    /// The branch checked out when the upgrade started; what "Switch back" returns to.
-    @State private var previousBranch: String?
     @State private var isConfirmingRollback = false
+    /// Why the last "Switch back and delete branch" failed; the button stays so it can be retried.
+    @State private var rollbackError: PresentedError?
     @State private var contentHeight: CGFloat = 0
 
     private enum Phase {
@@ -21,7 +21,7 @@ struct UpgradeFlowSheet: View {
         case running
         case finished(UpgradeOutcome)
         case rollingBack
-        case rolledBack(PresentedError?)
+        case rolledBack
     }
 
     private var snapshot: ProjectSnapshot? { model.snapshots[project.id] }
@@ -64,7 +64,7 @@ struct UpgradeFlowSheet: View {
             Button("Discard and Delete Branch", role: .destructive) { rollBack() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This throws away everything the upgrade changed, switches back to \(previousBranch ?? "your previous branch") and deletes the upgrade branch.")
+            Text("This throws away everything the upgrade changed, switches back to \(rollbackRecord?.previous ?? "your previous branch") and deletes the upgrade branch.")
         }
     }
 
@@ -81,14 +81,10 @@ struct UpgradeFlowSheet: View {
             finished(outcome)
         case .rollingBack:
             progress("Switching back and deleting the branch…")
-        case .rolledBack(let error):
-            if let error {
-                FailureView(error)
-            } else {
-                Label("Back on \(previousBranch ?? "your previous branch"). The upgrade branch is gone.", systemImage: "checkmark.circle.fill")
-                    .font(.callout.weight(.medium))
-                    .foregroundStyle(Theme.green)
-            }
+        case .rolledBack:
+            Label("Back on your previous branch. The upgrade branch is gone.", systemImage: "checkmark.circle.fill")
+                .font(.callout.weight(.medium))
+                .foregroundStyle(Theme.green)
         }
     }
 
@@ -124,6 +120,9 @@ struct UpgradeFlowSheet: View {
         Group {
             if let reason = precondition.reason {
                 Label(reason, systemImage: "xmark.octagon.fill")
+                    .foregroundStyle(Theme.red)
+            } else if model.cliStatus != .ready {
+                Label("Build the nuxt-saas CLI first.", systemImage: "xmark.octagon.fill")
                     .foregroundStyle(Theme.red)
             } else {
                 Label("Ready: kit v3, no unresolved conflicts, clean working tree.", systemImage: "checkmark.circle.fill")
@@ -206,6 +205,7 @@ struct UpgradeFlowSheet: View {
         case .failed(let branch, let error):
             VStack(alignment: .leading, spacing: 10) {
                 FailureView(error)
+                if let rollbackError { FailureView(rollbackError) }
                 if let branch {
                     AmberNote("Still on \(branch), which started from a clean working tree.")
                 }
@@ -220,9 +220,10 @@ struct UpgradeFlowSheet: View {
         return nil
     }
 
-    private var canUpgrade: Bool {
-        precondition == .ready && model.cliStatus == .ready
-    }
+    private var canUpgrade: Bool { model.canUpgrade(project) }
+
+    /// The branch the app created and the one it started from, read from the model, not the snapshot.
+    private var rollbackRecord: UpgradeBranchRecord? { model.rollbackRecord(for: project) }
 
     /// A loaded, current preview with nothing for Claude to do.
     private var isPlainUpgrade: Bool {
@@ -255,7 +256,7 @@ struct UpgradeFlowSheet: View {
             case .running, .rollingBack:
                 Spacer()
             case .finished(.failed(let branch, _)):
-                if branch != nil, previousBranch != nil {
+                if let branch, rollbackRecord?.branch == branch {
                     secondaryButton("Switch back and delete branch") { isConfirmingRollback = true }
                 }
                 Spacer()
@@ -279,7 +280,7 @@ struct UpgradeFlowSheet: View {
     // MARK: Actions
 
     private func start(withClaude: Bool) {
-        previousBranch = snapshot?.git?.branch
+        rollbackError = nil
         phase = .running
         Task {
             phase = .finished(await model.runUpgrade(project, withClaude: withClaude))
@@ -287,14 +288,19 @@ struct UpgradeFlowSheet: View {
     }
 
     private func rollBack() {
-        guard case .finished(.failed(let branch?, _)) = phase, let previous = previousBranch else { return }
+        guard case .finished(let outcome) = phase, case .failed(let branch?, _) = outcome,
+            let previous = rollbackRecord?.previous
+        else { return }
+        rollbackError = nil
         phase = .rollingBack
         Task {
             do {
                 try await model.rollBackUpgrade(project, branch: branch, previous: previous)
-                phase = .rolledBack(nil)
+                phase = .rolledBack
             } catch {
-                phase = .rolledBack(PresentedError(error))
+                // Back to the failed state, so the rollback can be retried.
+                rollbackError = PresentedError(error)
+                phase = .finished(outcome)
             }
         }
     }
