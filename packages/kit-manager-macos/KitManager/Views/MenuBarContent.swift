@@ -40,12 +40,12 @@ struct MenuBarContent: View {
                     }
                     .padding(6)
                 }
-                .frame(height: min(Self.listHeight, CGFloat(rows.count) * 56 + 12))
+                .frame(height: min(Self.listHeight, CGFloat(rows.count) * 46 + 10))
             }
             Divider()
             footer
         }
-        .frame(width: 480)
+        .frame(width: 340)
     }
 
     // MARK: Parts
@@ -56,7 +56,7 @@ struct MenuBarContent: View {
             Image(systemName: count > 0 ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                 .foregroundStyle(count > 0 ? Color.orange : Color.green)
                 .accessibilityHidden(true)
-            Text(title(for: count)).font(.headline)
+            Text(MenuBarLabel.attentionSummary(count)).font(.headline)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
@@ -65,47 +65,41 @@ struct MenuBarContent: View {
         .accessibilityAddTraits(.isHeader)
     }
 
-    private func title(for count: Int) -> String {
-        if model.snapshots.isEmpty { return "Kit Manager" }
-        if count == 0 { return "All projects are fine" }
-        return count == 1 ? "1 project needs attention" : "\(count) projects need attention"
-    }
-
     private func projectRow(_ row: ProjectRow) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Button {
                 show(row)
             } label: {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(row.name).fontWeight(.medium).lineLimit(1)
-                    Text(row.kitLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                HStack(spacing: 8) {
+                    ProjectIcon(name: row.name, size: 22)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(row.name).fontWeight(.medium).lineLimit(1)
+                        StatusLabel(status: row.status)
+                            .font(.caption)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .help("Open \(row.name) in Kit Manager")
-            StatusPill(status: row.status)
             OpenButtons(project: row.project, row: row, onLocate: {}, compact: true, showsMenu: false)
                 .environment(model)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .frame(height: 54)
+        .frame(height: 44)
     }
 
     private var footer: some View {
-        HStack {
+        HStack(spacing: 8) {
             Button("Open Kit Manager") { showWindow() }
                 .buttonStyle(.glassProminent)
-                .controlSize(.regular)
             Spacer(minLength: 0)
+            Button("Refresh") { Task { await model.refreshAll(force: true) } }
+                .buttonStyle(.glass)
             Button("Quit") { NSApp.terminate(nil) }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .buttonStyle(.glass)
                 .keyboardShortcut("q")
         }
         .padding(.horizontal, 14)

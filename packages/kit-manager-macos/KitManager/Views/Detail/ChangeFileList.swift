@@ -37,10 +37,9 @@ struct ChangeFileList: View {
             }
             if files.count > limit {
                 Button(showAll ? "Show fewer" : "Show all \(files.count) files") { showAll.toggle() }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Color.accentColor)
-                    .font(.caption)
-                    .padding(.top, 2)
+                    .buttonStyle(.glass)
+                    .controlSize(.small)
+                    .padding(.top, 4)
             }
         }
     }

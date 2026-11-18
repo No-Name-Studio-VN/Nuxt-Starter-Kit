@@ -10,16 +10,17 @@ struct CLIBanner: View {
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 12) {
-                message
-                Spacer(minLength: 12)
-                action
+                message.frame(idealWidth: 320, alignment: .leading)
+                Spacer(minLength: 0)
+                action.fixedSize()
             }
             VStack(alignment: .leading, spacing: 8) {
                 message
-                action
+                action.frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .padding(12)
+        .background(.fill.quaternary, in: .rect(cornerRadius: 10, style: .continuous))
         .accessibilityElement(children: .contain)
     }
 
@@ -47,34 +48,21 @@ struct CLIBanner: View {
     @ViewBuilder
     private var action: some View {
         if needsBuild {
-            if model.isBuildingCLI {
-                HStack(spacing: 6) {
-                    ProgressView().controlSize(.small)
-                    Text("Building…").foregroundStyle(.secondary)
-                }
-            } else {
-                Button("Build CLI") { Task { await model.buildCLI() } }
-                    .buttonStyle(.glassProminent)
-            }
+            CLIBuildControl()
         } else {
             SettingsLink { Text("Open Settings") }
                 .buttonStyle(.glass)
         }
     }
 
-    private var needsBuild: Bool {
-        switch status {
-        case .missingBuild, .staleBuild: true
-        case .ready, .tooOld, .missingCheckout: false
-        }
-    }
+    private var needsBuild: Bool { CLIBuildControl.isAvailable(for: status) }
 
     private var headline: String {
         switch status {
         case .missingBuild: "Build the nuxt-saas CLI"
         case .staleBuild: "The nuxt-saas CLI build is out of date"
-        case .tooOld: "The kit checkout has an old CLI"
-        case .missingCheckout: "Choose your kit checkout"
+        case .tooOld: "The kit folder has an old CLI"
+        case .missingCheckout: "Choose your kit folder"
         case .ready: "CLI ready"
         }
     }
@@ -82,13 +70,13 @@ struct CLIBanner: View {
     private var detail: String {
         switch status {
         case .missingBuild:
-            "Upgrade previews and the customisation score need the built CLI. This runs pnpm build in the kit checkout."
+            "Build the CLI to preview updates and see which kit files you've edited."
         case .staleBuild:
             "The sources are newer than the build, so previews would be out of date. Rebuild to refresh them."
         case .tooOld(let found):
-            "Found CLI \(found), but \(NuxtSaasCLI.minimumVersion) or newer is required. Check out a newer kit branch, or pick another checkout in Settings."
+            "Found CLI \(found), but \(NuxtSaasCLI.minimumVersion) or newer is required. Update the kit or choose a newer kit folder in Settings."
         case .missingCheckout:
-            "No packages/create-nuxt-saas folder was found at the configured path. Pick the Nuxt-Starter-Kit checkout in Settings."
+            "The selected folder doesn't contain the kit CLI. Choose the Nuxt-Starter-Kit folder in Settings."
         case .ready:
             ""
         }

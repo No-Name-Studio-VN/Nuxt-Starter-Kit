@@ -97,6 +97,7 @@ struct SwitcherView: View {
             open(row.project)
         } label: {
             HStack(spacing: 10) {
+                ProjectIcon(name: row.name, size: 24)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(row.name).fontWeight(.medium).lineLimit(1)
                     Text(row.displayPath)
@@ -106,11 +107,9 @@ struct SwitcherView: View {
                         .truncationMode(.middle)
                 }
                 Spacer(minLength: 8)
-                if row.isKitProject || row.kitLabel == "2.x" {
-                    Text(row.kitLabel)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                }
+                StatusLabel(status: row.status)
+                    .font(.caption)
+                    .lineLimit(1)
             }
             .padding(.horizontal, 10)
             .frame(height: Self.rowHeight)

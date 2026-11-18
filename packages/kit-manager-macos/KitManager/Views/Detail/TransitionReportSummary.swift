@@ -13,7 +13,7 @@ struct TransitionReportSummary: View {
             if !report.conflicts.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(
-                        "\(report.conflicts.count) conflict\(report.conflicts.count == 1 ? "" : "s")",
+                        ProjectStatus.unresolvedConflicts(report.conflicts.count).title,
                         systemImage: "exclamationmark.triangle.fill"
                     )
                     .font(.callout.weight(.medium))
@@ -25,8 +25,10 @@ struct TransitionReportSummary: View {
             }
             if !report.followUps.isEmpty {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Follow-ups").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                    ForEach(report.followUps, id: \.self) { Text($0).font(.callout) }
+                    Text("Follow-ups").font(.subheadline.weight(.semibold))
+                    ForEach(report.followUps, id: \.self) {
+                        Text($0).font(.callout).foregroundStyle(.secondary)
+                    }
                 }
             }
         }

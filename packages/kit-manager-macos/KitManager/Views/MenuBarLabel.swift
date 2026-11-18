@@ -12,6 +12,14 @@ struct MenuBarLabel: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(count > 0 ? "Kit Manager, \(count) need attention" : "Kit Manager")
+        .accessibilityLabel(count > 0 ? "Kit Manager, \(Self.attentionSummary(count))" : "Kit Manager")
+    }
+
+    static func attentionSummary(_ count: Int) -> String {
+        switch count {
+        case 0: "All projects are up to date"
+        case 1: "1 project needs attention"
+        default: "\(count) projects need attention"
+        }
     }
 }

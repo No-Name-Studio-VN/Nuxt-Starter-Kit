@@ -9,21 +9,12 @@ struct UpgradeFlowSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
 
-    @State private var phase: Phase = .review
+    @State private var phase: UpgradeFlowPhase = .review
     @State private var branchName: String?
     /// Why the last "Switch back" failed; the button stays so it can be retried.
     @State private var rollbackError: PresentedError?
     /// Why "Resolve with Claude" could not open Terminal; the button stays so it can be retried.
     @State private var resolveError: PresentedError?
-    @State private var contentHeight: CGFloat = 0
-
-    private enum Phase {
-        case review
-        case running
-        case finished(UpgradeOutcome)
-        case rollingBack
-        case rolledBack
-    }
 
     private var snapshot: ProjectSnapshot? { model.snapshots[project.id] }
 
@@ -37,17 +28,15 @@ struct UpgradeFlowSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Upgrade with Claude").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
-            ScrollView {
+        VStack(spacing: 0) {
+            Form {
                 content
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
             }
-            .frame(height: min(max(contentHeight, 40), 460))
-            footer
+            .formStyle(.grouped)
+            .frame(height: formHeight)
+            Divider()
+            footer.padding(20)
         }
-        .padding(20)
         .frame(width: 540)
         .interactiveDismissDisabled(isBusy)
         .task {
@@ -59,79 +48,132 @@ struct UpgradeFlowSheet: View {
         }
     }
 
+    private var formHeight: CGFloat {
+        switch phase {
+        case .review: snapshot?.preview.value?.changes.isEmpty == false ? 380 : 310
+        case .finished(.applied): 380
+        case .finished(.launched), .finished(.failed): 240
+        case .running, .rollingBack, .rolledBack: 140
+        }
+    }
+
     // MARK: Content
 
     @ViewBuilder
     private var content: some View {
         switch phase {
         case .review:
-            review
+            Section {
+                versions
+                preconditionRow
+                if branchName != nil || snapshot?.git?.branch != nil {
+                    branchDetails(update: branchName, previous: snapshot?.git?.branch)
+                }
+            } header: {
+                Text("Update with Claude").accessibilityAddTraits(.isHeader)
+            }
+            Section("Preview (nothing is changed yet)") {
+                preview
+            }
         case .running:
-            progress("Creating the branch and applying the upgrade…")
+            Section("Kit Update") {
+                progress("Creating a separate branch and applying the update…")
+            }
         case .finished(let outcome):
-            finished(outcome)
+            Section("Kit Update") {
+                finished(outcome)
+            }
         case .rollingBack:
-            progress("Switching back and deleting the branch…")
+            Section("Kit Update") {
+                progress("Switching back and deleting the update branch…")
+            }
         case .rolledBack:
-            Label("Back on your previous branch. The upgrade branch is gone.", systemImage: "checkmark.circle.fill")
-                .font(.callout.weight(.medium))
-                .foregroundStyle(Color.green)
-        }
-    }
-
-    private var review: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            versions
-            preconditionRow
-            if let branch = branchName {
-                detailRow("Branch", value: branch, monospaced: true)
+            Section("Kit Update") {
+                Label("Back on your previous branch. The update branch is gone.", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(Color.green)
             }
-            if let previous = snapshot?.git?.branch {
-                detailRow("Now on", value: previous, monospaced: true)
-            }
-            Divider()
-            preview
         }
     }
 
     private var versions: some View {
         HStack(spacing: 8) {
-            versionText(snapshot?.versionLabel ?? snapshot?.kitState.map { String($0.commit.prefix(7)) })
+            Text(snapshot?.versionLabel ?? snapshot?.kitState.map { String($0.commit.prefix(7)) } ?? "—")
+                .foregroundStyle(.secondary)
             Image(systemName: "arrow.right").foregroundStyle(.secondary).accessibilityLabel("to")
-            versionText(model.targetLabel)
+            Text(model.targetLabel ?? "—")
+                .fontWeight(.medium)
         }
-        .font(.title3)
-    }
-
-    private func versionText(_ label: String?) -> some View {
-        Text(label ?? "—").fontWeight(.medium)
     }
 
     private var preconditionRow: some View {
         Group {
-            if let reason = precondition.reason {
-                Label(reason, systemImage: "xmark.octagon.fill")
-                    .foregroundStyle(Color.red)
+            if let blockedReason {
+                Label {
+                    Text(blockedReason)
+                } icon: {
+                    Image(systemName: preconditionIndicator.symbol)
+                        .foregroundStyle(preconditionIndicator.tone.color)
+                }
+                .help(preconditionHelp ?? blockedReason)
             } else if model.cliStatus != .ready {
                 Label("Build the nuxt-saas CLI first.", systemImage: "xmark.octagon.fill")
                     .foregroundStyle(Color.red)
             } else {
-                Label("Ready: kit v3, no unresolved conflicts, clean working tree.", systemImage: "checkmark.circle.fill")
+                Label("Ready to update. Your project has no conflicts or unsaved changes.", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(Color.green)
             }
         }
-        .font(.callout)
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func detailRow(_ title: String, value: String, monospaced: Bool) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 56, alignment: .leading)
+    private var preconditionIndicator: (symbol: String, tone: StatusTone) {
+        switch precondition {
+        case .upToDate: ("checkmark.circle.fill", .positive)
+        case .dirtyTree, .notKitV3: ("exclamationmark.circle.fill", .warning)
+        case .unresolvedConflicts: ("xmark.octagon.fill", .critical)
+        default: ("info.circle", .neutral)
+        }
+    }
+
+    private var preconditionHelp: String? {
+        switch precondition {
+        case .notKitV3, .unresolvedConflicts: blockedReason
+        case .notOnMain: "The project's kit commit isn't on main in your kit folder, or the project uses another template."
+        default: precondition.reason
+        }
+    }
+
+    private var blockedReason: String? {
+        switch precondition {
+        case .notKitV3: "Only projects made with kit v3 can be updated here."
+        case .unresolvedConflicts: "Resolve the conflicts left by an earlier update first."
+        case .pinned: "This project is locked to a specific kit version."
+        case .notOnMain: "This project's kit version cannot be updated here."
+        case .kitUnavailable: "Can't reach the latest kit. Check the kit folder in Settings."
+        case .noBranch: "Switch to a branch before updating."
+        case .dirtyTree: "Commit or stash your changes first."
+        case .upToDate: "Already up to date with the latest kit."
+        case .ready: nil
+        }
+    }
+
+    private func branchDetails(update: String?, previous: String? = nil) -> some View {
+        DisclosureGroup("Branch details") {
+            VStack(alignment: .leading, spacing: 8) {
+                if let update {
+                    branchRow("Update branch", value: update)
+                }
+                if let previous {
+                    branchRow("Previous branch", value: previous)
+                }
+            }
+        }
+    }
+
+    private func branchRow(_ title: String, value: String) -> some View {
+        LabeledContent(title) {
             Text(value)
-                .font(monospaced ? .callout.monospaced() : .callout)
+                .font(.callout.monospaced())
                 .textSelection(.enabled)
                 .lineLimit(2)
                 .truncationMode(.middle)
@@ -143,24 +185,17 @@ struct UpgradeFlowSheet: View {
     private var preview: some View {
         switch snapshot?.preview ?? .idle {
         case .idle:
-            Text("No preview yet.").font(.callout).foregroundStyle(.secondary)
+            Text("No preview yet.").foregroundStyle(.secondary)
         case .loading:
-            progress("Previewing upgrade…")
+            progress("Previewing update…")
         case .failed(let message):
             FailureView(message: message)
         case .loaded(let report, let stale):
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Preview (nothing is changed yet)")
-                    .font(.caption.weight(.semibold))
-                    .tracking(0.8)
-                    .textCase(.uppercase)
+            TransitionReportSummary(report: report)
+            if stale {
+                Label("Computed for an earlier state of the project.", systemImage: "clock")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                TransitionReportSummary(report: report)
-                if stale {
-                    Label("Computed for an earlier state of the project.", systemImage: "clock")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
         }
     }
@@ -177,18 +212,20 @@ struct UpgradeFlowSheet: View {
         switch outcome {
         case .launched(let branch):
             VStack(alignment: .leading, spacing: 6) {
-                Label("Upgrade applied on \(branch).", systemImage: "checkmark.circle.fill")
+                Label("Update applied.", systemImage: "checkmark.circle.fill")
                     .font(.callout.weight(.medium))
                     .foregroundStyle(Color.green)
+                branchDetails(update: branch)
                 Text("Claude is open in Terminal to resolve the conflicts and run the follow-ups. Nothing is committed.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
         case .applied(let branch, let report, _):
             VStack(alignment: .leading, spacing: 10) {
-                Label("Upgrade applied on \(branch).", systemImage: "checkmark.circle.fill")
+                Label("Update applied.", systemImage: "checkmark.circle.fill")
                     .font(.callout.weight(.medium))
                     .foregroundStyle(Color.green)
+                branchDetails(update: branch)
                 if report.conflicts.isEmpty {
                     Text("Review the changes and commit them when you are happy. Nothing is committed.")
                         .font(.callout)
@@ -207,10 +244,15 @@ struct UpgradeFlowSheet: View {
                 FailureView(error)
                 if let rollbackError { FailureView(rollbackError) }
                 if let branch {
-                    AmberNote(
-                        rollbackRecord?.keepsChanges == true
-                            ? "Still on \(branch). Your changes are untouched; switching back keeps them."
-                            : "Still on \(branch), the branch this upgrade created.")
+                    Label {
+                        Text(rollbackRecord?.keepsChanges == true
+                            ? "Still on the update branch. Your changes are untouched; switching back keeps them."
+                            : "Still on the branch this update created.")
+                    } icon: {
+                        Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
+                    }
+                    .font(.callout)
+                    branchDetails(update: branch)
                 }
             }
         }
@@ -234,22 +276,22 @@ struct UpgradeFlowSheet: View {
         HStack(spacing: 10) {
             switch phase {
             case .review:
-                Spacer()
                 secondaryButton("Cancel", role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
+                Spacer()
                 if isPlainUpgrade {
-                    secondaryButton("Upgrade only") { start(withClaude: false) }
+                    secondaryButton("Update only") { start(withClaude: false) }
                         .disabled(!canUpgrade)
-                        .help("Apply the upgrade without opening Claude")
+                        .help("Apply the update without opening Claude")
                 }
                 Button {
                     start(withClaude: true)
                 } label: {
-                    Label("Upgrade with Claude", systemImage: "sparkles")
+                    Label("Update with Claude", systemImage: "sparkles")
                 }
                 .buttonStyle(.glassProminent)
                 .keyboardShortcut(.defaultAction)
                 .disabled(!canUpgrade)
-                .help(canUpgrade ? "Create the branch, apply the upgrade and open Claude" : (precondition.reason ?? "Build the nuxt-saas CLI first"))
+                .help(canUpgrade ? "Create the branch, apply the update and open Claude" : (preconditionHelp ?? "Build the nuxt-saas CLI first"))
             case .running, .rollingBack:
                 Spacer()
             case .finished(.failed(let branch, _)):
@@ -259,8 +301,8 @@ struct UpgradeFlowSheet: View {
                 Spacer()
                 secondaryButton("Close") { dismiss() }.keyboardShortcut(.cancelAction)
             case .finished(.applied(let branch, let report, let prompt)) where !report.conflicts.isEmpty:
-                Spacer()
                 secondaryButton("Done") { dismiss() }.keyboardShortcut(.cancelAction)
+                Spacer()
                 Button {
                     resolve(branch: branch, prompt: prompt)
                 } label: {

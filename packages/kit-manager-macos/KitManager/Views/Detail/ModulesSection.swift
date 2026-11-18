@@ -46,6 +46,17 @@ struct ModulesSection: View {
                     .disabled(!canChange || (available.isEmpty && removable.isEmpty))
                     .help(canChange ? "Add modules or remove installed modules" : "Build the nuxt-saas CLI first")
             }
+            #if DEBUG
+            .task {
+                if DebugLaunchOptions.sheet == "modules", model.selectedProjectID == project.id,
+                    canChange, !available.isEmpty || !removable.isEmpty
+                {
+                    // Let the detail form settle before asking it to present a sheet.
+                    try? await Task.sleep(for: .milliseconds(250))
+                    if !Task.isCancelled { manageModules() }
+                }
+            }
+            #endif
         } header: {
             Text("Modules")
         } footer: {

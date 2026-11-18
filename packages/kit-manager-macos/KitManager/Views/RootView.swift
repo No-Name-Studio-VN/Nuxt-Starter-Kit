@@ -6,6 +6,9 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
+    #if DEBUG
+    @Environment(\.openSettings) private var openSettings
+    #endif
     @Query(sort: \Project.addedAt) private var projects: [Project]
 
     @State private var moduleSelection: String?
@@ -53,6 +56,7 @@ struct RootView: View {
             await model.bootstrap()
             #if DEBUG
             DebugLaunchOptions.apply(to: model, projects: projects)
+            if DebugLaunchOptions.showsSettings { openSettings() }
             if model.sidebar == .modules, let id = DebugLaunchOptions.moduleSelection,
                 !moduleColumns.isEmpty, model.catalogue.contains(where: { $0.id == id })
             {

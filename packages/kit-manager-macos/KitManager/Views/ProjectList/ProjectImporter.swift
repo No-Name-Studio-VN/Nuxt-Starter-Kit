@@ -22,6 +22,13 @@ struct ProjectImporter: ViewModifier {
                 onCompletion: handleImport,
                 onCancellation: { request = nil }
             )
+            #if DEBUG
+            .task {
+                if DebugLaunchOptions.sheet == "scan" {
+                    scanCandidates = await model.scan(folder: URL(filePath: AppSettings.kitPath).deletingLastPathComponent())
+                }
+            }
+            #endif
             .sheet(
                 isPresented: Binding(get: { scanCandidates != nil }, set: { if !$0 { scanCandidates = nil } })
             ) {

@@ -38,87 +38,84 @@ struct MigrationFlowSheet: View {
 
     private var explanation: String {
         switch snapshot.kind {
-        case .kitLegacy: PromptBuilder.legacyGuidance
-        case .nuxt: "A plain Nuxt project. Claude generates a fresh kit project and ports this one across, on a new kit-migration branch."
+        case .kitLegacy: "This project was made with kit 2.x. Moving onto the kit starts with a fresh project."
+        case .nuxt: "This is a plain Nuxt app. Claude creates a fresh kit project and moves your code across."
         case .other, .kitV3, .missing, .invalidState:
-            "Claude generates a fresh kit project and ports this one across, on a new kit-migration branch."
+            "Claude creates a fresh kit project and moves your code across."
         }
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Migrate with Claude").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
-            Text(explanation)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            folderField
+        VStack(spacing: 0) {
+            Form {
+                Section {
+                    Text(explanation)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    DisclosureGroup("How it works") {
+                        Text(snapshot.kind == .kitLegacy ? PromptBuilder.legacyGuidance : "Claude does the work on a new kit-migration branch.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    TextField("Folder name", text: $folderName)
+                        .disabled(isWorking)
+                        .accessibilityLabel("Folder name")
+                } header: {
+                    Text("Move onto the Kit").accessibilityAddTraits(.isHeader)
+                } footer: {
+                    if let folderProblem {
+                        Label(folderProblem, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(Color.red)
+                    } else {
+                        Text("The kit uses the folder name as the new project's name.")
+                    }
+                }
+                if let failure {
+                    Section {
+                        FailureView(failure)
+                    }
+                }
+                modules
+            }
+            .formStyle(.grouped)
+            .frame(height: catalogue.isEmpty ? 300 : 400)
             Divider()
-            modules
-            if let failure { FailureView(failure) }
-            footer
+            footer.padding(20)
         }
-        .padding(20)
         .frame(width: 540)
         .interactiveDismissDisabled(isWorking)
     }
 
-    // MARK: Pieces
-
-    private var folderField: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Folder name").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            TextField("Folder name", text: $folderName)
-                .textFieldStyle(.roundedBorder)
-                .labelsHidden()
-                .disabled(isWorking)
-                .accessibilityLabel("Folder name")
-            if let folderProblem {
-                Label(folderProblem, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(Color.red)
-            } else {
-                Text("The generated project must carry this name. The kit records it as the project's name.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
     private var modules: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Modules").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+        Section("Modules") {
             if catalogue.isEmpty {
                 Text("The module list loads once the nuxt-saas CLI is ready. You can still copy the prompt without modules.")
-                    .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Pre-checked from this project's dependencies. Change them before generating.")
-                    .font(.caption)
+                Text("Suggestions from this project's dependencies are selected. You can change them below.")
                     .foregroundStyle(.secondary)
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(catalogue) { module in
-                            Toggle(isOn: binding(for: module.id)) {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    HStack(spacing: 6) {
-                                        Text(module.title).font(.callout.weight(.medium))
-                                        if suggested.contains(module.id) {
-                                            Text("suggested").font(.caption2).foregroundStyle(Color.accentColor)
-                                        }
-                                    }
-                                    if !module.description.isEmpty {
-                                        Text(module.description).font(.caption).foregroundStyle(.secondary)
+                ForEach(catalogue) { module in
+                    Toggle(isOn: binding(for: module.id)) {
+                        HStack(spacing: 10) {
+                            SettingsIcon(symbol: ModuleAppearance.symbol(for: module.id), color: ModuleAppearance.color(for: module.id))
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text(module.title).fontWeight(.medium)
+                                    if suggested.contains(module.id) {
+                                        Text("Suggested").font(.caption).foregroundStyle(Color.accentColor)
                                     }
                                 }
+                                if !module.description.isEmpty {
+                                    Text(module.description).font(.caption).foregroundStyle(.secondary)
+                                }
                             }
-                            .toggleStyle(.checkbox)
-                            .disabled(isWorking)
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .toggleStyle(.checkbox)
+                    .disabled(isWorking)
                 }
-                .frame(maxHeight: 220)
             }
         }
     }
@@ -133,14 +130,14 @@ struct MigrationFlowSheet: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
-            if didCopy {
-                Label("Copied", systemImage: "checkmark").font(.caption).foregroundStyle(Color.green)
-            }
-            Spacer()
             Button("Cancel", role: .cancel) { dismiss() }
                 .buttonStyle(.glass)
                 .keyboardShortcut(.cancelAction)
                 .disabled(isWorking)
+            if didCopy {
+                Label("Copied", systemImage: "checkmark").font(.caption).foregroundStyle(Color.green)
+            }
+            Spacer()
             Button {
                 copy()
             } label: {
@@ -151,7 +148,7 @@ struct MigrationFlowSheet: View {
             Button {
                 launch()
             } label: {
-                Label("Migrate with Claude", systemImage: "sparkles")
+                Label("Move with Claude", systemImage: "sparkles")
             }
             .buttonStyle(.glassProminent)
             .keyboardShortcut(.defaultAction)

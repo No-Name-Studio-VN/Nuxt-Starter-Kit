@@ -8,38 +8,48 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var isChoosing = false
     @State private var appliedPath: String?
+    @State private var pendingPathChanges = 0
 
     var body: some View {
         Form {
             Section {
-                LabeledContent("Kit checkout") {
-                    HStack {
-                        TextField("Kit checkout", text: $kitPath, prompt: Text("Path to Nuxt-Starter-Kit"))
-                            .labelsHidden()
-                            .textFieldStyle(.roundedBorder)
-                            .onSubmit { apply() }
-                        Button("Choose…") { isChoosing = true }
+                HStack(spacing: 8) {
+                    TextField("Kit folder", text: $kitPath, prompt: Text("Path to Nuxt-Starter-Kit"))
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { apply() }
+                        .accessibilityLabel("Kit folder path")
+                    Button("Choose…") { isChoosing = true }
+                        .buttonStyle(.glass)
+                }
+                HStack(spacing: 8) {
+                    validation
+                    if CLIBuildControl.isAvailable(for: model.cliStatus) {
+                        Spacer(minLength: 0)
+                        CLIBuildControl()
+                            .fixedSize()
+                            .disabled(kitPath != appliedPath || pendingPathChanges > 0)
                     }
                 }
-                validation
+                if let failure = model.buildFailure, CLIBuildControl.isAvailable(for: model.cliStatus) {
+                    FailureView(message: failure)
+                }
             } header: {
-                Text("KIT")
+                Text("Kit Folder")
             } footer: {
-                Text("Upgrade previews, version labels and the module list all come from this checkout.")
+                Text("Update previews, version labels and the module list come from this folder.")
             }
 
-            Section {
+            Section("Updates") {
                 Picker("Fetch the kit every", selection: $fetchInterval) {
                     ForEach(AppSettings.fetchIntervalChoices, id: \.self) { minutes in
                         Text(label(forMinutes: minutes)).tag(minutes)
                     }
                 }
-            } header: {
-                Text("REFRESH")
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520)
+        .frame(width: 460)
         .fixedSize(horizontal: false, vertical: true)
         .fileImporter(isPresented: $isChoosing, allowedContentTypes: [.folder]) { result in
             if case .success(let url) = result {
@@ -75,7 +85,11 @@ struct SettingsView: View {
     private func apply() {
         guard let appliedPath, kitPath != appliedPath else { return }
         self.appliedPath = kitPath
-        Task { await model.reconfigure() }
+        pendingPathChanges += 1
+        Task {
+            await model.reconfigure()
+            pendingPathChanges -= 1
+        }
     }
 
     private func label(forMinutes minutes: Int) -> String {

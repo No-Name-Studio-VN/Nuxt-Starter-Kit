@@ -16,7 +16,7 @@ struct RollbackButton: View {
     @State private var dirtyPaths: [String]?
 
     var body: some View {
-        Button(record.keepsChanges ? "Switch back to \(record.previous)" : "Switch back and delete branch…") {
+        Button(record.keepsChanges ? "Switch back" : "Switch back and delete update branch…") {
             if record.keepsChanges {
                 action()
             } else {
@@ -31,14 +31,14 @@ struct RollbackButton: View {
                 : "Discard the uncommitted changes, switch back to \(record.previous) and delete \(record.branch)"
         )
         .alert(
-            "Discard all uncommitted changes on \(record.branch)?",
+            "Discard all uncommitted changes on the update branch?",
             isPresented: $isConfirming
         ) {
             Button("Discard and Delete Branch", role: .destructive, action: action)
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(
-                "Discards all uncommitted changes on \(record.branch), including any you made since the upgrade. Then it switches back to \(record.previous) and deletes \(record.branch).\n\n\(changesSummary)"
+                "Discards all uncommitted changes on the update branch, including any you made since the update. Then it switches to your previous branch and deletes the update branch.\n\n\(changesSummary)"
             )
         }
     }

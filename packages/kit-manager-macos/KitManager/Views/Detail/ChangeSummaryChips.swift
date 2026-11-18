@@ -14,19 +14,25 @@ struct ChangeSummaryChips: View {
         if changes.isEmpty {
             Text("No file changes").font(.callout).foregroundStyle(.secondary)
         } else {
-            HStack(spacing: 6) {
-                ForEach(counts, id: \.kind) { entry in
-                    HStack(spacing: 4) {
-                        Text(entry.kind.symbol).font(.caption.monospaced().weight(.bold)).foregroundStyle(entry.kind.color)
-                        Text("\(entry.count) \(entry.kind.title)").font(.caption.monospacedDigit())
-                    }
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(Color(nsColor: .separatorColor).opacity(0.55), in: .rect(cornerRadius: 4))
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(entry.count) \(entry.kind.title)")
-                }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 6) { chips }
+                    .fixedSize()
+                VStack(alignment: .leading, spacing: 4) { chips }
             }
+        }
+    }
+
+    private var chips: some View {
+        ForEach(counts, id: \.kind) { entry in
+            HStack(spacing: 4) {
+                Text(entry.kind.symbol).font(.caption.monospaced().weight(.bold)).foregroundStyle(entry.kind.color)
+                Text("\(entry.count) \(entry.kind.title)").font(.caption.monospacedDigit())
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.fill.quaternary, in: .capsule)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(entry.count) \(entry.kind.title)")
         }
     }
 }

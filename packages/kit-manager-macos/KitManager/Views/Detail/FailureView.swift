@@ -32,7 +32,7 @@ struct FailureView: View {
                     }
                     .frame(maxHeight: 140)
                     .padding(8)
-                    .background(Color(nsColor: .separatorColor).opacity(0.4), in: .rect(cornerRadius: 4))
+                    .background(.fill.quaternary, in: .rect(cornerRadius: 8))
                 }
                 .font(.caption)
             }

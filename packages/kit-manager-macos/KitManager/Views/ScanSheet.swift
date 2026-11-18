@@ -16,43 +16,49 @@ struct ScanSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Scan results").font(.title3.weight(.semibold))
-
-            if candidates.isEmpty {
-                ContentUnavailableView(
-                    "No projects found", systemImage: "magnifyingglass",
-                    description: Text("Looked two folders deep for kit and Nuxt projects."))
-            } else {
-                List(candidates, id: \.url) { candidate in
-                    row(candidate)
-                }
-                .listStyle(.bordered)
-                .frame(minHeight: 220)
-            }
-
-            HStack {
-                if !addable.isEmpty {
-                    Button(chosen.count == addable.count ? "Select None" : "Select All") {
-                        chosen = chosen.count == addable.count ? [] : Set(addable.map(\.url))
+        VStack(spacing: 0) {
+            Form {
+                Section("Scan Results") {
+                    if candidates.isEmpty {
+                        ContentUnavailableView(
+                            "No projects found", systemImage: "magnifyingglass",
+                            description: Text("Looked two folders deep for kit and Nuxt projects."))
+                    } else {
+                        ForEach(candidates, id: \.url) { candidate in
+                            row(candidate)
+                        }
                     }
-                    .buttonStyle(.link)
                 }
-                Spacer()
-                Button("Cancel", role: .cancel) { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                Button(chosen.count > 1 ? "Add \(chosen.count) Projects" : "Add Project") {
-                    model.add(urls: Array(chosen))
-                    dismiss()
-                }
-                .buttonStyle(.glassProminent)
-                .keyboardShortcut(.defaultAction)
-                .disabled(chosen.isEmpty)
             }
+            .formStyle(.grouped)
+            .frame(height: candidates.isEmpty ? 200 : 320)
+            Divider()
+            footer.padding(20)
         }
-        .padding(20)
         .frame(width: 560)
         .onAppear { chosen = Set(addable.map(\.url)) }
+    }
+
+    private var footer: some View {
+        HStack(spacing: 10) {
+            Button("Cancel", role: .cancel) { dismiss() }
+                .buttonStyle(.glass)
+                .keyboardShortcut(.cancelAction)
+            Spacer()
+            if !addable.isEmpty {
+                Button(chosen.count == addable.count ? "Select None" : "Select All") {
+                    chosen = chosen.count == addable.count ? [] : Set(addable.map(\.url))
+                }
+                .buttonStyle(.glass)
+            }
+            Button(chosen.count > 1 ? "Add \(chosen.count) Projects" : "Add Project") {
+                model.add(urls: Array(chosen))
+                dismiss()
+            }
+            .buttonStyle(.glassProminent)
+            .keyboardShortcut(.defaultAction)
+            .disabled(chosen.isEmpty)
+        }
     }
 
     private func row(_ candidate: ScanCandidate) -> some View {
@@ -65,6 +71,7 @@ struct ScanSheet: View {
                 })
         ) {
             HStack(spacing: 10) {
+                ProjectIcon(name: candidate.url.lastPathComponent, size: 24)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(candidate.url.lastPathComponent).fontWeight(.medium)
                     Text((candidate.url.path as NSString).abbreviatingWithTildeInPath)
@@ -76,9 +83,10 @@ struct ScanSheet: View {
                 Spacer()
                 Text(added ? "Already added" : kindLabel(candidate.kind))
                     .font(.caption.weight(.medium))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color(nsColor: .separatorColor).opacity(0.55), in: .rect(cornerRadius: 4))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(.fill.quaternary, in: .capsule)
             }
         }
         .toggleStyle(.checkbox)

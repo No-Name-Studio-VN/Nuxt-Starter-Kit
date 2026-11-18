@@ -15,7 +15,7 @@ struct ModuleChangeSheet: View {
     @State private var action: ModuleAction
     @State private var selection: Set<String>
     @State private var phase: ModuleChangePhase = .idle
-    /// Bumped by "Plan again" to re-run the `--check` for the same selection.
+    /// Bumped by "Preview Again" to re-run the `--check` for the same selection.
     @State private var planAttempt = 0
     @State private var pickerHeight: CGFloat = 0
     @State private var isResolving = false
@@ -45,55 +45,72 @@ struct ModuleChangeSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("\(verb) modules").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
-            if !additions.isEmpty && !removals.isEmpty {
-                Picker("Module action", selection: Binding(get: { action }, set: selectAction)) {
-                    Text("Add").tag(ModuleAction.add)
-                    Text("Remove").tag(ModuleAction.remove)
+        VStack(spacing: 0) {
+            Form {
+                Section {
+                    if !additions.isEmpty && !removals.isEmpty {
+                        Picker("Module action", selection: Binding(get: { action }, set: selectAction)) {
+                            Text("Add").tag(ModuleAction.add)
+                            Text("Remove").tag(ModuleAction.remove)
+                        }
+                        .pickerStyle(.segmented)
+                        .disabled(isLocked)
+                    }
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 8) {
+                            picker
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pickerHeight = $0 }
+                    }
+                    .frame(height: min(max(pickerHeight, 1), 190))
+                } header: {
+                    Text("\(verb) Modules").accessibilityAddTraits(.isHeader)
                 }
-                .pickerStyle(.segmented)
-                .disabled(isLocked)
+                Section(resultTitle) {
+                    result
+                }
             }
-            ScrollView {
-                picker
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pickerHeight = $0 }
-            }
-            .frame(height: min(max(pickerHeight, 1), 200))
+            .formStyle(.grouped)
+            .frame(height: 440)
             Divider()
-            ScrollView {
-                result.frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .frame(minHeight: 120, maxHeight: 300)
-            footer
+            footer.padding(20)
         }
-        .padding(20)
         .frame(width: 540)
         .task(id: ModulePlanRequest(action: action, selection: selection, attempt: planAttempt)) { await runPreview() }
     }
 
     // MARK: Pieces
 
+    @ViewBuilder
     private var picker: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if choices.isEmpty {
-                Text(action == .add ? "Every module is already installed." : "No removable modules.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-            ForEach(choices) { choice in
-                Toggle(isOn: binding(for: choice.id)) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(choice.title).font(.callout.weight(.medium))
+        if choices.isEmpty {
+            Text(action == .add ? "Every module is already installed." : "No removable modules.")
+                .foregroundStyle(.secondary)
+        }
+        ForEach(choices) { choice in
+            Toggle(isOn: binding(for: choice.id)) {
+                HStack(spacing: 10) {
+                    SettingsIcon(symbol: ModuleAppearance.symbol(for: choice.id), color: ModuleAppearance.color(for: choice.id))
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(choice.title).fontWeight(.medium)
                         if !choice.detail.isEmpty {
                             Text(choice.detail).font(.caption).foregroundStyle(.secondary)
                         }
                     }
                 }
-                .toggleStyle(.checkbox)
-                .disabled(isLocked)
             }
+            .toggleStyle(.checkbox)
+            .disabled(isLocked)
+        }
+    }
+
+    private var resultTitle: String {
+        switch phase {
+        case .planned: "Preview (nothing is changed yet)"
+        case .applied: "Changes Applied"
+        case .idle, .previewing, .failed, .applying: "Preview"
         }
     }
 
@@ -113,7 +130,7 @@ struct ModuleChangeSheet: View {
         case .previewing:
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
-                Text("Planning with --check…").font(.callout).foregroundStyle(.secondary)
+                Text("Previewing changes…").font(.callout).foregroundStyle(.secondary)
             }
         case .failed(let error):
             FailureView(error)
@@ -123,19 +140,8 @@ struct ModuleChangeSheet: View {
                 Text("Applying…").font(.callout).foregroundStyle(.secondary)
             }
         case .planned(let report, _):
-            reportView(report, applied: false)
+            TransitionReportSummary(report: report)
         case .applied(let report, _):
-            reportView(report, applied: true)
-        }
-    }
-
-    private func reportView(_ report: TransitionReport, applied: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(applied ? "Applied" : "Plan (nothing is changed yet)")
-                .font(.caption.weight(.semibold))
-                .tracking(0.8)
-                .textCase(.uppercase)
-                .foregroundStyle(.secondary)
             TransitionReportSummary(report: report)
             if let resolveError { FailureView(resolveError) }
         }
@@ -150,24 +156,29 @@ struct ModuleChangeSheet: View {
                     } label: {
                         Label("Resolve with Claude", systemImage: "sparkles")
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.glass)
                     .disabled(isResolving)
                 }
                 Spacer()
                 Button("Done") { dismiss() }
-                    .buttonStyle(.glass)
+                    .buttonStyle(.glassProminent)
                     .keyboardShortcut(.defaultAction)
             } else {
-                if dirtyCount > 0 {
-                    AmberNote("Commit or stash your changes first")
-                }
-                Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .buttonStyle(.glass)
                     .keyboardShortcut(.cancelAction)
                     .disabled(isApplying)
+                if dirtyCount > 0 {
+                    Label {
+                        Text("Commit or stash your changes first").foregroundStyle(.secondary)
+                    } icon: {
+                        Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
+                    }
+                    .font(.caption)
+                }
+                Spacer()
                 if case .failed = phase, !selection.isEmpty {
-                    Button("Plan again") { planAttempt += 1 }
+                    Button("Preview Again") { planAttempt += 1 }
                         .buttonStyle(.glass)
                 }
                 Button("Apply") { applyPlanned() }

@@ -102,7 +102,7 @@ extension AppModel {
                 return await abandonUpToDate(project, branch: branch, previous: previous)
             }
             guard report.applied else {
-                return .failed(branch: branch, error: PresentedError(message: "The nuxt-saas CLI did not apply the upgrade."))
+                return .failed(branch: branch, error: PresentedError(message: "The nuxt-saas CLI did not apply the update."))
             }
             let input = UpgradePromptInput(
                 projectName: ProjectRow(project: project, snapshot: snapshot).name,
