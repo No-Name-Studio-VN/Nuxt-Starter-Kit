@@ -13,7 +13,7 @@ struct RollbackButton: View {
 
     @State private var isConfirming = false
     @State private var isReadingChanges = false
-    @State private var dirtyPaths: [String] = []
+    @State private var dirtyPaths: [String]?
 
     var body: some View {
         Button(record.keepsChanges ? "Switch back to \(record.previous)" : "Switch back and delete branch…") {
@@ -39,9 +39,13 @@ struct RollbackButton: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(
-                "Discards all uncommitted changes on \(record.branch), including any you made since the upgrade. Then it switches back to \(record.previous) and deletes \(record.branch).\n\n\(UpgradeRollback.discardSummary(paths: dirtyPaths))"
+                "Discards all uncommitted changes on \(record.branch), including any you made since the upgrade. Then it switches back to \(record.previous) and deletes \(record.branch).\n\n\(changesSummary)"
             )
         }
+    }
+
+    private var changesSummary: String {
+        dirtyPaths.map { UpgradeRollback.discardSummary(paths: $0) } ?? "Could not read the uncommitted changes."
     }
 
     private func confirm() {

@@ -127,10 +127,10 @@ struct SnapshotLoader: Sendable {
             }
             return Rendered(
                 result: .loaded(report, stale: false),
-                key: fingerprint.map { job.cacheKey(fingerprint: $0, resolvedTarget: report.to) })
+                key: fingerprint.map { job.storageKey(for: .preview, fingerprint: $0, resolvedTarget: report.to) })
         } catch {
             return Rendered(
-                result: .failed(error.localizedDescription), key: fingerprint.map { job.cacheKey(fingerprint: $0) })
+                result: .failed(error.localizedDescription), key: fingerprint.map { job.storageKey(for: .preview, fingerprint: $0) })
         }
     }
 
@@ -142,10 +142,10 @@ struct SnapshotLoader: Sendable {
                 try await cli.inspect(project: ref.url, source: job.source)
             }
             return Rendered(
-                result: .loaded(report, stale: false), key: fingerprint.map { job.cacheKey(fingerprint: $0) })
+                result: .loaded(report, stale: false), key: fingerprint.map { job.storageKey(for: .inspect, fingerprint: $0) })
         } catch {
             return Rendered(
-                result: .failed(error.localizedDescription), key: fingerprint.map { job.cacheKey(fingerprint: $0) })
+                result: .failed(error.localizedDescription), key: fingerprint.map { job.storageKey(for: .inspect, fingerprint: $0) })
         }
     }
 

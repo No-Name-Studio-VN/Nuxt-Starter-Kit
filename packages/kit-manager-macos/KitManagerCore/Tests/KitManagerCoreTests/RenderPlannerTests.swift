@@ -220,6 +220,32 @@ struct RenderPlannerTests {
         #expect(remote.inspectCacheKey(fingerprint: "f1") == key(target: ""))
     }
 
+    @Test func keysTheLoaderStoresAreTheKeysThePlannerChecks() throws {
+        let plan = RenderPlanner.plan(input())
+        let previewJob = try #require(plan.previewJob)
+        let inspectJob = try #require(plan.inspectJob)
+        // The local jobs carry the latest main as their target; inspect must not be keyed by it.
+        #expect(inspectJob.target == main)
+        let previewKey = previewJob.storageKey(for: .preview, fingerprint: "f1", resolvedTarget: main)
+        let inspectKey = inspectJob.storageKey(for: .inspect, fingerprint: "f1")
+
+        let stored = RenderPlanner.plan(
+            input(preview: cached(report(), previewKey), inspect: cached(inspectReport(), inspectKey)))
+        #expect(stored.preview == .loaded(report(), stale: false))
+        #expect(stored.inspect == .loaded(inspectReport(), stale: false))
+        #expect(stored.previewJob == nil)
+        #expect(stored.inspectJob == nil)
+
+        let failed = RenderPlanner.plan(
+            input(
+                previewFailure: CachedFailure(key: previewKey, message: "boom"),
+                inspectFailure: CachedFailure(key: inspectKey, message: "boom")))
+        #expect(failed.preview == .failed("boom"))
+        #expect(failed.inspect == .failed("boom"))
+        #expect(failed.previewJob == nil)
+        #expect(failed.inspectJob == nil)
+    }
+
     @Test func jobCacheKeyUsesTheReportTargetOnlyForRecordedSource() {
         let local = RenderJob(recordedCommit: recorded, source: .local, target: main)
         #expect(local.cacheKey(fingerprint: "f1", resolvedTarget: "zzz") == key())

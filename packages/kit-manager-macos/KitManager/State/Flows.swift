@@ -127,9 +127,9 @@ extension AppModel {
     }
 
     /// The paths with uncommitted changes right now, read from git, for telling the user what a
-    /// discard would throw away. Empty when git cannot say.
-    func uncommittedPaths(_ project: Project) async -> [String] {
-        (try? await git.dirtyPaths(project.url)) ?? []
+    /// discard would throw away. Nil when git cannot say.
+    func uncommittedPaths(_ project: Project) async -> [String]? {
+        try? await git.dirtyPaths(project.url)
     }
 
     /// The CLI found nothing to upgrade, so the new branch should be empty. Goes back to `previous` and
