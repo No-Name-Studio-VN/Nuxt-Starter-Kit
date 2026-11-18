@@ -8,7 +8,6 @@ struct ProjectDetailView: View {
     let project: Project
 
     @Environment(AppModel.self) private var model
-    @Environment(\.dismiss) private var dismiss
 
     @State private var width: CGFloat = 1000
     @State private var isLocating = false
@@ -126,7 +125,6 @@ struct ProjectDetailView: View {
                     Button("Locate…", systemImage: "folder.badge.questionmark") { isLocating = true }
                         .buttonStyle(.glassProminent)
                     Button("Remove from List", systemImage: "minus.circle", role: .destructive) {
-                        dismiss()
                         model.remove(project)
                     }
                     .buttonStyle(.glass)

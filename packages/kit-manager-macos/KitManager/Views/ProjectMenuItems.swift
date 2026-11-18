@@ -1,7 +1,7 @@
 import KitManagerCore
 import SwiftUI
 
-/// The actions shared by the row's "…" menu and the table's context menu.
+/// The actions shared by the project's "…" menu and the project list's context menu.
 struct ProjectMenuItems: View {
     /// Passed in, not read from the environment: menu content and table cells are built without it.
     let model: AppModel

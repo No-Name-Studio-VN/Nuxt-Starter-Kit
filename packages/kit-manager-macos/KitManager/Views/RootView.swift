@@ -1,53 +1,61 @@
+import KitManagerCore
 import SwiftData
 import SwiftUI
 
+/// The main window's sidebar, browser column and detail, or the first-run welcome screen.
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \Project.addedAt) private var projects: [Project]
 
-    @State private var selection: SidebarItem? = .allProjects
-    @State private var path: [UUID] = []
-    /// A detail page to open once a pending sidebar change has cleared the navigation path.
-    @State private var pendingDetail: UUID?
+    @State private var moduleSelection: String?
+    @State private var releaseSelection: String?
+    @State private var releases: Loadable<[ReleaseSection]> = .idle
+    @State private var searchText = ""
+    @State private var importRequest: ImportRequest?
+    @State private var isScanning = false
 
     var body: some View {
-        NavigationSplitView {
-            SidebarView(selection: $selection)
-        } detail: {
-            NavigationStack(path: $path) {
-                content
-                    .navigationDestination(for: UUID.self) { id in
-                        if let project = projects.first(where: { $0.id == id }) {
-                            ProjectDetailView(project: project)
-                        } else {
-                            ContentUnavailableView("Project removed", systemImage: "questionmark.folder")
+        Group {
+            if projects.isEmpty {
+                NavigationSplitView {
+                    SidebarView(projectCount: 0)
+                } detail: {
+                    WelcomeView(isScanning: isScanning, importRequest: $importRequest)
+                }
+            } else {
+                NavigationSplitView {
+                    SidebarView(projectCount: projects.count)
+                } content: {
+                    content
+                } detail: {
+                    detail
+                        .toolbar {
+                            if model.sidebar.isProjectList {
+                                ProjectListToolbar(isScanning: isScanning, importRequest: $importRequest)
+                            }
                         }
-                    }
+                }
+                .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
             }
         }
-        .frame(minWidth: 900, minHeight: 520)
+        .frame(minWidth: 900, minHeight: 560)
+        .modifier(ProjectImporter(request: $importRequest, isScanning: $isScanning))
         .task { await model.bootstrap() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await model.refreshAll() } }
         }
-        .onChange(of: selection) {
-            path = pendingDetail.map { [$0] } ?? []
-            pendingDetail = nil
+        .onChange(of: projects.map(\.id)) { _, ids in
+            if let id = model.selectedProjectID, !ids.contains(id) { model.selectedProjectID = nil }
         }
-        .onChange(of: model.detailRequest, initial: true) { _, id in
-            guard let id else { return }
-            model.detailRequest = nil
-            showDetail(id)
+        .onChange(of: model.sidebar) { _, item in
+            if !item.isProjectList { model.selectedProjectID = nil }
         }
         .onDisappear { model.isSwitcherPresented = false }
         .sheet(isPresented: Bindable(model).isSwitcherPresented) {
             SwitcherView(
                 projects: projects, model: model,
-                onOpen: { project in
-                    model.isSwitcherPresented = false
-                    model.openDetail(project)
-                },
+                onOpen: model.openDetail,
                 onClaude: { project in
                     model.isSwitcherPresented = false
                     Task { await model.openTerminal(project, command: .claude) }
@@ -64,6 +72,29 @@ struct RootView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(model.errorMessage ?? "")
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch model.sidebar {
+        case .allProjects, .needsAttention, .status:
+            ProjectListView(
+                projects: projects, searchText: searchText, importRequest: $importRequest)
+        case .modules:
+            ModulesListView(selection: $moduleSelection)
+        case .whatsNew:
+            ReleasesListView(selection: $releaseSelection, releases: $releases)
+        }
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        if let id = model.selectedProjectID, let project = projects.first(where: { $0.id == id }) {
+            ProjectDetailView(project: project)
+                .id(id)
+        } else {
+            OverviewView(projects: projects)
         }
     }
 
@@ -86,34 +117,6 @@ struct RootView: View {
                 }
                 .frame(width: 440, height: 240)
             }
-        }
-    }
-
-    /// Detail pages live under the project lists, so the other pages give way to All Projects first.
-    private func showDetail(_ id: UUID) {
-        switch selection ?? .allProjects {
-        case .allProjects, .needsAttention:
-            path = [id]
-        case .modules, .kit:
-            pendingDetail = id
-            selection = .allProjects
-        }
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        switch selection ?? .allProjects {
-        case .allProjects:
-            ProjectsTableView(projects: projects, scope: .allProjects, path: $path)
-        case .needsAttention:
-            ProjectsTableView(projects: projects, scope: .needsAttention, path: $path)
-        case .modules:
-            ModulesMatrixView(projects: projects) { module in
-                model.moduleFilter = module
-                selection = .allProjects
-            }
-        case .kit:
-            KitChangelogView()
         }
     }
 }

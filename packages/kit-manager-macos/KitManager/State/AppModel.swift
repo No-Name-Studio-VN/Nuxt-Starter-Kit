@@ -26,12 +26,12 @@ final class AppModel {
     var errorMessage: String?
     /// The upgrade or migration sheet to present, if any.
     var flow: FlowRequest?
-    /// A module the projects table is narrowed to (set from the modules matrix); nil shows every project.
+    /// A module the project list is narrowed to; nil shows every project in the sidebar filter.
     var moduleFilter: String?
     /// Whether the ⌘K switcher sheet is showing.
     var isSwitcherPresented = false
-    /// A project whose detail page the main window should open; the window clears it once it has.
-    var detailRequest: UUID?
+    var sidebar: SidebarItem = .allProjects
+    var selectedProjectID: UUID?
 
     @ObservationIgnored private let context: ModelContext
     @ObservationIgnored private let logger = Logger(subsystem: "studio.nonamestudio.KitManager", category: "AppModel")
@@ -385,6 +385,19 @@ final class AppModel {
         snapshots.values.filter { !AttentionReason.reasons(for: $0).isEmpty }.count
     }
 
+    func matches(_ snapshot: ProjectSnapshot?, in item: SidebarItem) -> Bool {
+        switch item {
+        case .allProjects: true
+        case .needsAttention: snapshot.map { !AttentionReason.reasons(for: $0).isEmpty } ?? false
+        case .status(let filter): snapshot.map { filter.matches(ProjectStatus(snapshot: $0)) } ?? false
+        case .modules, .whatsNew: false
+        }
+    }
+
+    func count(for item: SidebarItem) -> Int {
+        fetchProjects().count { matches(snapshots[$0.id], in: item) }
+    }
+
     /// Adds every folder in `urls` that is not already listed; returns how many were new.
     @discardableResult
     func add(urls: [URL]) -> Int {
@@ -411,6 +424,7 @@ final class AppModel {
     }
 
     func remove(_ project: Project) {
+        if selectedProjectID == project.id { selectedProjectID = nil }
         snapshots[project.id] = nil
         failures[project.id] = nil
         rerunRequested.remove(project.id)
@@ -436,9 +450,12 @@ final class AppModel {
         await Task.detached(priority: .userInitiated) { ScanService.scan(folder) }.value
     }
 
-    /// Asks the main window to open the project's detail page.
+    /// Selects a project from anywhere, falling back to All Projects if the filter hides it.
     func openDetail(_ project: Project) {
-        detailRequest = project.id
+        if !sidebar.isProjectList || !matches(snapshots[project.id], in: sidebar) {
+            sidebar = .allProjects
+        }
+        selectedProjectID = project.id
     }
 
     var knownPaths: Set<String> {

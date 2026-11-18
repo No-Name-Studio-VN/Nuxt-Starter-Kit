@@ -10,6 +10,7 @@ struct SwitcherView: View {
     let onOpen: (Project) -> Void
     let onClaude: (Project) -> Void
 
+    @Environment(\.dismiss) private var dismiss
     @State private var query = ""
     @State private var selected: UUID?
     @FocusState private var isSearchFocused: Bool
@@ -56,7 +57,7 @@ struct SwitcherView: View {
                     if press.modifiers.contains(.command) {
                         onClaude(current.project)
                     } else {
-                        onOpen(current.project)
+                        open(current.project)
                     }
                     return .handled
                 }
@@ -93,7 +94,7 @@ struct SwitcherView: View {
 
     private func resultRow(_ row: ProjectRow, isCurrent: Bool) -> some View {
         Button {
-            onOpen(row.project)
+            open(row.project)
         } label: {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 1) {
@@ -126,6 +127,11 @@ struct SwitcherView: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isCurrent ? .isSelected : [])
+    }
+
+    private func open(_ project: Project) {
+        onOpen(project)
+        dismiss()
     }
 
     private var hints: some View {

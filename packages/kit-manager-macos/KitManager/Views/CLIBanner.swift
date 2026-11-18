@@ -1,14 +1,30 @@
 import KitManagerCore
 import SwiftUI
 
-/// Shown above the table while the nuxt-saas CLI cannot run. It never builds silently.
+/// Explains why the nuxt-saas CLI cannot run and offers the next action. It never builds silently.
 struct CLIBanner: View {
     let status: CLIStatus
 
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                message
+                Spacer(minLength: 12)
+                action
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                message
+                action
+            }
+        }
+        .padding(12)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var message: some View {
+        HStack(alignment: .top, spacing: 12) {
             Image(systemName: needsBuild ? "hammer" : "exclamationmark.triangle")
                 .foregroundStyle(Color.orange)
                 .imageScale(.large)
@@ -24,22 +40,26 @@ struct CLIBanner: View {
                         .textSelection(.enabled)
                 }
             }
-            Spacer(minLength: 12)
-            if needsBuild {
-                if model.isBuildingCLI {
+            .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder
+    private var action: some View {
+        if needsBuild {
+            if model.isBuildingCLI {
+                HStack(spacing: 6) {
                     ProgressView().controlSize(.small)
                     Text("Building…").foregroundStyle(.secondary)
-                } else {
-                    Button("Build CLI") { Task { await model.buildCLI() } }
-                        .buttonStyle(.glassProminent)
                 }
             } else {
-                SettingsLink { Text("Open Settings") }
-                    .buttonStyle(.glass)
+                Button("Build CLI") { Task { await model.buildCLI() } }
+                    .buttonStyle(.glassProminent)
             }
+        } else {
+            SettingsLink { Text("Open Settings") }
+                .buttonStyle(.glass)
         }
-        .padding(12)
-        .accessibilityElement(children: .contain)
     }
 
     private var needsBuild: Bool {

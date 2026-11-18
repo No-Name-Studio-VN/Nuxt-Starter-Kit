@@ -41,7 +41,7 @@ struct DetailHeader: View {
                 .textSelection(.enabled)
                 .help(row.project.path)
             HStack(spacing: 8) {
-                StatusBadge(status: row.status)
+                StatusPill(status: row.status)
                 if row.isKitProject {
                     Text(row.kitLabel)
                         .font(row.kitIsCommit ? .callout.monospaced() : .callout.weight(.medium))

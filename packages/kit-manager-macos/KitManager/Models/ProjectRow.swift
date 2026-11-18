@@ -1,8 +1,7 @@
 import Foundation
 import KitManagerCore
 
-/// A table row: a stored project joined with its latest snapshot. Sort keys live here so the
-/// `Table` can sort with key paths.
+/// A stored project joined with its latest snapshot for display in the project list and detail.
 struct ProjectRow: Identifiable {
     let project: Project
     let snapshot: ProjectSnapshot?
@@ -32,6 +31,24 @@ struct ProjectRow: Identifiable {
 
     var attention: Set<AttentionReason> {
         snapshot.map(AttentionReason.reasons(for:)) ?? []
+    }
+
+    /// Explains health-only attention when the status label does not explain the row's grouping.
+    var healthNotice: HealthNotice? {
+        var missingKeys = 0
+        var siteDown = false
+        for reason in attention {
+            switch reason {
+            case .behind, .conflicts, .migration, .missing, .invalid, .checkFailed, .kitUnavailable:
+                return nil
+            case .missingEnvKeys(let count):
+                missingKeys = count
+            case .siteDown:
+                siteDown = true
+            }
+        }
+        if siteDown { return .siteDown(missingKeys: missingKeys) }
+        return missingKeys > 0 ? .missingEnvKeys(missingKeys) : nil
     }
 
     var modules: [String] {
@@ -76,13 +93,5 @@ struct ProjectRow: Identifiable {
         case .checking: 1
         case .upToDate: 0
         }
-    }
-
-    var gitSortKey: String {
-        snapshot?.git?.branch ?? ""
-    }
-
-    var kitSortKey: String {
-        kitLabel
     }
 }
