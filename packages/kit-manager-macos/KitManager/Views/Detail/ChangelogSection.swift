@@ -72,7 +72,7 @@ struct ChangelogSection: View {
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
             ForEach(shown) { commit in
-                commitRow(commit)
+                CommitRow(commit: commit)
             }
             if group.commits.count > Self.collapsedCount {
                 Button(
@@ -85,26 +85,5 @@ struct ChangelogSection: View {
                 .font(.caption)
             }
         }
-    }
-
-    private func commitRow(_ commit: KitCommit) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            if let type = commit.type {
-                Text(commit.scope.map { "\(type)(\($0))" } ?? type)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(commit.breaking ? Theme.red : Color.secondary)
-                    .lineLimit(1)
-                    .frame(minWidth: 52, alignment: .leading)
-            }
-            Text(commit.title)
-                .font(.callout)
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(commit.date.formatted(.relative(presentation: .named)))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .accessibilityElement(children: .combine)
     }
 }

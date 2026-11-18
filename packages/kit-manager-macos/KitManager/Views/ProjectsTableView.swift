@@ -33,11 +33,16 @@ struct ProjectsTableView: View {
             .map { ProjectRow(project: $0, snapshot: model.snapshots[$0.id]) }
             .filter { row in
                 (scope != .needsAttention || !row.attention.isEmpty)
+                    && (model.moduleFilter.map { row.modules.contains($0) } ?? true)
                     && (query.isEmpty
                         || row.name.localizedStandardContains(query)
                         || row.project.path.localizedStandardContains(query))
             }
             .sorted(using: sortOrder)
+    }
+
+    private var showsTopBar: Bool {
+        model.cliStatus != .ready || model.moduleFilter != nil
     }
 
     var body: some View {
@@ -46,7 +51,15 @@ struct ProjectsTableView: View {
             if projects.isEmpty {
                 emptyState
             } else if rows.isEmpty {
-                if searchText.isEmpty {
+                if let module = model.moduleFilter, searchText.isEmpty {
+                    ContentUnavailableView {
+                        Label(
+                            scope == .needsAttention ? "Nothing needs attention with \(module)" : "No projects with \(module)",
+                            systemImage: "square.grid.3x3")
+                    } actions: {
+                        Button("Clear Filter") { model.moduleFilter = nil }.buttonStyle(.glass)
+                    }
+                } else if searchText.isEmpty {
                     ContentUnavailableView(
                         "Nothing needs attention", systemImage: "checkmark.circle",
                         description: Text("Every project is up to date and healthy."))
@@ -60,14 +73,23 @@ struct ProjectsTableView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.canvas)
         .safeAreaInset(edge: .top, spacing: 0) {
-            if model.cliStatus != .ready {
-                CLIBanner(status: model.cliStatus)
-                    .padding([.horizontal, .top], 16)
-                    .padding(.bottom, 4)
-                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+            VStack(alignment: .leading, spacing: 8) {
+                if model.cliStatus != .ready {
+                    CLIBanner(status: model.cliStatus)
+                        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                }
+                if let module = model.moduleFilter {
+                    ModuleFilterChip(module: module) { model.moduleFilter = nil }
+                        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.top, showsTopBar ? 16 : 0)
+            .padding(.bottom, showsTopBar ? 4 : 0)
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: model.cliStatus)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: model.moduleFilter)
         .navigationTitle(scope.title)
         .searchable(text: $searchText, placement: .toolbar, prompt: "Filter by name or path")
         .toolbar { toolbar }

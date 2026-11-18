@@ -41,7 +41,7 @@ public enum ChangelogGrouper {
     }
 
     /// `base` first, the rest alphabetical.
-    private static func ordered(_ modules: [String]) -> [String] {
+    public static func ordered(_ modules: [String]) -> [String] {
         modules.sorted { lhs, rhs in
             if lhs == ModuleMapping.base { return rhs != ModuleMapping.base }
             if rhs == ModuleMapping.base { return false }

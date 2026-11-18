@@ -70,6 +70,33 @@ public struct KitRepository: Sendable {
             .compactMap { Self.parseRecord(String($0), mapping: mapping) }
     }
 
+    /// Version tags (`v*`) that point at a commit of `sha..origin/main`, by commit SHA. One
+    /// `git log` pass with decorations, so it stays cheap on a long history.
+    public func releaseTags(from sha: String) async throws -> [String: [String]] {
+        try requirePlainRevision(sha)
+        let output = try await text([
+            "log", "--decorate-refs=refs/tags/v*", "--format=%H%x1f%D", "\(sha)..\(Self.mainRef)",
+        ])
+        var tags: [String: [String]] = [:]
+        for line in output.split(separator: "\n") {
+            let fields = line.split(separator: "\u{1f}", maxSplits: 1, omittingEmptySubsequences: false)
+            guard fields.count == 2 else { continue }
+            let names = fields[1].split(separator: ", ").compactMap { reference -> String? in
+                guard reference.hasPrefix("tag: v") else { return nil }
+                return String(reference.dropFirst("tag: ".count))
+            }
+            if !names.isEmpty { tags[String(fields[0])] = names }
+        }
+        return tags
+    }
+
+    /// `commits(from:mapping:)` bucketed under release tags, for the kit changelog page.
+    public func changelog(from sha: String, mapping: ModuleMapping) async throws -> [ReleaseSection] {
+        async let commits = commits(from: sha, mapping: mapping)
+        async let tags = releaseTags(from: sha)
+        return ReleaseGrouper.sections(commits: try await commits, tags: try await tags)
+    }
+
     /// `v3.0.1` for an exact tag, `v3.0.1 +4` for four commits past it; nil when unrecognised.
     public static func parseDescribe(_ output: String) -> String? {
         let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)

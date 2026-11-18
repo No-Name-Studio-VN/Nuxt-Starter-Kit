@@ -22,6 +22,12 @@ final class AppModel {
     var errorMessage: String?
     /// The upgrade or migration sheet to present, if any.
     var flow: FlowRequest?
+    /// A module the projects table is narrowed to (set from the modules matrix); nil shows every project.
+    var moduleFilter: String?
+    /// Whether the ⌘K switcher sheet is showing.
+    var isSwitcherPresented = false
+    /// A project whose detail page the main window should open; the window clears it once it has.
+    var detailRequest: UUID?
 
     @ObservationIgnored private let context: ModelContext
     @ObservationIgnored private let logger = Logger(subsystem: "studio.nonamestudio.KitManager", category: "AppModel")
@@ -33,7 +39,7 @@ final class AppModel {
     @ObservationIgnored let health: any HealthChecking = HealthChecker()
     @ObservationIgnored let limiter = RenderLimiter(limit: 2)
     @ObservationIgnored private var loader: SnapshotLoader
-    @ObservationIgnored private var mapping: ModuleMapping?
+    @ObservationIgnored private(set) var mapping: ModuleMapping?
     @ObservationIgnored private var catalogueCommit: String?
     @ObservationIgnored private var refreshing: Set<UUID> = []
     /// Projects whose refresh was requested while one was already running; they run once more.
@@ -406,11 +412,16 @@ final class AppModel {
         await Task.detached(priority: .userInitiated) { ScanService.scan(folder) }.value
     }
 
+    /// Asks the main window to open the project's detail page.
+    func openDetail(_ project: Project) {
+        detailRequest = project.id
+    }
+
     var knownPaths: Set<String> {
         Set(fetchProjects().map(\.path))
     }
 
-    private func fetchProjects() -> [Project] {
+    func fetchProjects() -> [Project] {
         (try? context.fetch(FetchDescriptor<Project>(sortBy: [SortDescriptor(\.addedAt)]))) ?? []
     }
 

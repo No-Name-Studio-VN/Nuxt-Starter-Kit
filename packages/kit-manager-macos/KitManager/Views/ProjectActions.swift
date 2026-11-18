@@ -6,7 +6,9 @@ struct ProjectActions: View {
     let row: ProjectRow
     /// Passed in, not read from the environment: table cells can be built without it.
     let model: AppModel
-    let onLocate: () -> Void
+    /// The menu bar list has no room for the "…" menu.
+    var showsMenu = true
+    var onLocate: () -> Void = {}
 
     var body: some View {
         GlassEffectContainer(spacing: 6) {
@@ -20,7 +22,9 @@ struct ProjectActions: View {
                 iconButton("Start Claude in Terminal", symbol: "sparkles") {
                     await model.openTerminal(row.project, command: .claude)
                 }
-                menu(flowItem: model.flowMenuItem(for: row.project))
+                if showsMenu {
+                    menu(flowItem: model.flowMenuItem(for: row.project))
+                }
             }
         }
         .disabled(row.snapshot == nil)

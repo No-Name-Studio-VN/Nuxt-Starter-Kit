@@ -217,6 +217,36 @@ struct KitTests {
         #expect(relevant.map(\.subject) == ["chore: d", "fix(content): b"])
     }
 
+    @Test func changelogGroupsCommitsUnderTags() async throws {
+        let fixture = try await makeKitFixture()
+        defer { fixture.temp.remove() }
+        // Two release tags on one commit, a tag that is not a release, and one commit past them.
+        try await git(fixture.work, ["tag", "v1.1.0", fixture.shas[2]])
+        try await git(fixture.work, ["tag", "-a", "-m", "release", "v1.10.0", fixture.shas[2]])
+        try await git(fixture.work, ["tag", "nightly", fixture.shas[3]])
+        try await git(fixture.work, ["push", "origin", "--tags"])
+        let repository = fixture.repository
+        try await repository.fetch()
+
+        let sections = try await repository.changelog(from: fixture.shas[0], mapping: makeMapping())
+        #expect(sections.map(\.tag) == [nil, "v1.10.0"])
+        #expect(sections.map { $0.commits.map(\.subject) } == [["chore: d"], ["docs: c", "fix(content): b"]])
+    }
+
+    @Test func releaseTagsListOnlyVersionTags() async throws {
+        let fixture = try await makeKitFixture()
+        defer { fixture.temp.remove() }
+        try await git(fixture.work, ["tag", "v1.1.0", fixture.shas[1]])
+        try await git(fixture.work, ["tag", "release-candidate", fixture.shas[2]])
+        try await git(fixture.work, ["push", "origin", "--tags"])
+        let repository = fixture.repository
+        try await repository.fetch()
+
+        let tags = try await repository.releaseTags(from: fixture.shas[0])
+        #expect(tags == [fixture.shas[1]: ["v1.1.0"]])
+        await #expect(throws: GitError.self) { try await repository.releaseTags(from: "--all") }
+    }
+
     @Test func kitConfigIsReadFromRef() async throws {
         let fixture = try await makeKitFixture()
         defer { fixture.temp.remove() }

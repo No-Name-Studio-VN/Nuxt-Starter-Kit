@@ -8,6 +8,8 @@ struct RootView: View {
 
     @State private var selection: SidebarItem? = .allProjects
     @State private var path: [UUID] = []
+    /// A detail page to open once a pending sidebar change has cleared the navigation path.
+    @State private var pendingDetail: UUID?
 
     var body: some View {
         NavigationSplitView {
@@ -29,7 +31,28 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await model.refreshAll() } }
         }
-        .onChange(of: selection) { path = [] }
+        .onChange(of: selection) {
+            path = pendingDetail.map { [$0] } ?? []
+            pendingDetail = nil
+        }
+        .onChange(of: model.detailRequest, initial: true) { _, id in
+            guard let id else { return }
+            model.detailRequest = nil
+            showDetail(id)
+        }
+        .onDisappear { model.isSwitcherPresented = false }
+        .sheet(isPresented: Bindable(model).isSwitcherPresented) {
+            SwitcherView(
+                projects: projects, model: model,
+                onOpen: { project in
+                    model.isSwitcherPresented = false
+                    model.openDetail(project)
+                },
+                onClaude: { project in
+                    model.isSwitcherPresented = false
+                    Task { await model.openTerminal(project, command: .claude) }
+                })
+        }
         .sheet(item: Bindable(model).flow) { request in
             flowSheet(for: request)
         }
@@ -56,6 +79,17 @@ struct RootView: View {
         }
     }
 
+    /// Detail pages live under the project lists, so the other pages give way to All Projects first.
+    private func showDetail(_ id: UUID) {
+        switch selection ?? .allProjects {
+        case .allProjects, .needsAttention:
+            path = [id]
+        case .modules, .kit:
+            pendingDetail = id
+            selection = .allProjects
+        }
+    }
+
     @ViewBuilder
     private var content: some View {
         switch selection ?? .allProjects {
@@ -64,9 +98,12 @@ struct RootView: View {
         case .needsAttention:
             ProjectsTableView(projects: projects, scope: .needsAttention, path: $path)
         case .modules:
-            ComingSoonView(item: .modules)
+            ModulesMatrixView(projects: projects) { module in
+                model.moduleFilter = module
+                selection = .allProjects
+            }
         case .kit:
-            ComingSoonView(item: .kit)
+            KitChangelogView()
         }
     }
 }
