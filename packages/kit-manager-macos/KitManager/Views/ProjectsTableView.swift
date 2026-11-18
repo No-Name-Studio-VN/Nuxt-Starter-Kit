@@ -131,7 +131,7 @@ struct ProjectsTableView: View {
             .width(min: 110, ideal: 150)
 
             TableColumn("Actions") { row in
-                ProjectActions(row: row) { locating = row.project; present(.locate) }
+                ProjectActions(row: row, model: model) { locating = row.project; present(.locate) }
             }
             .width(min: 150, ideal: 150, max: 150)
         }
@@ -151,7 +151,7 @@ struct ProjectsTableView: View {
             Button("Open Details", systemImage: "arrow.right.circle") { path.append(project.id) }
             Divider()
             ProjectMenuItems(
-                project: project, isMissing: model.snapshots[project.id].map(isMissing) ?? false,
+                model: model, project: project, isMissing: model.snapshots[project.id].map(isMissing) ?? false,
                 flowItem: model.flowMenuItem(for: project)
             ) {
                 locating = project

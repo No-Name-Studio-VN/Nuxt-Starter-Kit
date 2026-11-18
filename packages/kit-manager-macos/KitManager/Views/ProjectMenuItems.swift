@@ -3,13 +3,12 @@ import SwiftUI
 
 /// The actions shared by the row's "…" menu and the table's context menu.
 struct ProjectMenuItems: View {
+    /// Passed in, not read from the environment: menu content and table cells are built without it.
+    let model: AppModel
     let project: Project
     let isMissing: Bool
-    /// Worked out by the caller, which has the environment; a menu's own content is built without it.
     let flowItem: FlowMenuItem
     let onLocate: () -> Void
-
-    @Environment(AppModel.self) private var model
 
     var body: some View {
         if isMissing {

@@ -71,7 +71,7 @@ struct DetailHeader: View {
                 }
                 Menu {
                     ProjectMenuItems(
-                        project: project, isMissing: row.isMissing, flowItem: flowItem, onLocate: onLocate)
+                        model: model, project: project, isMissing: row.isMissing, flowItem: flowItem, onLocate: onLocate)
                 } label: {
                     Label("More actions", systemImage: "ellipsis")
                         .labelStyle(.iconOnly)

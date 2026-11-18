@@ -4,9 +4,9 @@ import SwiftUI
 /// VS Code, Terminal and Claude buttons plus a menu, shown in the last table column.
 struct ProjectActions: View {
     let row: ProjectRow
+    /// Passed in, not read from the environment: table cells can be built without it.
+    let model: AppModel
     let onLocate: () -> Void
-
-    @Environment(AppModel.self) private var model
 
     var body: some View {
         GlassEffectContainer(spacing: 6) {
@@ -44,7 +44,7 @@ struct ProjectActions: View {
     private func menu(flowItem: FlowMenuItem) -> some View {
         Menu {
             ProjectMenuItems(
-                project: row.project, isMissing: row.isMissing, flowItem: flowItem, onLocate: onLocate)
+                model: model, project: row.project, isMissing: row.isMissing, flowItem: flowItem, onLocate: onLocate)
         } label: {
             Label("More actions", systemImage: "ellipsis")
                 .labelStyle(.iconOnly)
