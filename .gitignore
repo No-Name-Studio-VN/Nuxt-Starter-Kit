@@ -46,3 +46,8 @@ AGENTS.MD
 
 # Local-only planning documents
 /docs/
+
+# Kit Manager (macOS app)
+packages/kit-manager-macos/**/xcuserdata/
+packages/kit-manager-macos/**/.build/
+packages/kit-manager-macos/**/.swiftpm/

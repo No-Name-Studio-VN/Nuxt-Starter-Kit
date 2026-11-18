@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "error": {
+    "message": "/tmp/kmfx-emptydir2 is not a create-nuxt-saas project.",
+    "kind": "expected"
+  }
+}

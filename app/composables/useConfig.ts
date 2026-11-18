@@ -44,6 +44,9 @@ const defaultConfig: SiteConfig = {
     nav: [],
     links: [],
   },
+  auth: {
+    quotes: {},
+  },
 };
 
 export function useConfig() {

@@ -66,6 +66,21 @@ export interface SiteConfig {
       target?: string;
     }[];
   };
+  auth: {
+    /**
+     * Quotes shown on the auth pages' brand panel, keyed by page (`login`,
+     * `register`, `forgot-password`, `reset-password`, `verify-email`, …).
+     * `default` is used for any page without its own entry.
+     */
+    quotes: Record<string, AuthQuote>;
+  };
+}
+
+export interface AuthQuote {
+  /** Quote text, or an i18n key. */
+  text: string;
+  /** Attribution, or an i18n key. Omit to hide the attribution line. */
+  author?: string;
 }
 
 export type Color =

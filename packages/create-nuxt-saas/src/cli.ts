@@ -1,7 +1,15 @@
 import { defineCommand, runCommand, showUsage, type ArgsDef, type CommandDef } from 'citty';
-import { initArgs, listArgs, moduleChangeArgs, upgradeArgs } from './arguments';
-import { initCommand, moduleCommand, modulesCommand, upgradeCommand } from './commands/dispatch';
+import { initArgs, inspectArgs, listArgs, moduleChangeArgs, upgradeArgs } from './arguments';
+import {
+  initCommand,
+  inspectCommand,
+  moduleCommand,
+  modulesCommand,
+  upgradeCommand,
+} from './commands/dispatch';
 import { CliError } from './errors';
+import { printJson } from './report';
+import { JSON_SCHEMA } from './types/json';
 
 function route<T extends ArgsDef>(command: CommandDef<T>) {
   return {
@@ -13,6 +21,7 @@ function route<T extends ArgsDef>(command: CommandDef<T>) {
 
 export async function main(argv: string[]): Promise<number> {
   let exitCode = 0;
+  const json = argv.includes('--json');
   const commands = {
     init: route({
       meta: { name: 'init', description: 'Create a Nuxt SaaS project' },
@@ -49,11 +58,18 @@ export async function main(argv: string[]): Promise<number> {
         exitCode = await modulesCommand(args);
       },
     }),
+    inspect: route({
+      meta: { name: 'inspect', description: 'Show how a project differs from its kit render' },
+      args: inspectArgs,
+      async run({ args }) {
+        exitCode = await inspectCommand(args);
+      },
+    }),
   };
   const root = defineCommand({
     meta: {
       name: 'nuxt-saas',
-      version: '3.0.0',
+      version: '3.1.0',
       description: 'Create and manage modular Nuxt SaaS projects',
     },
     subCommands: {
@@ -62,6 +78,7 @@ export async function main(argv: string[]): Promise<number> {
       remove: commands.remove.command,
       upgrade: commands.upgrade.command,
       modules: commands.modules.command,
+      inspect: commands.inspect.command,
     },
   });
   try {
@@ -78,12 +95,20 @@ export async function main(argv: string[]): Promise<number> {
     await command.run(rawArgs);
     return exitCode;
   } catch (error) {
-    if (error instanceof CliError || (error instanceof Error && error.name === 'CLIError')) {
-      console.error(error.message);
-      return 1;
+    const expected =
+      error instanceof CliError || (error instanceof Error && error.name === 'CLIError');
+    const message = error instanceof Error ? error.message : String(error);
+    if (json) {
+      printJson({
+        schema: JSON_SCHEMA,
+        error: { message, kind: expected ? 'expected' : 'unexpected' },
+      });
+    } else if (expected) {
+      console.error(message);
+    } else {
+      console.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
     }
-    console.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
-    return 2;
+    return expected ? 1 : 2;
   }
 }
 

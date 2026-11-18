@@ -58,7 +58,7 @@ const { t } = useI18n();
 definePageMeta({
   title: 'auth.verify_email_title',
   breadcrumb: 'auth.verify_email_breadcrumb',
-  layout: 'empty',
+  layout: false,
   middleware: ['guest'],
 });
 
@@ -99,56 +99,55 @@ async function resendVerification() {
 </script>
 
 <template>
-  <AuthPageLayout quote="Verify your account once, then keep your reading in sync everywhere.">
-    <div class="space-y-6 text-center">
-      <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
-        <MailCheck aria-hidden="true" class="size-7 text-primary" />
+  <AuthPageLayout page="verify-email">
+    <div class="space-y-4">
+      <div class="flex size-10 items-center justify-center rounded-md border bg-background/60">
+        <MailCheck aria-hidden="true" class="size-5" />
       </div>
 
-      <div class="space-y-2">
+      <div class="space-y-1.5">
         <h1 class="text-2xl font-semibold tracking-tight">Check your email</h1>
         <p class="text-sm text-muted-foreground">
           We've sent a verification link to
-          <strong v-if="email" class="text-foreground">{{ email }}</strong>
-          <span v-else>your email address</span>
+          <strong v-if="email" class="font-medium text-foreground">{{ email }}</strong>
+          <span v-else>your email address</span>. Click the link in the email to verify your
+          account. If you don't see it, check your spam folder.
         </p>
       </div>
-
-      <p class="text-sm text-muted-foreground">
-        Click the link in the email to verify your account. If you don't see it, check your spam
-        folder.
-      </p>
-
-      <Alert
-        v-if="resendSuccess"
-        class="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
-      >
-        <AlertDescription class="text-green-700 dark:text-green-300">
-          Verification email sent! Please check your inbox.
-        </AlertDescription>
-      </Alert>
-
-      <Alert v-if="resendError" variant="destructive">
-        <AlertDescription>{{ resendError }}</AlertDescription>
-      </Alert>
-
-      <div class="space-y-3 pt-2">
-        <Button
-          variant="outline"
-          class="w-full"
-          :disabled="!email || isResending || resendSuccess"
-          :is-loading="isResending"
-          @click="resendVerification"
-        >
-          {{ resendSuccess ? 'Email Sent' : 'Resend Verification Email' }}
-        </Button>
-
-        <div>
-          <NuxtLink :to="loginLink" class="text-sm font-medium text-primary hover:underline">
-            Back to Sign In
-          </NuxtLink>
-        </div>
-      </div>
     </div>
+
+    <Alert
+      v-if="resendSuccess"
+      role="status"
+      class="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
+    >
+      <AlertDescription class="text-green-700 dark:text-green-300">
+        Verification email sent! Please check your inbox.
+      </AlertDescription>
+    </Alert>
+
+    <Alert v-if="resendError" variant="destructive" role="alert">
+      <AlertDescription>{{ resendError }}</AlertDescription>
+    </Alert>
+
+    <Button
+      type="button"
+      variant="outline"
+      class="h-10 w-full"
+      :disabled="!email || isResending || resendSuccess"
+      :is-loading="isResending"
+      @click="resendVerification"
+    >
+      {{ resendSuccess ? 'Email sent' : 'Resend verification email' }}
+    </Button>
+
+    <p class="text-center text-sm text-muted-foreground">
+      <NuxtLink
+        :to="loginLink"
+        class="font-medium text-foreground underline-offset-4 hover:underline"
+      >
+        Back to sign in
+      </NuxtLink>
+    </p>
   </AuthPageLayout>
 </template>

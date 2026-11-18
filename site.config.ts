@@ -40,4 +40,33 @@ export const SITE_CONFIG = {
       },
     ],
   },
+  auth: {
+    // Keyed by auth page; `default` covers any page without its own entry. Text may be an i18n key.
+    quotes: {
+      default: {
+        text: 'Everything you need to ship, already wired up.',
+        author: 'No Name Studio',
+      },
+      login: {
+        text: 'Nuxt Starter Kit is the best way to start your next Nuxt project with all the essential features and integrations you need.',
+        author: 'Ngo Duc Manh Le',
+      },
+      register: {
+        text: 'Build a library that feels like yours from the first page.',
+        author: 'No Name Studio',
+      },
+      'forgot-password': {
+        text: 'Get back into your library without losing your place.',
+        author: 'No Name Studio',
+      },
+      'reset-password': {
+        text: 'Choose a fresh key and step right back into your library.',
+        author: 'No Name Studio',
+      },
+      'verify-email': {
+        text: 'Verify your account once, then keep your reading in sync everywhere.',
+        author: 'No Name Studio',
+      },
+    },
+  },
 };

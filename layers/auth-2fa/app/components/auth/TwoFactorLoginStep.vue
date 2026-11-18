@@ -69,11 +69,11 @@ const on2faSubmit = async () => {
 </script>
 
 <template>
-  <div class="space-y-1">
-    <h1 id="two-factor-title" class="text-2xl font-bold tracking-tight">
+  <div class="space-y-1.5">
+    <h1 id="two-factor-title" class="text-2xl font-semibold tracking-tight">
       Two-factor authentication
     </h1>
-    <p id="two-factor-description" class="text-base text-muted-foreground">
+    <p id="two-factor-description" class="text-sm text-muted-foreground">
       <template v-if="useBackupCode">
         {{ t('auth.two_factor.backup_code_description') }}
       </template>

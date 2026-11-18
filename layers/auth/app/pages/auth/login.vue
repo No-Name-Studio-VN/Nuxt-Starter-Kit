@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { User, Lock, Eye, EyeOff } from '@lucide/vue';
+import { Eye, EyeOff } from '@lucide/vue';
 import {
   getAuthErrorMessage,
   getAuthSuccessMessage,
@@ -10,10 +10,10 @@ import { Field as VeeField, useForm } from 'vee-validate';
 import { loginSchema } from '#layers/auth/shared/schemas/userSchema';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
-import { APP_MANIFEST } from '#shared/constants/manifest';
 import type { ApiResponse } from '#layers/server-core/types/api';
 import type { OAuthUrlPayload } from '#layers/auth/types/auth';
 
+const siteConfig = useConfig();
 const formSchema = loginSchema.pick({ username: true, password: true });
 
 const route = useRoute();
@@ -78,7 +78,7 @@ const oauthPopupListener = useOAuthPopupListener(onOAuthPopupComplete);
 definePageMeta({
   title: 'auth.login_title',
   breadcrumb: 'auth.login_breadcrumb',
-  layout: 'empty',
+  layout: false,
 });
 
 useSeo({
@@ -249,10 +249,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <AuthPageLayout
-    quote="Gromet Reader keeps my library organized and lets me get back to reading without fighting the interface."
-    quote-author="Morgan Vale"
-  >
+  <AuthPageLayout page="login">
     <component
       :is="activeLoginStep.component"
       v-if="activeLoginStep"
@@ -261,15 +258,16 @@ onBeforeUnmount(() => {
       @cancel="leaveLoginStep"
     />
     <template v-else>
-      <div class="space-y-1">
-        <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
-        <p class="text-base text-muted-foreground">
-          {{ APP_MANIFEST.description }}
+      <div class="space-y-1.5">
+        <h1 class="text-2xl font-semibold tracking-tight">Welcome back</h1>
+        <p class="text-sm text-muted-foreground">
+          {{ siteConfig.site.description }}
         </p>
       </div>
 
       <Alert
         v-if="success"
+        role="status"
         class="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
       >
         <AlertDescription class="text-green-700 dark:text-green-300">
@@ -277,50 +275,82 @@ onBeforeUnmount(() => {
         </AlertDescription>
       </Alert>
 
-      <Alert v-if="error" variant="destructive">
+      <Alert v-if="error" variant="destructive" role="alert">
         <AlertDescription>{{ error }}</AlertDescription>
       </Alert>
+
+      <div v-if="AVAILABLE_PROVIDERS.length" class="flex flex-col gap-2">
+        <Button
+          v-for="provider in AVAILABLE_PROVIDERS"
+          :key="provider.id"
+          type="button"
+          variant="outline"
+          class="h-10 w-full"
+          :is-loading="oauthLoadingProvider === provider.id"
+          :disabled="isLoading || oauthLoadingProvider !== null"
+          @click="signInWithProvider(provider.id)"
+        >
+          <div class="flex size-4 items-center justify-center">
+            <OAuthIcon :provider="provider.id" />
+          </div>
+          Continue with {{ provider.name }}
+        </Button>
+      </div>
+
+      <div v-if="AVAILABLE_PROVIDERS.length" class="flex items-center gap-3">
+        <div class="h-px flex-1 bg-border" />
+        <span class="text-xs text-muted-foreground">or</span>
+        <div class="h-px flex-1 bg-border" />
+      </div>
 
       <form
         :action="authRoutes.AUTH_LOGIN_PASSWORD"
         method="POST"
-        class="space-y-4"
+        class="flex flex-col gap-4"
         @submit.prevent="onSubmit"
       >
         <input type="hidden" name="redirect-to" :value="redirectTo" />
         <VeeField v-slot="{ field, errors }" name="username">
-          <Field :data-invalid="!!errors.length" class="space-y-2">
-            <FieldLabel for="username" class="text-sm font-medium"> Username </FieldLabel>
-            <div class="relative">
-              <User aria-hidden="true" class="absolute left-3 top-3 size-4" />
-              <Input
-                id="username"
-                :model-value="field.value"
-                name="username"
-                type="text"
-                placeholder="Enter your username"
-                class="pl-9 h-11"
-                :disabled="isLoading"
-                :aria-invalid="!!errors.length"
-                @update:model-value="field.onChange"
-              />
-            </div>
+          <Field :data-invalid="!!errors.length">
+            <FieldLabel for="username">Username</FieldLabel>
+            <Input
+              id="username"
+              :model-value="field.value"
+              name="username"
+              type="text"
+              autocomplete="username"
+              autocapitalize="none"
+              :spellcheck="false"
+              placeholder="Enter your username"
+              class="h-10"
+              :disabled="isLoading"
+              :aria-invalid="!!errors.length"
+              @update:model-value="field.onChange"
+            />
             <FieldError v-if="errors.length" :errors="errors" />
           </Field>
         </VeeField>
 
         <VeeField v-slot="{ field, errors }" name="password">
-          <Field :data-invalid="!!errors.length" class="space-y-2">
-            <FieldLabel for="password" class="text-sm font-medium"> Password </FieldLabel>
+          <Field :data-invalid="!!errors.length">
+            <div class="flex items-center justify-between">
+              <FieldLabel for="password">Password</FieldLabel>
+              <NuxtLink
+                :to="{ path: '/auth/forgot-password' }"
+                class="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                {{ $t('auth.forgot_password') }}
+              </NuxtLink>
+            </div>
             <div class="relative">
-              <Lock aria-hidden="true" class="absolute left-3 top-3 size-4" />
               <Input
                 id="password"
                 :model-value="field.value"
                 name="password"
                 :type="showPassword ? 'text' : 'password'"
+                autocomplete="current-password"
                 placeholder="Enter your password"
-                class="h-11 px-9"
+                class="h-10 pr-10"
                 :disabled="isLoading"
                 :aria-invalid="!!errors.length"
                 @update:model-value="field.onChange"
@@ -328,8 +358,8 @@ onBeforeUnmount(() => {
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
-                class="absolute right-1 top-1 size-9 p-0 hover:bg-transparent"
+                size="icon"
+                class="absolute inset-y-0 right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
                 :aria-label="showPassword ? 'Hide password' : 'Show password'"
                 :aria-pressed="showPassword"
                 @click="showPassword = !showPassword"
@@ -342,68 +372,40 @@ onBeforeUnmount(() => {
           </Field>
         </VeeField>
 
-        <div class="flex justify-end">
-          <NuxtLink
-            :to="{ path: '/auth/forgot-password' }"
-            class="text-xs text-primary hover:underline"
-          >
-            {{ $t('auth.forgot_password') }}
-          </NuxtLink>
-        </div>
+        <NuxtTurnstile
+          v-model="turnstileToken"
+          :options="{ size: 'flexible', appearance: 'interaction-only' }"
+        />
 
-        <div class="space-y-3">
-          <NuxtTurnstile v-model="turnstileToken" />
-          <Button type="submit" class="h-11 w-full active:scale-[0.98]" :is-loading="isLoading">
-            <Lock aria-hidden="true" class="size-4" />
-            Sign In with Password
-          </Button>
+        <Button type="submit" class="h-10 w-full" :is-loading="isLoading">Sign in</Button>
 
-          <div class="flex items-center gap-2 py-1">
-            <div class="h-px flex-1 bg-border" />
-            <span class="text-xs uppercase text-muted-foreground">Or</span>
-            <div class="h-px flex-1 bg-border" />
-          </div>
-
-          <ExtensionSlot
-            name="auth:login:alternatives"
-            :username="values.username ?? ''"
-            :redirect-to="redirectTo"
-            :pending="isLoading"
-            @done="completeLogin"
-            @pending="onAlternativePending"
-            @error="onAlternativeError"
-          />
-
-          <div class="flex items-center gap-2 py-1">
-            <div class="h-px flex-1 bg-border" />
-            <span class="text-xs uppercase text-muted-foreground">Or</span>
-            <div class="h-px flex-1 bg-border" />
-          </div>
-
-          <template v-for="provider in AVAILABLE_PROVIDERS" :key="provider.id">
-            <Button
-              type="button"
-              variant="outline"
-              class="w-full"
-              :is-loading="oauthLoadingProvider === provider.id"
-              :disabled="isLoading || oauthLoadingProvider !== null"
-              @click="signInWithProvider(provider.id)"
-            >
-              <div class="flex size-4 items-center justify-center">
-                <OAuthIcon :provider="provider.id" />
-              </div>
-              Continue with {{ provider.name }}
-            </Button>
-          </template>
-        </div>
+        <ExtensionSlot
+          name="auth:login:alternatives"
+          :username="values.username ?? ''"
+          :redirect-to="redirectTo"
+          :pending="isLoading"
+          @done="completeLogin"
+          @pending="onAlternativePending"
+          @error="onAlternativeError"
+        />
       </form>
 
-      <div class="space-y-3 text-center">
-        <div class="text-xs text-muted-foreground">
+      <div class="space-y-3">
+        <p class="text-center text-sm text-muted-foreground">
+          Don't have an account?
+          <NuxtLink
+            to="/auth/register"
+            class="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Sign up
+          </NuxtLink>
+        </p>
+
+        <p class="text-center text-xs text-muted-foreground text-balance">
           By signing in, you agree to our
           <NuxtLink
             to="https://nnsvn.me/terms"
-            class="underline underline-offset-4 hover:text-primary"
+            class="underline underline-offset-4 hover:text-foreground"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -412,20 +414,13 @@ onBeforeUnmount(() => {
           and
           <NuxtLink
             to="https://nnsvn.me/privacy"
-            class="underline underline-offset-4 hover:text-primary"
+            class="underline underline-offset-4 hover:text-foreground"
             target="_blank"
             rel="noopener noreferrer"
           >
             Privacy Policy
           </NuxtLink>
-        </div>
-
-        <div class="text-sm text-muted-foreground">
-          Don't have an account?
-          <NuxtLink to="/auth/register" class="font-medium text-primary hover:underline">
-            Sign Up
-          </NuxtLink>
-        </div>
+        </p>
       </div>
     </template>
   </AuthPageLayout>

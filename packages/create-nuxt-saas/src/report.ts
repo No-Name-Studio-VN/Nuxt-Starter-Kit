@@ -1,7 +1,9 @@
 import type { InitReport } from './commands/init';
+import type { InspectReport } from './commands/inspect';
 import type { TransitionReport } from './commands/modules';
 import type { KitModule } from './kit/modules';
 import type { ChangeKind } from './transition/plan';
+import { JSON_SCHEMA, type JsonDocument } from './types/json';
 
 const symbols: Record<ChangeKind, string> = {
   create: '+',
@@ -38,6 +40,58 @@ export function printTransitionReport(report: TransitionReport, check: boolean):
     for (const path of report.conflicts) console.log(`  ${path}`);
   }
   printNext(report.followUps);
+}
+
+export function printJson(value: JsonDocument): void {
+  process.stdout.write(`${JSON.stringify(value)}\n`);
+}
+
+export function printTransitionJson(
+  report: TransitionReport & { upToDate?: boolean },
+  from: string,
+  to: string,
+): void {
+  printJson({
+    schema: JSON_SCHEMA,
+    from,
+    to,
+    changes: report.changes.map(({ path, kind }) => ({ path, kind })),
+    conflicts: report.conflicts,
+    followUps: report.followUps,
+    addedModules: report.addedModules,
+    removedModules: report.removedModules,
+    applied: report.applied,
+    ...(report.upToDate === undefined ? {} : { upToDate: report.upToDate }),
+  });
+}
+
+export function printModulesJson(modules: KitModule[], installed: string[], commit: string): void {
+  printJson({ schema: JSON_SCHEMA, commit, modules, installed });
+}
+
+export function printInspectJson(report: InspectReport): void {
+  printJson({ schema: JSON_SCHEMA, ...report });
+}
+
+export function printInspect(report: InspectReport): void {
+  const { summary } = report;
+  console.log(
+    `Kit ${report.commit.slice(0, 7)} · ${summary.total} files · ${summary.edited} edited · ${summary.deleted} deleted`,
+  );
+  const edited = report.files.filter((file) => file.status === 'edited');
+  const deleted = report.files.filter((file) => file.status === 'deleted');
+  if (edited.length > 0) {
+    console.log('Edited:');
+    for (const file of edited) console.log(`  ${file.path}`);
+  }
+  if (deleted.length > 0) {
+    console.log('Deleted:');
+    for (const file of deleted) console.log(`  ${file.path}`);
+  }
+  if (report.conflicts.unresolved.length > 0) {
+    console.log('Unresolved conflicts:');
+    for (const path of report.conflicts.unresolved) console.log(`  ${path}`);
+  }
 }
 
 export function printModules(modules: KitModule[], installed: string[]): void {

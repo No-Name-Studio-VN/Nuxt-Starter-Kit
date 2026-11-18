@@ -152,6 +152,7 @@ Nuxt-Starter-Kit/
 │   └── ...                # Other optional modules
 ├── content/               # Root Markdown, included only with content
 ├── packages/create-nuxt-saas/ # CLI (not copied into generated projects)
+├── packages/kit-manager-macos/ # Kit Manager macOS app (not copied into generated projects)
 └── nuxt.config.ts         # Base config; Nuxt auto-registers selected layers
 ```
 
@@ -167,6 +168,32 @@ pnpm dlx create-nuxt-saas@latest upgrade
 
 Apply commands require a clean git tree. Review the preview and follow the printed install,
 environment and migration steps.
+
+## 🖥️ Kit Manager for macOS
+
+Kit Manager is a native macOS app for everyone running more than one project from this kit. It
+shows which kit version each project is on, what an upgrade would change, which modules each
+project uses and what is missing from its environment, and hands the work to Terminal, VS Code or
+Claude.
+
+![Kit Manager overview](packages/kit-manager-macos/docs/screenshots/overview.png)
+
+|                                                                               |                                                                                                     |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| ![Project detail](packages/kit-manager-macos/docs/screenshots/detail.png)     | ![Update with Claude](packages/kit-manager-macos/docs/screenshots/upgrade.png)                      |
+| **Project detail:** kit update, modules, customisation and health in one page | **Update with Claude:** preview the file plan before anything changes, then upgrade on a new branch |
+| ![Modules](packages/kit-manager-macos/docs/screenshots/modules.png)           | ![What's New](packages/kit-manager-macos/docs/screenshots/whatsnew.png)                             |
+| **Modules:** every kit module and the projects that use it                    | **What's New:** kit releases and the projects each one affects                                      |
+
+Press ⌘K for the quick switcher, and use the menu bar item to see at a glance which projects need
+attention.
+
+![Quick switcher](packages/kit-manager-macos/docs/screenshots/switcher.png)
+
+The app **reads, the CLI acts**: anything that changes a project runs through `create-nuxt-saas`
+after an explicit click. It needs macOS 26 or later. Download `KitManager.zip` from the
+[latest release](https://github.com/No-Name-Studio-VN/Nuxt-Starter-Kit/releases/latest), or build
+it from source with Xcode; see the [Kit Manager README](packages/kit-manager-macos/README.md).
 
 ## ☁️ Deployment
 

@@ -36,12 +36,12 @@ async function signInWithPasskey() {
   <Button
     type="button"
     variant="outline"
-    class="w-full active:scale-[0.98]"
+    class="h-10 w-full"
     :disabled="!username.trim()"
     :is-loading="pending"
     @click="signInWithPasskey"
   >
     <Fingerprint aria-hidden="true" class="size-4" />
-    Sign In with a Passkey
+    Sign in with passkey
   </Button>
 </template>

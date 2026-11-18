@@ -1,119 +1,136 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
-import { ChevronLeftIcon, Grid2x2PlusIcon } from '@lucide/vue';
+import { ChevronLeftIcon } from '@lucide/vue';
+import { usePreferredReducedMotion } from '@vueuse/core';
 import { motion } from 'motion-v';
-import { APP_MANIFEST } from '#shared/constants/manifest';
 
-type FloatingPath = {
-  id: string;
-  d: string;
-  width: number;
-  opacity: number;
-  duration: number;
-};
+const props = defineProps<{
+  /** Key into `auth.quotes` in site.config; falls back to the `default` entry. */
+  page?: string;
+}>();
 
-const props = withDefaults(
-  defineProps<{
-    quote: string;
-    quoteAuthor?: string;
-  }>(),
-  {
-    quoteAuthor: 'No Name Studio',
-  },
+const { t, te } = useI18n();
+const config = useConfig();
+
+const quote = computed(() => {
+  const { quotes } = config.value.auth;
+  const entry = (props.page ? quotes[props.page] : undefined) ?? quotes.default;
+  if (!entry?.text) return undefined;
+
+  return {
+    text: te(entry.text) ? t(entry.text) : entry.text,
+    author: entry.author && te(entry.author) ? t(entry.author) : entry.author,
+  };
+});
+
+// three.js is heavy, so the background ships in its own chunk and only loads on auth pages.
+const HeroGeometric = defineAsyncComponent(
+  () => import('@/components/ui/hero-geometric/HeroGeometric.vue'),
 );
 
-function createFloatingPaths(position: 1 | -1): FloatingPath[] {
-  return Array.from({ length: 36 }, (_, index) => ({
-    id: `${position}-${index}`,
-    d: `M-${380 - index * 5 * position} -${189 + index * 6}C-${
-      380 - index * 5 * position
-    } -${189 + index * 6} -${312 - index * 5 * position} ${216 - index * 6} ${
-      152 - index * 5 * position
-    } ${343 - index * 6}C${616 - index * 5 * position} ${470 - index * 6} ${
-      684 - index * 5 * position
-    } ${875 - index * 6} ${684 - index * 5 * position} ${875 - index * 6}`,
-    width: 0.5 + index * 0.03,
-    opacity: Math.min(0.1 + index * 0.03, 1),
-    duration: 20 + (index % 10),
-  }));
+const colorMode = useColorMode();
+const reducedMotion = usePreferredReducedMotion();
+
+/**
+ * The shader only takes hex, so the theme tokens are resolved in the browser.
+ * Bands run from `--primary` into a faint primary tint, so the frosted panel
+ * always has colour behind it while staying near `--background` for contrast.
+ */
+const heroColors = ref({ accent: '#8e51ff', tint: '#f3eeff', base: '#ffffff' });
+
+function syncHeroColors() {
+  const styles = getComputedStyle(document.body);
+  const primary = styles.getPropertyValue('--primary').trim();
+  const background = styles.getPropertyValue('--background').trim();
+
+  heroColors.value = {
+    accent: cssColorToHex(primary) ?? heroColors.value.accent,
+    tint:
+      cssColorToHex(`color-mix(in oklab, ${primary} 18%, ${background})`) ?? heroColors.value.tint,
+    base: cssColorToHex(background) ?? heroColors.value.base,
+  };
 }
 
-const floatingPaths = [...createFloatingPaths(1), ...createFloatingPaths(-1)];
+onMounted(syncHeroColors);
+watch(() => colorMode.value, syncHeroColors, { flush: 'post' });
+
+const enterMotion = computed(() =>
+  reducedMotion.value === 'reduce'
+    ? { initial: false, transition: { duration: 0 } }
+    : {
+        initial: { opacity: 0, y: 12 },
+        transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+      },
+);
 </script>
 
 <template>
-  <main class="relative h-dvh overflow-hidden bg-background lg:grid lg:grid-cols-2">
-    <section
-      class="relative hidden h-full flex-col overflow-hidden border-r bg-muted/60 p-10 lg:flex"
-    >
-      <div class="absolute inset-0 bg-linear-to-t from-background to-transparent" />
-      <div class="relative flex items-center gap-2">
-        <Grid2x2PlusIcon aria-hidden="true" class="size-6" />
-        <p class="text-xl font-semibold">
-          {{ APP_MANIFEST.name }}
-        </p>
-      </div>
+  <main class="relative isolate h-dvh overflow-hidden bg-background text-foreground">
+    <HeroGeometric
+      aria-hidden="true"
+      class="absolute inset-0 -z-10 h-full min-h-0 bg-background"
+      :color1="heroColors.accent"
+      :color2="heroColors.tint"
+      :color3="heroColors.base"
+      :speed="0.6"
+    />
 
-      <div
-        class="pointer-events-none absolute inset-0 text-slate-950 dark:text-white motion-reduce:hidden"
-        aria-hidden="true"
+    <div class="grid h-full lg:grid-cols-2">
+      <!-- Brand side: left clear so the background carries the visual weight. -->
+      <aside class="relative hidden h-full flex-col justify-between p-10 lg:flex xl:p-14">
+        <AuthBrand />
+
+        <motion.figure
+          v-if="quote"
+          :initial="enterMotion.initial"
+          :animate="{ opacity: 1, y: 0 }"
+          :transition="{ ...enterMotion.transition, delay: 0.15 }"
+          class="max-w-md rounded-lg border border-border/60 bg-background/70 p-6 shadow-sm backdrop-blur-md"
+        >
+          <blockquote class="text-lg/relaxed font-medium tracking-tight text-pretty">
+            &ldquo;{{ quote.text }}&rdquo;
+          </blockquote>
+          <figcaption v-if="quote.author" class="mt-4 text-sm text-muted-foreground">
+            {{ quote.author }}
+          </figcaption>
+        </motion.figure>
+      </aside>
+
+      <!-- Auth side: a frosted panel on desktop, a frosted card on mobile. -->
+      <section
+        class="relative flex h-full min-h-0 flex-col lg:border-l lg:border-border/60 lg:bg-background/75 lg:backdrop-blur-2xl lg:backdrop-saturate-150"
       >
-        <svg class="size-full" viewBox="0 0 696 316" fill="none">
-          <motion.path
-            v-for="path in floatingPaths"
-            :key="path.id"
-            :d="path.d"
-            stroke="currentColor"
-            :stroke-width="path.width"
-            :stroke-opacity="path.opacity"
-            :initial="{ pathLength: 0.3, opacity: 0.6 }"
-            :animate="{ pathLength: 1, opacity: [0.3, 0.6, 0.3], pathOffset: [0, 1, 0] }"
-            :transition="{
-              duration: path.duration,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: 'linear',
-            }"
+        <header class="flex shrink-0 items-center justify-between p-3 sm:p-4 lg:px-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            class="bg-background/60 backdrop-blur-md lg:bg-transparent lg:backdrop-filter-none"
+            as-child
+          >
+            <NuxtLink to="/">
+              <ChevronLeftIcon aria-hidden="true" class="size-4" />
+              Home
+            </NuxtLink>
+          </Button>
+          <DarkModeToggle
+            class="bg-background/60 backdrop-blur-md lg:bg-transparent lg:backdrop-filter-none"
           />
-        </svg>
-      </div>
+        </header>
 
-      <div class="relative mt-auto max-w-xl">
-        <blockquote class="space-y-2">
-          <p class="text-xl/relaxed">&ldquo;{{ props.quote }}&rdquo;</p>
-          <footer class="font-mono text-sm font-semibold">~ {{ props.quoteAuthor }}</footer>
-        </blockquote>
-      </div>
-    </section>
+        <!-- Scrolls only as a fallback on very short viewports so content is never clipped. -->
+        <div class="flex min-h-0 flex-1 overflow-y-auto px-4 pb-6 sm:px-6 lg:px-10">
+          <motion.div
+            :initial="enterMotion.initial"
+            :animate="{ opacity: 1, y: 0 }"
+            :transition="enterMotion.transition"
+            class="m-auto flex w-full max-w-sm flex-col gap-6 rounded-xl border border-border/60 bg-background/75 p-6 shadow-xl backdrop-blur-2xl backdrop-saturate-150 sm:p-8 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-filter-none"
+          >
+            <AuthBrand size="sm" class="lg:hidden" />
 
-    <section
-      class="relative flex h-full min-h-0 flex-col overflow-x-hidden overflow-y-auto px-4 py-20 sm:px-6 lg:px-10"
-    >
-      <div aria-hidden="true" class="absolute inset-0 -z-10 isolate opacity-60">
-        <div
-          class="absolute right-0 top-0 size-80 -translate-y-1/2 translate-x-1/4 rounded-full bg-foreground/4 blur-3xl"
-        />
-        <div
-          class="absolute bottom-0 left-0 size-72 translate-y-1/3 rounded-full bg-muted blur-3xl"
-        />
-      </div>
-
-      <Button variant="ghost" class="absolute left-5 top-7" as-child>
-        <NuxtLink to="/">
-          <ChevronLeftIcon aria-hidden="true" class="me-2 size-4" />
-          Home
-        </NuxtLink>
-      </Button>
-
-      <div class="m-auto w-full max-w-sm space-y-5">
-        <div class="flex items-center gap-2 lg:hidden">
-          <Grid2x2PlusIcon aria-hidden="true" class="size-6" />
-          <p class="text-xl font-semibold">
-            {{ APP_MANIFEST.name }}
-          </p>
+            <slot />
+          </motion.div>
         </div>
-
-        <slot />
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
 </template>

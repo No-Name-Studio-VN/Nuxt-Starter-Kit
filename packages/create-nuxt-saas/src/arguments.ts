@@ -29,6 +29,7 @@ export const initArgs = {
 export const projectArgs = {
   ...kitArgs,
   dir: { type: 'string', description: 'Project directory', default: '.' },
+  json: { type: 'boolean', description: 'Print one JSON document instead of text', default: false },
 } satisfies ArgsDef;
 
 export const transitionArgs = {
@@ -52,4 +53,10 @@ export const upgradeArgs = {
   to: { type: 'string', description: 'Target kit ref or commit (defaults to the template ref)' },
 } satisfies ArgsDef;
 
-export const listArgs = { ...projectArgs, ...templateArg } satisfies ArgsDef;
+export const listArgs = {
+  ...projectArgs,
+  ...templateArg,
+  to: { type: 'string', description: 'Kit ref or commit (outside a project only)' },
+} satisfies ArgsDef;
+
+export const inspectArgs = projectArgs;

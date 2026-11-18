@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
   const secret = new OTPAuth.Secret({ size: 20 });
 
   const totp = new OTPAuth.TOTP({
-    issuer: 'Gromet Reader',
+    issuer: 'Nuxt Starter Kit',
     label: username,
     algorithm: 'SHA1',
     digits: 6,
