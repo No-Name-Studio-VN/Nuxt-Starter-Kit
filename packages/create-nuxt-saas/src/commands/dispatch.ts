@@ -1,6 +1,7 @@
 import { basename, join, resolve } from 'node:path';
 import type { ParsedArgs } from 'citty';
 import type { listArgs, moduleChangeArgs, upgradeArgs } from '../arguments';
+import { CliError } from '../errors';
 import { kitSource, targetCommit } from '../kit/context';
 import { DEFAULT_TEMPLATE, openKit, resolveCommit } from '../kit/source';
 import { readState, STATE_FILE } from '../project/state';
@@ -8,6 +9,7 @@ import { parseModules, promptInit } from '../prompts';
 import {
   printInitReport,
   printModules,
+  printModulesJson,
   printTransitionJson,
   printTransitionReport,
 } from '../report';
@@ -104,12 +106,16 @@ export async function modulesCommand(args: ParsedArgs<typeof listArgs>): Promise
     (await pathExists(join(projectRoot, STATE_FILE))) ||
     (await pathExists(join(projectRoot, '.nuxt-saas/manifest.json')));
   const state = hasState ? await readState(projectRoot) : null;
+  if (state && args.to) throw new CliError('--to is only valid outside a project.');
   const template = state?.kit ?? args.template ?? DEFAULT_TEMPLATE;
   const source = kitSource(args, template);
   if (state && source.kind === 'local') await resolveCommit(source);
-  const kit = await openKit(source, state?.commit ?? (await resolveCommit(source)), template);
+  const commit = state?.commit ?? (await targetCommit(source, args.to));
+  const kit = await openKit(source, commit, template);
   try {
-    printModules(kit.modules, state?.modules ?? []);
+    const installed = state?.modules ?? [];
+    if (args.json) printModulesJson(kit.modules, installed, kit.commit);
+    else printModules(kit.modules, installed);
     return 0;
   } finally {
     await kit.cleanup();

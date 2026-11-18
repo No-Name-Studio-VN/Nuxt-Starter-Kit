@@ -64,6 +64,10 @@ export function printTransitionJson(
   });
 }
 
+export function printModulesJson(modules: KitModule[], installed: string[], commit: string): void {
+  printJson({ schema: JSON_SCHEMA, commit, modules, installed });
+}
+
 export function printModules(modules: KitModule[], installed: string[]): void {
   for (const module of modules) {
     const tags = [

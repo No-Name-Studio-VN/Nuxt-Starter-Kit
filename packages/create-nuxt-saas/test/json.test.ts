@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { main } from '../src/cli';
-import type { JsonErrorReport, JsonTransitionReport } from '../src/types/json';
+import { readState } from '../src/project/state';
+import type { JsonErrorReport, JsonModulesReport, JsonTransitionReport } from '../src/types/json';
 import { createFixtureKit, makeTempDir } from './support/fixtureKit';
 
 const run = promisify(execFile);
@@ -157,5 +158,70 @@ describe('--json output', () => {
     expect(await main(['upgrade', '--json', '--help'])).toBe(0);
     expect(vi.mocked(console.log).mock.calls.flat().join('\n')).toContain('USAGE');
     expect(written(stdout)).toBe('');
+  });
+
+  it('modules --json outside a project lists claims at --to', async () => {
+    const emptyDir = join(parent, 'empty');
+    await run('mkdir', [emptyDir]);
+    const stdout = captureStdout();
+    expect(
+      await main([
+        'modules',
+        '--json',
+        '--kit',
+        fixture.root,
+        '--to',
+        fixture.v1,
+        '--dir',
+        emptyDir,
+      ]),
+    ).toBe(0);
+    const report: unknown = parseJson(written(stdout));
+    expect(report).toMatchObject({
+      schema: 1,
+      commit: fixture.v1,
+      installed: [],
+    } satisfies Partial<JsonModulesReport>);
+    const modules = isRecord(report) ? report.modules : undefined;
+    expect(Array.isArray(modules)).toBe(true);
+    if (!Array.isArray(modules)) return;
+    expect(modules.find((module) => isRecord(module) && module.id === 'alpha')).toMatchObject({
+      dependencies: expect.arrayContaining(['alpha-dep']),
+    });
+    expect(console.log).not.toHaveBeenCalled();
+  });
+
+  it('modules --to is rejected inside a project', async () => {
+    await initV1();
+    const stdout = captureStdout();
+    expect(
+      await main([
+        'modules',
+        '--dir',
+        project,
+        '--to',
+        fixture.v2,
+        '--kit',
+        fixture.root,
+        '--json',
+      ]),
+    ).toBe(1);
+    const report: unknown = parseJson(written(stdout));
+    expect(report).toMatchObject({ schema: 1, error: { kind: 'expected' } });
+    const message = isRecord(report) && isRecord(report.error) ? report.error.message : undefined;
+    expect(String(message)).toContain('--to');
+  });
+
+  it('modules --json inside a project uses the recorded commit', async () => {
+    await initV1();
+    const state = await readState(project);
+    const stdout = captureStdout();
+    expect(await main(['modules', '--json', '--dir', project, '--kit', fixture.root])).toBe(0);
+    const report: unknown = parseJson(written(stdout));
+    expect(report).toMatchObject({
+      schema: 1,
+      commit: state.commit,
+      installed: state.modules,
+    } satisfies Partial<JsonModulesReport>);
   });
 });

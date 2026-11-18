@@ -1,3 +1,4 @@
+import type { KitModule } from '../kit/modules';
 import type { ChangeKind } from '../transition/plan';
 
 export const JSON_SCHEMA = 1;
@@ -25,4 +26,11 @@ export interface JsonErrorReport {
   error: { message: string; kind: 'expected' | 'unexpected' };
 }
 
-export type JsonDocument = JsonTransitionReport | JsonErrorReport;
+export interface JsonModulesReport {
+  schema: typeof JSON_SCHEMA;
+  commit: string;
+  modules: KitModule[];
+  installed: string[];
+}
+
+export type JsonDocument = JsonTransitionReport | JsonModulesReport | JsonErrorReport;

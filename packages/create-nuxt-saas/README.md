@@ -33,7 +33,8 @@ add <modules> [--dir path] [--check] [--force] [--json] [--kit path] [--allow-di
 remove <modules> [--dir path] [--check] [--force] [--json] [--kit path] [--allow-dirty-kit]
 upgrade [--dir path] [--check] [--force] [--json] [--to ref] [--template github:owner/repo#ref]
         [--kit path] [--allow-dirty-kit]
-modules [--dir path] [--template github:owner/repo#ref] [--kit path] [--allow-dirty-kit]
+modules [--dir path] [--json] [--to ref] [--template github:owner/repo#ref] [--kit path]
+        [--allow-dirty-kit]
 ```
 
 Put the subcommand **before its flags**: `upgrade --dir my-app --check`, not
@@ -101,6 +102,11 @@ IDs must exist in the target kit. Newly required dependencies are included autom
 Lists each module's ID, title and description, tagging installed and internal modules. Inside a
 project it uses the recorded kit commit. Outside one it uses the default template's `main`, or
 `--template`. `--dir` chooses where to look for project state.
+
+`--to <ref>` lists the modules at another kit ref or commit. It is only valid outside a project;
+inside one the command throws, because the recorded commit decides. `--json` prints one document
+with `schema`, the resolved `commit`, every module with its claims (`dependencies`,
+`devDependencies`, `scripts`, `env`, `bindings`, `rootFiles`) and the `installed` module IDs.
 
 ### Local kit development
 

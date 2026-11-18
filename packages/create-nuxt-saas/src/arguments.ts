@@ -53,4 +53,8 @@ export const upgradeArgs = {
   to: { type: 'string', description: 'Target kit ref or commit (defaults to the template ref)' },
 } satisfies ArgsDef;
 
-export const listArgs = { ...projectArgs, ...templateArg } satisfies ArgsDef;
+export const listArgs = {
+  ...projectArgs,
+  ...templateArg,
+  to: { type: 'string', description: 'Kit ref or commit (outside a project only)' },
+} satisfies ArgsDef;
