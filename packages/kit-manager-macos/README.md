@@ -9,7 +9,7 @@ The app **reads, the CLI acts**. Anything that changes a project (upgrade, migra
 - macOS 26 or later
 - Xcode 27 or later
 - Node 22 or later and pnpm
-- The built CLI: run `pnpm --filter create-nuxt-saas build` from the repository root
+- The built CLI: run `pnpm --dir packages/create-nuxt-saas build` from the repository root. The app uses the CLI built in the configured kit checkout (it looks for `dist/cli.mjs`) and refuses a CLI older than 3.1.0 (the first version with `--json` and `inspect`).
 
 ## Layout
 
@@ -31,6 +31,16 @@ xcodebuild -project packages/kit-manager-macos/KitManager.xcodeproj -scheme KitM
 ```
 
 The app is signed ad hoc and is not sandboxed, because it launches `node`, `git` and `claude` from your shell environment.
+
+## Using the app
+
+- **Kit path:** Settings (⌘,) holds the path to your Nuxt-Starter-Kit checkout. It defaults to `~/Documents/GitHub/Nuxt-Starter-Kit` when that folder exists. Upgrade previews, version labels, the kit changelog and the module list all come from this checkout, and the app fetches it every 30 minutes by default (adjustable in Settings).
+- **Menu bar extra:** a menu bar item shows how many projects need attention and lists them, with quick actions and a way back to the main window.
+- **Quick switcher:** ⌘K opens the quick switcher over all projects. ⌘R refreshes every project.
+
+## Permissions
+
+The app is not sandboxed, but macOS still asks for the Documents folder permission when the kit or your projects live under `~/Documents`. Because the app is ad-hoc signed, every rebuild has a new signature and macOS asks again. Signing with a stable Apple Development identity (Signing & Capabilities, then Team) avoids the repeat prompts.
 
 ## Tests
 
