@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { rm } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -61,10 +61,10 @@ function parseJson(text: string): unknown {
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
-async function initV1(): Promise<void> {
+async function initV1(extraArgs: string[] = []): Promise<void> {
   await run('git', ['-C', fixture.root, 'checkout', '--detach', fixture.v1]);
   try {
-    expect(await main(['init', project, '--yes', '--kit', fixture.root])).toBe(0);
+    expect(await main(['init', project, '--yes', '--kit', fixture.root, ...extraArgs])).toBe(0);
   } finally {
     await run('git', ['-C', fixture.root, 'checkout', 'main']);
   }
@@ -86,7 +86,8 @@ describe('--json output', () => {
       '--to',
       fixture.v2,
     ]);
-    expect([0, 1]).toContain(code);
+    // An untouched project has nothing to conflict with, so a preview exits 0.
+    expect(code).toBe(0);
     const text = written(stdout);
     expect(text.endsWith('\n')).toBe(true);
     const report = parseJson(text);
@@ -105,6 +106,136 @@ describe('--json output', () => {
       expect(Object.keys(change).sort()).toEqual(['kind', 'path']);
     }
     expect(console.log).not.toHaveBeenCalled();
+  });
+
+  it('add --json applies the change and reports from and to as the recorded kit commit', async () => {
+    await initV1();
+    const state = await readState(project);
+    expect(state.modules).not.toContain('beta');
+    vi.mocked(console.log).mockClear();
+    const stdout = captureStdout();
+
+    expect(await main(['add', 'beta', '--json', '--dir', project, '--kit', fixture.root])).toBe(0);
+
+    const text = written(stdout);
+    expect(text.endsWith('\n')).toBe(true);
+    const report: unknown = parseJson(text);
+    expect(report).toMatchObject({
+      schema: 1,
+      from: state.commit,
+      to: state.commit,
+      conflicts: [],
+      addedModules: expect.arrayContaining(['beta']),
+      removedModules: [],
+      applied: true,
+    } satisfies Partial<JsonTransitionReport>);
+    const changes = isRecord(report) ? report.changes : undefined;
+    expect(Array.isArray(changes)).toBe(true);
+    if (!Array.isArray(changes)) return;
+    expect(changes.length).toBeGreaterThan(0);
+    for (const change of changes) expect(Object.keys(change).sort()).toEqual(['kind', 'path']);
+    expect(console.log).not.toHaveBeenCalled();
+    expect((await readState(project)).modules).toContain('beta');
+  });
+
+  it('remove --json reports the removed modules and what was written', async () => {
+    await initV1(['--modules', 'beta']);
+    const state = await readState(project);
+    expect(state.modules).toContain('beta');
+    vi.mocked(console.log).mockClear();
+    const stdout = captureStdout();
+
+    expect(await main(['remove', 'beta', '--json', '--dir', project, '--kit', fixture.root])).toBe(
+      0,
+    );
+
+    const report: unknown = parseJson(written(stdout));
+    expect(report).toMatchObject({
+      schema: 1,
+      from: state.commit,
+      to: state.commit,
+      conflicts: [],
+      addedModules: [],
+      removedModules: ['beta'],
+      applied: true,
+    } satisfies Partial<JsonTransitionReport>);
+    const changes = isRecord(report) ? report.changes : undefined;
+    expect(Array.isArray(changes) && changes.length > 0).toBe(true);
+    expect(console.log).not.toHaveBeenCalled();
+    expect((await readState(project)).modules).not.toContain('beta');
+  });
+
+  it('upgrade --json reports upToDate when the project already is at the target', async () => {
+    await initV1();
+    vi.mocked(console.log).mockClear();
+    const stdout = captureStdout();
+
+    expect(
+      await main([
+        'upgrade',
+        '--dir',
+        project,
+        '--json',
+        '--kit',
+        fixture.root,
+        '--to',
+        fixture.v1,
+        '--check',
+      ]),
+    ).toBe(0);
+
+    const report: unknown = parseJson(written(stdout));
+    expect(report).toEqual({
+      schema: 1,
+      from: fixture.v1,
+      to: fixture.v1,
+      changes: [],
+      conflicts: [],
+      followUps: [],
+      addedModules: [],
+      removedModules: [],
+      applied: false,
+      upToDate: true,
+    } satisfies JsonTransitionReport);
+    expect(console.log).not.toHaveBeenCalled();
+  });
+
+  it('an applied upgrade with conflicts exits 1 and still prints exactly one JSON report', async () => {
+    await initV1();
+    const home = join(project, 'app/pages/index.vue');
+    await writeFile(home, (await readFile(home, 'utf8')).replace('Home v1', 'User home'));
+    await run('git', ['-C', project, 'commit', '-am', 'customize home']);
+    vi.mocked(console.log).mockClear();
+    const stdout = captureStdout();
+
+    const code = await main([
+      'upgrade',
+      '--dir',
+      project,
+      '--json',
+      '--kit',
+      fixture.root,
+      '--to',
+      fixture.v2,
+    ]);
+
+    expect(code).toBe(1);
+    const text = written(stdout);
+    expect(text.endsWith('\n')).toBe(true);
+    // One document: the whole output parses as a single JSON value and the schema key appears once.
+    expect(text.match(/"schema"/g)).toHaveLength(1);
+    const report: unknown = parseJson(text);
+    expect(report).toMatchObject({
+      schema: 1,
+      from: fixture.v1,
+      to: fixture.v2,
+      conflicts: ['app/pages/index.vue'],
+      applied: true,
+      upToDate: false,
+    } satisfies Partial<JsonTransitionReport>);
+    expect(console.log).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
+    expect((await readState(project)).conflicts).toEqual(['app/pages/index.vue']);
   });
 
   it('prints a JSON error for a CliError', async () => {
