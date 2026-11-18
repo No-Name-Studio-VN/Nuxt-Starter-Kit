@@ -21,3 +21,13 @@ public struct KitState: Codable, Sendable, Hashable {
         self.conflicts = conflicts
     }
 }
+
+extension KitState {
+    /// The recorded template the kit author ships; only these two spellings count as the default.
+    /// A fork that tracks `#main` is a different template.
+    public static let defaultTemplate = "github:No-Name-Studio-VN/Nuxt-Starter-Kit"
+
+    public var usesDefaultTemplate: Bool {
+        kit == Self.defaultTemplate || kit == "\(Self.defaultTemplate)#main"
+    }
+}

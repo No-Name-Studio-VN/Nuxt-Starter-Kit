@@ -12,9 +12,16 @@ public struct ProcessResult: Sendable, Equatable {
     }
 }
 
-public enum ProcessError: Error, Equatable {
+public enum ProcessError: Error, Equatable, LocalizedError {
     case timedOut
     case launchFailed(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .timedOut: "The command timed out."
+        case .launchFailed(let reason): "Could not start the command: \(reason)"
+        }
+    }
 }
 
 public protocol ProcessRunning: Sendable {

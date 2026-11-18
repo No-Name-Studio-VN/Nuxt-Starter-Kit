@@ -1,0 +1,55 @@
+/// Everything the app knows about one project right now. Derived at runtime, never persisted
+/// (except the preview and inspect results, which are cached separately).
+public struct ProjectSnapshot: Sendable, Equatable {
+    public var kind: ProjectKind
+    public var package: PackageInfo?
+    public var git: GitStatus?
+    public var env: EnvCheck?
+    public var wrangler: WranglerInfo?
+    public var health: SiteHealth?
+    public var availability: CommitAvailability?
+    public var versionLabel: String?
+    public var behind: Int?
+    public var preview: Loadable<TransitionReport>
+    public var inspect: Loadable<InspectReport>
+    public var changelog: [KitCommit]
+
+    public init(
+        kind: ProjectKind, package: PackageInfo? = nil, git: GitStatus? = nil, env: EnvCheck? = nil,
+        wrangler: WranglerInfo? = nil, health: SiteHealth? = nil, availability: CommitAvailability? = nil,
+        versionLabel: String? = nil, behind: Int? = nil, preview: Loadable<TransitionReport> = .idle,
+        inspect: Loadable<InspectReport> = .idle, changelog: [KitCommit] = []
+    ) {
+        self.kind = kind
+        self.package = package
+        self.git = git
+        self.env = env
+        self.wrangler = wrangler
+        self.health = health
+        self.availability = availability
+        self.versionLabel = versionLabel
+        self.behind = behind
+        self.preview = preview
+        self.inspect = inspect
+        self.changelog = changelog
+    }
+
+    /// True only for a v3 project whose recorded template is the kit itself, on `main`.
+    public var usesDefaultTemplate: Bool {
+        guard case .kitV3(let state) = kind else { return false }
+        return state.usesDefaultTemplate
+    }
+
+    /// The recorded kit state when this is a v3 project.
+    public var kitState: KitState? {
+        guard case .kitV3(let state) = kind else { return nil }
+        return state
+    }
+
+    /// Conflicts still unresolved: the CLI's own answer when `inspect` has loaded, otherwise what
+    /// `.nuxt-saas.json` recorded.
+    public var unresolvedConflictCount: Int {
+        if let report = inspect.value { return report.conflicts.unresolved.count }
+        return kitState?.conflicts.count ?? 0
+    }
+}

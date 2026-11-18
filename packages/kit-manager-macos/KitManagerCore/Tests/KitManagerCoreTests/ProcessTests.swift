@@ -75,6 +75,16 @@ struct ProcessTests {
         #expect(environment.variables["PATH"] == environment.path)
     }
 
+    @Test func neverPromptsForGitCredentials() {
+        let environment = ShellEnvironment(path: ShellEnvironment.fallbackPath)
+        #expect(environment.variables["GIT_TERMINAL_PROMPT"] == "0")
+    }
+
+    @Test func describesProcessErrors() {
+        #expect(ProcessError.timedOut.errorDescription == "The command timed out.")
+        #expect(ProcessError.launchFailed("no such file").errorDescription == "Could not start the command: no such file")
+    }
+
     @Test func fallsBackOnBadShell() async {
         let environment = await ShellEnvironment.resolve(shell: "/nonexistent")
         #expect(environment.path == ShellEnvironment.fallbackPath)

@@ -10,9 +10,11 @@ public struct ShellEnvironment: Sendable, Equatable {
     }
 
     /// The current process environment with `PATH` replaced by the resolved one.
+    /// `GIT_TERMINAL_PROMPT=0` makes git fail instead of waiting on a credential prompt nobody can answer.
     public var variables: [String: String] {
         var environment = ProcessInfo.processInfo.environment
         environment["PATH"] = path
+        environment["GIT_TERMINAL_PROMPT"] = "0"
         return environment
     }
 
