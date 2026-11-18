@@ -29,6 +29,7 @@ export const initArgs = {
 export const projectArgs = {
   ...kitArgs,
   dir: { type: 'string', description: 'Project directory', default: '.' },
+  json: { type: 'boolean', description: 'Print one JSON document instead of text', default: false },
 } satisfies ArgsDef;
 
 export const transitionArgs = {

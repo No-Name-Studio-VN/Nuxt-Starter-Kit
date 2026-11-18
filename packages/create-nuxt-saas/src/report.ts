@@ -2,6 +2,7 @@ import type { InitReport } from './commands/init';
 import type { TransitionReport } from './commands/modules';
 import type { KitModule } from './kit/modules';
 import type { ChangeKind } from './transition/plan';
+import { JSON_SCHEMA, type JsonDocument } from './types/json';
 
 const symbols: Record<ChangeKind, string> = {
   create: '+',
@@ -38,6 +39,29 @@ export function printTransitionReport(report: TransitionReport, check: boolean):
     for (const path of report.conflicts) console.log(`  ${path}`);
   }
   printNext(report.followUps);
+}
+
+export function printJson(value: JsonDocument): void {
+  process.stdout.write(`${JSON.stringify(value)}\n`);
+}
+
+export function printTransitionJson(
+  report: TransitionReport & { upToDate?: boolean },
+  from: string,
+  to: string,
+): void {
+  printJson({
+    schema: JSON_SCHEMA,
+    from,
+    to,
+    changes: report.changes.map(({ path, kind }) => ({ path, kind })),
+    conflicts: report.conflicts,
+    followUps: report.followUps,
+    addedModules: report.addedModules,
+    removedModules: report.removedModules,
+    applied: report.applied,
+    ...(report.upToDate === undefined ? {} : { upToDate: report.upToDate }),
+  });
 }
 
 export function printModules(modules: KitModule[], installed: string[]): void {

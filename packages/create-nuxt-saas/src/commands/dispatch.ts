@@ -5,7 +5,12 @@ import { kitSource, targetCommit } from '../kit/context';
 import { DEFAULT_TEMPLATE, openKit, resolveCommit } from '../kit/source';
 import { readState, STATE_FILE } from '../project/state';
 import { parseModules, promptInit } from '../prompts';
-import { printInitReport, printModules, printTransitionReport } from '../report';
+import {
+  printInitReport,
+  printModules,
+  printTransitionJson,
+  printTransitionReport,
+} from '../report';
 import type { InitOptions } from '../types/cli';
 import { pathExists } from '../util/fs';
 import { runInit } from './init';
@@ -56,7 +61,8 @@ export async function moduleCommand(
       check: args.check,
       force: args.force,
     });
-    printTransitionReport(report, args.check);
+    if (args.json) printTransitionJson(report, state.commit, kit.commit);
+    else printTransitionReport(report, args.check);
     return report.conflicts.length > 0 ? 1 : 0;
   } finally {
     await kit.cleanup();
@@ -81,7 +87,8 @@ export async function upgradeCommand(args: ParsedArgs<typeof upgradeArgs>): Prom
         check: args.check,
         force: args.force,
       });
-      printTransitionReport(report, args.check);
+      if (args.json) printTransitionJson(report, state.commit, commit);
+      else printTransitionReport(report, args.check);
       return report.conflicts.length > 0 ? 1 : 0;
     } finally {
       await to.cleanup();

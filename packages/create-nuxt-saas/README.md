@@ -29,9 +29,9 @@ The executable is `nuxt-saas`. These are its commands and flags:
 ```text
 init [dir] [--yes] [--modules a,b] [--kit path] [--allow-dirty-kit]
            [--template github:owner/repo#ref] [--no-git]
-add <modules> [--dir path] [--check] [--force] [--kit path] [--allow-dirty-kit]
-remove <modules> [--dir path] [--check] [--force] [--kit path] [--allow-dirty-kit]
-upgrade [--dir path] [--check] [--force] [--to ref] [--template github:owner/repo#ref]
+add <modules> [--dir path] [--check] [--force] [--json] [--kit path] [--allow-dirty-kit]
+remove <modules> [--dir path] [--check] [--force] [--json] [--kit path] [--allow-dirty-kit]
+upgrade [--dir path] [--check] [--force] [--json] [--to ref] [--template github:owner/repo#ref]
         [--kit path] [--allow-dirty-kit]
 modules [--dir path] [--template github:owner/repo#ref] [--kit path] [--allow-dirty-kit]
 ```
@@ -41,6 +41,11 @@ Put the subcommand **before its flags**: `upgrade --dir my-app --check`, not
 go to init. Thus bare `nuxt-saas`, `nuxt-saas my-app` and `nuxt-saas init my-app` all initialize a
 project. A misspelled command is treated as a directory name. `--help` / `-h` lists commands;
 `upgrade --help` (or another subcommand) shows that command's flags.
+
+`--json` (on `add`, `remove` and `upgrade`) prints exactly one JSON document on stdout instead of
+the text report. Every document carries `"schema": 1`. Failures print
+`{"schema":1,"error":{"message":"…","kind":"expected"|"unexpected"}}` instead of writing to stderr.
+Exit codes are unchanged: 0 ok, 1 expected error or conflicts, 2 unexpected error.
 
 ### init
 
