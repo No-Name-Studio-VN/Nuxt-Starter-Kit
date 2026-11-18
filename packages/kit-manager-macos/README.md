@@ -4,6 +4,23 @@ A native macOS app for managing projects generated from the Nuxt Starter Kit: se
 
 The app **reads, the CLI acts**. Anything that changes a project (upgrade, migration, module changes) is performed by `create-nuxt-saas`; the app only inspects state and launches the CLI after an explicit click.
 
+![Kit Manager overview](docs/screenshots/overview.png)
+
+|                                                |                                                     |
+| ---------------------------------------------- | --------------------------------------------------- |
+| ![Project detail](docs/screenshots/detail.png) | ![Update with Claude](docs/screenshots/upgrade.png) |
+| ![Modules](docs/screenshots/modules.png)       | ![What's New](docs/screenshots/whatsnew.png)        |
+
+## Install from a release
+
+Each kit release attaches `KitManager.zip`. Unzip it and move `KitManager.app` to `/Applications`. The app is ad-hoc signed, not notarized, so macOS blocks the first launch: open it once from Finder with Control-click, then Open, or clear the quarantine flag:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/KitManager.app
+```
+
+The app still needs a local kit checkout with the CLI built (see Requirements, minus Xcode).
+
 ## Requirements
 
 - macOS 26 or later
