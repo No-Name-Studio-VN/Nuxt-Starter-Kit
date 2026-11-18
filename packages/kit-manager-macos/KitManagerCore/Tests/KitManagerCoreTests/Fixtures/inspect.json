@@ -1,0 +1,3113 @@
+{
+  "schema": 1,
+  "commit": "b3096441a3fda6da8f75344dc178ffafdccb3188",
+  "kit": "github:No-Name-Studio-VN/Nuxt-Starter-Kit",
+  "modules": ["auth", "database", "server-core"],
+  "identity": { "name": "kmfx-proj", "description": "A Nuxt SaaS application" },
+  "conflicts": { "recorded": [], "unresolved": [] },
+  "files": [
+    { "path": ".editorconfig", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": ".env.example", "status": "unchanged", "layer": "base", "expected": true },
+    { "path": ".gitattributes", "status": "unchanged", "layer": "base", "expected": false },
+    {
+      "path": ".github/workflows/lint-check.yml",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    { "path": ".gitignore", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": ".husky/commit-msg", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": ".husky/pre-commit", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": ".nuxtrc", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": ".oxfmtrc.jsonc", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": ".oxlintrc.jsonc", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": ".vscode/launch.json", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": ".vscode/settings.json", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "README.md", "status": "unchanged", "layer": "base", "expected": true },
+    { "path": "app/app.vue", "status": "unchanged", "layer": "base", "expected": false },
+    {
+      "path": "app/assets/css/global.css",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/assets/css/tailwind.css",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/AnimatedCircularProgressBar.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/AuroraBackground.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/BackToTop.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/BlurReveal.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/CenteredAppLayout.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/DarkModeToggle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/DashedLine.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ExtensionSlot.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/HeaderNav.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/LangSwitcher.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/LoadingScreen.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/LoadingSpinner.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/MaxWidthWrapper.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/MultiStepLoader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/RainbowButton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ResponsiveDialog.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/SiteIcon.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ThemeCustomizer.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ThemePopover.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ThemeSwitcher.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/accordion/Accordion.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/accordion/AccordionContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/accordion/AccordionItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/accordion/AccordionTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/accordion/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-box/AlertBox.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-box/AlertBoxActions.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-box/AlertBoxContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-box/AlertBoxDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-box/AlertBoxTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-box/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-dialog/AlertDialog.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-dialog/AlertDialogAction.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-dialog/AlertDialogCancel.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-dialog/AlertDialogContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-dialog/AlertDialogDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-dialog/AlertDialogFooter.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-dialog/AlertDialogHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-dialog/AlertDialogTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-dialog/AlertDialogTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert-dialog/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert/Alert.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert/AlertDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert/AlertTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/alert/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/apple-card-carousel/AppleBlurImage.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/apple-card-carousel/AppleCard.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/apple-card-carousel/AppleCardCarousel.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/apple-card-carousel/AppleCarouselContext.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/apple-card-carousel/AppleCarouselItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/apple-card-carousel/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/avatar/Avatar.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/avatar/AvatarFallback.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/avatar/AvatarImage.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/avatar/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/badge/Badge.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/badge/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/book/Book.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/book/BookDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/book/BookHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/book/BookTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/book/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/breadcrumb/Breadcrumb.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/breadcrumb/BreadcrumbEllipsis.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/breadcrumb/BreadcrumbItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/breadcrumb/BreadcrumbLink.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/breadcrumb/BreadcrumbList.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/breadcrumb/BreadcrumbPage.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/breadcrumb/BreadcrumbSeparator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/breadcrumb/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/button-group/ButtonGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/button-group/ButtonGroupSeparator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/button-group/ButtonGroupText.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/button-group/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/button/Button.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/button/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/Calendar.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarCell.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarCellTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarGrid.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarGridBody.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarGridHead.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarGridRow.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarHeadCell.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarHeading.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarNextButton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/CalendarPrevButton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/calendar/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/card-spotlight/CardSpotlight.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/card-spotlight/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/card/Card.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/card/CardAction.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/card/CardContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/card/CardDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/card/CardFooter.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/card/CardHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/card/CardTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/card/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/carousel/Carousel.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/carousel/CarouselContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/carousel/CarouselItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/carousel/CarouselNext.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/carousel/CarouselPrevious.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/carousel/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/carousel/interface.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/carousel/useCarousel.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/checkbox/Checkbox.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/checkbox/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/collapsible/Collapsible.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/collapsible/CollapsibleContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/collapsible/CollapsibleTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/collapsible/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/Command.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/CommandDialog.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/CommandEmpty.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/CommandGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/CommandInput.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/CommandInputOnly.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/CommandItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/CommandList.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/CommandSeparator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/CommandShortcut.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/command/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenu.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuCheckboxItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuLabel.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuPortal.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuRadioGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuRadioItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuSeparator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuShortcut.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuSub.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuSubContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuSubTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/ContextMenuTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/context-menu/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/Dialog.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/DialogClose.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/DialogContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/DialogDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/DialogFooter.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/DialogHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/DialogOverlay.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/DialogScrollContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/DialogTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/DialogTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dialog/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drag-reorder-list/DragReorderList.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drag-reorder-list/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drag-reorder-list/types.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drawer/Drawer.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drawer/DrawerClose.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drawer/DrawerContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drawer/DrawerDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drawer/DrawerFooter.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drawer/DrawerHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drawer/DrawerOverlay.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drawer/DrawerTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drawer/DrawerTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/drawer/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenu.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuCheckboxItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuLabel.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuRadioGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuRadioItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuSeparator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuShortcut.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuSub.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuSubContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuSubTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/DropdownMenuTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/dropdown-menu/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/empty/Empty.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/empty/EmptyContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/empty/EmptyDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/empty/EmptyHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/empty/EmptyMedia.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/empty/EmptyTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/empty/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/Field.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/FieldContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/FieldDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/FieldError.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/FieldGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/FieldLabel.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/FieldLegend.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/FieldSeparator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/FieldSet.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/FieldTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/field/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/flickering-grid/FlickeringGrid.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/flickering-grid/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/form/FormControl.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/form/FormDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/form/FormItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/form/FormLabel.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/form/FormMessage.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/form/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/form/injectionKeys.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/form/useFormField.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/input-group/InputGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/input-group/InputGroupAddon.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/input-group/InputGroupButton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/input-group/InputGroupInput.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/input-group/InputGroupText.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/input-group/InputGroupTextarea.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/input-group/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/input/Input.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/input/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/Item.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/ItemActions.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/ItemContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/ItemDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/ItemFooter.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/ItemGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/ItemHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/ItemMedia.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/ItemSeparator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/ItemTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/item/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/kbd/Kbd.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/kbd/KbdGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/kbd/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/label/Label.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/label/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/line-sidebar/LineSidebar.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/line-sidebar/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/line-sidebar/types.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/native-select/NativeSelect.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/native-select/NativeSelectOptGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/native-select/NativeSelectOption.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/native-select/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/navigation-menu/NavigationMenu.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/navigation-menu/NavigationMenuContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/navigation-menu/NavigationMenuIndicator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/navigation-menu/NavigationMenuItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/navigation-menu/NavigationMenuLink.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/navigation-menu/NavigationMenuList.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/navigation-menu/NavigationMenuTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/navigation-menu/NavigationMenuViewport.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/navigation-menu/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/pagination/Pagination.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/pagination/PaginationContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/pagination/PaginationEllipsis.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/pagination/PaginationFirst.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/pagination/PaginationItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/pagination/PaginationLast.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/pagination/PaginationNext.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/pagination/PaginationPrevious.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/pagination/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/popover/Popover.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/popover/PopoverAnchor.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/popover/PopoverContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/popover/PopoverTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/popover/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/progress/Progress.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/progress/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/radio-group/RadioGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/radio-group/RadioGroupItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/radio-group/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/resizable/ResizableHandle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/resizable/ResizablePanel.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/resizable/ResizablePanelGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/resizable/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/scroll-area/ScrollArea.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/scroll-area/ScrollBar.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/scroll-area/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/Select.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/SelectContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/SelectGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/SelectItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/SelectItemText.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/SelectLabel.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/SelectScrollDownButton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/SelectScrollUpButton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/SelectSeparator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/SelectTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/SelectValue.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/select/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/separator/Separator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/separator/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/Sheet.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/SheetClose.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/SheetContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/SheetDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/SheetFooter.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/SheetHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/SheetOverlay.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/SheetTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/SheetTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sheet/keys.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/Sidebar.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarFooter.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarGroup.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarGroupAction.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarGroupContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarGroupLabel.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarInput.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarInset.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarMenu.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarMenuAction.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarMenuBadge.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarMenuButton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarMenuButtonChild.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarMenuItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarMenuSkeleton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarMenuSub.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarMenuSubButton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarMenuSubItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarProvider.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarRail.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarSeparator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/SidebarTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sidebar/utils.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/skeleton/ReaderSkeleton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/skeleton/Skeleton.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/skeleton/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/slider/Slider.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/slider/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sonner/Sonner.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/sonner/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/spinner/Spinner.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/spinner/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/spinner/types.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/stepper/Stepper.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/stepper/StepperDescription.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/stepper/StepperIndicator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/stepper/StepperItem.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/stepper/StepperSeparator.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/stepper/StepperTitle.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/stepper/StepperTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/stepper/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/switch/Switch.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/switch/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/Table.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/TableBody.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/TableCaption.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/TableCell.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/TableEmpty.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/TableFooter.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/TableHead.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/TableHeader.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/TableRow.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/table/utils.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/tabs/Tabs.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/tabs/TabsContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/tabs/TabsList.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/tabs/TabsTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/tabs/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/textarea/Textarea.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/textarea/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/tooltip/Tooltip.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/tooltip/TooltipContent.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/tooltip/TooltipProvider.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/tooltip/TooltipTrigger.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/components/ui/tooltip/index.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/composables/useConfig.ts",
+      "status": "edited",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/composables/useFileIcon.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/composables/usePageBreadcrumbs.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/composables/useResponsive.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/composables/useScreenType.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/composables/useSeo.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/composables/useThemes.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    { "path": "app/error.vue", "status": "unchanged", "layer": "base", "expected": false },
+    {
+      "path": "app/layouts/default.vue",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    { "path": "app/layouts/empty.vue", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "app/lib/themes.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "app/lib/utils.ts", "status": "unchanged", "layer": "base", "expected": false },
+    {
+      "path": "app/modules/worker-routes.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    { "path": "app/pages/index.vue", "status": "unchanged", "layer": "base", "expected": false },
+    {
+      "path": "app/plugins/error-handler.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/plugins/ssr-width.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/plugins/umami.client.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/utils/breadcrumbs.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "app/utils/extensions.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    { "path": "app/utils/format.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "commitlint.config.js", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "components.json", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "eslint.config.js", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "i18n-constants.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "i18n/i18n.config.ts", "status": "unchanged", "layer": "base", "expected": true },
+    { "path": "i18n/locales/en.json", "status": "unchanged", "layer": "base", "expected": true },
+    { "path": "i18n/locales/vi.json", "status": "unchanged", "layer": "base", "expected": true },
+    { "path": "layers/auth/README.md", "status": "unchanged", "layer": "auth", "expected": false },
+    {
+      "path": "layers/auth/app/components/AppLayout.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/components/AppSidebar.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/components/HotSearch.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/components/OAuthIcon.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/components/PasswordStrengthIndicator.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/components/auth/AuthPageLayout.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/components/auth/GoogleOneTapPrompt.client.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/components/nav/NavMain.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/components/nav/NavSecondary.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/components/nav/NavUser.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/composables/useHotSearch.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/composables/useOAuthPopupListener.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/composables/useSidebarContext.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/constants/pref.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/constants/sidebar.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/layouts/dashboard.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/middleware/auth.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/middleware/guest.global.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/middleware/guest.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/pages/auth/forgot-password.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/pages/auth/index.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/pages/auth/login.vue",
+      "status": "edited",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/pages/auth/oauth/popup.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/pages/auth/register.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/pages/auth/reset-password.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/pages/dashboard.vue",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/plugins/nav.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/plugins/oauth-popup-bridge.client.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/utils/googleOneTap.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/utils/oauthPopupComplete.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/utils/passwordValidation.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/utils/safeRedirect.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/app/utils/user.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    { "path": "layers/auth/auth.d.ts", "status": "unchanged", "layer": "auth", "expected": false },
+    {
+      "path": "layers/auth/i18n/locales/en.json",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/i18n/locales/vi.json",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/module.json",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/nuxt.config.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/auth/[provider].get.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/auth/account-status.get.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/auth/forgot-password.post.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/auth/google-one-tap.post.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/auth/login-password.post.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/auth/oauth/unlink.delete.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/auth/oauth/url.post.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/auth/register-password.post.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/auth/reset-password.post.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/users/[id]/index.delete.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/users/[id]/index.get.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/users/[id]/lock-screen/index.get.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/users/[id]/lock-screen/index.put.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/users/[id]/password.patch.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/api/users/[id]/profile.patch.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/db/schema.sqlite.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/middleware/locked-account.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/plugins/account-lock.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/plugins/auth-tokens.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/authTokenKinds.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/authorization.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/database/authToken.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/database/oauthAccount.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/database/user.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/database/userLockScreen.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/email.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/googleIdentity.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/loginPolicies.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/oauth.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/postRegisterSteps.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/safeRedirect.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/server/utils/userProfile.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/shared/authRoutes.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/shared/constants/authMessages.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/shared/constants/authTokens.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/shared/constants/oauthProviders.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/shared/schemas/index.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/shared/schemas/userSchema.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/auth.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/authTokens.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/email.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/extensions.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/googleIdentity.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/googleOneTap.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/loginPolicies.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/loginSteps.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/models/profile.d.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/password.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/sidebar.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/auth/types/userSecurity.ts",
+      "status": "unchanged",
+      "layer": "auth",
+      "expected": false
+    },
+    {
+      "path": "layers/database/README.md",
+      "status": "unchanged",
+      "layer": "database",
+      "expected": false
+    },
+    {
+      "path": "layers/database/module.json",
+      "status": "unchanged",
+      "layer": "database",
+      "expected": false
+    },
+    {
+      "path": "layers/database/nuxt.config.ts",
+      "status": "unchanged",
+      "layer": "database",
+      "expected": false
+    },
+    {
+      "path": "layers/database/server/utils/db.ts",
+      "status": "unchanged",
+      "layer": "database",
+      "expected": false
+    },
+    {
+      "path": "layers/database/types/db/database-service.ts",
+      "status": "unchanged",
+      "layer": "database",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/README.md",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/app/composables/useAPI.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/app/composables/useRequestState.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/app/utils/apiError.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/app/utils/apiRequest.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/module.json",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/nuxt.config.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/server/api/index.get.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/server/utils/apiResponse.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/server/utils/constants/cacheKeys.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/server/utils/kv.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/server/utils/reportServerError.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/shared/pagination.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/types/api.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/types/errors.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    {
+      "path": "layers/server-core/types/models/pagination.ts",
+      "status": "unchanged",
+      "layer": "server-core",
+      "expected": false
+    },
+    { "path": "lint-staged.config.js", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "nuxt.config.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "package.json", "status": "unchanged", "layer": "base", "expected": true },
+    { "path": "pnpm-workspace.yaml", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "public/_robots.txt", "status": "unchanged", "layer": "base", "expected": true },
+    { "path": "public/favicon.ico", "status": "unchanged", "layer": "base", "expected": true },
+    { "path": "public/favicon.svg", "status": "unchanged", "layer": "base", "expected": true },
+    {
+      "path": "public/images/avatar/default.png",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": true
+    },
+    { "path": "public/images/bg.jpg", "status": "unchanged", "layer": "base", "expected": true },
+    {
+      "path": "public/images/bg2@0,5x.jpg",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": true
+    },
+    {
+      "path": "public/social-preview.png",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": true
+    },
+    {
+      "path": "sentry.client.config.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "server/plugins/sentry-cloudflare-plugin.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "server/plugins/worker-gate.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    { "path": "server/tsconfig.json", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "shared/apiRoutes.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "shared/commonEnums.ts", "status": "unchanged", "layer": "base", "expected": false },
+    {
+      "path": "shared/constants/manifest.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "shared/schemas/common.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "shared/serialization.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    { "path": "shared/shuffleArray.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "shared/url.ts", "status": "unchanged", "layer": "base", "expected": false },
+    {
+      "path": "shared/utils/locales.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "shared/utils/slugifyTitle.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    { "path": "site.config.ts", "status": "unchanged", "layer": "base", "expected": true },
+    {
+      "path": "test/unit/mocks/hubBlob.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "test/unit/mocks/hubDb.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    {
+      "path": "test/unit/setup/h3Globals.ts",
+      "status": "unchanged",
+      "layer": "base",
+      "expected": false
+    },
+    { "path": "tsconfig.json", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "types/common.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "types/extensions.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "types/i18n.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "types/index.d.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "types/screen.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "types/seo.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "vitest.config.ts", "status": "unchanged", "layer": "base", "expected": false },
+    { "path": "wrangler.jsonc", "status": "unchanged", "layer": "base", "expected": true }
+  ],
+  "summary": {
+    "total": 558,
+    "unchanged": 556,
+    "edited": 2,
+    "deleted": 0,
+    "protected": 0,
+    "expected": 15,
+    "scored": 543,
+    "scoredChanged": 2
+  }
+}

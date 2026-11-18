@@ -11,7 +11,8 @@ let package = Package(
         .target(name: "KitManagerCore"),
         .testTarget(
             name: "KitManagerCoreTests",
-            dependencies: ["KitManagerCore"]
+            dependencies: ["KitManagerCore"],
+            resources: [.copy("Fixtures")]
         ),
     ]
 )
