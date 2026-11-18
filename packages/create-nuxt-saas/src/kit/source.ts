@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { downloadTemplate } from 'giget';
 import { CliError } from '../errors';
+import { cleanupOnTermination } from '../util/terminationCleanup';
 import { readKitModules, type KitModule } from './modules';
 
 export type KitSource =
@@ -101,11 +102,20 @@ export async function openKit(
   }
   if (!shaPattern.test(commit)) throw unavailable('Expected a full 40-character SHA.');
   const dir = await mkdtemp(join(tmpdir(), 'nuxt-saas-kit-'));
-  const cleanup = () => rm(dir, { recursive: true, force: true });
+  const removeDir = () => rm(dir, { recursive: true, force: true });
+  // A killed run (the app's cancel or timeout) never reaches `finally`, so the signal handler removes the copy.
+  const stopWatching = cleanupOnTermination(removeDir);
+  const cleanup = async () => {
+    stopWatching();
+    await removeDir();
+  };
   try {
     if (source.kind === 'local') {
       // Keep the archive outside the snapshot so only tracked kit files remain.
       const archiveDir = await mkdtemp(join(tmpdir(), 'nuxt-saas-kit-archive-'));
+      const stopWatchingArchive = cleanupOnTermination(() =>
+        rm(archiveDir, { recursive: true, force: true }),
+      );
       try {
         const archive = join(archiveDir, 'kit.tar');
         try {
@@ -123,6 +133,7 @@ export async function openKit(
         }
         await run('tar', ['-xf', archive, '-C', dir]);
       } finally {
+        stopWatchingArchive();
         await rm(archiveDir, { recursive: true, force: true });
       }
     } else {
