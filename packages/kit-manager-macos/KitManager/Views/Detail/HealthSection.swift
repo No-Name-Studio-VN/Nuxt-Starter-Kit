@@ -18,8 +18,8 @@ struct HealthSection: View {
             sourceControl
             environment
             website
+                .onAppear { draftURL = project.productionURL ?? "" }
         }
-        .onAppear { draftURL = project.productionURL ?? "" }
     }
 
     private func row<Value: View>(

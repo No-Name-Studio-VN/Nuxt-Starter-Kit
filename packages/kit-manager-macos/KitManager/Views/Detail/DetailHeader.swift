@@ -8,16 +8,22 @@ struct DetailHeader: View {
 
     var body: some View {
         Section {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 0) {
+            Group {
+                if row.isMissing {
                     info
-                    Spacer(minLength: 12)
-                    actions(controlSize: .small)
-                        .fixedSize(horizontal: true, vertical: false)
-                }
-                VStack(alignment: .leading, spacing: 14) {
-                    info
-                    actions(controlSize: .regular)
+                } else {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 0) {
+                            info
+                            Spacer(minLength: 12)
+                            actions(controlSize: .small)
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
+                        VStack(alignment: .leading, spacing: 14) {
+                            info
+                            actions(controlSize: .regular)
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -24,16 +24,19 @@ struct UpgradeSection: View {
                 interruptedUpdate(record)
             }
             if showsPreview {
+                if showsPreviewStatus && !showsUpdateBanner { previewStatusRow }
                 DisclosureGroup("Details") {
                     VStack(alignment: .leading, spacing: 10) {
                         preview
-                        Button("Preview Again", systemImage: "arrow.clockwise") {
-                            Task { await model.loadPreview(project) }
-                        }
-                        .buttonStyle(.glass)
-                        .disabled(snapshot.preview == .loading || model.cliStatus != .ready)
-                        .help(model.cliStatus == .ready ? "Render the update again" : "Build the nuxt-saas CLI first")
+                        if !showsPreviewStatus { previewButton }
                     }
+                }
+            }
+            if case .pinned = status {
+                DisclosureGroup("Show command") {
+                    Text("nuxt-saas upgrade --template \(KitState.defaultTemplate)")
+                        .font(.callout.monospaced())
+                        .textSelection(.enabled)
                 }
             }
             if snapshot.usesDefaultTemplate, (snapshot.behind ?? 0) > 0 {
@@ -118,17 +121,25 @@ struct UpgradeSection: View {
             .fixedSize()
     }
 
+    private var showsUpdateBanner: Bool {
+        if case .behind = status { return true }
+        return false
+    }
+
     private func updateBanner(count: Int) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
-                bannerInfo(count: count)
-                Spacer(minLength: 8)
-                updateButton
+        VStack(alignment: .leading, spacing: 10) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    bannerInfo(count: count)
+                    Spacer(minLength: 8)
+                    updateButton
+                }
+                VStack(alignment: .leading, spacing: 10) {
+                    bannerInfo(count: count)
+                    updateButtonRow
+                }
             }
-            VStack(alignment: .leading, spacing: 10) {
-                bannerInfo(count: count)
-                updateButtonRow
-            }
+            if showsPreviewStatus { previewStatusRow }
         }
         .padding(.vertical, 4)
     }
@@ -240,6 +251,61 @@ struct UpgradeSection: View {
         }
     }
 
+    private var showsPreviewStatus: Bool {
+        switch snapshot.preview {
+        case .idle, .loading, .failed: true
+        case .loaded: false
+        }
+    }
+
+    private var previewStatusRow: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                previewStatus
+                Spacer(minLength: 0)
+                previewButton
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                previewStatus
+                previewButton
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var previewStatus: some View {
+        if case .failed = snapshot.preview {
+            Label {
+                Text("Couldn't prepare the update preview")
+            } icon: {
+                Image(systemName: "exclamationmark.circle").foregroundStyle(.red)
+            }
+            .font(.callout)
+            .foregroundStyle(.secondary)
+        } else if snapshot.preview == .loading {
+            previewProgress
+        } else {
+            note("Preview not prepared yet")
+        }
+    }
+
+    private var previewProgress: some View {
+        HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            note("Previewing update…")
+        }
+    }
+
+    private var previewButton: some View {
+        Button("Preview Again", systemImage: "arrow.clockwise") {
+            Task { await model.loadPreview(project) }
+        }
+        .buttonStyle(.glass)
+        .fixedSize()
+        .disabled(snapshot.preview == .loading || model.cliStatus != .ready)
+        .help(model.cliStatus == .ready ? "Render the update again" : "Build the nuxt-saas CLI first")
+    }
+
     @ViewBuilder
     private var preview: some View {
         switch snapshot.preview {
@@ -249,10 +315,7 @@ struct UpgradeSection: View {
                     ? "No preview yet. A preview shows what the update would do without changing anything."
                     : "Update previews need the built nuxt-saas CLI.")
         case .loading:
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                note("Previewing update…")
-            }
+            previewProgress
         case .failed(let message):
             FailureView(message: message)
         case .loaded(let report, let stale):
@@ -313,6 +376,7 @@ struct UpgradeSection: View {
         return switch precondition {
         case .notKitV3: "Only projects made with kit v3 can be updated."
         case .unresolvedConflicts: "Fix the conflicts left by an earlier update first."
+        case .pinned: "To follow new releases again, unlock it from the project's Terminal."
         case .notOnMain: "This project can't be updated here because its kit commit isn't on main or it uses another template."
         default: precondition.reason ?? "Build the nuxt-saas CLI first"
         }

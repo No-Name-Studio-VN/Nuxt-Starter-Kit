@@ -30,8 +30,18 @@ final class AppModel {
     var moduleFilter: String?
     /// Whether the ⌘K switcher sheet is showing.
     var isSwitcherPresented = false
-    var sidebar: SidebarItem = .allProjects
-    var selectedProjectID: UUID?
+    var sidebar: SidebarItem = .allProjects {
+        didSet {
+            guard sidebar != oldValue else { return }
+            // Keep only rows that belong to the new filter, not those held visible by selection.
+            selection = selection.filter { matchesProjectFilters(snapshots[$0]) }
+        }
+    }
+    var selection: Set<UUID> = []
+    var selectedProjectID: UUID? {
+        get { selection.count == 1 ? selection.first : nil }
+        set { selection = newValue.map { [$0] } ?? [] }
+    }
 
     @ObservationIgnored private let context: ModelContext
     @ObservationIgnored private let logger = Logger(subsystem: "studio.nonamestudio.KitManager", category: "AppModel")
@@ -252,10 +262,16 @@ final class AppModel {
     func refreshAll(force: Bool = false) async {
         refreshCLIStatus()
         await updateLatestMain()
-        let ids = fetchProjects().map(\.id)
-        let known = Set(ids)
-        for id in snapshots.keys where !known.contains(id) { snapshots[id] = nil }
+        let ids = Set(fetchProjects().map(\.id))
+        for id in snapshots.keys where !ids.contains(id) { snapshots[id] = nil }
         if force { failures = [:] }
+        await refreshProjects(ids)
+    }
+
+    func refreshProjects(_ ids: Set<UUID>, force: Bool = false) async {
+        if force {
+            for id in ids { failures[id] = nil }
+        }
         await withTaskGroup(of: Void.self) { group in
             for id in ids {
                 group.addTask { await self.refresh(id: id) }
@@ -399,8 +415,25 @@ final class AppModel {
         }
     }
 
-    func count(for item: SidebarItem) -> Int {
-        fetchProjects().count { matches(snapshots[$0.id], in: item) }
+    func matchesProjectFilters(_ snapshot: ProjectSnapshot?) -> Bool {
+        matches(snapshot, in: sidebar) && matchesModuleFilter(snapshot)
+    }
+
+    private func matchesModuleFilter(_ snapshot: ProjectSnapshot?) -> Bool {
+        guard let moduleFilter else { return true }
+        return snapshot?.kitState?.modules.contains(moduleFilter) == true
+    }
+
+    func counts(for items: [SidebarItem], in projects: [Project]) -> [SidebarItem: Int] {
+        let items = Set(items)
+        var counts = Dictionary(uniqueKeysWithValues: items.map { ($0, 0) })
+        for project in projects {
+            let snapshot = snapshots[project.id]
+            for item in items where matches(snapshot, in: item) {
+                counts[item, default: 0] += 1
+            }
+        }
+        return counts
     }
 
     /// Adds every folder in `urls` that is not already listed; returns how many were new.
@@ -429,7 +462,7 @@ final class AppModel {
     }
 
     func remove(_ project: Project) {
-        if selectedProjectID == project.id { selectedProjectID = nil }
+        selection.remove(project.id)
         snapshots[project.id] = nil
         failures[project.id] = nil
         rerunRequested.remove(project.id)
@@ -457,9 +490,9 @@ final class AppModel {
 
     /// Selects a project from anywhere, falling back to All Projects if the filter hides it.
     func openDetail(_ project: Project) {
-        if !sidebar.isProjectList || !matches(snapshots[project.id], in: sidebar) {
-            sidebar = .allProjects
-        }
+        let snapshot = snapshots[project.id]
+        if !matches(snapshot, in: sidebar) { sidebar = .allProjects }
+        if !matchesModuleFilter(snapshot) { moduleFilter = nil }
         selectedProjectID = project.id
     }
 

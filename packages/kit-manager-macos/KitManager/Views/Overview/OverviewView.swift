@@ -24,8 +24,9 @@ struct OverviewView: View {
     var body: some View {
         // An anchor is discovered during the first project refresh, after latestMain is known.
         let anchor = model.canLoadKitChangelog ? model.changelogAnchor : nil
+        let counts = model.counts(for: SidebarItem.projectItems, in: projects)
         Form {
-            Section { header }
+            Section { header(counts: counts) }
             nextSteps
             OverviewLatestKit(latestLabel: latestLabel, anchor: anchor)
                 .id(anchor)
@@ -36,15 +37,16 @@ struct OverviewView: View {
         .navigationTitle("Overview")
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 14) {
+    private func header(counts: [SidebarItem: Int]) -> some View {
+        let attentionCount = counts[.needsAttention, default: 0]
+        return VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Overview")
                     .font(.largeTitle.bold())
                     .accessibilityAddTraits(.isHeader)
-                Text(model.attentionCount == 0
+                Text(attentionCount == 0
                     ? "Everything is up to date"
-                    : "\(projects.count) \(projects.count == 1 ? "project" : "projects") · \(model.attentionCount) need attention")
+                    : "\(projects.count) \(projects.count == 1 ? "project" : "projects") · \(attentionCount) need attention")
                     .foregroundStyle(.secondary)
             }
             if model.cliStatus != .ready {
@@ -55,13 +57,24 @@ struct OverviewView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
-            tiles
+            tiles(counts: counts)
         }
         .padding(.vertical, 6)
     }
 
-    private var tiles: some View {
-        ViewThatFits(in: .horizontal) {
+    private func tiles(counts: [SidebarItem: Int]) -> some View {
+        let projectsTile = tile("Projects", symbol: "square.stack.3d.up.fill", color: .gray,
+            item: .allProjects, value: counts[.allProjects, default: 0])
+        let upToDateTile = tile("Up to Date", symbol: "checkmark.circle.fill", color: .green,
+            item: .status(.upToDate), value: counts[.status(.upToDate), default: 0])
+        let updatesTile = tile("Updates", symbol: "arrow.down.circle.fill", color: .accentColor,
+            item: .status(.updates), value: counts[.status(.updates), default: 0])
+        let conflictsTile = tile("Conflicts", symbol: "exclamationmark.triangle.fill", color: .red,
+            item: .needsAttention, value: conflictCount)
+        let notOnKitTile = tile("Not on Kit", symbol: "arrow.triangle.merge", color: .orange,
+            item: .status(.notOnKit), value: counts[.status(.notOnKit), default: 0])
+
+        return ViewThatFits(in: .horizontal) {
             HStack(spacing: 10) {
                 projectsTile
                 upToDateTile
@@ -84,28 +97,8 @@ struct OverviewView: View {
         }
     }
 
-    private var projectsTile: some View {
-        tile("Projects", symbol: "square.stack.3d.up.fill", color: .gray, item: .allProjects)
-    }
-
-    private var upToDateTile: some View {
-        tile("Up to Date", symbol: "checkmark.circle.fill", color: .green, item: .status(.upToDate))
-    }
-
-    private var updatesTile: some View {
-        tile("Updates", symbol: "arrow.down.circle.fill", color: .accentColor, item: .status(.updates))
-    }
-
-    private var conflictsTile: some View {
-        tile("Conflicts", symbol: "exclamationmark.triangle.fill", color: .red, item: .needsAttention, value: conflictCount)
-    }
-
-    private var notOnKitTile: some View {
-        tile("Not on Kit", symbol: "arrow.triangle.merge", color: .orange, item: .status(.notOnKit))
-    }
-
-    private func tile(_ title: String, symbol: String, color: Color, item: SidebarItem, value: Int? = nil) -> some View {
-        OverviewTile(value: value ?? model.count(for: item), title: title, symbol: symbol, color: color) {
+    private func tile(_ title: String, symbol: String, color: Color, item: SidebarItem, value: Int) -> some View {
+        OverviewTile(value: value, title: title, symbol: symbol, color: color) {
             model.sidebar = item
         }
     }

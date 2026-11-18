@@ -63,22 +63,11 @@ struct SettingsView: View {
     }
 
     private var validation: some View {
-        let result = describe(model.cliStatus)
-        return Label(result.text, systemImage: result.symbol)
-            .foregroundStyle(result.color)
+        let isReady = model.cliStatus == .ready
+        return Label(model.cliStatus.setupMessage, systemImage: isReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+            .foregroundStyle(isReady ? Color.green : .orange)
             .accessibilityElement(children: .combine)
-    }
-
-    private func describe(_ status: CLIStatus) -> (text: String, symbol: String, color: Color) {
-        switch status {
-        case .ready:
-            ("The nuxt-saas CLI is built and ready.", "checkmark.circle.fill", Color.green)
-        case .missingBuild, .staleBuild, .tooOld, .missingCheckout:
-            (
-                CLIFailure.unavailable(status).errorDescription ?? "The CLI cannot run.",
-                "exclamationmark.triangle.fill", Color.orange
-            )
-        }
+            .help(CLIFailure.unavailable(model.cliStatus).errorDescription ?? model.cliStatus.setupMessage)
     }
 
     /// Applies a changed path once, instead of on every keystroke.

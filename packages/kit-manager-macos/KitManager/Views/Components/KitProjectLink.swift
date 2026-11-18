@@ -10,9 +10,6 @@ struct KitProjectLink: View {
 
     var body: some View {
         Button {
-            if let filter = model.moduleFilter, !row.modules.contains(filter) {
-                model.moduleFilter = nil
-            }
             model.openDetail(row.project)
         } label: {
             HStack(spacing: 10) {

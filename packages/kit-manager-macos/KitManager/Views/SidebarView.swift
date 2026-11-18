@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The project filters, kit pages and fetch status in the leading column.
 struct SidebarView: View {
-    let projectCount: Int
+    let projects: [Project]
 
     @Environment(AppModel.self) private var model
 
@@ -13,15 +13,16 @@ struct SidebarView: View {
             get: { sidebar.wrappedValue },
             set: { if let item = $0 { sidebar.wrappedValue = item } }
         )
+        let counts = model.counts(for: SidebarItem.projectItems, in: projects)
         List(selection: selection) {
             Section("Projects") {
-                row(.allProjects, count: projectCount)
-                row(.needsAttention, count: model.attentionCount)
+                row(.allProjects, count: counts[.allProjects, default: 0])
+                row(.needsAttention, count: counts[.needsAttention, default: 0])
             }
             Section("Status") {
                 ForEach(StatusFilter.allCases, id: \.self) { filter in
                     let item = SidebarItem.status(filter)
-                    row(item, count: model.count(for: item))
+                    row(item, count: counts[item, default: 0])
                 }
             }
             Section("Kit") {
@@ -52,14 +53,24 @@ struct SidebarView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .combine)
             Spacer(minLength: 0)
+            Button("Check Now", systemImage: "arrow.clockwise", action: checkNow)
+                .labelStyle(.iconOnly)
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .help("Check the kit for updates now")
+                .disabled(model.fetchState == .fetching)
         }
         .padding(12)
         .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
         .contextMenu {
-            Button("Check Now") { Task { await model.fetchKit() } }
+            Button("Check Now", action: checkNow)
                 .disabled(model.fetchState == .fetching)
         }
+    }
+
+    private func checkNow() {
+        Task { await model.fetchKit() }
     }
 }

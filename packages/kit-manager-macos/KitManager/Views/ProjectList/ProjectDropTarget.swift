@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// Adds folders dropped onto the center list or welcome screen.
+/// Adds folders dropped onto the main window.
 struct ProjectDropTarget: ViewModifier {
     @Environment(AppModel.self) private var model
     @State private var isTargeted = false
 
     func body(content: Content) -> some View {
         content
+            .contentShape(.rect)
             .overlay {
                 if isTargeted {
                     let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)

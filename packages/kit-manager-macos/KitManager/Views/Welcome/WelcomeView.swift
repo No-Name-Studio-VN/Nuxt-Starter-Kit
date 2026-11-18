@@ -68,18 +68,17 @@ struct WelcomeView: View {
         .frame(maxWidth: 600)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle("Kit Manager")
-        .modifier(ProjectDropTarget())
     }
 
     @ViewBuilder
     private var kitStatus: some View {
         switch model.cliStatus {
         case .ready:
-            Label("Ready", systemImage: "checkmark.circle.fill").foregroundStyle(Color.green)
-        case .missingBuild, .staleBuild, .tooOld:
-            Label("Needs building", systemImage: "hammer").foregroundStyle(.secondary)
-        case .missingCheckout:
-            Label("Not found", systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+            Label(model.cliStatus.setupMessage, systemImage: "checkmark.circle.fill").foregroundStyle(Color.green)
+        case .missingBuild, .staleBuild:
+            Label(model.cliStatus.setupMessage, systemImage: "hammer").foregroundStyle(.secondary)
+        case .tooOld, .missingCheckout:
+            Label(model.cliStatus.setupMessage, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
         }
     }
 }

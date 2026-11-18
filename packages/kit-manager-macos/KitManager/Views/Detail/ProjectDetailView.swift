@@ -35,6 +35,7 @@ struct ProjectDetailView: View {
     private func sections(for snapshot: ProjectSnapshot, row: ProjectRow) -> some View {
         switch snapshot.kind {
         case .missing:
+            header(row)
             missingSection
         case .invalidState(let reason):
             invalidSection(reason, row: row)

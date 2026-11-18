@@ -51,10 +51,6 @@ struct ProjectRow: Identifiable {
         return missingKeys > 0 ? .missingEnvKeys(missingKeys) : nil
     }
 
-    var modules: [String] {
-        snapshot?.kitState?.modules ?? []
-    }
-
     var isKitProject: Bool {
         snapshot?.kitState != nil
     }

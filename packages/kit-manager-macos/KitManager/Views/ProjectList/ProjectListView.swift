@@ -1,11 +1,12 @@
 import KitManagerCore
 import SwiftUI
 
-/// A single-selection project list narrowed by the sidebar, module and search filters.
+/// The project list, narrowed by the sidebar, module and search filters.
 struct ProjectListView: View {
     let projects: [Project]
     let searchText: String
     @Binding var importRequest: ImportRequest?
+    let onRemoveProjects: (Set<UUID>) -> Void
 
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -16,8 +17,8 @@ struct ProjectListView: View {
         return projects
             .map { ProjectRow(project: $0, snapshot: model.snapshots[$0.id]) }
             .filter { row in
-                model.matches(row.snapshot, in: model.sidebar)
-                    && (model.moduleFilter.map { row.modules.contains($0) } ?? true)
+                // Keep selected rows visible when their status or modules change, but still apply search.
+                (model.selection.contains(row.id) || model.matchesProjectFilters(row.snapshot))
                     && (query.isEmpty
                         || row.name.localizedStandardContains(query)
                         || row.project.path.localizedStandardContains(query))
@@ -37,7 +38,7 @@ struct ProjectListView: View {
 
     private var showsCLIBanner: Bool {
         // With no project selected the banner lives in the Overview instead.
-        model.selectedProjectID != nil && model.cliStatus != .ready
+        !model.selection.isEmpty && model.cliStatus != .ready
     }
 
     private var showsTopBar: Bool {
@@ -76,17 +77,10 @@ struct ProjectListView: View {
         .navigationSubtitle(rows.count == 1 ? "1 project" : "\(rows.count) projects")
         .navigationSplitViewColumnWidth(min: 260, ideal: 300)
         .toolbar { toolbar }
-        .modifier(ProjectDropTarget())
-        .onChange(of: rows.map(\.id)) { previous, visible in
-            // A row can disappear after filtering; an external open may never have been in the results.
-            if let id = model.selectedProjectID, previous.contains(id), !visible.contains(id) {
-                model.selectedProjectID = nil
-            }
-        }
     }
 
     private func list(_ rows: [ProjectRow]) -> some View {
-        List(selection: Bindable(model).selectedProjectID) {
+        List(selection: Bindable(model).selection) {
             if sort == .status {
                 section("Needs Attention", rows: rows.filter { !$0.attention.isEmpty })
                 section("Everything Else", rows: rows.filter { $0.attention.isEmpty })
@@ -123,12 +117,10 @@ struct ProjectListView: View {
             }
         } else if !ids.isEmpty {
             Button("Refresh", systemImage: "arrow.clockwise") {
-                for project in projects where ids.contains(project.id) {
-                    Task { await model.refresh(project, force: true) }
-                }
+                Task { await model.refreshProjects(ids, force: true) }
             }
             Button("Remove from List", systemImage: "minus.circle", role: .destructive) {
-                for project in projects where ids.contains(project.id) { model.remove(project) }
+                onRemoveProjects(ids)
             }
         }
     }

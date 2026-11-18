@@ -46,6 +46,9 @@ struct ModulesSection: View {
                     .disabled(!canChange || (available.isEmpty && removable.isEmpty))
                     .help(canChange ? "Add modules or remove installed modules" : "Build the nuxt-saas CLI first")
             }
+            .sheet(isPresented: $isManaging) {
+                ModuleChangeSheet(project: project, additions: available, removals: removable, initialRemoval: initialRemoval)
+            }
             #if DEBUG
             .task {
                 if DebugLaunchOptions.sheet == "modules", model.selectedProjectID == project.id,
@@ -75,9 +78,6 @@ struct ModulesSection: View {
                     Text("\(available.count) more available")
                 }
             }
-        }
-        .sheet(isPresented: $isManaging) {
-            ModuleChangeSheet(project: project, additions: available, removals: removable, initialRemoval: initialRemoval)
         }
     }
 
