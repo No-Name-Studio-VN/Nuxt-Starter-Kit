@@ -44,7 +44,7 @@ final class AppModel {
     @ObservationIgnored let limiter = RenderLimiter(limit: 2)
     @ObservationIgnored private var loader: SnapshotLoader
     @ObservationIgnored private(set) var mapping: ModuleMapping?
-    @ObservationIgnored private var catalogueCommit: String?
+    private var catalogueCommit: String?
     @ObservationIgnored private var refreshing: Set<UUID> = []
     /// Projects whose refresh was requested while one was already running; they run once more.
     @ObservationIgnored private var rerunRequested: Set<UUID> = []
@@ -210,6 +210,11 @@ final class AppModel {
             return
         }
         latestLabel = await kit.versionLabel(for: latestMain)
+    }
+
+    /// A changelog needs the module mapping for the current main, not a previous fetch.
+    var canLoadKitChangelog: Bool {
+        latestMain != nil && catalogueCommit == latestMain
     }
 
     private func loadCatalogue(at commit: String) async {

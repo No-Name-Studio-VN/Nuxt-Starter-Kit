@@ -35,8 +35,13 @@ struct ProjectListView: View {
             }
     }
 
+    private var showsCLIBanner: Bool {
+        // With no project selected the banner lives in the Overview instead.
+        model.selectedProjectID != nil && model.cliStatus != .ready
+    }
+
     private var showsTopBar: Bool {
-        model.cliStatus != .ready || model.moduleFilter != nil
+        showsCLIBanner || model.moduleFilter != nil
     }
 
     var body: some View {
@@ -51,7 +56,7 @@ struct ProjectListView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
-                if model.cliStatus != .ready {
+                if showsCLIBanner {
                     CLIBanner(status: model.cliStatus)
                         .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 }
@@ -65,7 +70,7 @@ struct ProjectListView: View {
             .padding(.top, showsTopBar ? 16 : 0)
             .padding(.bottom, showsTopBar ? 4 : 0)
         }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: model.cliStatus)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: showsCLIBanner)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: model.moduleFilter)
         .navigationTitle(model.sidebar.title)
         .navigationSubtitle(rows.count == 1 ? "1 project" : "\(rows.count) projects")

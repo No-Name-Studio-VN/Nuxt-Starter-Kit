@@ -82,16 +82,11 @@ struct ChangelogSection: View {
     }
 
     private func commitRow(_ commit: KitCommit) -> some View {
-        let (type, color): (String, Color) = switch commit.type {
-        case "feat": ("New", .accentColor)
-        case "fix": ("Fix", .orange)
-        default: ("Change", .secondary)
-        }
         let modules = ChangelogGrouper.ordered(Array(commit.modules)).joined(separator: ", ")
         return HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(type)
+            Text(commit.kindWord)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(color)
+                .foregroundStyle(commit.kindColor)
                 .frame(minWidth: 42, alignment: .leading)
             if commit.breaking {
                 Image(systemName: "exclamationmark.triangle")

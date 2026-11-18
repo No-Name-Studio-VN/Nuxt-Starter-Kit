@@ -99,7 +99,7 @@ struct RootView: View {
             ProjectDetailView(project: project)
                 .id(id)
         } else {
-            OverviewView(projects: projects)
+            OverviewView(projects: projects, importRequest: $importRequest, isScanning: isScanning)
         }
     }
 
