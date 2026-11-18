@@ -18,10 +18,13 @@
           {{ $t(title) }}
         </p>
         <LayoutNavigationSkeleton v-if="pending" :label="$t('docs.loading_toc')" />
-        <LayoutTocTree
+        <AnimatedToc
           v-else
-          :links="tocLinks"
-          :level="0"
+          v-model="activeIndex"
+          :items="items"
+          title=""
+          :aria-label="$t(title)"
+          :progress-bar="config.toc.progressBar"
           :class="[(links.length || iconLinks?.length) && 'border-b pb-5']"
         />
       </div>
@@ -67,12 +70,22 @@
         :label="$t('docs.loading_toc')"
         class="mx-4 mb-3 pl-2"
       />
-      <LayoutTocTree v-else :links="tocLinks" :level="0" class="mx-4 mb-3 pl-2 text-sm" />
+      <AnimatedToc
+        v-else
+        v-model="activeIndex"
+        :items="items"
+        title=""
+        :aria-label="$t(title)"
+        :progress-bar="config.toc.progressBar"
+        class="mx-4 mb-3 w-auto pl-2 text-sm"
+      />
     </CollapsibleContent>
   </Collapsible>
 </template>
 
 <script setup lang="ts">
+import { AnimatedToc } from '@/components/ui/animated-toc';
+import { useContentToc } from '#layers/content/app/composables/useContentToc';
 import CtIcon from '#layers/content/app/components/content/CtIcon.vue';
 import { ArrowUpRightIcon, ChevronRightIcon } from '@lucide/vue';
 import { useDocsToc } from '#layers/content/app/composables/useDocsToc';
@@ -80,6 +93,7 @@ import { useDocsToc } from '#layers/content/app/composables/useDocsToc';
 defineProps<{ isSmall: boolean }>();
 const config = useDocsConfig();
 const { tocLinks, pending } = useDocsToc();
+const { items, activeIndex } = useContentToc(tocLinks);
 
 const { title, links: configLinks, iconLinks, carbonAds } = useDocsConfig().value.toc;
 
