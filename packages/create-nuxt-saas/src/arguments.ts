@@ -58,3 +58,5 @@ export const listArgs = {
   ...templateArg,
   to: { type: 'string', description: 'Kit ref or commit (outside a project only)' },
 } satisfies ArgsDef;
+
+export const inspectArgs = projectArgs;

@@ -1,6 +1,12 @@
 import { defineCommand, runCommand, showUsage, type ArgsDef, type CommandDef } from 'citty';
-import { initArgs, listArgs, moduleChangeArgs, upgradeArgs } from './arguments';
-import { initCommand, moduleCommand, modulesCommand, upgradeCommand } from './commands/dispatch';
+import { initArgs, inspectArgs, listArgs, moduleChangeArgs, upgradeArgs } from './arguments';
+import {
+  initCommand,
+  inspectCommand,
+  moduleCommand,
+  modulesCommand,
+  upgradeCommand,
+} from './commands/dispatch';
 import { CliError } from './errors';
 import { printJson } from './report';
 import { JSON_SCHEMA } from './types/json';
@@ -52,6 +58,13 @@ export async function main(argv: string[]): Promise<number> {
         exitCode = await modulesCommand(args);
       },
     }),
+    inspect: route({
+      meta: { name: 'inspect', description: 'Show how a project differs from its kit render' },
+      args: inspectArgs,
+      async run({ args }) {
+        exitCode = await inspectCommand(args);
+      },
+    }),
   };
   const root = defineCommand({
     meta: {
@@ -65,6 +78,7 @@ export async function main(argv: string[]): Promise<number> {
       remove: commands.remove.command,
       upgrade: commands.upgrade.command,
       modules: commands.modules.command,
+      inspect: commands.inspect.command,
     },
   });
   try {

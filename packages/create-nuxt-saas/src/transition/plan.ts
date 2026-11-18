@@ -29,13 +29,13 @@ function normalized(content: Buffer): string {
   return content.toString('utf8').replaceAll('\r\n', '\n');
 }
 
-function equal(left: TreeFile, right: TreeFile): boolean {
+export function equal(left: TreeFile, right: TreeFile): boolean {
   return left.binary || right.binary
     ? left.content.equals(right.content)
     : normalized(left.content) === normalized(right.content);
 }
 
-async function readUserFile(root: string, path: string): Promise<TreeFile | null | 'owned'> {
+export async function readUserFile(root: string, path: string): Promise<TreeFile | null | 'owned'> {
   if (await hasSymbolicLink(root, path)) return 'owned';
   try {
     if (!(await lstat(path)).isFile()) return 'owned';

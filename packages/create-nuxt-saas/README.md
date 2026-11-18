@@ -35,6 +35,7 @@ upgrade [--dir path] [--check] [--force] [--json] [--to ref] [--template github:
         [--kit path] [--allow-dirty-kit]
 modules [--dir path] [--json] [--to ref] [--template github:owner/repo#ref] [--kit path]
         [--allow-dirty-kit]
+inspect [--dir path] [--json] [--kit path] [--allow-dirty-kit]
 ```
 
 Put the subcommand **before its flags**: `upgrade --dir my-app --check`, not
@@ -43,7 +44,7 @@ go to init. Thus bare `nuxt-saas`, `nuxt-saas my-app` and `nuxt-saas init my-app
 project. A misspelled command is treated as a directory name. `--help` / `-h` lists commands;
 `upgrade --help` (or another subcommand) shows that command's flags.
 
-`--json` (on `add`, `remove` and `upgrade`) prints exactly one JSON document on stdout instead of
+`--json` (on `add`, `remove`, `upgrade`, `modules` and `inspect`) prints exactly one JSON document on stdout instead of
 the text report. Every document carries `"schema": 1`. Failures print
 `{"schema":1,"error":{"message":"…","kind":"expected"|"unexpected"}}` instead of writing to stderr.
 Exit codes are unchanged: 0 ok, 1 expected error or conflicts, 2 unexpected error.
@@ -107,6 +108,21 @@ project it uses the recorded kit commit. Outside one it uses the default templat
 inside one the command throws, because the recorded commit decides. `--json` prints one document
 with `schema`, the resolved `commit`, every module with its claims (`dependencies`,
 `devDependencies`, `scripts`, `env`, `bindings`, `rootFiles`) and the `installed` module IDs.
+
+### inspect
+
+Read-only. Renders the project's recorded modules at its recorded kit commit and compares every
+rendered file with the working tree. It never writes. Each file is `unchanged`, `edited` (including
+symbolic links and non-files), `deleted` or `protected` (protected paths such as `.env*`, lockfiles,
+migrations and `content/` are not compared). It also reports the file's layer (`base`, a module ID,
+or the module whose `rootFiles` claim it), whether the file is `expected` to differ, and the
+recorded and unresolved conflicts (files still holding `<<<<<<<` markers).
+
+The summary counts `total`, `unchanged`, `edited`, `deleted`, `protected` and `expected`.
+`scored` is every file that is neither protected nor expected, and `scoredChanged` is how many of
+those are edited or deleted; the customisation score is `scoredChanged / scored`. `--json` prints
+the full report with `schema`, `commit`, `kit`, `modules`, `identity`, `conflicts`, `files` and
+`summary`. Exit code is 0 unless the command fails.
 
 ### Local kit development
 
@@ -245,7 +261,11 @@ The remaining arrays claim **names**, not values:
 Versions and values live once, in the real root files. Named claims must exist and may be shared
 between modules; a name is kept while any selected module claims it. `rootFiles` globs must remain
 uniquely owned. Unclaimed root entries belong to base and ship everywhere. `kit.json` in this package controls copy exclusions,
-including kit-only migrations, tests and release tooling.
+including kit-only migrations, tests and release tooling. Its optional `userOwned` globs list the
+files projects are expected to customise (`package.json`, `wrangler.jsonc`, `.env.example`,
+`README.md`, `site.config.ts`, `i18n/**`, `public/**`). `inspect` flags them as `expected` and keeps
+them out of the customisation score. When absent, for example in older kit commits, the same default
+list applies.
 
 ### Imports and configuration
 

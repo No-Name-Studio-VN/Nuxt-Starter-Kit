@@ -23,5 +23,14 @@
     ".superpowers/**",
     ".slim/**",
     ".ignore"
+  ],
+  "userOwned": [
+    "package.json",
+    "wrangler.jsonc",
+    ".env.example",
+    "README.md",
+    "site.config.ts",
+    "i18n/**",
+    "public/**"
   ]
 }

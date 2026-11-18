@@ -1,6 +1,6 @@
 import { basename, join, resolve } from 'node:path';
 import type { ParsedArgs } from 'citty';
-import type { listArgs, moduleChangeArgs, upgradeArgs } from '../arguments';
+import type { inspectArgs, listArgs, moduleChangeArgs, upgradeArgs } from '../arguments';
 import { CliError } from '../errors';
 import { kitSource, targetCommit } from '../kit/context';
 import { DEFAULT_TEMPLATE, openKit, resolveCommit } from '../kit/source';
@@ -8,6 +8,8 @@ import { readState, STATE_FILE } from '../project/state';
 import { parseModules, promptInit } from '../prompts';
 import {
   printInitReport,
+  printInspect,
+  printInspectJson,
   printModules,
   printModulesJson,
   printTransitionJson,
@@ -16,6 +18,7 @@ import {
 import type { InitOptions } from '../types/cli';
 import { pathExists } from '../util/fs';
 import { runInit } from './init';
+import { runInspect } from './inspect';
 import { runModuleChange } from './modules';
 import { runUpgrade } from './upgrade';
 
@@ -116,6 +119,22 @@ export async function modulesCommand(args: ParsedArgs<typeof listArgs>): Promise
     const installed = state?.modules ?? [];
     if (args.json) printModulesJson(kit.modules, installed, kit.commit);
     else printModules(kit.modules, installed);
+    return 0;
+  } finally {
+    await kit.cleanup();
+  }
+}
+
+export async function inspectCommand(args: ParsedArgs<typeof inspectArgs>): Promise<number> {
+  const projectRoot = resolve(args.dir);
+  const state = await readState(projectRoot);
+  const source = kitSource(args, state.kit);
+  if (source.kind === 'local') await resolveCommit(source);
+  const kit = await openKit(source, state.commit, state.kit);
+  try {
+    const report = await runInspect({ projectRoot, kit });
+    if (args.json) printInspectJson(report);
+    else printInspect(report);
     return 0;
   } finally {
     await kit.cleanup();

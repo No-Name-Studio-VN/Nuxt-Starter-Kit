@@ -5,7 +5,12 @@ import { promisify } from 'node:util';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { main } from '../src/cli';
 import { readState } from '../src/project/state';
-import type { JsonErrorReport, JsonModulesReport, JsonTransitionReport } from '../src/types/json';
+import type {
+  JsonErrorReport,
+  JsonInspectReport,
+  JsonModulesReport,
+  JsonTransitionReport,
+} from '../src/types/json';
 import { createFixtureKit, makeTempDir } from './support/fixtureKit';
 
 const run = promisify(execFile);
@@ -223,5 +228,23 @@ describe('--json output', () => {
       commit: state.commit,
       installed: state.modules,
     } satisfies Partial<JsonModulesReport>);
+  });
+
+  it('inspect --json reports the summary at the recorded commit', async () => {
+    await initV1();
+    vi.mocked(console.log).mockClear();
+    const stdout = captureStdout();
+    expect(await main(['inspect', '--json', '--dir', project, '--kit', fixture.root])).toBe(0);
+    const report: unknown = parseJson(written(stdout));
+    expect(report).toMatchObject({
+      schema: 1,
+      commit: fixture.v1,
+    } satisfies Partial<JsonInspectReport>);
+    expect(report).toMatchObject({ summary: { edited: 0, deleted: 0, scoredChanged: 0 } });
+    const files = isRecord(report) ? report.files : undefined;
+    expect(Array.isArray(files)).toBe(true);
+    if (!Array.isArray(files)) return;
+    expect(files.length).toBeGreaterThan(0);
+    expect(console.log).not.toHaveBeenCalled();
   });
 });

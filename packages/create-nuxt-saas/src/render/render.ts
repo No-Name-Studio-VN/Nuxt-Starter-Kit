@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { glob } from 'tinyglobby';
-import { z } from 'zod';
+import { readKitConfig } from '../kit/config';
 import type { KitSnapshot } from '../kit/source';
 import { resolveInside, toPosixPath } from '../util/paths';
 import { composeEnvExample, composePackageJson, composeWrangler, type Claims } from './compose';
@@ -18,16 +18,13 @@ export interface ProjectIdentity {
   description: string;
 }
 
-const kitConfigSchema = z.object({ exclude: z.array(z.string()) });
-
 export async function render(
   kit: KitSnapshot,
   selected: string[],
   identity: ProjectIdentity,
 ): Promise<Tree> {
   const cliRoot = join(kit.dir, 'packages/create-nuxt-saas');
-  const parsed: unknown = JSON.parse(await readFile(join(cliRoot, 'kit.json'), 'utf8'));
-  const config = kitConfigSchema.parse(parsed);
+  const config = await readKitConfig(kit.dir);
   const selectedIds = new Set(selected);
   const dropped = kit.modules.filter((module) => !selectedIds.has(module.id));
   const kept = kit.modules.filter((module) => selectedIds.has(module.id));
