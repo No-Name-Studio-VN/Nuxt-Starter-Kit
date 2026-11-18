@@ -24,7 +24,7 @@ struct KitManagerApp: App {
         .defaultSize(width: 1180, height: 720)
         .commands {
             CommandGroup(after: .toolbar) {
-                Button("Refresh All Projects") { Task { await model.refreshAll() } }
+                Button("Refresh All Projects") { Task { await model.refreshAll(force: true) } }
                     .keyboardShortcut("r")
             }
         }

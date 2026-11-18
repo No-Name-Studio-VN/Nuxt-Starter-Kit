@@ -13,6 +13,8 @@ struct ProjectsTableView: View {
     @State private var searchText = ""
     @State private var selection: Set<UUID> = []
     @State private var sortOrder = [KeyPathComparator(\ProjectRow.name, comparator: .localizedStandard)]
+    @State private var isImporting = false
+    /// Set before the picker opens and cleared only by `handleImport`, so a dismissal cannot lose it.
     @State private var importPurpose: ImportPurpose?
     @State private var locating: Project?
     @State private var scanCandidates: [ScanCandidate]?
@@ -76,7 +78,7 @@ struct ProjectsTableView: View {
             isDropTargeted = $0
         }
         .fileImporter(
-            isPresented: Binding(get: { importPurpose != nil }, set: { if !$0 { importPurpose = nil } }),
+            isPresented: $isImporting,
             allowedContentTypes: [.folder], allowsMultipleSelection: importPurpose == .add
         ) { result in
             handleImport(result)
@@ -114,7 +116,7 @@ struct ProjectsTableView: View {
             .width(min: 70, ideal: 90, max: 130)
 
             TableColumn("Status", value: \.statusRank) { row in
-                StatusBadge(status: row.status, isOffline: model.latestMain == nil)
+                StatusBadge(status: row.status, isOffline: model.isOffline)
             }
             .width(min: 130, ideal: 160, max: 210)
 
@@ -129,7 +131,7 @@ struct ProjectsTableView: View {
             .width(min: 110, ideal: 150)
 
             TableColumn("Actions") { row in
-                ProjectActions(row: row) { locating = row.project; importPurpose = .locate }
+                ProjectActions(row: row) { locating = row.project; present(.locate) }
             }
             .width(min: 150, ideal: 150, max: 150)
         }
@@ -151,12 +153,12 @@ struct ProjectsTableView: View {
                 project: project, isMissing: model.snapshots[project.id].map(isMissing) ?? false
             ) {
                 locating = project
-                importPurpose = .locate
+                present(.locate)
             }
         } else if !ids.isEmpty {
             Button("Refresh", systemImage: "arrow.clockwise") {
                 for project in projects where ids.contains(project.id) {
-                    Task { await model.refresh(project) }
+                    Task { await model.refresh(project, force: true) }
                 }
             }
             Button("Remove from List", systemImage: "minus.circle", role: .destructive) {
@@ -178,9 +180,9 @@ struct ProjectsTableView: View {
         } description: {
             Text("Add a project folder, scan a folder for projects, or drop folders here.")
         } actions: {
-            Button("Add Project…") { importPurpose = .add }
+            Button("Add Project…") { present(.add) }
                 .buttonStyle(.glassProminent)
-            Button("Scan Folder…") { importPurpose = .scan }
+            Button("Scan Folder…") { present(.scan) }
                 .buttonStyle(.glass)
         }
     }
@@ -203,12 +205,12 @@ struct ProjectsTableView: View {
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .status) { fetchStatus }
         ToolbarItemGroup {
-            Button("Add Project", systemImage: "plus") { importPurpose = .add }
+            Button("Add Project", systemImage: "plus") { present(.add) }
                 .help("Add project folders")
-            Button("Scan Folder", systemImage: "magnifyingglass.circle") { importPurpose = .scan }
+            Button("Scan Folder", systemImage: "magnifyingglass.circle") { present(.scan) }
                 .help("Find projects inside a folder")
                 .disabled(isScanning)
-            Button("Refresh", systemImage: "arrow.clockwise") { Task { await model.refreshAll() } }
+            Button("Refresh", systemImage: "arrow.clockwise") { Task { await model.refreshAll(force: true) } }
                 .help("Refresh all projects (⌘R)")
                 .disabled(model.isRefreshing)
         }
@@ -233,12 +235,19 @@ struct ProjectsTableView: View {
         }
     }
 
+    private func present(_ purpose: ImportPurpose) {
+        importPurpose = purpose
+        isImporting = true
+    }
+
     private func handleImport(_ result: Result<[URL], any Error>) {
         let purpose = importPurpose
         importPurpose = nil
         switch result {
         case .failure(let error):
-            model.errorMessage = error.localizedDescription
+            // Cancelling the picker is not an error.
+            if !isUserCancellation(error) { model.errorMessage = error.localizedDescription }
+            locating = nil
         case .success(let urls):
             switch purpose {
             case .add:
@@ -258,5 +267,10 @@ struct ProjectsTableView: View {
                 break
             }
         }
+    }
+
+    private func isUserCancellation(_ error: any Error) -> Bool {
+        let nsError = error as NSError
+        return nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError
     }
 }

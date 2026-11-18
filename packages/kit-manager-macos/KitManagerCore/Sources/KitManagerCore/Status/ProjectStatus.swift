@@ -6,7 +6,9 @@ public enum ProjectStatus: Sendable, Equatable {
     case otherTemplate
     case commitNotOnMain(shortSHA: String)
     case upToDate
-    case behind(Int, PreviewSummary?)
+    case behind(Int, UpgradePreview)
+    /// git could not answer for a commit that is on main; carries the error.
+    case checkFailed(String)
     case checking
 
     /// Picks the first case that applies, in the order declared above.
@@ -31,7 +33,9 @@ public enum ProjectStatus: Sendable, Equatable {
             } else if snapshot.availability == .notOnMain {
                 self = .commitNotOnMain(shortSHA: String(state.commit.prefix(7)))
             } else if let behind = snapshot.behind, snapshot.availability == .onMain {
-                self = behind == 0 ? .upToDate : .behind(behind, snapshot.preview.value.map(PreviewSummary.init(report:)))
+                self = behind == 0 ? .upToDate : .behind(behind, UpgradePreview(snapshot.preview))
+            } else if let failure = snapshot.kitCheckFailure {
+                self = .checkFailed(failure)
             } else {
                 self = .checking
             }

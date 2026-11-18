@@ -64,8 +64,38 @@ struct StatusTests {
                 FileChangeSummary(path: "a", kind: .merge), FileChangeSummary(path: "b", kind: .update),
             ])
         behind.preview = .loaded(preview, stale: false)
-        #expect(ProjectStatus(snapshot: behind) == .behind(4, PreviewSummary(report: preview)))
-        #expect(ProjectStatus(snapshot: snapshot(behind: 4)) == .behind(4, nil))
+        #expect(
+            ProjectStatus(snapshot: behind) == .behind(4, .ready(PreviewSummary(report: preview), stale: false)))
+        #expect(ProjectStatus(snapshot: snapshot(behind: 4)) == .behind(4, .pending))
+    }
+
+    @Test func behindDistinguishesRunningStaleAndFailedPreviews() {
+        let preview = report(changes: [FileChangeSummary(path: "a", kind: .merge)])
+        let summary = PreviewSummary(report: preview)
+
+        var running = snapshot(behind: 2)
+        running.preview = .loading
+        #expect(ProjectStatus(snapshot: running) == .behind(2, .pending))
+
+        var stale = snapshot(behind: 2)
+        stale.preview = .loaded(preview, stale: true)
+        #expect(ProjectStatus(snapshot: stale) == .behind(2, .ready(summary, stale: true)))
+
+        var failed = snapshot(behind: 2)
+        failed.preview = .failed("render exploded")
+        #expect(ProjectStatus(snapshot: failed) == .behind(2, .failed("render exploded")))
+    }
+
+    @Test func failedKitCheckIsVisibleInsteadOfChecking() {
+        // On main, but git could not count the commits behind: not "checking" forever.
+        var broken = snapshot(availability: .onMain, behind: nil)
+        broken.kitCheckFailure = "git rev-list failed"
+        #expect(ProjectStatus(snapshot: broken) == .checkFailed("git rev-list failed"))
+
+        // A count that did arrive wins over a stale failure message.
+        var recovered = snapshot(availability: .onMain, behind: 0)
+        recovered.kitCheckFailure = "old"
+        #expect(ProjectStatus(snapshot: recovered) == .upToDate)
     }
 
     @Test func loadedInspectOverridesRecordedConflicts() {

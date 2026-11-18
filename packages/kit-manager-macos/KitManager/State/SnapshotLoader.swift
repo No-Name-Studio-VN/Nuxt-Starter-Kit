@@ -9,19 +9,14 @@ struct SnapshotLoader: Sendable {
         let mapping: ModuleMapping?
         let cliReady: Bool
         let previousHealth: SiteHealth?
-    }
-
-    /// A CLI render still to run. `target` is the commit to upgrade to; nil uses the recorded template.
-    struct Job: Sendable {
-        let recordedCommit: String
-        let source: KitSourceMode
-        let target: String?
+        let previewFailure: CachedFailure?
+        let inspectFailure: CachedFailure?
     }
 
     struct Work: Sendable {
         var healthURL: URL?
-        var preview: Job?
-        var inspect: Job?
+        var preview: RenderJob?
+        var inspect: RenderJob?
     }
 
     struct Loaded: Sendable {
@@ -31,7 +26,7 @@ struct SnapshotLoader: Sendable {
 
     struct Rendered<Value: Sendable & Equatable>: Sendable {
         let result: Loadable<Value>
-        /// What the result was computed for; nil when the folder has no usable git fingerprint.
+        /// What the result was computed for, success or failure; nil when the folder has no git fingerprint.
         let key: CacheKey?
     }
 
@@ -46,7 +41,6 @@ struct SnapshotLoader: Sendable {
     func load(_ ref: ProjectRef, input: Input) async -> Loaded {
         let kind = ProjectClassifier.classify(ref.url)
         var snapshot = ProjectSnapshot(kind: kind)
-        snapshot.health = input.previousHealth
         if case .missing = kind {
             return Loaded(snapshot: snapshot, work: Work())
         }
@@ -64,19 +58,30 @@ struct SnapshotLoader: Sendable {
         snapshot.wrangler = await wrangler
 
         var work = Work()
-        work.healthURL = Self.productionURL(wrangler: snapshot.wrangler, override: ref.productionURL)
+        work.healthURL = ProductionURL.resolve(wrangler: snapshot.wrangler, override: ref.productionURL)
+        // A previous result for a URL that no longer resolves would be misleading.
+        snapshot.health = work.healthURL == nil ? nil : input.previousHealth
 
         if case .kitV3(let state) = kind {
             await readKitHistory(of: state, input: input, into: &snapshot)
-            planRenders(
-                for: state, ref: ref, fingerprint: await fingerprint, input: input, snapshot: &snapshot,
-                work: &work)
+            let plan = RenderPlanner.plan(
+                RenderPlanner.Input(
+                    state: state, fingerprint: await fingerprint, availability: snapshot.availability,
+                    behind: snapshot.behind, latestMain: input.latestMain, cliReady: input.cliReady,
+                    cachedPreview: Self.decode(CachedResult<TransitionReport>.self, from: ref.previewCache),
+                    cachedInspect: Self.decode(CachedResult<InspectReport>.self, from: ref.inspectCache),
+                    previewFailure: input.previewFailure, inspectFailure: input.inspectFailure))
+            snapshot.preview = plan.preview
+            snapshot.inspect = plan.inspect
+            work.preview = plan.previewJob
+            work.inspect = plan.inspectJob
         }
         return Loaded(snapshot: snapshot, work: work)
     }
 
     /// Availability, version label, commits behind and changelog. They only make sense for the default
-    /// template, and only once `origin/main` is known (spec 2.2).
+    /// template, and only once `origin/main` is known (spec 2.2). A git failure is kept on the snapshot
+    /// instead of leaving the status on "checking".
     private func readKitHistory(of state: KitState, input: Input, into snapshot: inout ProjectSnapshot) async {
         guard state.usesDefaultTemplate, input.latestMain != nil else { return }
         let availability = await kit.availability(of: state.commit)
@@ -84,87 +89,51 @@ struct SnapshotLoader: Sendable {
         guard availability == .onMain else { return }
 
         async let label = kit.versionLabel(for: state.commit)
-        async let behind = try? await kit.commitsBehind(state.commit)
+        async let behind = Self.count(kit, state.commit)
         snapshot.versionLabel = await label
-        snapshot.behind = await behind
+        switch await behind {
+        case .success(let count): snapshot.behind = count
+        case .failure(let error): snapshot.kitCheckFailure = error.localizedDescription
+        }
         if let behind = snapshot.behind, behind > 0, let mapping = input.mapping {
             snapshot.changelog = (try? await kit.commits(from: state.commit, mapping: mapping)) ?? []
         }
     }
 
-    /// Restores cached results, and decides which renders must run again. Only a project the local
-    /// checkout can serve is previewed automatically; other projects need an explicit click because
-    /// the CLI would fetch their recorded template over the network.
-    private func planRenders(
-        for state: KitState, ref: ProjectRef, fingerprint: String?, input: Input,
-        snapshot: inout ProjectSnapshot, work: inout Work
-    ) {
-        let localTarget: String? = snapshot.availability == .onMain ? input.latestMain : nil
-        let source: KitSourceMode = localTarget == nil ? .recorded : .local
-        // Without a fingerprint nothing can be validated, so only a click renders.
-        let canRender = input.cliReady && fingerprint != nil
-            && (snapshot.availability != nil || !state.usesDefaultTemplate)
-
-        let inspectKey = fingerprint.map {
-            CacheKey(fingerprint: $0, recordedCommit: state.commit, targetCommit: localTarget ?? "")
-        }
-        let cachedInspect = Self.decode(CachedResult<InspectReport>.self, from: ref.inspectCache)
-        snapshot.inspect = Self.restore(cachedInspect, key: inspectKey)
-        if canRender, cachedInspect?.key != inspectKey {
-            work.inspect = Job(recordedCommit: state.commit, source: source, target: localTarget)
-            if snapshot.inspect == .idle { snapshot.inspect = .loading }
-        }
-
-        guard let behind = snapshot.behind, behind > 0, let localTarget else {
-            // Up to date, or not served by the local checkout: nothing to preview automatically.
-            if snapshot.behind == nil {
-                let cached = Self.decode(CachedResult<TransitionReport>.self, from: ref.previewCache)
-                snapshot.preview = Self.restore(cached, key: nil)
-            }
-            return
-        }
-        let previewKey = fingerprint.map {
-            CacheKey(fingerprint: $0, recordedCommit: state.commit, targetCommit: localTarget)
-        }
-        let cachedPreview = Self.decode(CachedResult<TransitionReport>.self, from: ref.previewCache)
-        snapshot.preview = Self.restore(cachedPreview, key: previewKey)
-        if canRender, cachedPreview?.key != previewKey {
-            work.preview = Job(recordedCommit: state.commit, source: .local, target: localTarget)
-            if snapshot.preview == .idle { snapshot.preview = .loading }
-        }
+    private static func count(_ kit: KitRepository, _ commit: String) async -> Result<Int, any Error> {
+        do { return .success(try await kit.commitsBehind(commit)) } catch { return .failure(error) }
     }
 
     // MARK: Renders and checks
 
-    func renderPreview(_ ref: ProjectRef, job: Job) async -> Rendered<TransitionReport> {
+    func renderPreview(_ ref: ProjectRef, job: RenderJob) async -> Rendered<TransitionReport> {
         let fingerprint = try? await git.fingerprint(ref.url)
         let cli = cli
         do {
             let report = try await limiter.run {
                 try await cli.upgrade(project: ref.url, to: job.target, source: job.source, check: true)
             }
-            let key = fingerprint.map {
-                CacheKey(fingerprint: $0, recordedCommit: job.recordedCommit, targetCommit: job.target ?? report.to)
-            }
-            return Rendered(result: .loaded(report, stale: false), key: key)
+            return Rendered(
+                result: .loaded(report, stale: false),
+                key: fingerprint.map { job.cacheKey(fingerprint: $0, resolvedTarget: report.to) })
         } catch {
-            return Rendered(result: .failed(error.localizedDescription), key: nil)
+            return Rendered(
+                result: .failed(error.localizedDescription), key: fingerprint.map { job.cacheKey(fingerprint: $0) })
         }
     }
 
-    func renderInspect(_ ref: ProjectRef, job: Job) async -> Rendered<InspectReport> {
+    func renderInspect(_ ref: ProjectRef, job: RenderJob) async -> Rendered<InspectReport> {
         let fingerprint = try? await git.fingerprint(ref.url)
         let cli = cli
         do {
             let report = try await limiter.run {
                 try await cli.inspect(project: ref.url, source: job.source)
             }
-            let key = fingerprint.map {
-                CacheKey(fingerprint: $0, recordedCommit: job.recordedCommit, targetCommit: job.target ?? "")
-            }
-            return Rendered(result: .loaded(report, stale: false), key: key)
+            return Rendered(
+                result: .loaded(report, stale: false), key: fingerprint.map { job.cacheKey(fingerprint: $0) })
         } catch {
-            return Rendered(result: .failed(error.localizedDescription), key: nil)
+            return Rendered(
+                result: .failed(error.localizedDescription), key: fingerprint.map { job.cacheKey(fingerprint: $0) })
         }
     }
 
@@ -174,31 +143,10 @@ struct SnapshotLoader: Sendable {
 
     // MARK: Helpers
 
-    /// The wrangler routes win; the per-project override is the fallback (spec 2.7).
-    static func productionURL(wrangler: WranglerInfo?, override: String?) -> URL? {
-        if let url = wrangler?.productionURL { return url }
-        guard var text = override?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
-            return nil
-        }
-        if !text.contains("://") { text = "https://\(text)" }
-        guard let url = URL(string: text), let scheme = url.scheme, ["http", "https"].contains(scheme),
-            url.host() != nil
-        else { return nil }
-        return url
-    }
-
-    static func decode<Value: Codable & Sendable & Equatable>(
+    private static func decode<Value: Codable & Sendable & Equatable>(
         _ type: CachedResult<Value>.Type, from data: Data?
     ) -> CachedResult<Value>? {
         guard let data else { return nil }
         return try? JSONDecoder().decode(type, from: data)
-    }
-
-    /// A cached value is fresh only when its key matches; otherwise it is shown as stale until recomputed.
-    private static func restore<Value: Codable & Sendable & Equatable>(
-        _ cached: CachedResult<Value>?, key: CacheKey?
-    ) -> Loadable<Value> {
-        guard let cached else { return .idle }
-        return .loaded(cached.value, stale: key == nil || cached.key != key)
     }
 }

@@ -32,7 +32,7 @@ struct ProjectMenuItems: View {
         }
         Button("Copy Path", systemImage: "doc.on.doc") { model.copyPath(project) }
         Button("Refresh", systemImage: "arrow.clockwise") {
-            Task { await model.refresh(project) }
+            Task { await model.refresh(project, force: true) }
         }
         Divider()
         Button("Remove from List", systemImage: "minus.circle", role: .destructive) {

@@ -17,7 +17,7 @@ public enum AttentionReason: Sendable, Hashable {
         case .needsMigration(let source): if source != .other { reasons.insert(.migration) }
         case .unresolvedConflicts: reasons.insert(.conflicts)
         case .behind: reasons.insert(.behind)
-        case .otherTemplate, .commitNotOnMain, .upToDate, .checking: break
+        case .otherTemplate, .commitNotOnMain, .upToDate, .checkFailed, .checking: break
         }
         if let missing = snapshot.env?.missing.count, missing > 0 {
             reasons.insert(.missingEnvKeys(missing))

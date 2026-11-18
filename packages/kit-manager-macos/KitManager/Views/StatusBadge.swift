@@ -111,11 +111,14 @@ struct StatusBadge: View {
             Appearance(
                 title: "Up to date", detail: nil, symbol: "checkmark.circle.fill", tone: .green,
                 help: "Up to date with the latest kit")
-        case .behind(let count, let summary):
+        case .behind(let count, let preview):
             Appearance(
-                title: "\(count) behind", detail: upgradeCost(summary), symbol: "arrow.down.circle.fill",
-                tone: .amber,
-                help: "\(count) kit commits behind. Upgrade: \(upgradeCost(summary) ?? "being checked")")
+                title: "\(count) behind", detail: detail(of: preview), symbol: "arrow.down.circle.fill",
+                tone: .amber, help: "\(count) kit commits behind. \(help(for: preview))")
+        case .checkFailed(let message):
+            Appearance(
+                title: "Check failed", detail: nil, symbol: "exclamationmark.circle", tone: .grey,
+                help: "Could not compare with the latest kit: \(message)")
         case .checking:
             if isOffline {
                 Appearance(
@@ -127,9 +130,25 @@ struct StatusBadge: View {
         }
     }
 
-    /// "clean", "3 merges" or "2 conflicts"; nil while the preview is still running.
-    private func upgradeCost(_ summary: PreviewSummary?) -> String? {
-        guard let summary else { return nil }
+    private func detail(of preview: UpgradePreview) -> String? {
+        switch preview {
+        case .pending: "previewing"
+        case .ready(let summary, let stale): stale ? "\(upgradeCost(summary)), stale" : upgradeCost(summary)
+        case .failed: "preview failed"
+        }
+    }
+
+    private func help(for preview: UpgradePreview) -> String {
+        switch preview {
+        case .pending: "Upgrade preview is being computed."
+        case .ready(let summary, let stale):
+            "Upgrade: \(upgradeCost(summary))\(stale ? ". This preview is out of date and is being recomputed." : ".")"
+        case .failed(let message): "The upgrade preview failed: \(message)"
+        }
+    }
+
+    /// "clean", "3 merges" or "2 conflicts".
+    private func upgradeCost(_ summary: PreviewSummary) -> String {
         if summary.conflicts > 0 { return summary.conflicts == 1 ? "1 conflict" : "\(summary.conflicts) conflicts" }
         let merges = summary.counts[.merge, default: 0]
         if merges > 0 { return merges == 1 ? "1 merge" : "\(merges) merges" }

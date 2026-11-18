@@ -67,6 +67,7 @@ struct ProjectRow: Identifiable {
         case .unresolvedConflicts: 7
         case .behind: 6
         case .needsMigration: 4
+        case .checkFailed: 3
         case .commitNotOnMain: 3
         case .otherTemplate: 2
         case .checking: 1

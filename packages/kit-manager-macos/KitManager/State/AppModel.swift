@@ -32,6 +32,10 @@ final class AppModel {
     @ObservationIgnored private var mapping: ModuleMapping?
     @ObservationIgnored private var catalogueCommit: String?
     @ObservationIgnored private var refreshing: Set<UUID> = []
+    /// Projects whose refresh was requested while one was already running; they run once more.
+    @ObservationIgnored private var rerunRequested: Set<UUID> = []
+    /// Renders that failed for their current key, so the CLI is not re-run on every window activation.
+    @ObservationIgnored private var failures: [UUID: RenderFailures] = [:]
     @ObservationIgnored private var fetchTimer: Task<Void, Never>?
     @ObservationIgnored private var didBootstrap = false
 
@@ -49,6 +53,11 @@ final class AppModel {
     }
 
     // MARK: Services
+
+    private struct RenderFailures {
+        var preview: CachedFailure?
+        var inspect: CachedFailure?
+    }
 
     private struct Services {
         let cli: NuxtSaasCLI
@@ -181,36 +190,63 @@ final class AppModel {
 
     var isRefreshing: Bool { refreshingCount > 0 }
 
-    /// Local refresh: no fetch. One project's failure never blocks the others.
-    func refreshAll() async {
+    /// True only once a fetch has failed and no `origin/main` is known; before the first attempt
+    /// finishes the status reads "checking".
+    var isOffline: Bool { fetchState == .offline && latestMain == nil }
+
+    /// Local refresh: no fetch. One project's failure never blocks the others. `force` also retries
+    /// renders that failed earlier; window activation does not.
+    func refreshAll(force: Bool = false) async {
         refreshCLIStatus()
         latestMain = try? await kit.latestMain()
         if let latestMain { await loadCatalogue(at: latestMain) }
-        let refs = fetchProjects().map(ProjectRef.init)
-        let known = Set(refs.map(\.id))
+        let ids = fetchProjects().map(\.id)
+        let known = Set(ids)
         for id in snapshots.keys where !known.contains(id) { snapshots[id] = nil }
+        if force { failures = [:] }
         await withTaskGroup(of: Void.self) { group in
-            for ref in refs {
-                group.addTask { await self.refresh(ref) }
+            for id in ids {
+                group.addTask { await self.refresh(id: id) }
             }
         }
     }
 
-    func refresh(_ project: Project) async {
-        await refresh(ProjectRef(project))
+    func refresh(_ project: Project, force: Bool = false) async {
+        if force { failures[project.id] = nil }
+        await refresh(id: project.id)
     }
 
-    private func refresh(_ ref: ProjectRef) async {
-        guard refreshing.insert(ref.id).inserted else { return }
+    /// Requests that arrive while a pass is running are coalesced into one more pass, so a refresh
+    /// asked for after an edit is never lost.
+    private func refresh(id: UUID) async {
+        guard refreshing.insert(id).inserted else {
+            rerunRequested.insert(id)
+            return
+        }
         refreshingCount += 1
         defer {
-            refreshing.remove(ref.id)
+            refreshing.remove(id)
             refreshingCount -= 1
         }
+        repeat {
+            rerunRequested.remove(id)
+            guard let project = fetchProject(id: id) else {
+                snapshots[id] = nil
+                failures[id] = nil
+                return
+            }
+            await refreshPass(ProjectRef(project))
+        } while rerunRequested.contains(id)
+    }
+
+    private func refreshPass(_ ref: ProjectRef) async {
         let input = SnapshotLoader.Input(
             latestMain: latestMain, mapping: mapping, cliReady: cliStatus == .ready,
-            previousHealth: snapshots[ref.id]?.health)
+            previousHealth: snapshots[ref.id]?.health, previewFailure: failures[ref.id]?.preview,
+            inspectFailure: failures[ref.id]?.inspect)
         let loaded = await loader.load(ref, input: input)
+        // The project may have been removed while the folder was being read.
+        guard fetchProject(id: ref.id) != nil else { return }
         snapshots[ref.id] = loaded.snapshot
         await run(loaded.work, for: ref)
     }
@@ -236,7 +272,10 @@ final class AppModel {
     /// Explicit "Preview again" from the detail page: recomputes whatever the cache says.
     func loadPreview(_ project: Project) async {
         let ref = ProjectRef(project)
-        guard let job = job(for: ref.id) else { return }
+        guard let snapshot = snapshots[ref.id],
+            let job = RenderPlanner.job(for: snapshot, latestMain: latestMain)
+        else { return }
+        failures[ref.id]?.preview = nil
         update(ref.id) { snapshot in
             if snapshot.preview.value == nil { snapshot.preview = .loading }
         }
@@ -245,36 +284,44 @@ final class AppModel {
 
     func loadInspect(_ project: Project) async {
         let ref = ProjectRef(project)
-        guard let job = job(for: ref.id) else { return }
+        guard let snapshot = snapshots[ref.id],
+            let job = RenderPlanner.job(for: snapshot, latestMain: latestMain)
+        else { return }
+        failures[ref.id]?.inspect = nil
         update(ref.id) { snapshot in
             if snapshot.inspect.value == nil { snapshot.inspect = .loading }
         }
         applyInspect(await loader.renderInspect(ref, job: job), for: ref.id)
     }
 
-    /// The local checkout serves a project on the default template whose commit is on main;
-    /// everything else renders from its recorded template.
-    private func job(for id: UUID) -> SnapshotLoader.Job? {
-        guard let snapshot = snapshots[id], let state = snapshot.kitState else { return nil }
-        let local = snapshot.availability == .onMain ? latestMain : nil
-        return SnapshotLoader.Job(
-            recordedCommit: state.commit, source: local == nil ? .recorded : .local, target: local)
-    }
-
     private func applyPreview(_ rendered: SnapshotLoader.Rendered<TransitionReport>, for id: UUID) {
         update(id) { $0.preview = rendered.result }
-        guard case .loaded(let report, _) = rendered.result, let key = rendered.key,
-            let project = fetchProject(id: id)
-        else { return }
-        project.previewCache = try? JSONEncoder().encode(CachedResult(key: key, value: report, checkedAt: .now))
+        switch rendered.result {
+        case .loaded(let report, _):
+            failures[id]?.preview = nil
+            guard let key = rendered.key, let project = fetchProject(id: id) else { return }
+            project.previewCache = try? JSONEncoder().encode(CachedResult(key: key, value: report, checkedAt: .now))
+        case .failed(let message):
+            guard let key = rendered.key else { return }
+            failures[id, default: RenderFailures()].preview = CachedFailure(key: key, message: message)
+        case .idle, .loading:
+            break
+        }
     }
 
     private func applyInspect(_ rendered: SnapshotLoader.Rendered<InspectReport>, for id: UUID) {
         update(id) { $0.inspect = rendered.result }
-        guard case .loaded(let report, _) = rendered.result, let key = rendered.key,
-            let project = fetchProject(id: id)
-        else { return }
-        project.inspectCache = try? JSONEncoder().encode(CachedResult(key: key, value: report, checkedAt: .now))
+        switch rendered.result {
+        case .loaded(let report, _):
+            failures[id]?.inspect = nil
+            guard let key = rendered.key, let project = fetchProject(id: id) else { return }
+            project.inspectCache = try? JSONEncoder().encode(CachedResult(key: key, value: report, checkedAt: .now))
+        case .failed(let message):
+            guard let key = rendered.key else { return }
+            failures[id, default: RenderFailures()].inspect = CachedFailure(key: key, message: message)
+        case .idle, .loading:
+            break
+        }
     }
 
     private func update(_ id: UUID, _ change: (inout ProjectSnapshot) -> Void) {
@@ -305,23 +352,33 @@ final class AppModel {
             added.append(project)
         }
         save()
-        let refs = added.map(ProjectRef.init)
+        let ids = added.map(\.id)
         Task {
-            for ref in refs { await refresh(ref) }
+            await withTaskGroup(of: Void.self) { group in
+                for id in ids { group.addTask { await self.refresh(id: id) } }
+            }
         }
         return added.count
     }
 
     func remove(_ project: Project) {
         snapshots[project.id] = nil
+        failures[project.id] = nil
+        rerunRequested.remove(project.id)
         context.delete(project)
         save()
     }
 
     func relocate(_ project: Project, to url: URL) {
-        project.path = url.standardizedFileURL.path
+        let path = url.standardizedFileURL.path
+        if fetchProjects().contains(where: { $0.path == path && $0.id != project.id }) {
+            errorMessage = "That folder is already in the project list."
+            return
+        }
+        project.path = path
         project.previewCache = nil
         project.inspectCache = nil
+        failures[project.id] = nil
         save()
         Task { await refresh(project) }
     }

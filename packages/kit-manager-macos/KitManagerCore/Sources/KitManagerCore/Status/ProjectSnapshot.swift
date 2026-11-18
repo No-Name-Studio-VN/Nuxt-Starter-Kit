@@ -10,6 +10,8 @@ public struct ProjectSnapshot: Sendable, Equatable {
     public var availability: CommitAvailability?
     public var versionLabel: String?
     public var behind: Int?
+    /// Why availability, version or behind count could not be read, when git failed on a commit that is on main.
+    public var kitCheckFailure: String?
     public var preview: Loadable<TransitionReport>
     public var inspect: Loadable<InspectReport>
     public var changelog: [KitCommit]
@@ -17,7 +19,7 @@ public struct ProjectSnapshot: Sendable, Equatable {
     public init(
         kind: ProjectKind, package: PackageInfo? = nil, git: GitStatus? = nil, env: EnvCheck? = nil,
         wrangler: WranglerInfo? = nil, health: SiteHealth? = nil, availability: CommitAvailability? = nil,
-        versionLabel: String? = nil, behind: Int? = nil, preview: Loadable<TransitionReport> = .idle,
+        versionLabel: String? = nil, behind: Int? = nil, kitCheckFailure: String? = nil, preview: Loadable<TransitionReport> = .idle,
         inspect: Loadable<InspectReport> = .idle, changelog: [KitCommit] = []
     ) {
         self.kind = kind
@@ -29,6 +31,7 @@ public struct ProjectSnapshot: Sendable, Equatable {
         self.availability = availability
         self.versionLabel = versionLabel
         self.behind = behind
+        self.kitCheckFailure = kitCheckFailure
         self.preview = preview
         self.inspect = inspect
         self.changelog = changelog
