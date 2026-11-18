@@ -64,6 +64,12 @@ public enum RenderPlanner {
                     previewJob = RenderJob(recordedCommit: input.state.commit, source: .local, target: localTarget)
                 }
             }
+        } else if let failure = input.previewFailure, let fingerprint = input.fingerprint,
+            failure.key == CacheKey(fingerprint: fingerprint, recordedCommit: input.state.commit, targetCommit: "")
+        {
+            // An explicit preview from the recorded template failed for this working tree; keep saying so
+            // until the user asks again. Such a render is keyed with an empty target.
+            preview = .failed(failure.message)
         } else if let cached = input.cachedPreview {
             // Not served by the local checkout: show what an earlier explicit preview found.
             preview = .loaded(cached.value, stale: true)

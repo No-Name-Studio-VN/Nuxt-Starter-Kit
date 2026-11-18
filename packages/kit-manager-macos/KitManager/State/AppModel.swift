@@ -11,6 +11,8 @@ final class AppModel {
     private(set) var snapshots: [UUID: ProjectSnapshot] = [:]
     private(set) var catalogue: [KitModuleInfo] = []
     private(set) var latestMain: String?
+    /// `v3.1.0 +2` for `latestMain`; nil while unknown or when git cannot describe it.
+    private(set) var latestLabel: String?
     private(set) var cliStatus: CLIStatus = .missingCheckout
     private(set) var fetchState: FetchState = .idle
     private(set) var isBuildingCLI = false
@@ -26,8 +28,8 @@ final class AppModel {
     @ObservationIgnored private(set) var kit: KitRepository
     @ObservationIgnored private(set) var git: GitInspector
     @ObservationIgnored private(set) var launcher: Launcher
-    @ObservationIgnored private let health: any HealthChecking = HealthChecker()
-    @ObservationIgnored private let limiter = RenderLimiter(limit: 2)
+    @ObservationIgnored let health: any HealthChecking = HealthChecker()
+    @ObservationIgnored let limiter = RenderLimiter(limit: 2)
     @ObservationIgnored private var loader: SnapshotLoader
     @ObservationIgnored private var mapping: ModuleMapping?
     @ObservationIgnored private var catalogueCommit: String?
@@ -110,6 +112,7 @@ final class AppModel {
     func reconfigure() async {
         rebuildServices()
         latestMain = nil
+        latestLabel = nil
         catalogue = []
         mapping = nil
         catalogueCommit = nil
@@ -167,7 +170,16 @@ final class AppModel {
 
     private func updateLatestMain() async {
         latestMain = try? await kit.latestMain()
+        await updateLatestLabel()
         if let latestMain { await loadCatalogue(at: latestMain) }
+    }
+
+    private func updateLatestLabel() async {
+        guard let latestMain else {
+            latestLabel = nil
+            return
+        }
+        latestLabel = await kit.versionLabel(for: latestMain)
     }
 
     private func loadCatalogue(at commit: String) async {
@@ -199,6 +211,7 @@ final class AppModel {
     func refreshAll(force: Bool = false) async {
         refreshCLIStatus()
         latestMain = try? await kit.latestMain()
+        await updateLatestLabel()
         if let latestMain { await loadCatalogue(at: latestMain) }
         let ids = fetchProjects().map(\.id)
         let known = Set(ids)
@@ -325,7 +338,7 @@ final class AppModel {
         }
     }
 
-    private func update(_ id: UUID, _ change: (inout ProjectSnapshot) -> Void) {
+    func update(_ id: UUID, _ change: (inout ProjectSnapshot) -> Void) {
         guard var snapshot = snapshots[id] else { return }
         change(&snapshot)
         snapshots[id] = snapshot
@@ -402,7 +415,7 @@ final class AppModel {
         return try? context.fetch(descriptor).first
     }
 
-    private func save() {
+    func save() {
         do {
             try context.save()
         } catch {
@@ -429,7 +442,7 @@ final class AppModel {
         NSPasteboard.general.setString(project.path, forType: .string)
     }
 
-    private func perform(_ operation: () async throws -> Void) async {
+    func perform(_ operation: () async throws -> Void) async {
         do {
             try await operation()
         } catch {

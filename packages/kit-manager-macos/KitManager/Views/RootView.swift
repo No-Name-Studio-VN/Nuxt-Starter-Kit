@@ -17,8 +17,7 @@ struct RootView: View {
                 content
                     .navigationDestination(for: UUID.self) { id in
                         if let project = projects.first(where: { $0.id == id }) {
-                            ProjectDetailPlaceholderView(
-                                row: ProjectRow(project: project, snapshot: model.snapshots[id]))
+                            ProjectDetailView(project: project)
                         } else {
                             ContentUnavailableView("Project removed", systemImage: "questionmark.folder")
                         }

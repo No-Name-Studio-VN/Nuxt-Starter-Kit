@@ -18,6 +18,14 @@ enum Theme {
                 : NSColor.windowBackgroundColor
         })
 
+    /// A solid card surface, used where glass is switched off (Reduce Transparency).
+    static let surface = Color(
+        nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                ? NSColor(red: 0.125, green: 0.12, blue: 0.113, alpha: 1)
+                : NSColor.controlBackgroundColor
+        })
+
     /// A crisp 1 pt line that stays visible in both appearances.
     static let hairline = Color(
         nsColor: NSColor(name: nil) { appearance in

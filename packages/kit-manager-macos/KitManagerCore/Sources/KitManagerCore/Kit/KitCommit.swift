@@ -24,6 +24,13 @@ public struct KitCommit: Sendable, Hashable, Identifiable {
         self.modules = modules
     }
 
+    /// The subject without its `type(scope): ` prefix, when it has one.
+    public var title: String {
+        guard type != nil, let colon = subject.firstRange(of: ": ") else { return subject }
+        let rest = subject[colon.upperBound...].trimmingCharacters(in: .whitespaces)
+        return rest.isEmpty ? subject : rest
+    }
+
     /// A commit matters to a project when it touches the base or any installed module.
     public func isRelevant(to installed: Set<String>) -> Bool {
         modules.contains(ModuleMapping.base) || !modules.isDisjoint(with: installed)

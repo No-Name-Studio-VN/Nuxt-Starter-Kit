@@ -120,6 +120,36 @@ struct RenderPlannerTests {
         #expect(remembered.previewJob == nil)
     }
 
+    @Test func explicitPreviewFailureOnARecordedSourceProjectSurvivesTheNextRefresh() {
+        // An explicit preview of a pinned project, fork or off-main commit renders from the recorded
+        // template, so it is keyed with an empty target.
+        let failure = CachedFailure(key: key(target: ""), message: "offline")
+        for plan in [
+            RenderPlanner.plan(input(kit: "\(defaultKit)#v3.0.2", behind: nil, previewFailure: failure)),
+            RenderPlanner.plan(input(kit: "github:someone/fork", availability: nil, behind: nil, previewFailure: failure)),
+            RenderPlanner.plan(input(availability: .notOnMain, behind: nil, previewFailure: failure)),
+        ] {
+            #expect(plan.preview == .failed("offline"))
+            #expect(plan.previewJob == nil)
+        }
+
+        // The failure wins over an older successful preview for the same working tree.
+        let older = RenderPlanner.plan(
+            input(behind: nil, preview: cached(report(), key(target: "x")), previewFailure: failure))
+        #expect(older.preview == .failed("offline"))
+
+        // Once the working tree changes the failure no longer applies.
+        let moved = RenderPlanner.plan(
+            input(
+                behind: nil, preview: cached(report(), key(target: "x")),
+                previewFailure: CachedFailure(key: key(fingerprint: "old", target: ""), message: "offline")))
+        #expect(moved.preview == .loaded(report(), stale: true))
+        let none = RenderPlanner.plan(
+            input(
+                behind: nil, previewFailure: CachedFailure(key: key(fingerprint: "old", target: ""), message: "offline")))
+        #expect(none.preview == .idle)
+    }
+
     @Test func missingFingerprintOrCLIOrMainRendersNothing() {
         #expect(RenderPlanner.plan(input(fingerprint: nil)).previewJob == nil)
         #expect(RenderPlanner.plan(input(cliReady: false)).inspectJob == nil)
