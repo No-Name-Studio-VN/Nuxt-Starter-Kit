@@ -22,7 +22,7 @@ struct ChangeSummaryChips: View {
                     }
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
-                    .background(Theme.hairline.opacity(0.55), in: .rect(cornerRadius: 4))
+                    .background(Color(nsColor: .separatorColor).opacity(0.55), in: .rect(cornerRadius: 4))
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(entry.count) \(entry.kind.title)")
                 }

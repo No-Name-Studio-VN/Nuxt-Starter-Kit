@@ -11,7 +11,7 @@ struct CommitRow: View {
             if let type = commit.type {
                 Text(commit.scope.map { "\(type)(\($0))" } ?? type)
                     .font(.caption.monospaced())
-                    .foregroundStyle(commit.breaking ? Theme.red : Color.secondary)
+                    .foregroundStyle(commit.breaking ? Color.red : Color.secondary)
                     .lineLimit(1)
                     .frame(minWidth: 52, alignment: .leading)
             }

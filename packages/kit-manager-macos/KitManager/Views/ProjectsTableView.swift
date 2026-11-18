@@ -71,7 +71,6 @@ struct ProjectsTableView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.canvas)
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
                 if model.cliStatus != .ready {
@@ -214,9 +213,9 @@ struct ProjectsTableView: View {
     @ViewBuilder
     private var dropOverlay: some View {
         if isDropTargeted {
-            RoundedRectangle(cornerRadius: Theme.radius)
-                .strokeBorder(Theme.amber, style: StrokeStyle(lineWidth: 2, dash: [6, 4]))
-                .background(Theme.amber.opacity(0.06), in: .rect(cornerRadius: Theme.radius))
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [6, 4]))
+                .background(Color.accentColor.opacity(0.06), in: .rect(cornerRadius: 8))
                 .padding(8)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)

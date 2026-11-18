@@ -81,7 +81,7 @@ struct ChangelogSection: View {
                     if isExpanded { expanded.remove(group.id) } else { expanded.insert(group.id) }
                 }
                 .buttonStyle(.plain)
-                    .foregroundStyle(Theme.amber)
+                    .foregroundStyle(Color.accentColor)
                 .font(.caption)
             }
         }

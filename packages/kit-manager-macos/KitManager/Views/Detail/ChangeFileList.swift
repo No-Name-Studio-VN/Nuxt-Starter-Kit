@@ -38,7 +38,7 @@ struct ChangeFileList: View {
             if files.count > limit {
                 Button(showAll ? "Show fewer" : "Show all \(files.count) files") { showAll.toggle() }
                     .buttonStyle(.plain)
-                    .foregroundStyle(Theme.amber)
+                    .foregroundStyle(Color.accentColor)
                     .font(.caption)
                     .padding(.top, 2)
             }

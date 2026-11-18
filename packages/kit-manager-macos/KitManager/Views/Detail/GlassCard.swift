@@ -1,13 +1,10 @@
 import SwiftUI
 
-/// A dashboard card: a quiet uppercase label, optional trailing controls and a 6 pt glass surface
-/// with a hairline edge. Solid when Reduce Transparency is on.
+/// A content card with an optional header and trailing controls.
 struct GlassCard<Content: View, Trailing: View>: View {
     let title: String?
     let content: Content
     let trailing: Trailing
-
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(
         _ title: String? = nil, @ViewBuilder content: () -> Content, @ViewBuilder trailing: () -> Trailing
@@ -18,7 +15,7 @@ struct GlassCard<Content: View, Trailing: View>: View {
     }
 
     var body: some View {
-        let card = VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 14) {
             if title != nil || Trailing.self != EmptyView.self {
                 HStack(alignment: .center, spacing: 8) {
                     if let title {
@@ -37,17 +34,7 @@ struct GlassCard<Content: View, Trailing: View>: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-
-        Group {
-            if reduceTransparency {
-                card.background(Theme.surface, in: .rect(cornerRadius: Theme.radius))
-            } else {
-                card.glassEffect(.regular, in: .rect(cornerRadius: Theme.radius))
-            }
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.hairline, lineWidth: 1)
-        }
+        .background(Color(nsColor: .controlBackgroundColor), in: .rect(cornerRadius: 8))
         .accessibilityElement(children: .contain)
     }
 }

@@ -7,7 +7,7 @@ struct ModuleFilterChip: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "line.3.horizontal.decrease").imageScale(.small).foregroundStyle(Theme.amber)
+            Image(systemName: "line.3.horizontal.decrease").imageScale(.small).foregroundStyle(Color.accentColor)
             Text("Module")
                 .foregroundStyle(.secondary)
             Text(module).fontWeight(.semibold)
@@ -23,9 +23,9 @@ struct ModuleFilterChip: View {
         .padding(.leading, 10)
         .padding(.trailing, 8)
         .padding(.vertical, 5)
-        .background(Theme.amber.opacity(0.12), in: .rect(cornerRadius: Theme.radius))
+        .background(Color.accentColor.opacity(0.12), in: .rect(cornerRadius: 8))
         .overlay {
-            RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.amber.opacity(0.5), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 8).strokeBorder(Color.accentColor.opacity(0.5), lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
     }

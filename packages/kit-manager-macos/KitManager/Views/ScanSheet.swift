@@ -78,7 +78,7 @@ struct ScanSheet: View {
                     .font(.caption.weight(.medium))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Theme.hairline.opacity(0.55), in: .rect(cornerRadius: 4))
+                    .background(Color(nsColor: .separatorColor).opacity(0.55), in: .rect(cornerRadius: 4))
             }
         }
         .toggleStyle(.checkbox)

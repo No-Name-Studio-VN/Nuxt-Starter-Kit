@@ -20,7 +20,7 @@ struct FailureView: View {
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
             } icon: {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.red)
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.red)
             }
             if let details = error.details {
                 DisclosureGroup("Show details") {
@@ -32,7 +32,7 @@ struct FailureView: View {
                     }
                     .frame(maxHeight: 140)
                     .padding(8)
-                    .background(Theme.hairline.opacity(0.4), in: .rect(cornerRadius: 4))
+                    .background(Color(nsColor: .separatorColor).opacity(0.4), in: .rect(cornerRadius: 4))
                 }
                 .font(.caption)
             }

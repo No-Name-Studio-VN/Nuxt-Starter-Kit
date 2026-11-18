@@ -34,7 +34,6 @@ struct ProjectDetailView: View {
             }
             .padding(20)
         }
-        .background(Theme.canvas)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .navigationTitle(row.name)
         .toolbar {

@@ -49,7 +49,6 @@ struct UpgradeFlowSheet: View {
         }
         .padding(20)
         .frame(width: 540)
-        .background(Theme.canvas)
         .interactiveDismissDisabled(isBusy)
         .task {
             branchName = await model.proposedUpgradeBranch(for: project)
@@ -76,7 +75,7 @@ struct UpgradeFlowSheet: View {
         case .rolledBack:
             Label("Back on your previous branch. The upgrade branch is gone.", systemImage: "checkmark.circle.fill")
                 .font(.callout.weight(.medium))
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(Color.green)
         }
     }
 
@@ -90,7 +89,7 @@ struct UpgradeFlowSheet: View {
             if let previous = snapshot?.git?.branch {
                 detailRow("Now on", value: previous, monospaced: true)
             }
-            Divider().overlay(Theme.hairline)
+            Divider()
             preview
         }
     }
@@ -112,13 +111,13 @@ struct UpgradeFlowSheet: View {
         Group {
             if let reason = precondition.reason {
                 Label(reason, systemImage: "xmark.octagon.fill")
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Color.red)
             } else if model.cliStatus != .ready {
                 Label("Build the nuxt-saas CLI first.", systemImage: "xmark.octagon.fill")
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Color.red)
             } else {
                 Label("Ready: kit v3, no unresolved conflicts, clean working tree.", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Color.green)
             }
         }
         .font(.callout)
@@ -180,7 +179,7 @@ struct UpgradeFlowSheet: View {
             VStack(alignment: .leading, spacing: 6) {
                 Label("Upgrade applied on \(branch).", systemImage: "checkmark.circle.fill")
                     .font(.callout.weight(.medium))
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Color.green)
                 Text("Claude is open in Terminal to resolve the conflicts and run the follow-ups. Nothing is committed.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -189,7 +188,7 @@ struct UpgradeFlowSheet: View {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Upgrade applied on \(branch).", systemImage: "checkmark.circle.fill")
                     .font(.callout.weight(.medium))
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Color.green)
                 if report.conflicts.isEmpty {
                     Text("Review the changes and commit them when you are happy. Nothing is committed.")
                         .font(.callout)
@@ -248,7 +247,6 @@ struct UpgradeFlowSheet: View {
                     Label("Upgrade with Claude", systemImage: "sparkles")
                 }
                 .buttonStyle(.glassProminent)
-                .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                 .keyboardShortcut(.defaultAction)
                 .disabled(!canUpgrade)
                 .help(canUpgrade ? "Create the branch, apply the upgrade and open Claude" : (precondition.reason ?? "Build the nuxt-saas CLI first"))
@@ -269,13 +267,11 @@ struct UpgradeFlowSheet: View {
                     Label("Resolve with Claude", systemImage: "sparkles")
                 }
                 .buttonStyle(.glassProminent)
-                .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                 .keyboardShortcut(.defaultAction)
             case .finished, .rolledBack:
                 Spacer()
                 Button("Done") { dismiss() }
                     .buttonStyle(.glassProminent)
-                    .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                     .keyboardShortcut(.defaultAction)
             }
         }
@@ -284,7 +280,6 @@ struct UpgradeFlowSheet: View {
     private func secondaryButton(_ title: String, role: ButtonRole? = nil, action: @escaping () -> Void) -> some View {
         Button(title, role: role, action: action)
             .buttonStyle(.glass)
-            .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
     }
 
     // MARK: Actions

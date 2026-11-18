@@ -22,7 +22,6 @@ struct ModulesMatrixView: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.canvas)
             .navigationTitle("Modules")
     }
 
@@ -131,8 +130,8 @@ struct ModulesMatrixView: View {
                 stat("\(behind)", behind == 1 ? "project behind on a module" : "projects behind on a module", tint: behind > 0)
                 if compact { Spacer(minLength: 0) } else { Divider() }
                 VStack(alignment: .leading, spacing: 8) {
-                    key(fill: Theme.amber.opacity(0.55), "Installed")
-                    key(fill: Theme.amber, "Behind on a commit that touched it")
+                    key(fill: Color.accentColor.opacity(0.55), "Installed")
+                    key(fill: Color.accentColor, "Behind on a commit that touched it")
                     key(fill: Color.primary.opacity(0.04), "Not installed")
                     Text("Click a row to filter the projects.")
                         .foregroundStyle(.secondary)
@@ -149,7 +148,7 @@ struct ModulesMatrixView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
                 .font(.system(size: 28, weight: .semibold).monospacedDigit())
-                .foregroundStyle(tint ? Theme.amber : Color.primary)
+                .foregroundStyle(tint ? Color.accentColor : Color.primary)
             Text(label).font(.callout).foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
@@ -210,7 +209,7 @@ struct ModulesMatrixView: View {
                 Text(row.module.id)
                     .font(.callout.weight(.medium))
                     .lineLimit(1)
-                    .foregroundStyle(model.moduleFilter == row.module.id ? Theme.amber : Color.primary)
+                    .foregroundStyle(model.moduleFilter == row.module.id ? Color.accentColor : Color.primary)
                 if row.module.internal {
                     Text("internal").font(.caption2).foregroundStyle(.secondary)
                 }
@@ -228,7 +227,7 @@ struct ModulesMatrixView: View {
     private func countCell(_ text: String, row: ModuleMatrix.Row, tint: Bool, help: String) -> some View {
         Text(text)
             .font(.callout.monospacedDigit().weight(tint ? .semibold : .regular))
-            .foregroundStyle(tint ? Theme.amber : Color.secondary)
+            .foregroundStyle(tint ? Color.accentColor : Color.secondary)
             .frame(width: Self.countWidth, height: Self.cell)
             .contentShape(Rectangle())
             .onTapGesture { onSelect(row.module.id) }
@@ -240,7 +239,7 @@ struct ModulesMatrixView: View {
         let installed = row.installed.contains(column.id)
         let isBehind = row.behind.contains(column.id)
         return RoundedRectangle(cornerRadius: 4)
-            .fill(installed ? Theme.amber.opacity(isBehind ? 1 : 0.55) : Color.primary.opacity(0.04))
+            .fill(installed ? Color.accentColor.opacity(isBehind ? 1 : 0.55) : Color.primary.opacity(0.04))
             .overlay {
                 if !installed { RoundedRectangle(cornerRadius: 4).strokeBorder(Color.primary.opacity(0.18), lineWidth: 1) }
             }

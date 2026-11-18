@@ -39,7 +39,6 @@ struct ProjectActions: View {
                 .frame(width: 18, height: 18)
         }
         .buttonStyle(.glass)
-        .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
         .controlSize(.small)
         .disabled(row.isMissing)
         .help(title)
@@ -56,7 +55,6 @@ struct ProjectActions: View {
         }
         .menuStyle(.button)
         .buttonStyle(.glass)
-        .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
         .menuIndicator(.hidden)
         .controlSize(.small)
         .fixedSize()

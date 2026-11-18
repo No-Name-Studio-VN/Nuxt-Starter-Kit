@@ -27,7 +27,7 @@ struct ModuleChips: View {
             .lineLimit(1)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .foregroundStyle(emphasized ? Theme.amber : .primary)
-            .background(Theme.hairline.opacity(0.55), in: .rect(cornerRadius: 4))
+            .foregroundStyle(emphasized ? Color.accentColor : .primary)
+            .background(Color(nsColor: .separatorColor).opacity(0.55), in: .rect(cornerRadius: 4))
     }
 }

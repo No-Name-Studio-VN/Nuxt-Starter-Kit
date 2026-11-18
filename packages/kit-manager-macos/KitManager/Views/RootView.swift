@@ -85,7 +85,6 @@ struct RootView: View {
                         .keyboardShortcut(.cancelAction)
                 }
                 .frame(width: 440, height: 240)
-                .background(Theme.canvas)
             }
         }
     }

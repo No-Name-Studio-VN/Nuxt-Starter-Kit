@@ -53,14 +53,13 @@ struct MigrationFlowSheet: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             folderField
-            Divider().overlay(Theme.hairline)
+            Divider()
             modules
             if let failure { FailureView(failure) }
             footer
         }
         .padding(20)
         .frame(width: 540)
-        .background(Theme.canvas)
         .interactiveDismissDisabled(isWorking)
     }
 
@@ -77,7 +76,7 @@ struct MigrationFlowSheet: View {
             if let folderProblem {
                 Label(folderProblem, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Color.red)
             } else {
                 Text("The generated project must carry this name. The kit records it as the project's name.")
                     .font(.caption)
@@ -105,7 +104,7 @@ struct MigrationFlowSheet: View {
                                     HStack(spacing: 6) {
                                         Text(module.title).font(.callout.weight(.medium))
                                         if suggested.contains(module.id) {
-                                            Text("suggested").font(.caption2).foregroundStyle(Theme.amber)
+                                            Text("suggested").font(.caption2).foregroundStyle(Color.accentColor)
                                         }
                                     }
                                     if !module.description.isEmpty {
@@ -135,12 +134,11 @@ struct MigrationFlowSheet: View {
     private var footer: some View {
         HStack(spacing: 10) {
             if didCopy {
-                Label("Copied", systemImage: "checkmark").font(.caption).foregroundStyle(Theme.green)
+                Label("Copied", systemImage: "checkmark").font(.caption).foregroundStyle(Color.green)
             }
             Spacer()
             Button("Cancel", role: .cancel) { dismiss() }
                 .buttonStyle(.glass)
-                .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                 .keyboardShortcut(.cancelAction)
                 .disabled(isWorking)
             Button {
@@ -149,7 +147,6 @@ struct MigrationFlowSheet: View {
                 Label("Copy prompt", systemImage: "doc.on.doc")
             }
             .buttonStyle(.glass)
-            .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
             .disabled(folderProblem != nil || isWorking)
             Button {
                 launch()
@@ -157,7 +154,6 @@ struct MigrationFlowSheet: View {
                 Label("Migrate with Claude", systemImage: "sparkles")
             }
             .buttonStyle(.glassProminent)
-            .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
             .keyboardShortcut(.defaultAction)
             .disabled(folderProblem != nil || isWorking)
         }

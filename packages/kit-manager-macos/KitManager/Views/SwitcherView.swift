@@ -35,7 +35,6 @@ struct SwitcherView: View {
             hints
         }
         .frame(width: 540)
-        .background(Theme.canvas)
         .onAppear { isSearchFocused = true }
         .onChange(of: query) { selected = nil }
     }
@@ -116,11 +115,11 @@ struct SwitcherView: View {
             .frame(height: Self.rowHeight)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                isCurrent ? Theme.amber.opacity(0.16) : Color.clear, in: .rect(cornerRadius: Theme.radius)
+                isCurrent ? Color.accentColor.opacity(0.16) : Color.clear, in: .rect(cornerRadius: 8)
             )
             .overlay {
                 if isCurrent {
-                    RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.amber.opacity(0.45), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 8).strokeBorder(Color.accentColor.opacity(0.45), lineWidth: 1)
                 }
             }
             .contentShape(Rectangle())

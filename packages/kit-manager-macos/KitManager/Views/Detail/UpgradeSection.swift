@@ -56,7 +56,7 @@ struct UpgradeSection: View {
                 VStack(alignment: .trailing, spacing: 0) {
                     Text("\(count)")
                         .font(.system(size: 34, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(Theme.amber)
+                        .foregroundStyle(Color.accentColor)
                     Text(count == 1 ? "commit behind" : "commits behind")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -67,7 +67,7 @@ struct UpgradeSection: View {
         case .upToDate:
             Label("Up to date with the latest kit", systemImage: "checkmark.circle.fill")
                 .font(.callout.weight(.medium))
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(Color.green)
             versionText(snapshot.versionLabel, fallback: snapshot.kitState?.commit).font(.title3)
         case .unresolvedConflicts:
             if snapshot.behind != nil { versionPath }
@@ -83,7 +83,7 @@ struct UpgradeSection: View {
             VStack(alignment: .leading, spacing: 6) {
                 Label("Cannot compare with the latest kit", systemImage: "exclamationmark.triangle.fill")
                     .font(.callout.weight(.medium))
-                    .foregroundStyle(Theme.amber)
+                    .foregroundStyle(.orange)
                 note(reason)
                 note("Check the kit path in Settings: it needs an origin remote with a main branch.")
                 HStack(spacing: 10) {
@@ -139,7 +139,7 @@ struct UpgradeSection: View {
                 systemImage: "exclamationmark.triangle.fill"
             )
             .font(.callout.weight(.medium))
-            .foregroundStyle(Theme.red)
+            .foregroundStyle(Color.red)
             ForEach(unresolvedConflicts, id: \.self) { path in
                 Text(path).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
             }
@@ -235,7 +235,6 @@ struct UpgradeSection: View {
                 Label("Upgrade with Claude", systemImage: "sparkles")
             }
             .buttonStyle(.glassProminent)
-            .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
             .disabled(!canUpgrade)
             .help(canUpgrade ? "Review the upgrade, then apply it on a new branch" : blockedReason)
             if !canUpgrade, precondition != .unresolvedConflicts {

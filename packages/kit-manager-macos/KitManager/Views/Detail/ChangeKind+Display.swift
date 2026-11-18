@@ -28,10 +28,10 @@ extension ChangeKind {
 
     var color: Color {
         switch self {
-        case .create: Theme.green
-        case .merge: Theme.amber
-        case .conflict: Theme.red
-        case .update, .delete, .keepEdited, .keepProtected: Theme.grey
+        case .create: Color.green
+        case .merge: Color.accentColor
+        case .conflict: Color.red
+        case .update, .delete, .keepEdited, .keepProtected: Color.secondary
         }
     }
 

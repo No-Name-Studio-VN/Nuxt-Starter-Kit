@@ -54,7 +54,7 @@ struct ModuleChangeSheet: View {
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pickerHeight = $0 }
             }
             .frame(height: min(max(pickerHeight, 1), 200))
-            Divider().overlay(Theme.hairline)
+            Divider()
             ScrollView {
                 result.frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -63,7 +63,6 @@ struct ModuleChangeSheet: View {
         }
         .padding(20)
         .frame(width: 540)
-        .background(Theme.canvas)
         .task(id: PlanRequest(selection: selection, attempt: planAttempt)) { await runPreview() }
     }
 
@@ -145,13 +144,11 @@ struct ModuleChangeSheet: View {
                         Label("Resolve with Claude", systemImage: "sparkles")
                     }
                     .buttonStyle(.glassProminent)
-                    .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                     .disabled(isResolving)
                 }
                 Spacer()
                 Button("Done") { dismiss() }
                     .buttonStyle(.glass)
-                    .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                     .keyboardShortcut(.defaultAction)
             } else {
                 if dirtyCount > 0 {
@@ -160,17 +157,14 @@ struct ModuleChangeSheet: View {
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .buttonStyle(.glass)
-                    .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                     .keyboardShortcut(.cancelAction)
                     .disabled(isApplying)
                 if case .failed = phase, !selection.isEmpty {
                     Button("Plan again") { planAttempt += 1 }
                         .buttonStyle(.glass)
-                        .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                 }
                 Button("Apply") { applyPlanned() }
                     .buttonStyle(.glassProminent)
-                    .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                     .keyboardShortcut(.defaultAction)
                     .disabled(!canApply)
                     .help(dirtyCount > 0 ? "Commit or stash your changes first" : "Apply the planned change")

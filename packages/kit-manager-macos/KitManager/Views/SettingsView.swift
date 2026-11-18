@@ -62,11 +62,11 @@ struct SettingsView: View {
     private func describe(_ status: CLIStatus) -> (text: String, symbol: String, color: Color) {
         switch status {
         case .ready:
-            ("The nuxt-saas CLI is built and ready.", "checkmark.circle.fill", Theme.green)
+            ("The nuxt-saas CLI is built and ready.", "checkmark.circle.fill", Color.green)
         case .missingBuild, .staleBuild, .tooOld, .missingCheckout:
             (
                 CLIFailure.unavailable(status).errorDescription ?? "The CLI cannot run.",
-                "exclamationmark.triangle.fill", Theme.amber
+                "exclamationmark.triangle.fill", Color.orange
             )
         }
     }

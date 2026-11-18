@@ -17,7 +17,7 @@ struct TransitionReportSummary: View {
                         systemImage: "exclamationmark.triangle.fill"
                     )
                     .font(.callout.weight(.medium))
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Color.red)
                     ForEach(report.conflicts, id: \.self) { path in
                         Text(path).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
                     }

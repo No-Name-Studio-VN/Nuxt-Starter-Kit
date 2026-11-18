@@ -8,9 +8,9 @@ struct ScoreMeter: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 3).fill(Theme.hairline.opacity(0.7))
+                RoundedRectangle(cornerRadius: 3).fill(Color(nsColor: .separatorColor).opacity(0.7))
                 RoundedRectangle(cornerRadius: 3)
-                    .fill(Theme.amber)
+                    .fill(Color.accentColor)
                     .frame(width: max(value > 0 ? 3 : 0, proxy.size.width * min(max(value, 0), 1)))
             }
         }

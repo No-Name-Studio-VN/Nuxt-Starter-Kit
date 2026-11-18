@@ -6,12 +6,11 @@ struct CLIBanner: View {
     let status: CLIStatus
 
     @Environment(AppModel.self) private var model
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             Image(systemName: needsBuild ? "hammer" : "exclamationmark.triangle")
-                .foregroundStyle(Theme.amber)
+                .foregroundStyle(Color.orange)
                 .imageScale(.large)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
@@ -20,7 +19,7 @@ struct CLIBanner: View {
                 if let failure = model.buildFailure {
                     Text(failure)
                         .font(.caption)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Color.red)
                         .lineLimit(8)
                         .textSelection(.enabled)
                 }
@@ -40,15 +39,7 @@ struct CLIBanner: View {
             }
         }
         .padding(12)
-        .background(background)
-        .overlay {
-            RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.hairline, lineWidth: 1)
-        }
         .accessibilityElement(children: .contain)
-    }
-
-    private var background: some ShapeStyle {
-        reduceTransparency ? AnyShapeStyle(Theme.canvas) : AnyShapeStyle(.regularMaterial)
     }
 
     private var needsBuild: Bool {

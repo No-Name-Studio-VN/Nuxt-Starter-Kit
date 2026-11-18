@@ -12,7 +12,7 @@ struct AmberNote: View {
         Label {
             Text(text).font(.caption).foregroundStyle(.secondary)
         } icon: {
-            Circle().fill(Theme.amber).frame(width: 7, height: 7)
+            Circle().fill(Color.orange).frame(width: 7, height: 7)
         }
     }
 }

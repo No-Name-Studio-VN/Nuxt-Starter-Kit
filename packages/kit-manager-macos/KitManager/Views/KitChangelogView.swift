@@ -32,7 +32,6 @@ struct KitChangelogView: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.canvas)
             .navigationTitle("Kit")
             .task(id: loadKey) { await load() }
     }
@@ -109,7 +108,7 @@ struct KitChangelogView: View {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(section.tag ?? "Unreleased")
                         .font(.headline)
-                        .foregroundStyle(section.tag == nil ? Theme.amber : Color.primary)
+                        .foregroundStyle(section.tag == nil ? Color.accentColor : Color.primary)
                     Text("\(section.commits.count)")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)

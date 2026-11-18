@@ -61,7 +61,7 @@ struct HealthSection: View {
                 } else {
                     Label("\(git.dirtyCount) uncommitted", systemImage: "circle.fill")
                         .symbolRenderingMode(.palette)
-                        .foregroundStyle(Theme.amber, Color.primary)
+                        .foregroundStyle(Color.orange, Color.primary)
                 }
             }
             DetailRow("Upstream") {
@@ -93,15 +93,15 @@ struct HealthSection: View {
             } else if !env.hasEnv {
                 Label("No .env file", systemImage: "exclamationmark.circle")
                     .font(.callout)
-                    .foregroundStyle(Theme.amber)
+                    .foregroundStyle(Color.orange)
             } else if env.missing.isEmpty {
                 Label("All keys defined", systemImage: "checkmark.circle.fill")
                     .font(.callout)
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Color.green)
             } else {
                 Label("\(env.missing.count) missing", systemImage: "exclamationmark.circle")
                     .font(.callout)
-                    .foregroundStyle(Theme.amber)
+                    .foregroundStyle(Color.orange)
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(env.missing.prefix(Self.envKeyLimit), id: \.self) { key in
                         Text(key).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
@@ -179,7 +179,7 @@ struct HealthSection: View {
         } else if let health = snapshot.health {
             if let code = health.statusCode {
                 HStack(spacing: 6) {
-                    Circle().fill(health.isUp ? Theme.green : Theme.red).frame(width: 7, height: 7)
+                    Circle().fill(health.isUp ? Color.green : Color.red).frame(width: 7, height: 7)
                     Text("\(code)").monospacedDigit()
                     if let latency = health.latency {
                         Text("· \(Self.milliseconds(latency)) ms").monospacedDigit().foregroundStyle(.secondary)
@@ -189,7 +189,7 @@ struct HealthSection: View {
                 .accessibilityLabel("\(health.isUp ? "Up" : "Down"), status \(code)")
             } else {
                 Label(health.error ?? "Unreachable", systemImage: "wifi.exclamationmark")
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Color.red)
                     .lineLimit(2)
             }
         } else {
@@ -217,7 +217,7 @@ struct HealthSection: View {
                     .disabled(draftURL.trimmingCharacters(in: .whitespacesAndNewlines) == (project.productionURL ?? ""))
             }
             if let urlError {
-                Text(urlError).font(.caption).foregroundStyle(Theme.red)
+                Text(urlError).font(.caption).foregroundStyle(Color.red)
             } else if snapshot.wrangler?.productionURL != nil {
                 Text("The wrangler.jsonc route takes priority.").font(.caption).foregroundStyle(.secondary)
             } else {

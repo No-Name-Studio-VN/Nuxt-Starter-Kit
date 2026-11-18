@@ -13,7 +13,7 @@ struct GitSummary: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 if git.dirtyCount > 0 {
-                    Circle().fill(Theme.amber).frame(width: 7, height: 7)
+                    Circle().fill(Color.orange).frame(width: 7, height: 7)
                 }
                 if let ahead = git.ahead, ahead > 0 {
                     Text("↑\(ahead)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)

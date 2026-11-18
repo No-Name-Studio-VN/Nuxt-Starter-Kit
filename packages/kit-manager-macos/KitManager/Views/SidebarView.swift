@@ -9,7 +9,6 @@ struct SidebarView: View {
         List(SidebarItem.allCases, id: \.self, selection: $selection) { item in
             Label(item.title, systemImage: item.symbol)
                 .badge(item == .needsAttention ? model.attentionCount : 0)
-                .listItemTint(.fixed(Theme.amber))
                 .accessibilityLabel(label(for: item))
         }
         .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 280)

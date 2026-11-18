@@ -24,7 +24,6 @@ struct RollbackButton: View {
             }
         }
         .buttonStyle(.glass)
-        .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
         .disabled(isReadingChanges)
         .help(
             record.keepsChanges

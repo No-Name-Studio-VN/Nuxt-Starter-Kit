@@ -79,7 +79,6 @@ struct DetailHeader: View {
                 }
                 .menuStyle(.button)
                 .buttonStyle(.glass)
-                .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                 .menuIndicator(.hidden)
                 .fixedSize()
                 .help("More actions")
@@ -97,7 +96,6 @@ struct DetailHeader: View {
             Label(title, systemImage: symbol)
         }
         .buttonStyle(.glass)
-        .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
         .disabled(row.isMissing)
         .help("Open in \(title)")
     }

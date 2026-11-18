@@ -46,8 +46,6 @@ struct MenuBarContent: View {
             footer
         }
         .frame(width: 480)
-        .background(Theme.canvas)
-        .tint(Theme.amber)
     }
 
     // MARK: Parts
@@ -56,7 +54,7 @@ struct MenuBarContent: View {
         let count = model.attentionCount
         return HStack(spacing: 8) {
             Image(systemName: count > 0 ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                .foregroundStyle(count > 0 ? Theme.amber : Theme.green)
+                .foregroundStyle(count > 0 ? Color.orange : Color.green)
                 .accessibilityHidden(true)
             Text(title(for: count)).font(.headline)
             Spacer(minLength: 0)

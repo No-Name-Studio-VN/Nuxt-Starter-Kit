@@ -49,7 +49,7 @@ struct ModulesSection: View {
                 } else {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(installed.enumerated()), id: \.element) { index, id in
-                            if index > 0 { Divider().overlay(Theme.hairline) }
+                            if index > 0 { Divider() }
                             row(id)
                         }
                     }

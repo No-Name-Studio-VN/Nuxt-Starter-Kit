@@ -61,7 +61,7 @@ struct CustomisationSection: View {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(summary.score.formatted(.percent.precision(.fractionLength(0))))
                         .font(.system(size: 34, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(summary.scoredChanged > 0 ? Theme.amber : Color.primary)
+                        .foregroundStyle(summary.scoredChanged > 0 ? Color.accentColor : Color.primary)
                     Text("\(summary.scoredChanged) of \(summary.scored) kit files changed")
                         .font(.callout)
                         .foregroundStyle(.secondary)
@@ -122,7 +122,7 @@ struct CustomisationSection: View {
             if files.count > Self.collapsedCount {
                 Button(showAllFiles ? "Show fewer" : "Show all \(files.count) files") { showAllFiles.toggle() }
                     .buttonStyle(.plain)
-                    .foregroundStyle(Theme.amber)
+                    .foregroundStyle(Color.accentColor)
                     .font(.caption)
             }
             if hiddenExpected > 0 || showExpected {
@@ -142,7 +142,7 @@ struct CustomisationSection: View {
             HStack(spacing: 8) {
                 Text(isDeleted ? "-" : "~")
                     .font(.callout.monospaced().weight(.bold))
-                    .foregroundStyle(isDeleted ? Theme.red : Theme.amber)
+                    .foregroundStyle(isDeleted ? Color.red : Color.accentColor)
                     .frame(width: 14)
                 Text(file.path)
                     .font(.caption.monospaced())

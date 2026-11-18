@@ -24,7 +24,6 @@ struct KitManagerApp: App {
         Window("Kit Manager", id: Self.mainWindowID) {
             RootView()
                 .environment(model)
-                .tint(Theme.amber)
         }
         .modelContainer(container)
         .defaultSize(width: 1180, height: 720)
@@ -54,7 +53,6 @@ struct KitManagerApp: App {
         Settings {
             SettingsView()
                 .environment(model)
-                .tint(Theme.amber)
         }
     }
 

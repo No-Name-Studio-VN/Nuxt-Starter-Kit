@@ -37,14 +37,12 @@ struct MigrationSection: View {
                         Label(didCopy ? "Copied" : "Copy migration prompt", systemImage: didCopy ? "checkmark" : "doc.on.doc")
                     }
                     .buttonStyle(.glass)
-                    .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                     Button {
                         model.flow = .migration(project)
                     } label: {
                         Label("Migrate with Claude…", systemImage: "sparkles")
                     }
                     .buttonStyle(.glassProminent)
-                    .buttonBorderShape(.roundedRectangle(radius: Theme.radius))
                     .help("Choose the modules and folder name, then open Claude")
                 }
                 if let failure { FailureView(failure) }
