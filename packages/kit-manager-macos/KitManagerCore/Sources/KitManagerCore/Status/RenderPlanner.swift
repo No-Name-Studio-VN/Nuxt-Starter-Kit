@@ -72,9 +72,18 @@ public enum RenderPlanner {
             preview: preview, inspect: inspect.state, previewJob: previewJob, inspectJob: inspectJob)
     }
 
-    /// The job for an explicit "Preview again" or inspect: local when the checkout can serve the
-    /// project, otherwise the recorded template.
-    public static func job(for snapshot: ProjectSnapshot, latestMain: String?) -> RenderJob? {
+    /// The job for an explicit "Preview again". Only a project on the default template follows `main`
+    /// through the local checkout; a pinned project or fork previews from its recorded template,
+    /// which respects the pin.
+    public static func previewJob(for snapshot: ProjectSnapshot, latestMain: String?) -> RenderJob? {
+        guard let state = snapshot.kitState else { return nil }
+        let local = snapshot.usesDefaultTemplate && snapshot.availability == .onMain ? latestMain : nil
+        return RenderJob(recordedCommit: state.commit, source: local == nil ? .recorded : .local, target: local)
+    }
+
+    /// The job for an explicit inspect. Inspect only renders the recorded commit, so the local checkout
+    /// can serve any project whose commit is on main, pinned or not.
+    public static func inspectJob(for snapshot: ProjectSnapshot, latestMain: String?) -> RenderJob? {
         guard let state = snapshot.kitState else { return nil }
         let local = snapshot.availability == .onMain ? latestMain : nil
         return RenderJob(recordedCommit: state.commit, source: local == nil ? .recorded : .local, target: local)

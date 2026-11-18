@@ -1,8 +1,12 @@
 public enum ProjectStatus: Sendable, Equatable {
     case missing
     case invalid(String)
+    /// The kit checkout itself: it is the source of the kit, so there is nothing to migrate or upgrade.
+    case kitSource
     case needsMigration(MigrationSource)
     case unresolvedConflicts(Int)
+    /// Same repository as the kit, but pinned to a tag or branch other than `main`.
+    case pinned(ref: String)
     case otherTemplate
     case commitNotOnMain(shortSHA: String)
     case upToDate
@@ -19,17 +23,17 @@ public enum ProjectStatus: Sendable, Equatable {
         case .invalidState(let reason):
             self = .invalid(reason)
         case .kitLegacy:
-            self = .needsMigration(.legacy)
+            self = snapshot.isKitSource ? .kitSource : .needsMigration(.legacy)
         case .nuxt:
-            self = .needsMigration(.nuxt)
+            self = snapshot.isKitSource ? .kitSource : .needsMigration(.nuxt)
         case .other:
-            self = .needsMigration(.other)
+            self = snapshot.isKitSource ? .kitSource : .needsMigration(.other)
         case .kitV3(let state):
             let conflicts = snapshot.unresolvedConflictCount
             if conflicts > 0 {
                 self = .unresolvedConflicts(conflicts)
             } else if !snapshot.usesDefaultTemplate {
-                self = .otherTemplate
+                self = state.pinnedRef.map { .pinned(ref: $0) } ?? .otherTemplate
             } else if snapshot.availability == .notOnMain {
                 self = .commitNotOnMain(shortSHA: String(state.commit.prefix(7)))
             } else if let behind = snapshot.behind, snapshot.availability == .onMain {

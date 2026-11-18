@@ -2,6 +2,8 @@
 /// (except the preview and inspect results, which are cached separately).
 public struct ProjectSnapshot: Sendable, Equatable {
     public var kind: ProjectKind
+    /// The folder is the configured kit checkout itself, not a project that uses the kit.
+    public var isKitSource: Bool
     public var package: PackageInfo?
     public var git: GitStatus?
     public var env: EnvCheck?
@@ -17,12 +19,13 @@ public struct ProjectSnapshot: Sendable, Equatable {
     public var changelog: [KitCommit]
 
     public init(
-        kind: ProjectKind, package: PackageInfo? = nil, git: GitStatus? = nil, env: EnvCheck? = nil,
+        kind: ProjectKind, isKitSource: Bool = false, package: PackageInfo? = nil, git: GitStatus? = nil, env: EnvCheck? = nil,
         wrangler: WranglerInfo? = nil, health: SiteHealth? = nil, availability: CommitAvailability? = nil,
         versionLabel: String? = nil, behind: Int? = nil, kitCheckFailure: String? = nil, preview: Loadable<TransitionReport> = .idle,
         inspect: Loadable<InspectReport> = .idle, changelog: [KitCommit] = []
     ) {
         self.kind = kind
+        self.isKitSource = isKitSource
         self.package = package
         self.git = git
         self.env = env

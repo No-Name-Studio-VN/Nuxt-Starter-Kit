@@ -136,6 +136,7 @@ struct ProjectsTableView: View {
             .width(min: 150, ideal: 150, max: 150)
         }
         .scrollContentBackground(.hidden)
+        .alternatingRowBackgrounds(.disabled)
         .contextMenu(forSelectionType: UUID.self) { ids in
             contextMenu(for: ids)
         } primaryAction: { ids in

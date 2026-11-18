@@ -242,6 +242,7 @@ final class AppModel {
     private func refreshPass(_ ref: ProjectRef) async {
         let input = SnapshotLoader.Input(
             latestMain: latestMain, mapping: mapping, cliReady: cliStatus == .ready,
+            kitRoot: AppSettings.kitPath.isEmpty ? nil : URL(filePath: AppSettings.kitPath),
             previousHealth: snapshots[ref.id]?.health, previewFailure: failures[ref.id]?.preview,
             inspectFailure: failures[ref.id]?.inspect)
         let loaded = await loader.load(ref, input: input)
@@ -273,7 +274,7 @@ final class AppModel {
     func loadPreview(_ project: Project) async {
         let ref = ProjectRef(project)
         guard let snapshot = snapshots[ref.id],
-            let job = RenderPlanner.job(for: snapshot, latestMain: latestMain)
+            let job = RenderPlanner.previewJob(for: snapshot, latestMain: latestMain)
         else { return }
         failures[ref.id]?.preview = nil
         update(ref.id) { snapshot in
@@ -285,7 +286,7 @@ final class AppModel {
     func loadInspect(_ project: Project) async {
         let ref = ProjectRef(project)
         guard let snapshot = snapshots[ref.id],
-            let job = RenderPlanner.job(for: snapshot, latestMain: latestMain)
+            let job = RenderPlanner.inspectJob(for: snapshot, latestMain: latestMain)
         else { return }
         failures[ref.id]?.inspect = nil
         update(ref.id) { snapshot in

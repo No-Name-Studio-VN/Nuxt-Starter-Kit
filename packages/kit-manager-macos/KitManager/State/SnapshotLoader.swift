@@ -8,6 +8,8 @@ struct SnapshotLoader: Sendable {
         let latestMain: String?
         let mapping: ModuleMapping?
         let cliReady: Bool
+        /// The configured kit checkout, nil when none is set.
+        let kitRoot: URL?
         let previousHealth: SiteHealth?
         let previewFailure: CachedFailure?
         let inspectFailure: CachedFailure?
@@ -40,7 +42,7 @@ struct SnapshotLoader: Sendable {
 
     func load(_ ref: ProjectRef, input: Input) async -> Loaded {
         let kind = ProjectClassifier.classify(ref.url)
-        var snapshot = ProjectSnapshot(kind: kind)
+        var snapshot = ProjectSnapshot(kind: kind, isKitSource: KitCheckout.isSource(ref.url, kitRoot: input.kitRoot))
         if case .missing = kind {
             return Loaded(snapshot: snapshot, work: Work())
         }
@@ -80,17 +82,20 @@ struct SnapshotLoader: Sendable {
     }
 
     /// Availability, version label, commits behind and changelog. They only make sense for the default
-    /// template, and only once `origin/main` is known (spec 2.2). A git failure is kept on the snapshot
+    /// template (or a pin on the kit's repository), and only once `origin/main` is known (spec 2.2). A git failure is kept on the snapshot
     /// instead of leaving the status on "checking".
     private func readKitHistory(of state: KitState, input: Input, into snapshot: inout ProjectSnapshot) async {
-        guard state.usesDefaultTemplate, input.latestMain != nil else { return }
+        // A project pinned to a tag of the kit's own repository still gets a version label from the clone.
+        guard state.isDefaultRepository, input.latestMain != nil else { return }
         let availability = await kit.availability(of: state.commit)
         snapshot.availability = availability
         guard availability == .onMain else { return }
 
         async let label = kit.versionLabel(for: state.commit)
-        async let behind = Self.count(kit, state.commit)
         snapshot.versionLabel = await label
+        // Behind and the changelog follow `main`; a pinned project upgrades along its pin instead.
+        guard state.usesDefaultTemplate else { return }
+        async let behind = Self.count(kit, state.commit)
         switch await behind {
         case .success(let count): snapshot.behind = count
         case .failure(let error): snapshot.kitCheckFailure = error.localizedDescription

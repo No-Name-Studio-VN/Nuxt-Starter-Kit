@@ -134,19 +134,37 @@ struct RenderPlannerTests {
 
     @Test func explicitJobsUseTheLocalCheckoutOnlyWhenItCanServeTheProject() {
         let onMain = ProjectSnapshot(kind: .kitV3(state()), availability: .onMain, behind: 1)
-        #expect(
-            RenderPlanner.job(for: onMain, latestMain: main)
-                == RenderJob(recordedCommit: recorded, source: .local, target: main))
+        let local = RenderJob(recordedCommit: recorded, source: .local, target: main)
+        #expect(RenderPlanner.previewJob(for: onMain, latestMain: main) == local)
+        #expect(RenderPlanner.inspectJob(for: onMain, latestMain: main) == local)
 
         let notOnMain = ProjectSnapshot(kind: .kitV3(state()), availability: .notOnMain)
-        #expect(
-            RenderPlanner.job(for: notOnMain, latestMain: main)
-                == RenderJob(recordedCommit: recorded, source: .recorded, target: nil))
+        let remote = RenderJob(recordedCommit: recorded, source: .recorded, target: nil)
+        #expect(RenderPlanner.previewJob(for: notOnMain, latestMain: main) == remote)
+        #expect(RenderPlanner.inspectJob(for: notOnMain, latestMain: main) == remote)
 
         let fork = ProjectSnapshot(kind: .kitV3(state(kit: "github:someone/fork")))
-        #expect(RenderPlanner.job(for: fork, latestMain: main)?.source == .recorded)
-        #expect(RenderPlanner.job(for: onMain, latestMain: nil)?.source == .recorded)
-        #expect(RenderPlanner.job(for: ProjectSnapshot(kind: .nuxt), latestMain: main) == nil)
+        #expect(RenderPlanner.previewJob(for: fork, latestMain: main)?.source == .recorded)
+        #expect(RenderPlanner.previewJob(for: onMain, latestMain: nil)?.source == .recorded)
+        #expect(RenderPlanner.previewJob(for: ProjectSnapshot(kind: .nuxt), latestMain: main) == nil)
+    }
+
+    @Test func pinnedProjectsPreviewFromTheRecordedTemplateButInspectLocally() {
+        let pinned = ProjectSnapshot(
+            kind: .kitV3(state(kit: "\(defaultKit)#v3.0.2")), availability: .onMain)
+        // The pin must be respected, so the preview never follows main through the local checkout.
+        #expect(
+            RenderPlanner.previewJob(for: pinned, latestMain: main)
+                == RenderJob(recordedCommit: recorded, source: .recorded, target: nil))
+        // Inspect renders only the recorded commit, which the local clone has.
+        #expect(
+            RenderPlanner.inspectJob(for: pinned, latestMain: main)
+                == RenderJob(recordedCommit: recorded, source: .local, target: main))
+
+        // Planning never previews a pinned project on its own (no behind count), but may inspect it.
+        let plan = RenderPlanner.plan(input(kit: "\(defaultKit)#v3.0.2", behind: nil))
+        #expect(plan.previewJob == nil)
+        #expect(plan.inspectJob == RenderJob(recordedCommit: recorded, source: .local, target: main))
     }
 
     @Test func jobCacheKeyUsesTheReportTargetOnlyForRecordedSource() {

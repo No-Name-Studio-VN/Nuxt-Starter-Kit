@@ -30,4 +30,24 @@ extension KitState {
     public var usesDefaultTemplate: Bool {
         kit == Self.defaultTemplate || kit == "\(Self.defaultTemplate)#main"
     }
+
+    /// The part after `#`, when there is one.
+    public var templateRef: String? {
+        guard let hash = kit.firstIndex(of: "#") else { return nil }
+        let ref = String(kit[kit.index(after: hash)...])
+        return ref.isEmpty ? nil : ref
+    }
+
+    /// True for the kit's own repository, whatever ref is recorded.
+    public var isDefaultRepository: Bool {
+        kit.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init)
+            == Self.defaultTemplate
+    }
+
+    /// The tag or branch a project on the kit's own repository is pinned to; nil for `main`, no ref,
+    /// or another repository.
+    public var pinnedRef: String? {
+        guard isDefaultRepository, let ref = templateRef, ref != "main" else { return nil }
+        return ref
+    }
 }

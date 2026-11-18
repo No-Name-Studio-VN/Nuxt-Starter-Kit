@@ -79,6 +79,14 @@ struct StatusBadge: View {
                 help: "Missing: the folder was moved or deleted")
         case .invalid(let reason):
             Appearance(title: "Invalid state", detail: nil, symbol: "xmark.octagon", tone: .red, help: reason)
+        case .kitSource:
+            Appearance(
+                title: "Kit source", detail: nil, symbol: "shippingbox", tone: .grey,
+                help: "Kit source: this is your kit checkout, so there is nothing to migrate or upgrade")
+        case .pinned(let ref):
+            Appearance(
+                title: "Pinned to \(ref)", detail: nil, symbol: "pin", tone: .grey,
+                help: "Pinned to \(ref): upgrades follow this ref instead of main")
         case .needsMigration(let source):
             switch source {
             case .legacy:
