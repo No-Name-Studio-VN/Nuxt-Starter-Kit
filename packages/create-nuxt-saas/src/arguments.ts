@@ -59,4 +59,11 @@ export const listArgs = {
   to: { type: 'string', description: 'Kit ref or commit (outside a project only)' },
 } satisfies ArgsDef;
 
-export const inspectArgs = projectArgs;
+export const inspectArgs = {
+  ...projectArgs,
+  added: {
+    type: 'boolean',
+    description: 'Include files added outside the kit render (requires git)',
+    default: false,
+  },
+} satisfies ArgsDef;

@@ -1,13 +1,14 @@
 import { glob } from 'tinyglobby';
 import { readKitConfig } from '../kit/config';
 import type { KitSnapshot } from '../kit/source';
-import { render, type ProjectIdentity } from '../render/render';
+import { listProjectFiles } from '../project/git';
 import { readState, unresolvedConflicts } from '../project/state';
+import { render, type ProjectIdentity } from '../render/render';
 import { equal, readUserFile } from '../transition/plan';
 import { isProtected } from '../transition/protected';
 import { resolveInside, toPosixPath } from '../util/paths';
 
-export type InspectStatus = 'unchanged' | 'edited' | 'deleted' | 'protected';
+export type InspectStatus = 'unchanged' | 'edited' | 'deleted' | 'protected' | 'added';
 
 export interface InspectFile {
   path: string;
@@ -32,7 +33,22 @@ export interface InspectReport {
     expected: number;
     scored: number;
     scoredChanged: number;
+    added?: number;
   };
+}
+
+const generatedDirectories = new Set(['.nuxt', '.output', 'node_modules', '.data']);
+
+function skipAddition(path: string): boolean {
+  // Content is protected from transitions, but new posts are part of the migration inventory.
+  return (
+    (isProtected(path) && !path.startsWith('content/')) ||
+    (path.startsWith('.env') && path !== '.env.example') ||
+    path
+      .split('/')
+      .slice(0, -1)
+      .some((directory) => generatedDirectories.has(directory))
+  );
 }
 
 async function globSet(patterns: string[], cwd: string): Promise<Set<string>> {
@@ -50,6 +66,7 @@ async function globSet(patterns: string[], cwd: string): Promise<Set<string>> {
 export async function runInspect(opts: {
   projectRoot: string;
   kit: KitSnapshot;
+  added?: boolean;
 }): Promise<InspectReport> {
   const { projectRoot, kit } = opts;
   const state = await readState(projectRoot);
@@ -84,8 +101,17 @@ export async function runInspect(opts: {
     files.push({ path, status, layer: layerOf(path), expected: userOwned.has(path) });
   }
 
+  if (opts.added) {
+    for (const path of await listProjectFiles(projectRoot)) {
+      if (tree.has(path) || skipAddition(path)) continue;
+      files.push({ path, status: 'added', layer: layerOf(path), expected: false });
+    }
+  }
+
   const count = (status: InspectStatus) => files.filter((file) => file.status === status).length;
-  const scored = files.filter((file) => file.status !== 'protected' && !file.expected);
+  const scored = files.filter(
+    (file) => file.status !== 'added' && file.status !== 'protected' && !file.expected,
+  );
   return {
     commit: kit.commit,
     kit: state.kit,
@@ -99,6 +125,7 @@ export async function runInspect(opts: {
       edited: count('edited'),
       deleted: count('deleted'),
       protected: count('protected'),
+      ...(opts.added ? { added: count('added') } : {}),
       expected: files.filter((file) => file.status !== 'protected' && file.expected).length,
       scored: scored.length,
       scoredChanged: scored.filter((file) => file.status === 'edited' || file.status === 'deleted')

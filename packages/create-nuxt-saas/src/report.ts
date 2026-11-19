@@ -90,11 +90,13 @@ export function printInspectJson(report: InspectReport): void {
 
 export function printInspect(report: InspectReport): void {
   const { summary } = report;
+  const addedCount = summary.added === undefined ? '' : ` · ${summary.added} added`;
   console.log(
-    `Kit ${report.commit.slice(0, 7)} · ${summary.total} files · ${summary.edited} edited · ${summary.deleted} deleted`,
+    `Kit ${report.commit.slice(0, 7)} · ${summary.total} files · ${summary.edited} edited · ${summary.deleted} deleted${addedCount}`,
   );
   const edited = report.files.filter((file) => file.status === 'edited');
   const deleted = report.files.filter((file) => file.status === 'deleted');
+  const added = report.files.filter((file) => file.status === 'added');
   if (edited.length > 0) {
     console.log('Edited:');
     for (const file of edited) console.log(`  ${file.path}`);
@@ -102,6 +104,10 @@ export function printInspect(report: InspectReport): void {
   if (deleted.length > 0) {
     console.log('Deleted:');
     for (const file of deleted) console.log(`  ${file.path}`);
+  }
+  if (added.length > 0) {
+    console.log('Added:');
+    for (const file of added) console.log(`  ${file.path}`);
   }
   if (report.conflicts.unresolved.length > 0) {
     console.log('Unresolved conflicts:');

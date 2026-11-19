@@ -11,6 +11,7 @@ import type {
   JsonModulesReport,
   JsonTransitionReport,
 } from '../src/types/json';
+import { writeTextFile } from '../src/util/fs';
 import { createFixtureKit, makeTempDir } from './support/fixtureKit';
 
 const run = promisify(execFile);
@@ -407,5 +408,76 @@ describe('--json output', () => {
     if (!Array.isArray(files)) return;
     expect(files.length).toBeGreaterThan(0);
     expect(console.log).not.toHaveBeenCalled();
+  });
+
+  it('inspect --added inventories only project additions visible to git', async () => {
+    await initV1();
+    const args = ['inspect', '--dir', project, '--kit', fixture.root];
+    const stdout = captureStdout();
+    expect(await main([...args, '--json'])).toBe(0);
+    const baseline = written(stdout);
+    const baselineReport = parseJson(baseline);
+    const baselineSummary = isRecord(baselineReport) ? baselineReport.summary : undefined;
+    if (!isRecord(baselineSummary)) throw new Error('Expected an inspect summary');
+    expect(baselineSummary).not.toHaveProperty('added');
+
+    const tracked = 'content/tracked post.md';
+    const untracked = 'untracked file.txt';
+    const excluded = [
+      'ignored.txt',
+      '.env.production',
+      '.envrc',
+      'server/db/migrations/0001_fixture.sql',
+      'pnpm-lock.yaml',
+      '.nuxt/types.d.ts',
+      '.output/server/index.mjs',
+      'local/node_modules/fixture/package.json',
+      '.data/local.db',
+    ];
+    await writeTextFile(join(project, '.git/info/exclude'), 'ignored.txt\n');
+    const deleted = 'removed.txt';
+    for (const path of [tracked, untracked, deleted, ...excluded]) {
+      await writeTextFile(join(project, path), 'fixture\n');
+    }
+    await run('git', [
+      '-C',
+      project,
+      'add',
+      '--force',
+      '--',
+      tracked,
+      deleted,
+      ...excluded.slice(1),
+    ]);
+    await rm(join(project, deleted));
+
+    stdout.mockClear();
+    expect(await main([...args, '--json'])).toBe(0);
+    expect(written(stdout)).toBe(baseline);
+
+    stdout.mockClear();
+    expect(await main([...args, '--json', '--added'])).toBe(0);
+    const report = parseJson(written(stdout));
+    expect(report).toMatchObject({
+      summary: {
+        added: 2,
+        scored: baselineSummary.scored,
+        scoredChanged: baselineSummary.scoredChanged,
+      },
+    });
+    const files = isRecord(report) ? report.files : undefined;
+    if (!Array.isArray(files)) throw new Error('Expected inspect files');
+    expect(files.filter((file: unknown) => isRecord(file) && file.status === 'added')).toEqual([
+      { path: tracked, status: 'added', layer: 'base', expected: false },
+      { path: untracked, status: 'added', layer: 'base', expected: false },
+    ]);
+
+    vi.mocked(console.log).mockClear();
+    expect(await main([...args, '--added'])).toBe(0);
+    expect(vi.mocked(console.log).mock.calls.slice(-3)).toEqual([
+      ['Added:'],
+      [`  ${tracked}`],
+      [`  ${untracked}`],
+    ]);
   });
 });

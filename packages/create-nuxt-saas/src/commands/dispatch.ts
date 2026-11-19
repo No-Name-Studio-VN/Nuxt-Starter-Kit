@@ -132,7 +132,7 @@ export async function inspectCommand(args: ParsedArgs<typeof inspectArgs>): Prom
   if (source.kind === 'local') await resolveCommit(source);
   const kit = await openKit(source, state.commit, state.kit);
   try {
-    const report = await runInspect({ projectRoot, kit });
+    const report = await runInspect({ projectRoot, kit, added: args.added });
     if (args.json) printInspectJson(report);
     else printInspect(report);
     return 0;

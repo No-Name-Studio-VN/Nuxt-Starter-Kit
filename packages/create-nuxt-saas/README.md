@@ -19,7 +19,6 @@ run `pnpm db:generate` before starting the app. Dependencies are not installed b
 Use `pnpm dlx create-nuxt-saas@latest` inside an existing project:
 
 ```bash
-pnpm dlx create-nuxt-saas@latest add auth
 pnpm dlx create-nuxt-saas@latest upgrade --check
 pnpm dlx create-nuxt-saas@latest upgrade
 ```
@@ -35,7 +34,7 @@ upgrade [--dir path] [--check] [--force] [--json] [--to ref] [--template github:
         [--kit path] [--allow-dirty-kit]
 modules [--dir path] [--json] [--to ref] [--template github:owner/repo#ref] [--kit path]
         [--allow-dirty-kit]
-inspect [--dir path] [--json] [--kit path] [--allow-dirty-kit]
+inspect [--dir path] [--json] [--added] [--kit path] [--allow-dirty-kit]
 ```
 
 Put the subcommand **before its flags**: `upgrade --dir my-app --check`, not
@@ -52,15 +51,16 @@ Exit codes are unchanged: 0 ok, 1 expected error or conflicts, 2 unexpected erro
 ### init
 
 ```bash
-npm create nuxt-saas@latest my-app -- --yes --modules auth,pwa
+npm create nuxt-saas@latest my-app -- --yes --modules auth-password,pwa
 npm create nuxt-saas@latest base-app -- --yes
 ```
 
 - The target must be absent or empty. Its folder name becomes the package and worker name (sanitized
   for npm). With no directory, `--yes` / `-y` uses `my-nuxt-app`.
 - `--modules` takes comma-separated IDs, trims whitespace and ignores empty entries. Required modules
-  are added automatically: `auth` includes `database` and `server-core`. Base is always included; it
-  is not a module ID to pass. `--yes` without `--modules`, or `--modules ''`, means **base only**.
+  are added automatically. For example, `auth-password` brings in `auth`, `database`, `server-core`,
+  and `email`. Selecting `auth` without a sign-in method is refused. Base is always included and has
+  no module ID. `--yes` without `--modules`, or `--modules ''`, means **base only**.
 - `--template` defaults to `github:No-Name-Studio-VN/Nuxt-Starter-Kit` (ref `main`). Refs resolve to
   full commit SHAs before rendering. `GITHUB_TOKEN` can authenticate GitHub requests.
 - Init renders in a temporary sibling directory, then publishes the result into the target.
@@ -70,16 +70,20 @@ npm create nuxt-saas@latest base-app -- --yes
 
 ### add and remove
 
+For example, in a base project:
+
 ```bash
 pnpm dlx create-nuxt-saas@latest add auth-passkeys,pwa --check
 pnpm dlx create-nuxt-saas@latest add auth-passkeys,pwa
+# Commit the add changes before running remove.
 pnpm dlx create-nuxt-saas@latest remove auth-passkeys
 ```
 
-Both use the kit commit recorded in the project, not the latest kit. Adding brings the dependency
-closure along. Removing is refused if a remaining module requires an ID being removed. Dependencies
-are not automatically removed with their dependents: remove those explicitly if no longer needed.
-Removing every layer is allowed; base remains.
+Both use the kit commit recorded in the project, not the latest kit. Adding installs required
+modules. Removing is refused if a remaining module still requires one of the removed IDs, or if the
+remaining selection breaks a `requiresOneOf` rule. Remove public dependencies explicitly if you no
+longer need them. The CLI removes internal dependencies that no remaining module needs. You can
+remove every layer and keep only base.
 
 `--dir` selects the project (default `.`). Applying requires a clean git tree; `--force` permits a
 dirty tree or a project without git, but does not bypass conflicts or dependency checks. `--check`
@@ -96,10 +100,9 @@ pnpm dlx create-nuxt-saas@latest upgrade --template github:owner/repo#release
 Upgrade resolves the recorded template's ref (normally `main`), or `--to`, to a commit. `--template`
 changes the target template; the old render still comes from the recorded source. Installed module
 IDs must exist in the target kit. Newly required dependencies are included automatically.
-The CLI refuses upgrades between different major kit versions. A project generated before the
-kit 4.0 auth split must be recreated, then you can move your code across. `add` and `remove`
-continue to work at the project's recorded commit. `--dir`, `--check`, and `--force` work as for
-add/remove.
+The CLI refuses upgrades between different major kit versions. See
+[Moving a 3.x project to 4.0](#moving-a-3x-project-to-40). `add` and `remove` continue to work at the
+project's recorded commit. `--dir`, `--check`, and `--force` work as for add and remove.
 
 ### modules
 
@@ -124,15 +127,24 @@ or the module whose `rootFiles` claim it), whether the file is `expected` to dif
 recorded and unresolved conflicts (files still holding `<<<<<<<` markers).
 
 The summary counts `total`, `unchanged`, `edited`, `deleted`, `protected` and `expected`.
-`scored` is every file that is neither protected nor expected, and `scoredChanged` is how many of
-those are edited or deleted; the customisation score is `scoredChanged / scored`. `--json` prints
-the full report with `schema`, `commit`, `kit`, `modules`, `identity`, `conflicts`, `files` and
-`summary`. Exit code is 0 unless the command fails.
+`scored` counts rendered files that are neither protected nor expected. `scoredChanged` counts how
+many of those are edited or deleted. The customisation score is `scoredChanged / scored`.
+
+Use `inspect --added` to also list files outside the kit render. It requires a Git working tree and
+includes tracked files still present and untracked files that Git does not ignore. It skips root
+`.env*` files except `.env.example`, migrations, root lockfiles, and `.nuxt-saas.json`. It also skips
+files under `.nuxt`, `.output`, `node_modules`, and `.data`. Added files appear under `Added:` in the
+text report. The summary includes them in `total` and counts them separately as `added`. They do not
+change the customisation score.
+
+`--json` prints the full report with `schema`, `commit`, `kit`, `modules`, `identity`, `conflicts`, `files` and
+`summary`. With `--added`, new entries have the same `path`, `status`, `layer`, and `expected` fields.
+Their `status` is `added` and their `expected` is `false`. Exit code is 0 unless the command fails.
 
 ### Local kit development
 
 ```bash
-pnpm dlx create-nuxt-saas@latest init demo --yes --modules auth --kit /path/to/kit
+pnpm dlx create-nuxt-saas@latest init demo --yes --modules auth-password --kit /path/to/kit
 pnpm dlx create-nuxt-saas@latest upgrade --dir demo --kit /path/to/kit --to HEAD
 ```
 
@@ -192,10 +204,27 @@ selected schemas, and never hand-edit generated SQL or snapshots.
 Exit codes: **0** success (including cancellation), **1** expected errors or merge conflicts
 (including a preview that finds conflicts), **2** unexpected failures.
 
+### Moving a 3.x project to 4.0
+
+Kit 4.0 is a clean break. Generate a new project and move your code across instead of running `upgrade`.
+
+1. Generate a 4.0 project with the equivalent modules. If the old project used `auth`, select
+   `auth-password`, `auth-oauth`, or both, depending on how users sign in. Both bring in `auth`.
+   Include `dashboard` if the app used the dashboard shell or admin area. Include `content-studio`
+   if you used Nuxt Studio.
+2. From the old project, run `pnpm dlx create-nuxt-saas@latest inspect --added`. Use the `Added:` and
+   `Edited:` lists to identify code to carry over. Copy `server/db/migrations/**` separately to keep
+   the database's migration history. The inventory skips migrations.
+3. If you use a database, install dependencies and run `pnpm db:generate` in the new project. Read the
+   generated migration before applying it to a populated database. For a 3.x project with `auth`,
+   the migration drops `users.password`. It also drops `oauth_accounts` if you omit `auth-oauth`.
+   To keep existing passwords, install `auth-password` and plan and test a data migration that copies
+   the hashes to `user_passwords.password_hash` before the generated migration drops `users.password`.
+
 ### Upgrading from 2.x
 
-3.0 cannot upgrade projects generated by 2.x. Generate a fresh 3.0 project and move your code
-across. A project with `.nuxt-saas/manifest.json` and no `.nuxt-saas.json` stops with:
+The current CLI cannot manage projects generated by 2.x. Generate a fresh project and move your
+code across. A project with `.nuxt-saas/manifest.json` and no `.nuxt-saas.json` stops with:
 
 > This project was created by create-nuxt-saas 2.x, which this version cannot manage. Generate a new project with `npm create nuxt-saas@latest` and move your code across.
 
@@ -210,20 +239,25 @@ Each selected module is copied verbatim as `layers/<id>/`, which Nuxt 4 auto-reg
 are stripped from shared files. The root package, env example and worker config remain the full
 kit's union; the CLI drops claims of unselected modules only when no selected module also claims them.
 
-| Module                    | Requires      | Provides                                                   |
-| ------------------------- | ------------- | ---------------------------------------------------------- |
-| `server-core` (internal)  | —             | API envelope, error helpers, KV and cache bindings         |
-| `database`                | `server-core` | D1/SQLite through NuxtHub and Drizzle; migration scripts   |
-| `auth`                    | `database`    | Password/OAuth sessions, account pages and dashboard shell |
-| `admin`                   | `auth`        | Admin guards, seed task and admin landing page             |
-| `admin-users`             | `admin`       | User administration                                        |
-| `admin-kv`                | `admin`       | Workers KV browser                                         |
-| `feature-flags`           | `admin`       | OpenFeature flags, admin panel and edge evaluation         |
-| `auth-2fa`                | `auth`        | TOTP setup and password-login challenge                    |
-| `auth-passkeys`           | `auth`        | WebAuthn sign-in and passkey management                    |
-| `auth-email-verification` | `auth`        | Verification email and password-login policy               |
-| `content`                 | —             | Documentation, blog, search, RSS and Studio                |
-| `pwa`                     | —             | Service worker, install prompt, offline page and assets    |
+| Group          | Module                    | Parent          | Requires            | Requires one of               | Provides                                                          |
+| -------------- | ------------------------- | --------------- | ------------------- | ----------------------------- | ----------------------------------------------------------------- |
+| Foundation     | `database`                |                 | `server-core`       |                               | D1/SQLite through NuxtHub and Drizzle, plus migration scripts     |
+| Authentication | `auth`                    |                 | `database`          | `auth-password`, `auth-oauth` | Accounts, sessions, and the sign-in page                          |
+| Authentication | `auth-oauth`              | `auth`          | `auth`              |                               | OAuth sign-in with providers selected in `site.config.ts`         |
+| Authentication | `auth-password`           | `auth`          | `auth`, `email`     |                               | Password sign-in, registration, and password reset with Turnstile |
+| Authentication | `auth-2fa`                | `auth-password` | `auth-password`     |                               | TOTP setup and password sign-in challenge                         |
+| Authentication | `auth-email-verification` | `auth-password` | `auth-password`     |                               | Verification email and password sign-in policy                    |
+| Authentication | `auth-passkeys`           | `auth-password` | `auth-password`     |                               | WebAuthn sign-in and passkey management                           |
+| App            | `admin`                   |                 | `auth`, `dashboard` |                               | Admin guards, seed task, and admin landing page                   |
+| App            | `admin-kv`                | `admin`         | `admin`             |                               | Workers KV browser                                                |
+| App            | `admin-users`             | `admin`         | `admin`             |                               | User administration                                               |
+| App            | `feature-flags`           | `admin`         | `admin`             |                               | OpenFeature flags, admin panel, and edge evaluation               |
+| App            | `dashboard`               |                 |                     |                               | Dashboard layout, sidebar, and quick search                       |
+| App            | `pwa`                     |                 |                     |                               | Service worker, install prompt, offline page, and assets          |
+| Content        | `content`                 |                 |                     |                               | Documentation, blog, search, and RSS                              |
+| Content        | `content-studio`          | `content`       | `content`           |                               | Nuxt Studio and MDC component metadata                            |
+| Internal       | `email`                   |                 |                     |                               | Transactional email through Resend                                |
+| Internal       | `server-core`             |                 |                     |                               | API envelope, error helpers, and KV and cache bindings            |
 
 Internal modules are hidden from the picker, not from `modules`; they arrive through dependencies
 and can also be requested explicitly. See each layer's README for its configuration.
@@ -241,8 +275,8 @@ field. For example, the existing passkeys layer claims:
   "title": "Passkeys",
   "description": "WebAuthn sign-in and passkey management",
   "group": "Authentication",
-  "parent": "auth",
-  "requires": ["auth"],
+  "parent": "auth-password",
+  "requires": ["auth-password"],
   "requiresOneOf": [],
   "internal": false,
   "dependencies": ["@simplewebauthn/browser", "@simplewebauthn/server"],
@@ -328,36 +362,45 @@ export default defineNuxtPlugin(() => {
 });
 ```
 
-Base hosts `<ExtensionSlot name="…" />` for `app:root`, `home:hero` and `header:actions`, and the
-`header` nav menu. Auth adds `auth:login:alternatives`, `auth:login:steps`, `sidebar:footer`,
-`sidebar` and `userMenu`; admin adds `adminCards`. The auth login host selects a step by matching its
-ID to `?step=`. Keep the host in the upstream layer and contributions in downstream plugins.
+Base hosts `<ExtensionSlot name="…" />` for `app:root`, `home:hero`, and `header:actions`, and owns the
+`header` nav menu. `auth` hosts `auth:login:methods` and `auth:login:footer`. A matching `?step=` renders
+an `auth:login:steps` entry instead of the sign-in methods. `auth` also owns the `userMenu` nav menu.
+
+`auth-password` hosts `auth:login:alternatives` in the password form and `auth:register:methods` on
+its registration page. The `auth` types declare both method slots so `auth-oauth` can register its
+buttons without depending on `auth-password`. `dashboard` hosts `sidebar:user`, `sidebar:footer`,
+and `dashboard:header:actions`, and owns the `sidebar` nav menu. `admin` owns `adminCards`.
+Keep the host in the upstream layer and contributions in downstream plugins.
 
 To add a typed slot/menu, augment `~~/types/extensions` in the owning layer's
 `types/extensions.ts`. Make it a module (imports or `export {}`), and **import that file from the
 registering plugin**, e.g. `import '#layers/auth/types/extensions'`. Without that import, the
 augmentation is not visible. Define menu record types in the layer's `types/` directory. Follow
-`layers/auth/types/extensions.ts` and `layers/admin/types/extensions.ts`.
+`layers/auth/types/extensions.ts`, `layers/auth-password/types/extensions.ts`,
+`layers/dashboard/types/extensions.ts`, and `layers/admin/types/extensions.ts`.
 
 ### Server registries
 
 Register from Nitro plugins with explicit imports from the owning layer:
 
-- Auth `server/utils/loginPolicies.ts`: `registerLoginPolicy({ id, order, run })`. `run(ctx)` returns
-  `{ kind: 'continue' }`, `{ kind: 'respond', body }` or `{ kind: 'deny', error }`. Policies run after
-  valid password credentials, in ascending order, stopping on any non-continue outcome. Throws fail
-  sign-in. Current order: email verification 100, account lock 150, two-factor 200. Verification and
-  TOTP do not gate OAuth, One Tap or passkey sign-in.
-- Auth `server/utils/postRegisterSteps.ts`: `registerPostRegisterStep({ id, order, run })`.
-  Runs every step after password registration; `run(ctx)` returns `{ redirect?: string }`. If several
+- `layers/auth/server/utils/loginPolicies.ts`: `registerLoginPolicy({ id, order, methods, run })`.
+  Policies run after identity is verified, before the session is written. Omit `methods` to run on all
+  sign-in methods. Policies run in ascending order and stop at the first `{ kind: 'respond', respond }`
+  or `{ kind: 'deny', error }` instead of `{ kind: 'continue' }`. A thrown policy fails sign-in.
+  Email verification runs at order 100 and TOTP at 200, both for password sign-in only. Account lock
+  runs at 150 for every method.
+- `layers/auth/server/utils/signInMethods.ts`: `registerSignInMethod()` registers how to count a user's
+  credentials for a sign-in method and, optionally, how to set a secret for that method.
+- `layers/auth-password/server/utils/postRegisterSteps.ts`: `registerPostRegisterStep({ id, order, run })`.
+  Every step runs after password registration. `run(ctx)` returns `{ redirect?: string }`. If several
   steps return redirects, the last wins.
-- Auth `server/utils/authTokenKinds.ts`: `registerAuthTokenKind({ id, expiresInMs })`. Token lifetimes
-  must be positive and finite. Looking up an unregistered kind throws. See the email-verification
-  plugin for registering a token kind alongside its policy and registration step.
-- Admin `server/utils/seedTasks.ts`: `registerSeedTask({ id, order, key, label, run })`. Tasks run
-  sequentially after admin creation; `run()` returns `Promise<Record<string, number>>`. `key` owns a
-  seed-summary field, `label` prefixes logged counts. Duplicate IDs/keys and the reserved key `admin`
-  are rejected. A thrown task stops the seed. See feature-flags' `seed-feature-flags.ts` plugin.
+- `layers/auth-password/server/utils/authTokenKinds.ts`: `registerAuthTokenKind({ id, expiresInMs })`.
+  Token lifetimes must be positive and finite. Looking up an unregistered kind throws. The
+  email-verification plugin registers a token kind alongside its policy and registration step.
+- `layers/admin/server/utils/seedTasks.ts`: `registerSeedTask({ id, order, key, label, run })`. Tasks run
+  in ascending order. `run()` returns `Promise<Record<string, number>>`. `key` owns a seed-summary
+  field and must be unique. `label` prefixes logged counts. A thrown task stops the seed. See
+  `layers/feature-flags/server/plugins/seed-feature-flags.ts`.
 
 All server registries reject duplicate IDs. Keep types in `types/`, shared validation schemas in
 `shared/schemas/`, and API handlers on the `success(...)` / `apiError(...)` response convention.
