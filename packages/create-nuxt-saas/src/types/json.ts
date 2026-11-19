@@ -35,6 +35,7 @@ export interface JsonModule extends Omit<KitModule, 'group' | 'parent'> {
 export interface JsonModulesReport {
   schema: typeof JSON_SCHEMA;
   commit: string;
+  groups: string[];
   modules: JsonModule[];
   installed: string[];
 }

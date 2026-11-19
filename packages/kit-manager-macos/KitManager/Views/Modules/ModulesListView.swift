@@ -31,14 +31,26 @@ struct ModulesListView: View {
                 description: Text("Add a project made with the kit to see which modules it uses."))
         } else {
             List(selection: $selection) {
-                ForEach(rows) { row in moduleRow(row) }
+                ForEach(groupModules(rows, module: \.module)) { group in
+                    if let name = group.name {
+                        Section(name) { moduleRows(group.entries) }
+                    } else {
+                        moduleRows(group.entries)
+                    }
+                }
             }
             .accessibilityLabel("Modules")
             .navigationSubtitle(rows.count == 1 ? "1 module" : "\(rows.count) modules")
         }
     }
 
-    private func moduleRow(_ row: ModuleMatrix.Row) -> some View {
+    private func moduleRows(_ entries: [ModuleSection<ModuleMatrix.Row>.Entry]) -> some View {
+        ForEach(entries) { entry in
+            moduleRow(entry.item, depth: entry.depth)
+        }
+    }
+
+    private func moduleRow(_ row: ModuleMatrix.Row, depth: Int) -> some View {
         let id = row.id
         let title = row.module.title.isEmpty ? id : row.module.title
         let count = row.installedCount == 1 ? "1 project" : "\(row.installedCount) projects"
@@ -69,6 +81,7 @@ struct ModulesListView: View {
             }
         }
         .padding(.vertical, 3)
+        .padding(.leading, CGFloat(depth) * 16)
         .help("\(title) · \(installedHelp) \(behindHelp)")
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(spokenTitle), \(count), \(row.behindCount) behind\(internalLabel)")

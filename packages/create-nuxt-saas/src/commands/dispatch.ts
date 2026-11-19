@@ -117,7 +117,7 @@ export async function modulesCommand(args: ParsedArgs<typeof listArgs>): Promise
   const kit = await openKit(source, commit, template);
   try {
     const installed = state?.modules ?? [];
-    if (args.json) printModulesJson(kit.modules, installed, kit.commit);
+    if (args.json) printModulesJson(kit.modules, installed, kit.commit, kit.groups);
     else printModules(kit.modules, installed, kit.groups);
     return 0;
   } finally {

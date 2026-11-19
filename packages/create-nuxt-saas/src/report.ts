@@ -65,10 +65,16 @@ export function printTransitionJson(
   });
 }
 
-export function printModulesJson(modules: KitModule[], installed: string[], commit: string): void {
+export function printModulesJson(
+  modules: KitModule[],
+  installed: string[],
+  commit: string,
+  groups: string[] = [],
+): void {
   printJson({
     schema: JSON_SCHEMA,
     commit,
+    groups,
     modules: modules.map((module) => ({
       ...module,
       group: module.group ?? null,

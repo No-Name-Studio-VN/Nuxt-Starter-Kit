@@ -316,6 +316,7 @@ describe('--json output', () => {
     expect(report).toMatchObject({
       schema: 1,
       commit: fixture.v1,
+      groups: [],
       installed: [],
     } satisfies Partial<JsonModulesReport>);
     const modules = isRecord(report) ? report.modules : undefined;
@@ -327,11 +328,12 @@ describe('--json output', () => {
     expect(console.log).not.toHaveBeenCalled();
   });
 
-  it('modules --json includes group, parent and selection rules', async () => {
+  it('modules --json includes groups in kit order, parent and selection rules', async () => {
     const stdout = captureStdout();
     expect(await main(['modules', '--json', '--kit', fixture.root, '--dir', parent])).toBe(0);
     expect(parseJson(written(stdout))).toMatchObject({
       schema: 1,
+      groups: ['Foundation', 'App', 'Content'],
       modules: expect.arrayContaining([
         expect.objectContaining({
           id: 'access',

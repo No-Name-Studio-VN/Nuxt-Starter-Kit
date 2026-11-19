@@ -88,22 +88,35 @@ struct ModuleChangeSheet: View {
             Text(action == .add ? "Every module is already installed." : "No removable modules.")
                 .foregroundStyle(.secondary)
         }
-        ForEach(choices) { choice in
-            Toggle(isOn: binding(for: choice.id)) {
-                HStack(spacing: 10) {
-                    SettingsIcon(symbol: ModuleAppearance.symbol(for: choice.id), color: ModuleAppearance.color(for: choice.id))
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(choice.title).fontWeight(.medium)
-                        if !choice.detail.isEmpty {
-                            Text(choice.detail).font(.caption).foregroundStyle(.secondary)
-                        }
+        ForEach(groupModules(choices, module: \.info)) { group in
+            if let name = group.name {
+                Text(name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            ForEach(group.entries) { entry in
+                moduleToggle(entry.item)
+                    .padding(.leading, CGFloat(entry.depth) * 16)
+            }
+        }
+    }
+
+    private func moduleToggle(_ choice: ModuleChoice) -> some View {
+        Toggle(isOn: binding(for: choice.id)) {
+            HStack(spacing: 10) {
+                SettingsIcon(symbol: ModuleAppearance.symbol(for: choice.id), color: ModuleAppearance.color(for: choice.id))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(choice.title).fontWeight(.medium)
+                    if !choice.detail.isEmpty {
+                        Text(choice.detail).font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
-            .toggleStyle(.checkbox)
-            .disabled(isLocked)
         }
+        .toggleStyle(.checkbox)
+        .disabled(isLocked)
     }
 
     private var resultTitle: String {
