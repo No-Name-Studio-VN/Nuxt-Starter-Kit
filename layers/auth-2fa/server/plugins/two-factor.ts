@@ -4,13 +4,14 @@ import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwo
 
 /**
  * Sends a password sign-in with an authenticator app to the code step. The
- * account lock (150) has already run, so a challenged sign-in is still recorded
- * as the last login.
+ * account lock (150) has already run; the sign-in is recorded once the code
+ * step finishes it.
  */
 export default defineNitroPlugin(() => {
   registerLoginPolicy({
     id: 'two-factor',
     order: 200,
+    methods: ['password'],
     async run({ event, user, redirectTo }) {
       const twoFactor = await userTwoFactorService.getById(user.id);
       if (!twoFactor?.enabled || !twoFactor.secret) {

@@ -85,7 +85,7 @@ class OAuthAccountService {
   }
 
   /**
-   * Count linked providers for a user (used for "can unlink" check)
+   * Count linked providers for a user (the OAuth sign-in method's credentials)
    */
   async countByUserId(userId: number) {
     const accounts = await this.getByUserId(userId);

@@ -1,10 +1,10 @@
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import {
   apiError,
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import userService from '#layers/auth/server/utils/database/user';
+import { assertCanRemoveCredential } from '#layers/auth/server/utils/signInMethods';
 import type { DeletePasskeyResponse } from '#layers/auth-passkeys/types/models/passkey';
 import { deletePasskeySchema } from '#layers/auth-passkeys/shared/schemas/passkeySchema';
 
@@ -47,25 +47,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Check if this is the user's last passkey and they don't have a password
-  const userCredentialsCount = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(tables.credentials)
-    .where(eq(tables.credentials.userId, sessionUser.id))
-    .get();
-
-  const user = await userService.getById(sessionUser.id);
-
-  // If this is the last passkey and user has no password, prevent deletion
-  if (userCredentialsCount?.count === 1 && !user?.password) {
-    throw apiError({
-      status: 400,
-      statusText: 'Bad Request',
-      message:
-        'Bad Request. Cannot delete your last passkey without setting up password authentication first.',
-      code: 'LAST_PASSKEY_REQUIRES_PASSWORD',
-    });
-  }
+  await assertCanRemoveCredential(sessionUser.id);
 
   await db
     .delete(tables.credentials)

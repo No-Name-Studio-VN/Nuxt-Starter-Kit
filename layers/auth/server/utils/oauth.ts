@@ -1,8 +1,11 @@
 import type { H3Event } from 'h3';
 import type { OAuthLoginCompletionResult, OAuthProfile } from '#layers/auth/types/auth';
+import type { ApiErrorOptions } from '#layers/server-core/types/api';
+import type { OAuthSignInEvidence } from '#layers/auth/types/signInMethods';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import userService from '#layers/auth/server/utils/database/user';
 import oauthAccountService from '#layers/auth/server/utils/database/oauthAccount';
+import { completeSignIn } from '#layers/auth/server/utils/completeSignIn';
 
 export type { OAuthLoginCompletionResult, OAuthProfile } from '#layers/auth/types/auth';
 
@@ -38,6 +41,12 @@ export function sendOAuthRedirect(event: H3Event, fallback: string) {
   const target = getPopupRedirectTarget(event, fallback);
   clearPopupOAuthCookies(event);
   return sendRedirect(event, target);
+}
+
+/** The login page's `?error=` slug for a denied sign-in, e.g. ACCOUNT_LOCKED -> account-locked. */
+function loginErrorPath(error: ApiErrorOptions) {
+  const slug = error.code ? error.code.toLowerCase().replace(/_/g, '-') : 'oauth-error';
+  return `${authRoutes.AUTH_LOGIN}?error=${encodeURIComponent(slug)}`;
 }
 
 /**
@@ -132,6 +141,17 @@ export async function handleOAuthSuccess(event: H3Event, provider: string, profi
     return sendOAuthRedirect(event, `${authRoutes.AUTH_LOGIN}?error=unknown`);
   }
 
+  const { outcome } = completion;
+  // A policy that answers the request itself has started its response already
+  // (a redirect, as the password policies do); the OAuth handler only waits for it.
+  if (outcome.kind === 'respond') {
+    await outcome.body;
+    return;
+  }
+  if (outcome.kind === 'deny') {
+    return sendOAuthRedirect(event, loginErrorPath(outcome.error));
+  }
+
   return sendOAuthRedirect(event, '/');
 }
 
@@ -140,6 +160,11 @@ export async function completeOAuthLogin(
   provider: string,
   profile: OAuthProfile,
 ): Promise<OAuthLoginCompletionResult> {
+  const oauth: OAuthSignInEvidence = {
+    provider,
+    providerAccountId: profile.id,
+    email: profile.email,
+  };
   const linked = await oauthAccountService.getByProviderAccount(provider, profile.id);
 
   if (linked) {
@@ -148,18 +173,12 @@ export async function completeOAuthLogin(
       return { status: 'missing-user' };
     }
 
-    await userService.update({ id: dbUser.id, lastLoginAt: new Date() });
-
-    await setUserSession(event, {
-      user: {
-        id: dbUser.id,
-        username: dbUser.username,
-        name: dbUser.name,
-        isAdmin: dbUser.isAdmin,
-      },
+    const outcome = await completeSignIn(event, dbUser, {
+      method: 'oauth',
+      redirectTo: '/',
+      oauth,
     });
-
-    return { status: 'signed-in', userId: dbUser.id };
+    return { status: 'signed-in', userId: dbUser.id, outcome };
   }
 
   const username = await generateUniqueUsername(profile.email);
@@ -182,14 +201,6 @@ export async function completeOAuthLogin(
     avatarUrl: profile.avatarUrl ?? null,
   });
 
-  await setUserSession(event, {
-    user: {
-      id: newUser.id,
-      username: newUser.username,
-      name: newUser.name,
-      isAdmin: newUser.isAdmin,
-    },
-  });
-
-  return { status: 'created', userId: newUser.id };
+  const outcome = await completeSignIn(event, newUser, { method: 'oauth', redirectTo: '/', oauth });
+  return { status: 'created', userId: newUser.id, outcome };
 }

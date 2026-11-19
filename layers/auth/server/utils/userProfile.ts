@@ -1,6 +1,6 @@
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
-import oauthAccountService from '#layers/auth/server/utils/database/oauthAccount';
 import userService from '#layers/auth/server/utils/database/user';
+import { listUserSignInMethods } from '#layers/auth/server/utils/signInMethods';
 import type { UserProfileModel } from '#layers/auth/types/models/profile';
 
 export async function getUserProfileById(userId: number): Promise<UserProfileModel> {
@@ -15,8 +15,6 @@ export async function getUserProfileById(userId: number): Promise<UserProfileMod
     });
   }
 
-  const oauthAccounts = await oauthAccountService.getByUserId(userId);
-
   return {
     id: dbUser.id,
     username: dbUser.username,
@@ -25,14 +23,7 @@ export async function getUserProfileById(userId: number): Promise<UserProfileMod
     emailVerified: dbUser.emailVerified,
     createdAt: dbUser.createdAt || new Date(),
     lastLoginAt: dbUser.lastLoginAt || dbUser.createdAt || new Date(),
-    hasPassword: !!dbUser.password && dbUser.password.trim().length > 0,
     isAdmin: dbUser.isAdmin,
-    linkedAccounts: oauthAccounts.map((account) => ({
-      provider: account.provider,
-      email: account.email,
-      name: account.name,
-      avatarUrl: account.avatarUrl,
-      linkedAt: account.createdAt || new Date(),
-    })),
+    signInMethods: await listUserSignInMethods(userId),
   };
 }

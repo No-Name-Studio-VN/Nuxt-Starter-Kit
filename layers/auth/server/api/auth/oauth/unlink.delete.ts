@@ -4,7 +4,7 @@ import {
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
 import oauthAccountService from '#layers/auth/server/utils/database/oauthAccount';
-import userService from '#layers/auth/server/utils/database/user';
+import { assertCanRemoveCredential } from '#layers/auth/server/utils/signInMethods';
 import type { OAuthUnlinkPayload } from '#layers/auth/types/auth';
 import { oauthUnlinkBodySchema } from '#layers/auth/shared/schemas/userSchema';
 
@@ -37,31 +37,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Check if user has a password
-  const dbUser = await userService.getById(userId);
-  if (!dbUser) {
-    throw apiError({
-      status: 404,
-      statusText: 'Not Found',
-      message: 'User not found.',
-      code: 'USER_NOT_FOUND',
-    });
-  }
-
-  const hasPassword = !!dbUser.password && dbUser.password.trim().length > 0;
-
-  // Count other linked providers
-  const linkedCount = await oauthAccountService.countByUserId(userId);
-
-  // User must have at least one other auth method (password or another provider)
-  if (!hasPassword && linkedCount <= 1) {
-    throw apiError({
-      status: 400,
-      statusText: 'Bad Request',
-      message: "You can't unlink your only sign-in method. Set a password first.",
-      code: 'ONLY_SIGNIN_METHOD',
-    });
-  }
+  await assertCanRemoveCredential(userId);
 
   // Unlink the provider
   await oauthAccountService.unlink(userId, provider);

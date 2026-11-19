@@ -1,7 +1,7 @@
 import userService from '#layers/auth/server/utils/database/user';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { loginSchema } from '#layers/auth/shared/schemas/userSchema';
-import { runLoginPolicies } from '#layers/auth/server/utils/loginPolicies';
+import { completeSignIn } from '#layers/auth/server/utils/completeSignIn';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
 
 function safeRedirectPath(value: string | undefined, origin: string): string {
@@ -52,40 +52,18 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=invalid-credentials');
   }
 
-  // Installed layers can register policies before auth's account lock check,
-  // which also records the login (150), and the second factor when auth-2fa is
-  // installed (200).
-  const policyOutcome = await runLoginPolicies({ event, user, redirectTo: redirectToStr });
-  if (policyOutcome.kind !== 'continue') {
-    if (policyOutcome.kind === 'respond') {
-      return policyOutcome.body;
-    }
-    if (policyOutcome.kind === 'deny') {
-      throw apiError(policyOutcome.error);
-    }
-
-    // Fail closed: an outcome no branch above understands never signs the user in.
-    throw apiError({
-      status: 500,
-      statusText: 'Internal Server Error',
-      message: 'Internal Server Error. The sign-in could not be completed.',
-      code: 'LOGIN_POLICY_UNKNOWN_OUTCOME',
-    });
-  }
-
-  // Update last login
-  await userService.update({ id: user.id, lastLoginAt: new Date() });
-
-  // The login policy allowed a direct sign-in (no second factor required)
-  await setUserSession(event, {
-    user: {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      isAdmin: user.isAdmin,
-      skipLockOnInit: true, // Bypass lock screen initial check on fresh login
-    },
+  // Installed layers can register policies before auth's account lock check
+  // (150), and the second factor runs at 200 when auth-2fa is installed.
+  const outcome = await completeSignIn(event, user, {
+    method: 'password',
+    redirectTo: redirectToStr,
   });
+  if (outcome.kind === 'respond') {
+    return outcome.body;
+  }
+  if (outcome.kind === 'deny') {
+    throw apiError(outcome.error);
+  }
 
   return sendRedirect(event, redirectToStr);
 });

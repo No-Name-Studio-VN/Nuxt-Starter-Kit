@@ -1,4 +1,5 @@
 import type { SessionUser } from '#layers/auth/types/auth';
+import type { SignInEvidence } from '#layers/auth/types/signInMethods';
 
 declare module '#auth-utils' {
   interface User {
@@ -12,6 +13,16 @@ declare module '#auth-utils' {
 
   interface UserSession {
     loggedInAt?: Date;
+  }
+}
+
+declare module 'nitropack/types' {
+  interface NitroRuntimeHooks {
+    /**
+     * After every login policy allowed a sign-in, before its session is written.
+     * Changes a handler makes to the user row reach the session.
+     */
+    'auth:signed-in': (evidence: SignInEvidence) => void | Promise<void>;
   }
 }
 

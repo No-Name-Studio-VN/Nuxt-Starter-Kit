@@ -69,5 +69,13 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const { outcome } = loginResult;
+  if (outcome.kind === 'respond') {
+    return outcome.body;
+  }
+  if (outcome.kind === 'deny') {
+    throw apiError(outcome.error);
+  }
+
   return success<GoogleOneTapPayload>({ authenticated: true, status: loginResult.status });
 });

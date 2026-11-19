@@ -17,12 +17,14 @@ export function registerLoginPolicy(policy: LoginPolicy): void {
 }
 
 /**
- * Runs the registered policies in ascending `order`. Only `continue` moves on to
- * the next policy; any other outcome, including one the host does not know, is
- * returned at once. A policy that throws fails the sign-in.
+ * Runs the policies that apply to `ctx.method` in ascending `order`. Only
+ * `continue` moves on to the next policy; any other outcome, including one the
+ * host does not know, is returned at once. A policy that throws fails the sign-in.
  */
 export async function runLoginPolicies(ctx: LoginPolicyContext): Promise<LoginPolicyOutcome> {
-  const policies = [...loginPolicies.values()].sort((a, b) => a.order - b.order);
+  const policies = [...loginPolicies.values()]
+    .filter((policy) => !policy.methods || policy.methods.includes(ctx.method))
+    .sort((a, b) => a.order - b.order);
 
   for (const policy of policies) {
     const outcome = await policy.run(ctx);

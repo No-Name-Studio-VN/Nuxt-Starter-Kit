@@ -1,4 +1,5 @@
 import type { tables } from '#layers/database/server/utils/db';
+import type { LoginPolicyOutcome } from '#layers/auth/types/loginPolicies';
 
 export type User = typeof tables.users.$inferSelect;
 export type SafeUser = Pick<
@@ -54,6 +55,8 @@ export type OAuthLoginCompletionResult =
   | {
       status: GoogleOneTapStatus;
       userId: number;
+      /** Only `continue` wrote a session; the caller answers the others. */
+      outcome: LoginPolicyOutcome;
     }
   | {
       status: 'missing-user';

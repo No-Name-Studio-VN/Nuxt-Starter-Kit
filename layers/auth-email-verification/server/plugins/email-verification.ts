@@ -34,6 +34,7 @@ export default defineNitroPlugin(() => {
   registerLoginPolicy({
     id: 'email-verification',
     order: 100,
+    methods: ['password'],
     async run({ event, user, redirectTo }) {
       if (user.emailVerified) {
         return { kind: 'continue' };

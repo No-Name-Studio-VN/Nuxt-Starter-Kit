@@ -11,9 +11,13 @@ Accounts and sessions through `nuxt-auth-utils`, with Cloudflare Turnstile on th
 
 Extension points for modules that require auth:
 
-- Server registries: `registerLoginPolicy()` adds a check between the password check and the session
-  (auth's account lock runs at order 150; layers can register before or after it);
-  `registerPostRegisterStep()` runs after a password registration. Register both from a Nitro plugin.
+- Server registries: `registerSignInMethod()` adds a way to sign in and counts the user's credentials for
+  it, so removing the last one is refused; `registerLoginPolicy()` adds a check between the proof of
+  identity and the session, for every method or only the ones in `methods` (auth's account lock runs at
+  order 150 for every method; layers can register before or after it); `registerPostRegisterStep()` runs
+  after a password registration. Register them from a Nitro plugin.
+- Every sign-in finishes through `completeSignIn()`, which runs the policies, calls the `auth:signed-in`
+  Nitro runtime hook with what the sign-in proved, records `lastLoginAt` and writes the session.
 - Nav menus `sidebar` (contexts, sections and items) and `userMenu`, through `registerNavItem()`.
   Their guards read a context (today, flag values) that an app plugin can provide under
   `SIDEBAR_GUARD_CONTEXT_KEY` (`app/constants/sidebar.ts`); without one, the flag set is empty.

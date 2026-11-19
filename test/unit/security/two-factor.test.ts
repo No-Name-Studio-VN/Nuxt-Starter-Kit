@@ -74,6 +74,7 @@ beforeEach(async () => {
   );
   vi.stubGlobal('getUserSession', async () => ({ secure: { pending2faUserId: 1 } }));
   vi.stubGlobal('setUserSession', vi.fn());
+  vi.stubGlobal('useNitroApp', () => ({ hooks: { callHook: async () => {} } }));
   vi.stubGlobal('createError', (options: object) => Object.assign(new Error('API error'), options));
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -184,6 +185,7 @@ for (const route of ['login', 'unlock']) {
     it('accepts a backup code once, rejects replay and preserves the other codes', async () => {
       expect(await verify('AB12CD34')).toMatchObject({ success: true, data: { valid: true } });
       if (route === 'login') {
+        expect((await db.select().from(users).get())?.lastLoginAt).toBeInstanceOf(Date);
         expect(setUserSession).toHaveBeenCalledOnce();
         expect(setUserSession).toHaveBeenCalledWith(
           {},

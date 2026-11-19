@@ -38,6 +38,8 @@ export default defineEventHandler(async (event) => {
     id: userId,
     name: result.data.name,
     email: result.data.email,
+    // No account holds the new address, so it differs from the current one and is unproven.
+    ...(existingUser ? {} : { emailVerified: false }),
   });
 
   if (!updatedUser) {

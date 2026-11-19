@@ -7,6 +7,7 @@ import {
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
 import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwoFactor';
 import userService from '#layers/auth/server/utils/database/user';
+import { finishSignIn } from '#layers/auth/server/utils/completeSignIn';
 import { MAX_TOTP_ATTEMPTS, TOTP_LENGTH } from '#layers/auth-2fa/shared/constants/totp';
 import type { LockScreenValidationPayload } from '#layers/auth-2fa/types/twoFactor';
 import { loginTwoFactorSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
@@ -117,7 +118,6 @@ export default defineEventHandler(async (event) => {
     lastActivityTime: now,
   });
 
-  // Set the actual user session
   const user = await userService.getById(userId);
   if (!user) {
     throw apiError({
@@ -128,15 +128,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  await setUserSession(event, {
-    user: {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      isAdmin: user.isAdmin,
-      skipLockOnInit: true, // Bypass lock screen post-login
-    },
-  });
+  // The password step already ran every policy; the code was the last one.
+  await finishSignIn(event, { user, method: 'password' });
 
   const response: LockScreenValidationPayload = { valid: true };
   return success(response);
