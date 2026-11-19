@@ -22,7 +22,6 @@ export default defineNuxtConfig({
     seed: {
       secret: '',
     },
-    defaultAdminPassword: '',
   },
 
   routeRules: {
@@ -37,7 +36,7 @@ export default defineNuxtConfig({
 
   nitro: {
     experimental: {
-      // The `db:admin-creation` seed task (`pnpm db:seed`).
+      // The `db:seed` task (`pnpm db:seed`).
       tasks: true,
     },
     prerender: {

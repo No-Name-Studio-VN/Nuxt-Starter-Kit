@@ -30,6 +30,7 @@ definePageMeta({
   title: 'auth.login_title',
   breadcrumb: 'auth.login_breadcrumb',
   layout: false,
+  middleware: ['guest'],
 });
 
 useSeo({
@@ -44,7 +45,7 @@ const redirectTo = computed(() =>
 
 /**
  * The registered login step `?step=` names, e.g. a second-factor challenge. It
- * replaces the password form until it signs the user in or is cancelled.
+ * replaces the sign-in methods until it signs the user in or is cancelled.
  */
 const activeLoginStep = computed(() => {
   const step = getQueryString(route.query.step);
@@ -146,15 +147,7 @@ watch(
       </ExtensionSlot>
 
       <div class="space-y-3">
-        <p class="text-center text-sm text-muted-foreground">
-          Don't have an account?
-          <NuxtLink
-            to="/auth/register"
-            class="font-medium text-foreground underline-offset-4 hover:underline"
-          >
-            Sign up
-          </NuxtLink>
-        </p>
+        <ExtensionSlot name="auth:login:footer" />
 
         <p class="text-center text-xs text-muted-foreground text-balance">
           By signing in, you agree to our

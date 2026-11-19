@@ -5,12 +5,12 @@ import type {
 } from '#layers/auth-oauth/types/oauth';
 import type { OAuthProfile, OAuthProviderId } from '#layers/auth-oauth/types/providers';
 import { oauthRoutes } from '#layers/auth-oauth/shared/oauthRoutes';
-import type { ApiErrorOptions } from '#layers/server-core/types/api';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import userService from '#layers/auth/server/utils/database/user';
 import oauthAccountService from '#layers/auth-oauth/server/utils/database/oauthAccount';
 import { completeSignIn } from '#layers/auth/server/utils/completeSignIn';
 import { safeRedirectPath } from '#layers/auth/server/utils/safeRedirect';
+import { loginErrorPath } from '#layers/auth/server/utils/loginErrorPath';
 
 export function rememberOAuthRequest(event: H3Event) {
   const { popup, redirectTo, code, error } = getQuery(event);
@@ -60,12 +60,6 @@ function sendLinkRedirect(
   target.searchParams.set(feedback, code);
   target.searchParams.set('provider', provider);
   return sendOAuthRedirect(event, target.href);
-}
-
-/** The login page's `?error=` slug for a denied sign-in, e.g. ACCOUNT_LOCKED -> account-locked. */
-function loginErrorPath(error: ApiErrorOptions) {
-  const slug = error.code ? error.code.toLowerCase().replace(/_/g, '-') : 'oauth-error';
-  return `${authRoutes.AUTH_LOGIN}?error=${encodeURIComponent(slug)}`;
 }
 
 /**
@@ -156,7 +150,7 @@ export async function handleOAuthSuccess(
     return;
   }
   if (outcome.kind === 'deny') {
-    return sendOAuthRedirect(event, loginErrorPath(outcome.error));
+    return sendOAuthRedirect(event, loginErrorPath(outcome.error, 'oauth-error'));
   }
 
   return sendOAuthRedirect(event, getOAuthRedirectTo(event));
@@ -197,7 +191,6 @@ export async function completeOAuthLogin(
     username,
     name: profile.name || username,
     email: profile.email,
-    password: '',
     emailVerified: true,
     isAdmin: false,
   });

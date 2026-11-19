@@ -1,4 +1,4 @@
-import '#layers/auth/types/extensions';
+import '#layers/auth-password/types/extensions';
 import { defineAsyncComponent } from 'vue';
 
 /**

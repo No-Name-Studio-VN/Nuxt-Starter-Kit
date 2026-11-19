@@ -1,0 +1,11 @@
+{
+  "auth_password": {
+    "forgot_password": "Quên mật khẩu?",
+    "forgot_password_title": "Bạn quên mật khẩu?",
+    "forgot_password_description": "Nhập địa chỉ email để nhận liên kết đặt lại mật khẩu.",
+    "register_title": "Tạo tài khoản",
+    "register_description": "Tạo tài khoản để bắt đầu.",
+    "reset_password_title": "Đặt lại mật khẩu",
+    "reset_password_description": "Chọn mật khẩu mới cho tài khoản của bạn."
+  }
+}

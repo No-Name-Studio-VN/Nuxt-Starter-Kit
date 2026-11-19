@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { requiredStringSchema } from '#shared/schemas/common';
 import { createUserSchema, userUpdateSchema } from '#layers/auth/shared/schemas/userSchema';
 
 /**
@@ -17,7 +18,20 @@ export const adminBulkUserDeleteSchema = z.object({
 });
 export type AdminBulkUserDeleteInput = z.input<typeof adminBulkUserDeleteSchema>;
 
-export const adminUserCreateFormSchema = createUserSchema.pick({
+/**
+ * Creating a user sets their password, so it exists only when password
+ * sign-in is installed; without it an account would have no way in.
+ */
+export const adminUserCreateSchema = createUserSchema.extend({
+  password: requiredStringSchema('validation.password_required'),
+});
+
+/** A blank or missing password keeps the current one. */
+export const adminUserUpdateSchema = userUpdateSchema.extend({
+  password: z.string().optional().default(''),
+});
+
+export const adminUserCreateFormSchema = adminUserCreateSchema.pick({
   username: true,
   email: true,
   name: true,
@@ -25,19 +39,15 @@ export const adminUserCreateFormSchema = createUserSchema.pick({
   isAdmin: true,
 });
 
-export const adminUserEditFormSchema = userUpdateSchema
-  .pick({
-    id: true,
-    username: true,
-    email: true,
-    name: true,
-    password: true,
-    emailVerified: true,
-    isAdmin: true,
-  })
-  .extend({
-    password: z.string().optional().default(''),
-  });
+export const adminUserEditFormSchema = adminUserUpdateSchema.pick({
+  id: true,
+  username: true,
+  email: true,
+  name: true,
+  password: true,
+  emailVerified: true,
+  isAdmin: true,
+});
 
 export type AdminUserCreateFormInput = z.infer<typeof adminUserCreateFormSchema>;
 export type AdminUserEditFormInput = z.infer<typeof adminUserEditFormSchema>;

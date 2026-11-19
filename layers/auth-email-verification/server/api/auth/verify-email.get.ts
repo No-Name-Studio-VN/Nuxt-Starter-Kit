@@ -1,4 +1,4 @@
-import authTokenService from '#layers/auth/server/utils/database/authToken';
+import authTokenService from '#layers/auth-password/server/utils/database/authToken';
 import userService from '#layers/auth/server/utils/database/user';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { EmailVerificationTokenType } from '#layers/auth-email-verification/shared/constants/emailVerificationTokens';

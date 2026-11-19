@@ -1,10 +1,3 @@
-/** What the seed did with the default admin account. */
-export interface SeedAdminResult {
-  created: boolean;
-  verified: boolean;
-  username: string;
-}
-
 /** What one registered seed task did. */
 export interface SeedTaskResult {
   /** Property of the seed summary that holds `counts`, e.g. 'featureFlags'. */
@@ -16,19 +9,15 @@ export interface SeedTaskResult {
 }
 
 /**
- * The seed's response body. Task keys are known only once modules register
- * their tasks, so they sit behind an index signature.
+ * The seed's response body: each registered task's counts under its `key`.
+ * Task keys are known only once modules register their tasks.
  */
-export interface SeedSummary {
-  admin: SeedAdminResult;
-  /** Counts of each registered seed task, under its `key`. */
-  [key: string]: SeedAdminResult | SeedTaskResult['counts'];
-}
+export type SeedSummary = Record<string, SeedTaskResult['counts']>;
 
 /**
- * Work that runs after the seed has created the admin account, e.g. a module's
- * default rows. `key` and `label` are declared up front so a clash with another
- * task's summary key fails at registration, before any seed runs.
+ * Work the seed runs, e.g. a module's default rows. `key` and `label` are
+ * declared up front so a clash with another task's summary key fails at
+ * registration, before any seed runs.
  */
 export interface SeedTask extends Pick<SeedTaskResult, 'key' | 'label'> {
   id: string;

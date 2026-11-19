@@ -1,6 +1,6 @@
 import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
 import userService from '#layers/auth/server/utils/database/user';
-import authTokenService from '#layers/auth/server/utils/database/authToken';
+import authTokenService from '#layers/auth-password/server/utils/database/authToken';
 import { EmailVerificationTokenType } from '#layers/auth-email-verification/shared/constants/emailVerificationTokens';
 import { resendVerificationSchema } from '../../../shared/schemas/emailVerificationSchema';
 import { sendVerificationEmail } from '../../utils/verificationEmail';

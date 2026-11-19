@@ -2,7 +2,7 @@
   "title": "Passkeys",
   "description": "Passwordless sign-in with WebAuthn passkeys, plus endpoints to register, list and delete them.",
   "group": "Authentication",
-  "parent": "auth",
-  "requires": ["auth"],
+  "parent": "auth-password",
+  "requires": ["auth-password"],
   "dependencies": ["@simplewebauthn/browser", "@simplewebauthn/server", "reflect-metadata"]
 }

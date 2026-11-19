@@ -1,0 +1,9 @@
+{
+  "title": "Password sign-in",
+  "description": "Username and password sign-in, registration and password reset, protected by Cloudflare Turnstile.",
+  "group": "Authentication",
+  "parent": "auth",
+  "requires": ["auth", "email"],
+  "dependencies": ["@nuxtjs/turnstile"],
+  "env": ["NUXT_TURNSTILE_SITE_KEY", "NUXT_TURNSTILE_SECRET_KEY"]
+}

@@ -3,9 +3,6 @@ import type { SeedTask, SeedTaskResult } from '#layers/admin/types/seedTasks';
 // Filled once by Nitro plugins; shared by every seed run.
 const seedTasks = new Map<string, SeedTask>();
 
-// The seed summary holds the admin account's result under this key.
-const RESERVED_SUMMARY_KEYS = new Set(['admin']);
-
 /**
  * Throws when the id or the summary key is taken, so no module can silently
  * replace another's task or hide its counts in the seed summary.
@@ -15,9 +12,7 @@ export function registerSeedTask(task: SeedTask): void {
     throw new Error(`Seed task "${task.id}" is already registered.`);
   }
 
-  const keyTaken =
-    RESERVED_SUMMARY_KEYS.has(task.key) ||
-    [...seedTasks.values()].some((registered) => registered.key === task.key);
+  const keyTaken = [...seedTasks.values()].some((registered) => registered.key === task.key);
   if (keyTaken) {
     throw new Error(`Seed summary key "${task.key}" of seed task "${task.id}" is already taken.`);
   }

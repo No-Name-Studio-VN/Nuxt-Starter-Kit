@@ -1,11 +1,11 @@
-import { registerAuthTokenKind } from '#layers/auth/server/utils/authTokenKinds';
+import { registerAuthTokenKind } from '#layers/auth-password/server/utils/authTokenKinds';
 import {
   EMAIL_VERIFICATION_EXPIRY_MS,
   EmailVerificationTokenType,
 } from '#layers/auth-email-verification/shared/constants/emailVerificationTokens';
 import { registerLoginPolicy } from '#layers/auth/server/utils/loginPolicies';
-import { registerPostRegisterStep } from '#layers/auth/server/utils/postRegisterSteps';
-import authTokenService from '#layers/auth/server/utils/database/authToken';
+import { registerPostRegisterStep } from '#layers/auth-password/server/utils/postRegisterSteps';
+import authTokenService from '#layers/auth-password/server/utils/database/authToken';
 import { emailVerificationRoutes } from '#layers/auth-email-verification/shared/emailVerificationRoutes';
 import { sendVerificationEmail } from '#layers/auth-email-verification/server/utils/verificationEmail';
 

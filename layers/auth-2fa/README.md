@@ -1,11 +1,12 @@
 # Two-factor authentication
 
-A TOTP second factor (authenticator apps) for password sign-in.
+A TOTP second factor (authenticator apps) for password sign-in. Requires `auth-password`.
 
 - The `user_two_factor` table (`server/db/schema.sqlite.ts`): each account's secret, on/off flag and
   backup codes, with its service in `server/utils/database/userTwoFactor.ts`.
 - `POST /api/users/:id/2fa/setup`, `/verify` and `DELETE /api/users/:id/2fa/disable` to turn it on
-  and off; verifying hands out ten single-use backup codes.
+  and off. Setup and disable ask for the account password, checked by `auth-password`'s credential
+  service. Verifying hands out ten single-use backup codes.
 - The `two-factor` login policy (order 200): a password sign-in with 2FA on stops at
   `/auth/login?step=2fa`, and `POST /api/auth/login-2fa` finishes it with a code or a backup code.
 - The `2fa` login step (`auth:login:steps`), with its OTP input (`app/components/ui/input-otp`).

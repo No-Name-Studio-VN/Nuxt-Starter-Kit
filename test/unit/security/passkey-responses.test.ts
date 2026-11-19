@@ -40,7 +40,6 @@ describe('client-safe WebAuthn responses', () => {
       id: 1,
       username: 'member',
       name: 'Member',
-      password: 'internal-hash',
       email: 'member@example.com',
       emailVerified: true,
       isAdmin: false,

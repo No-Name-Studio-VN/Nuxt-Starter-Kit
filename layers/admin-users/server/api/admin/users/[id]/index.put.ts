@@ -1,5 +1,6 @@
-import { userUpdateSchema } from '#layers/auth/shared/schemas/userSchema';
+import { adminUserUpdateSchema } from '#layers/admin-users/shared/schemas/adminUserSchema';
 import userService from '#layers/auth/server/utils/database/user';
+import { getSignInMethod } from '#layers/auth/server/utils/signInMethods';
 import {
   apiError,
   success,
@@ -17,7 +18,7 @@ export default defineEventHandler(async (event) => {
       code: 'INVALID_USER_ID',
     });
   }
-  const result = await readValidatedBody(event, (body) => userUpdateSchema.safeParse(body));
+  const result = await readValidatedBody(event, (body) => adminUserUpdateSchema.safeParse(body));
   if (!result.success) {
     throw apiError({
       status: 400,
@@ -29,17 +30,18 @@ export default defineEventHandler(async (event) => {
   }
 
   const { password, ...validatedData } = result.data;
-  const hashedPassword =
-    typeof password === 'string' && password.trim().length > 0
-      ? await hashPassword(password)
-      : undefined;
-  const updateData = {
-    ...validatedData,
-    id: userId,
-    ...(hashedPassword ? { password: hashedPassword } : {}),
-  };
+  const newPassword = password.trim().length > 0 ? password : undefined;
+  const passwordMethod = getSignInMethod('password');
+  if (newPassword && !passwordMethod?.setSecret) {
+    throw apiError({
+      status: 400,
+      statusText: 'Bad Request',
+      message: 'Bad Request. Setting a password needs password sign-in, which is not installed.',
+      code: 'PASSWORD_SIGN_IN_NOT_INSTALLED',
+    });
+  }
 
-  const updatedUser = await userService.update(updateData);
+  const updatedUser = await userService.update({ ...validatedData, id: userId });
   if (!updatedUser) {
     throw apiError({
       status: 404,
@@ -47,6 +49,10 @@ export default defineEventHandler(async (event) => {
       message: 'Not Found. The requested user does not exist.',
       code: 'USER_NOT_FOUND',
     });
+  }
+
+  if (newPassword) {
+    await passwordMethod?.setSecret?.(userId, newPassword);
   }
 
   const user: AdminUserModel = {

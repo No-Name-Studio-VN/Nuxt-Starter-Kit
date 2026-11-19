@@ -1,34 +1,14 @@
-import type { AuthErrorCode, AuthSuccessCode, AuthMessages } from '../../types/auth';
+import type { AuthErrorCode, AuthMessages } from '../../types/auth';
 
 /**
  * Authentication error messages for user-facing display
  */
 export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
-  // Registration errors
   validation: 'Please check your input and try again. All fields are required.',
-  captcha: 'Security verification failed. Please refresh the page and try again.',
-  existed: 'This username is already taken. Please choose a different username.',
-  'email-existed': 'This email is already in use. Please choose a different email.',
   unknown: 'An unexpected error occurred. Please try again later.',
-
-  // Login errors
-  'invalid-credentials':
-    'Invalid username or password. Please check your credentials and try again.',
-
-  // Password reset errors
-  'reset-invalid-token': 'This reset link is invalid or has already been used.',
-  'reset-token-expired': 'This reset link has expired. Please request a new one.',
 };
 
-/**
- * Authentication success messages for user-facing display
- */
-export const AUTH_SUCCESS_MESSAGES: Record<AuthSuccessCode, string> = {
-  'password-reset': 'Your password has been reset. You can now sign in with your new password.',
-  'reset-link-sent': "If an account exists with that email, we've sent a password reset link.",
-};
-
-export type { AuthErrorCode, AuthSuccessCode } from '../../types/auth';
+export type { AuthErrorCode } from '../../types/auth';
 
 const extraErrorMessages = new Map<string, string>();
 const extraSuccessMessages = new Map<string, string>();
@@ -47,14 +27,8 @@ function isAuthErrorCode(errorCode: string): errorCode is AuthErrorCode {
   return errorCode in AUTH_ERROR_MESSAGES;
 }
 
-function isAuthSuccessCode(successCode: string): successCode is AuthSuccessCode {
-  return successCode in AUTH_SUCCESS_MESSAGES;
-}
-
 export function getAuthSuccessMessage(successCode: string): string | null {
-  return isAuthSuccessCode(successCode)
-    ? AUTH_SUCCESS_MESSAGES[successCode]
-    : (extraSuccessMessages.get(successCode) ?? null);
+  return extraSuccessMessages.get(successCode) ?? null;
 }
 
 /**

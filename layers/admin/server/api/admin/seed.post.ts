@@ -31,17 +31,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const defaultAdminPassword = config.defaultAdminPassword.toString();
-  if (!defaultAdminPassword) {
-    throw apiError({
-      status: 503,
-      statusText: 'Service Unavailable',
-      message: 'Default admin password is not configured.',
-      code: 'DEFAULT_ADMIN_PASSWORD_NOT_CONFIGURED',
-    });
-  }
-
-  const { summary } = await seedDatabase(defaultAdminPassword);
+  const { summary } = await seedDatabase();
 
   return success(summary, 'Database seed completed.');
 });

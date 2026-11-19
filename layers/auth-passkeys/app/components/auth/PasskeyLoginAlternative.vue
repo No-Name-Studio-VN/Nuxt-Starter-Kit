@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Fingerprint } from '@lucide/vue';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
-import type { LoginAlternativeEmits, LoginAlternativeProps } from '#layers/auth/types/loginSteps';
+import type {
+  LoginAlternativeEmits,
+  LoginAlternativeProps,
+} from '#layers/auth-password/types/loginAlternatives';
 
 const props = defineProps<LoginAlternativeProps>();
 const emit = defineEmits<LoginAlternativeEmits>();

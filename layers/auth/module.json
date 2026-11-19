@@ -1,13 +1,9 @@
 {
   "title": "Authentication",
-  "description": "Sessions, password sign-in, and account pages.",
+  "description": "Accounts, sessions and the sign-in page that sign-in methods plug into.",
   "group": "Authentication",
-  "requires": ["database", "email"],
-  "dependencies": ["@nuxtjs/turnstile", "nuxt-auth-utils"],
-  "env": [
-    "NUXT_SESSION_PASSWORD",
-    "CSRF_SECRET",
-    "NUXT_TURNSTILE_SITE_KEY",
-    "NUXT_TURNSTILE_SECRET_KEY"
-  ]
+  "requires": ["database"],
+  "requiresOneOf": ["auth-password", "auth-oauth"],
+  "dependencies": ["nuxt-auth-utils"],
+  "env": ["NUXT_SESSION_PASSWORD", "CSRF_SECRET"]
 }

@@ -1,8 +1,8 @@
 {
   "title": "Admin",
-  "description": "Admin area shell: route guards, the seed endpoint, and the admin landing page.",
+  "description": "Admin area shell: route guards, who becomes an admin, the seed endpoint, and the admin landing page.",
   "group": "App",
   "requires": ["auth", "dashboard"],
   "scripts": ["db:seed"],
-  "env": ["NUXT_DEFAULT_ADMIN_PASSWORD", "NUXT_SEED_SECRET"]
+  "env": ["NUXT_SEED_SECRET"]
 }

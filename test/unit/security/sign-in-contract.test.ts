@@ -39,7 +39,7 @@ beforeEach(async () => {
     DROP TABLE IF EXISTS users;
     CREATE TABLE users (
       id INTEGER PRIMARY KEY, username TEXT NOT NULL, name TEXT NOT NULL,
-      password TEXT NOT NULL, email TEXT NOT NULL, email_verified INTEGER DEFAULT 0,
+      email TEXT NOT NULL, email_verified INTEGER DEFAULT 0,
       is_admin INTEGER DEFAULT 0, is_locked INTEGER DEFAULT 0,
       last_login_at INTEGER, created_at INTEGER, updated_at INTEGER
     );
@@ -48,7 +48,6 @@ beforeEach(async () => {
     id: 1,
     username: 'member',
     name: 'Member',
-    password: '',
     email: 'member@example.com',
   });
   signedInHandlers.length = 0;
@@ -67,7 +66,6 @@ beforeEach(async () => {
   }));
   vi.stubGlobal('createError', (options: object) => Object.assign(new Error('API error'), options));
   vi.stubGlobal('defineNitroPlugin', (plugin: () => void) => plugin);
-  vi.stubGlobal('sendRedirect', (_event: object, location: string) => ({ redirect: location }));
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -151,17 +149,14 @@ describe('login policies by method', () => {
     expect(seen).toEqual(['password', 'oauth', 'passkey']);
   });
 
-  it('stops a locked account on every method, keeping the password redirect', async () => {
+  it('denies a locked account on every method', async () => {
     const { completeSignIn } = await loadSignIn();
     const { default: accountLock } =
       await import('../../../layers/auth/server/plugins/account-lock');
     accountLock();
     await db.update(users).set({ isLocked: true });
 
-    expect(
-      await completeSignIn(event, await getUser(), { method: 'password', redirectTo: '/' }),
-    ).toEqual({ kind: 'respond', body: { redirect: '/auth/login?error=account-locked' } });
-    for (const method of ['oauth', 'passkey']) {
+    for (const method of ['password', 'oauth', 'passkey']) {
       expect(
         await completeSignIn(event, await getUser(), { method, redirectTo: '/' }),
       ).toMatchObject({

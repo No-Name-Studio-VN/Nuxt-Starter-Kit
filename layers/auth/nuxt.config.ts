@@ -15,7 +15,7 @@ const dashboardRouteRules = Object.fromEntries(
 );
 
 export default defineNuxtConfig({
-  modules: ['nuxt-auth-utils', '@nuxtjs/turnstile'],
+  modules: ['nuxt-auth-utils'],
 
   i18n: {
     locales: [
@@ -25,9 +25,6 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    turnstile: {
-      secretKey: '',
-    },
     session: {
       password: '',
       // Without maxAge the session cookie is written with no Expires, so it only
@@ -55,18 +52,5 @@ export default defineNuxtConfig({
         include: [resolve('./auth.d.ts')],
       },
     },
-  },
-
-  security: {
-    headers: {
-      contentSecurityPolicy: {
-        // Turnstile's challenge widget.
-        'style-src': ['https://challenges.cloudflare.com'],
-      },
-    },
-  },
-
-  turnstile: {
-    siteKey: process.env.NUXT_TURNSTILE_SITE_KEY,
   },
 });

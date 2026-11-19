@@ -8,7 +8,7 @@
         </p>
       </div>
 
-      <Button @click="openAddDialog">
+      <Button v-if="canSetPasswords" @click="openAddDialog">
         <UserPlus class="size-4" />
         Add user
       </Button>
@@ -139,7 +139,7 @@
                   </Field>
                 </VeeField>
 
-                <VeeField v-slot="{ field, errors }" name="password">
+                <VeeField v-if="canSetPasswords" v-slot="{ field, errors }" name="password">
                   <Field :data-invalid="!!errors.length">
                     <FieldLabel for="admin-user-password"> Password </FieldLabel>
                     <Input
@@ -221,6 +221,7 @@
 </template>
 
 <script setup lang="ts">
+import '#layers/auth/types/extensions';
 import { computed, onMounted, ref } from 'vue';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { toast } from 'vue-sonner';
@@ -272,6 +273,10 @@ const defaultFormData: UserFormValues = {
   isAdmin: false,
 };
 
+// Passwords exist only when password sign-in is installed; it registers the `password` login method.
+const canSetPasswords = getExtensions('auth:login:methods').some(
+  (entry) => entry.id === 'password',
+);
 const isEditing = computed(() => editingUserId.value !== null);
 const validationSchema = computed(() =>
   isEditing.value ? adminUserEditFormSchema : adminUserCreateFormSchema,

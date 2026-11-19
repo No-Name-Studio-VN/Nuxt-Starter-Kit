@@ -6,7 +6,7 @@ import {
 } from '#layers/server-core/server/utils/apiResponse';
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
 import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwoFactor';
-import userService from '#layers/auth/server/utils/database/user';
+import userPasswordService from '#layers/auth-password/server/utils/database/userPassword';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import type { TwoFactorSetupPayload } from '#layers/auth-2fa/types/twoFactor';
 import { setupTotpSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
@@ -29,18 +29,7 @@ export default defineEventHandler(async (event) => {
 
   const { password } = result.data;
 
-  const user = await userService.getById(userId);
-  if (!user) {
-    throw apiError({
-      status: 404,
-      statusText: 'Not Found',
-      message: 'Not Found. User not found.',
-      code: 'USER_NOT_FOUND',
-    });
-  }
-
-  const isPasswordValid = await verifyPassword(user.password, password);
-  if (!isPasswordValid) {
+  if (!(await userPasswordService.verify(userId, password))) {
     throw apiError({
       status: 401,
       statusText: 'Unauthorized',

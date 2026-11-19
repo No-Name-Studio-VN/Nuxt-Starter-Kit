@@ -28,9 +28,8 @@ vi.mock('../../../layers/server-core/server/utils/reportServerError', () => ({
 
 const config = {
   seed: { secret: 'test-seed-secret' },
-  defaultAdminPassword: 'test-admin-password',
 };
-const summary = { admin: { created: true, verified: true, username: 'admin' } };
+const summary = { featureFlags: { created: 1 } };
 const seedDatabase = vi.fn().mockResolvedValue({ summary, tasks: [] });
 const requireUserSession = vi.fn(async () => {
   throw createError({ status: 401, statusText: 'Unauthorized' });
@@ -50,7 +49,6 @@ async function request(path = '/api/admin/seed', headers: HeadersInit = {}, meth
 beforeEach(() => {
   vi.clearAllMocks();
   config.seed.secret = 'test-seed-secret';
-  config.defaultAdminPassword = 'test-admin-password';
   vi.stubGlobal('defineEventHandler', defineEventHandler);
   vi.stubGlobal('createError', createError);
   vi.stubGlobal('getHeader', getHeader);
@@ -94,7 +92,7 @@ describe('POST /api/admin/seed bootstrap authentication', () => {
       data: summary,
       message: 'Database seed completed.',
     });
-    expect(seedDatabase).toHaveBeenCalledExactlyOnceWith('test-admin-password');
+    expect(seedDatabase).toHaveBeenCalledExactlyOnceWith();
     expect(requireUserSession).not.toHaveBeenCalled();
     expect(userService.getById).not.toHaveBeenCalled();
   });
@@ -130,16 +128,6 @@ describe('POST /api/admin/seed bootstrap authentication', () => {
       expect(requireUserSession).not.toHaveBeenCalled();
     },
   );
-
-  it('requires a configured default admin password before seeding', async () => {
-    config.defaultAdminPassword = '';
-    const response = await request('/api/admin/seed', { 'x-seed-secret': 'test-seed-secret' });
-    expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({
-      data: { success: false, error: { code: 'DEFAULT_ADMIN_PASSWORD_NOT_CONFIGURED' } },
-    });
-    expect(seedDatabase).not.toHaveBeenCalled();
-  });
 });
 
 describe('admin guard boundaries', () => {
@@ -165,7 +153,6 @@ describe('admin guard boundaries', () => {
       id: 1,
       username: 'member',
       name: 'Member',
-      password: 'internal-hash',
       email: 'member@example.com',
       emailVerified: true,
       isAdmin: false,
@@ -193,7 +180,6 @@ describe('admin guard boundaries', () => {
       id: 1,
       username: 'member',
       name: 'Member',
-      password: 'internal-hash',
       email: 'member@example.com',
       emailVerified: true,
       isAdmin: false,

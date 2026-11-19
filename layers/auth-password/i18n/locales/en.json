@@ -1,0 +1,11 @@
+{
+  "auth_password": {
+    "forgot_password": "Forgot password?",
+    "forgot_password_title": "Forgot your password?",
+    "forgot_password_description": "Enter your email address to receive a password reset link.",
+    "register_title": "Create an account",
+    "register_description": "Create an account to get started.",
+    "reset_password_title": "Reset your password",
+    "reset_password_description": "Choose a new password for your account."
+  }
+}

@@ -15,7 +15,6 @@ export type SafeUser = Pick<
   | 'updatedAt'
 >;
 export type DBLockScreen = typeof tables.userLockScreen.$inferSelect;
-export type DBAuthToken = typeof tables.authTokens.$inferSelect;
 export interface SessionUser {
   id: number;
   username: string;
@@ -24,17 +23,7 @@ export interface SessionUser {
   skipLockOnInit?: boolean;
 }
 
-export type AuthErrorCode =
-  | 'validation'
-  | 'captcha'
-  | 'existed'
-  | 'email-existed'
-  | 'unknown'
-  | 'invalid-credentials'
-  | 'reset-invalid-token'
-  | 'reset-token-expired';
-
-export type AuthSuccessCode = 'password-reset' | 'reset-link-sent';
+export type AuthErrorCode = 'validation' | 'unknown';
 
 export interface AuthMessages {
   errors: Record<string, string>;

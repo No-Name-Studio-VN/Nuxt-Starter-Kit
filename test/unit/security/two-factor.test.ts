@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/libsql';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { users, userLockScreen } from '../../../layers/auth/server/db/schema.sqlite';
 import { userTwoFactor } from '../../../layers/auth-2fa/server/db/schema.sqlite';
+import { userPasswords } from '../../../layers/auth-password/server/db/schema.sqlite';
 import userTwoFactorService from '../../../layers/auth-2fa/server/utils/database/userTwoFactor';
 import {
   loginTwoFactorSchema,
@@ -21,7 +22,7 @@ vi.mock('../../../layers/auth/server/utils/authorization', () => ({
 const client = createClient({ url: ':memory:' });
 const db = drizzle(client);
 const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
-let body = { code: '' };
+let body: Record<string, string> = { code: '' };
 
 const defineHandler = vi.fn((handler: (event: object) => Promise<object>) => () => handler({}));
 
@@ -31,10 +32,11 @@ beforeEach(async () => {
   await client.executeMultiple(`
     DROP TABLE IF EXISTS user_two_factor;
     DROP TABLE IF EXISTS user_lock_screen;
+    DROP TABLE IF EXISTS user_passwords;
     DROP TABLE IF EXISTS users;
     CREATE TABLE users (
       id INTEGER PRIMARY KEY, username TEXT NOT NULL, name TEXT NOT NULL,
-      password TEXT NOT NULL, email TEXT NOT NULL, email_verified INTEGER DEFAULT 0,
+      email TEXT NOT NULL, email_verified INTEGER DEFAULT 0,
       is_admin INTEGER DEFAULT 0, is_locked INTEGER DEFAULT 0,
       last_login_at INTEGER, created_at INTEGER, updated_at INTEGER
     );
@@ -48,14 +50,17 @@ beforeEach(async () => {
       failed_attempts INTEGER NOT NULL DEFAULT 0, last_failed_attempt INTEGER,
       last_activity_time INTEGER, created_at INTEGER, updated_at INTEGER
     );
+    CREATE TABLE user_passwords (
+      user_id INTEGER PRIMARY KEY, password_hash TEXT NOT NULL, updated_at INTEGER NOT NULL
+    );
   `);
   await db.insert(users).values({
     id: 1,
     username: 'member',
     name: 'Member',
-    password: 'hash',
     email: 'member@example.com',
   });
+  await db.insert(userPasswords).values({ userId: 1, passwordHash: 'hashed:Secret#123' });
   await db.insert(userTwoFactor).values({
     userId: 1,
     secret,
@@ -63,7 +68,12 @@ beforeEach(async () => {
     backupCodes: ['AB12CD34', 'EF56GH78'],
   });
   await db.insert(userLockScreen).values({ userId: 1 });
-  vi.stubGlobal('tables', { users, userTwoFactor, userLockScreen });
+  vi.stubGlobal('tables', { users, userTwoFactor, userLockScreen, userPasswords });
+  vi.stubGlobal(
+    'verifyPassword',
+    async (hash: string, password: string) => hash === `hashed:${password}`,
+  );
+  vi.stubGlobal('requireUserSession', async () => ({ user: { id: 1, username: 'member' } }));
   vi.stubGlobal('useDB', () => db);
   vi.resetModules();
   defineHandler.mockClear();
@@ -100,6 +110,47 @@ it('generates ten unique exact-format backup codes even when Math.random returns
     expect(code).toMatch(/^[A-Z0-9]{8}$/);
     expect(loginTwoFactorSchema.safeParse({ code }).success).toBe(true);
   }
+});
+
+describe('2FA setup and disable check the password', () => {
+  async function load(route: 'setup.post' | 'disable.delete') {
+    await import(`../../../layers/auth-2fa/server/api/users/[id]/2fa/${route}.ts`);
+    const handler = defineHandler.mock.results[0]?.value;
+    if (!handler) throw new Error(`Missing ${route} handler`);
+    return handler;
+  }
+
+  it('disables 2FA only with the account password', async () => {
+    const disable = await load('disable.delete');
+    body = { password: 'Wrong#123' };
+    await expect(disable()).rejects.toMatchObject({
+      status: 401,
+      data: { error: { code: 'INVALID_PASSWORD' } },
+    });
+    expect((await userTwoFactorService.getById(1))?.enabled).toBe(true);
+
+    body = { password: 'Secret#123' };
+    expect(await disable()).toMatchObject({ success: true });
+    expect((await userTwoFactorService.getById(1))?.enabled).toBe(false);
+  });
+
+  it('refuses setup for an account without a password', async () => {
+    await userTwoFactorService.update({ userId: 1, enabled: false });
+    await db.delete(userPasswords);
+    const setup = await load('setup.post');
+    body = { password: 'Secret#123' };
+    await expect(setup()).rejects.toMatchObject({
+      status: 401,
+      data: { error: { code: 'INVALID_PASSWORD' } },
+    });
+  });
+
+  it('starts setup with the account password', async () => {
+    await userTwoFactorService.update({ userId: 1, enabled: false });
+    const setup = await load('setup.post');
+    body = { password: 'Secret#123' };
+    expect(await setup()).toMatchObject({ success: true, data: { uri: expect.any(String) } });
+  });
 });
 
 describe('two-factor code schemas', () => {
