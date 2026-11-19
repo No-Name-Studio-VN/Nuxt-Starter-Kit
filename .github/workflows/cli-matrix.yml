@@ -79,28 +79,28 @@ jobs:
             modules: pwa
           - name: base + content
             modules: content
+          - name: base + content studio
+            modules: content-studio
           - name: base + database
             modules: database
-          - name: base + auth
-            modules: auth
-          - name: base + admin
-            modules: admin
-          - name: base + admin users
-            modules: admin-users
-          - name: base + admin kv
-            modules: admin-kv
-          - name: base + feature flags
-            modules: feature-flags
-          - name: base + 2fa
-            modules: auth-2fa
-          - name: base + passkeys
-            modules: auth-passkeys
-          - name: base + email verification
-            modules: auth-email-verification
+          - name: base + dashboard
+            modules: dashboard
+          - name: base + password sign-in
+            modules: auth-password
+          - name: base + oauth sign-in
+            modules: auth-oauth
+          - name: base + password and oauth sign-in
+            modules: auth-password,auth-oauth
+          - name: base + password add-ons
+            modules: auth-2fa,auth-email-verification,auth-passkeys
+          - name: base + admin users without password
+            modules: admin-users,auth-oauth
+          - name: base + admin kv and feature flags
+            modules: admin-kv,feature-flags,auth-password
           - name: all modules
-            modules: admin,admin-kv,admin-users,auth,auth-2fa,auth-email-verification,auth-passkeys,content,database,feature-flags,pwa
-          - name: lifecycle (auth + add admin-users)
-            modules: auth
+            modules: admin,admin-kv,admin-users,auth,auth-2fa,auth-email-verification,auth-oauth,auth-passkeys,auth-password,content,content-studio,dashboard,database,feature-flags,pwa
+          - name: lifecycle (oauth, then password and its add-ons)
+            modules: auth-oauth
             lifecycle: true
     steps:
       - uses: actions/checkout@v4
@@ -135,14 +135,29 @@ jobs:
         working-directory: ${{ runner.temp }}/generated
         run: git init --quiet
 
-      - name: Add admin-users to an existing auth project
+      - name: Add and remove modules on an existing project
         if: matrix.lifecycle == true
         working-directory: ${{ runner.temp }}/generated
         run: |
-          git add -A
-          git -c user.name=ci -c user.email=ci@local commit -qm init
-          node "$GITHUB_WORKSPACE/packages/create-nuxt-saas/bin/nuxt-saas.mjs" add admin-users \
-            --kit "$GITHUB_WORKSPACE"
+          CLI="$GITHUB_WORKSPACE/packages/create-nuxt-saas/bin/nuxt-saas.mjs"
+          commit() {
+            git add -A
+            git -c user.name=ci -c user.email=ci@local commit -qm "$1"
+          }
+          # auth without a sign-in method is refused and writes nothing.
+          if node "$CLI" init "$RUNNER_TEMP/refused" --yes --kit "$GITHUB_WORKSPACE" --no-git --modules auth; then exit 1; fi
+          test ! -e "$RUNNER_TEMP/refused"
+          commit init
+          node "$CLI" add auth-password --kit "$GITHUB_WORKSPACE"
+          commit "add password"
+          node "$CLI" add auth-2fa --kit "$GITHUB_WORKSPACE"
+          commit "add 2fa"
+          # 2FA still needs password, so removing password alone is refused.
+          if node "$CLI" remove auth-password --kit "$GITHUB_WORKSPACE"; then exit 1; fi
+          node "$CLI" remove auth-2fa,auth-password --kit "$GITHUB_WORKSPACE"
+          commit "remove password"
+          test ! -d layers/auth-password
+          test ! -d layers/email
 
       - name: Check for module leaks
         working-directory: ${{ runner.temp }}/generated

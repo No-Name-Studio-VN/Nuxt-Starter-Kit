@@ -30,6 +30,6 @@ Extension points for sign-in methods and other modules:
   See `types/loginSteps.ts`.
 - Nav menu `userMenu`, through `registerNavItem()`.
 
-Env keys to fill: `NUXT_SESSION_PASSWORD` (at least 32 characters) and `CSRF_SECRET`.
+Env key to fill: `NUXT_SESSION_PASSWORD` (at least 32 characters).
 
 Follow-up commands: `pnpm db:generate` to create the auth tables' migrations, then `pnpm deploy:db`.
