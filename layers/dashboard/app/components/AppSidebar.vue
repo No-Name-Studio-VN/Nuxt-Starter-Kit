@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ArrowLeft, SearchIcon, LogIn, LogOut } from '@lucide/vue';
+import { ArrowLeft, SearchIcon } from '@lucide/vue';
 
-import NavMain from '#layers/auth/app/components/nav/NavMain.vue';
-import NavSecondary from '#layers/auth/app/components/nav/NavSecondary.vue';
-import NavUser from '#layers/auth/app/components/nav/NavUser.vue';
+import NavMain from '#layers/dashboard/app/components/nav/NavMain.vue';
+import NavSecondary from '#layers/dashboard/app/components/nav/NavSecondary.vue';
 import type { SidebarProps } from '@/components/ui/sidebar';
 import {
   Sidebar,
@@ -24,23 +23,20 @@ const props = withDefaults(defineProps<SidebarProps>(), {
 
 const { toggleIsOpen } = useHotSearch();
 const { open } = useSidebar();
-const { primarySections, secondarySections, showBack, showMainSidebar } = useSidebarContext();
-const { loggedIn, clear } = useUserSession();
-
-async function logout() {
-  clear().then(() => {
-    location.reload();
-  });
-}
+const {
+  primarySections,
+  secondarySections,
+  showBack,
+  showMainSidebar,
+  clearSidebarContextOverride,
+} = useSidebarContext();
 </script>
 
 <template>
   <Sidebar v-bind="props">
     <SidebarHeader>
       <SidebarMenu class="space-y-2">
-        <SidebarMenuItem>
-          <NavUser />
-        </SidebarMenuItem>
+        <ExtensionSlot name="sidebar:user" @navigate="clearSidebarContextOverride" />
         <SidebarMenuItem>
           <SidebarMenuButton
             as-child
@@ -97,18 +93,6 @@ async function logout() {
     <Separator />
     <SidebarFooter>
       <ExtensionSlot name="sidebar:footer" :sidebar-open="open" />
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <Button v-if="loggedIn" class="w-full" variant="destructive" @click="logout">
-            <LogOut class="size-4" />
-            {{ $t('common.log_out') }}
-          </Button>
-          <Button v-else class="w-full" @click="navigateTo('/auth/login')">
-            <LogIn class="size-4" />
-            {{ $t('common.sign_in') }}
-          </Button>
-        </SidebarMenuItem>
-      </SidebarMenu>
     </SidebarFooter>
   </Sidebar>
 </template>

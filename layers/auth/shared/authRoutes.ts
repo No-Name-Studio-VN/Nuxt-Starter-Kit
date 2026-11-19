@@ -16,7 +16,6 @@ export const authRoutes = {
   AUTH_GOOGLE_ONE_TAP: '/api/auth/google-one-tap',
   AUTH_ACCOUNT_STATUS: '/api/auth/account-status',
   MY_PASSWORD: '/api/users/me/password',
-  ACCOUNT_DELETE: '/api/account',
   MY_PROFILE_UPDATE: '/api/users/me/profile',
 
   userProfile: (userId: string | number) => `/api/users/${userId}/profile`,

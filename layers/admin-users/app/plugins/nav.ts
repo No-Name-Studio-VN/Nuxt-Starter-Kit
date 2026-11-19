@@ -1,8 +1,8 @@
-import '#layers/auth/types/extensions';
+import '#layers/dashboard/types/extensions';
 import '#layers/admin/types/extensions';
 import { UsersIcon } from '@lucide/vue';
 import type { AdminCardRecord } from '#layers/admin/types/adminCards';
-import type { SidebarNavRecord } from '#layers/auth/types/sidebar';
+import type { SidebarNavRecord } from '#layers/dashboard/types/sidebar';
 
 const sidebarRecords: SidebarNavRecord[] = [
   {

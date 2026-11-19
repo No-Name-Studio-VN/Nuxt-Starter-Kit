@@ -1,27 +1,12 @@
-import type {
-  SidebarContext,
-  SidebarGuardContext,
-  SidebarSection,
-} from '#layers/auth/types/sidebar';
-import { getSidebarContexts, SIDEBAR_GUARD_CONTEXT_KEY } from '#layers/auth/app/constants/sidebar';
+import type { SidebarContext } from '#layers/dashboard/types/sidebar';
+import { getVisibleSidebarContexts } from '#layers/dashboard/app/constants/sidebar';
 
 const sidebarContextOverride = ref<string | null>(null);
 
 export function useSidebarContext() {
   const route = useRoute();
-  const { user } = useUserSession();
-
-  /**
-   * What the guards read besides the user. A module such as feature-flags provides
-   * live values from an app plugin; without one every guard sees an empty flag set.
-   */
-  const guardContextSource = inject(SIDEBAR_GUARD_CONTEXT_KEY, null);
-  const guardContext =
-    guardContextSource?.() ?? computed<SidebarGuardContext>(() => ({ flags: {} }));
-
-  // Layer plugins fill the nav registry while the app starts, after this module
-  // loads, so the contexts are read here rather than once at import time.
-  const contexts = computed(() => getSidebarContexts());
+  const guardContext = useNavGuardContext();
+  const contexts = computed(() => getVisibleSidebarContexts(guardContext.value));
 
   const defaultContext = computed<SidebarContext>(() => {
     const firstContext = contexts.value[0];
@@ -31,15 +16,9 @@ export function useSidebarContext() {
     return contexts.value.find((ctx) => ctx.id === 'main') ?? firstContext;
   });
 
-  const getContextById = (id: string) => {
-    return contexts.value.find(
-      (ctx) => ctx.id === id && (!ctx.guard || ctx.guard(user.value, guardContext.value)),
-    );
-  };
-
   const activeContext = computed<SidebarContext>(() => {
     if (sidebarContextOverride.value) {
-      const overrideContext = getContextById(sidebarContextOverride.value);
+      const overrideContext = contexts.value.find((ctx) => ctx.id === sidebarContextOverride.value);
       if (overrideContext) return overrideContext;
     }
 
@@ -53,17 +32,12 @@ export function useSidebarContext() {
           contexts.value.some((c) => c.match !== '/' && path.startsWith(c.match))
         )
           return false;
-        if (ctx.guard && !ctx.guard(user.value, guardContext.value)) return false;
         return true;
       }) ?? defaultContext.value
     );
   });
 
-  const visibleSections = computed<SidebarSection[]>(() => {
-    return activeContext.value.sections.filter(
-      (section) => !section.guard || section.guard(user.value, guardContext.value),
-    );
-  });
+  const visibleSections = computed(() => activeContext.value.sections);
 
   const primarySections = computed(() => visibleSections.value.filter((s) => !s.secondary));
 
@@ -89,7 +63,6 @@ export function useSidebarContext() {
   );
 
   return {
-    guardContext,
     activeContext,
     visibleSections,
     primarySections,

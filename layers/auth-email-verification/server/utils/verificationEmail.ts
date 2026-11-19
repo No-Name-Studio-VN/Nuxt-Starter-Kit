@@ -1,5 +1,5 @@
 import { APP_MANIFEST } from '#shared/constants/manifest';
-import { sendEmail } from '#layers/auth/server/utils/email';
+import { sendEmail } from '#layers/email/server/utils/email';
 
 export function sendVerificationEmail(
   to: string,

@@ -1,0 +1,11 @@
+{
+  "common": {
+    "back": "Quay lại",
+    "home": "Trang chủ",
+    "toggle_sidebar": "Ẩn hoặc hiện thanh bên"
+  },
+  "nav": {
+    "open_breadcrumb": "Hiện đường dẫn điều hướng",
+    "quick_search": "Tìm kiếm nhanh"
+  }
+}

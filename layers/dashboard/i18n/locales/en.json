@@ -1,0 +1,11 @@
+{
+  "common": {
+    "back": "Back",
+    "home": "Home",
+    "toggle_sidebar": "Toggle sidebar"
+  },
+  "nav": {
+    "open_breadcrumb": "Show breadcrumb navigation",
+    "quick_search": "Quick search"
+  }
+}

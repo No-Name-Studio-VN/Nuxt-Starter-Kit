@@ -1,7 +1,7 @@
 import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
 import userService from '#layers/auth/server/utils/database/user';
 import authTokenService from '#layers/auth/server/utils/database/authToken';
-import { sendPasswordResetEmail } from '#layers/auth/server/utils/email';
+import { sendPasswordResetEmail } from '#layers/auth/server/utils/passwordResetEmail';
 import { AuthTokenType } from '#layers/auth/shared/constants/authTokens';
 import { forgotPasswordSchema } from '#layers/auth/shared/schemas/userSchema';
 

@@ -1,7 +1,11 @@
-import { markRaw, shallowReactive } from 'vue';
+import { computed, markRaw, shallowReactive } from 'vue';
+import type { NuxtApp } from '#app';
 import type {
   ExtensionEntry,
   ExtensionSlotName,
+  NavGuardContext,
+  NavGuardContextProvider,
+  NavGuardContextProviders,
   NavMenu,
   NavMenus,
   NavRegistry,
@@ -10,6 +14,8 @@ import type {
 // Registries hold static layer contributions, never request-specific state.
 const extensions = shallowReactive(new Map<ExtensionSlotName, Map<string, ExtensionEntry>>());
 const navItems: NavRegistry = shallowReactive<NavRegistry>({});
+
+const navGuardProviders = new WeakMap<NuxtApp, NavGuardContextProviders>();
 
 export function registerExtension(slot: ExtensionSlotName, entry: ExtensionEntry): void {
   let entries = extensions.get(slot);
@@ -45,4 +51,31 @@ export function registerNavItem<M extends NavMenu>(menu: M, record: NavMenus[M])
 
 export function getNavItems<M extends NavMenu>(menu: M): readonly NavMenus[M][] {
   return [...(navItems[menu]?.values() ?? [])].sort((a, b) => a.order - b.order);
+}
+
+export function registerNavGuardContext<K extends keyof NavGuardContext>(
+  key: K,
+  setup: NavGuardContextProvider<K>,
+): void {
+  const app = useNuxtApp();
+  const providers: NavGuardContextProviders = navGuardProviders.get(app) ?? new Map();
+  providers.set(key, () => {
+    const value = setup();
+    return (context: NavGuardContext) => {
+      context[key] = value.value;
+    };
+  });
+  navGuardProviders.set(app, providers);
+}
+
+export function useNavGuardContext() {
+  // Set up providers in the consuming component so they can register lifecycle hooks.
+  const providers = navGuardProviders.get(useNuxtApp());
+  const read = [...(providers?.values() ?? [])].map((setup) => setup());
+
+  return computed<NavGuardContext>(() => {
+    const context: NavGuardContext = {};
+    for (const apply of read) apply(context);
+    return context;
+  });
 }

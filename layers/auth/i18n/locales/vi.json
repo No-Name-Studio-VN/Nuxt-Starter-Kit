@@ -13,14 +13,7 @@
     "reset_password_description": "Chọn mật khẩu mới cho tài khoản của bạn."
   },
   "common": {
-    "back": "Quay lại",
-    "home": "Trang chủ",
     "log_out": "Đăng xuất",
-    "sign_in": "Đăng nhập",
-    "toggle_sidebar": "Ẩn hoặc hiện thanh bên"
-  },
-  "nav": {
-    "open_breadcrumb": "Hiện đường dẫn điều hướng",
-    "quick_search": "Tìm kiếm nhanh"
+    "sign_in": "Đăng nhập"
   }
 }

@@ -2,7 +2,7 @@
 import type { VueElement } from 'vue';
 import { cn } from '@/lib/utils';
 import MaxWidthWrapper from '@/components/MaxWidthWrapper.vue';
-import { ChevronLeft, HomeIcon, LogInIcon } from '@lucide/vue';
+import { ChevronLeft, HomeIcon } from '@lucide/vue';
 import type { BreadcrumbItemType } from '~~/types/common';
 
 const router = useRouter();
@@ -108,8 +108,6 @@ withDefaults(
     hideHeader: false,
   },
 );
-
-const { loggedIn, user } = useUserSession();
 </script>
 
 <template>
@@ -195,15 +193,7 @@ const { loggedIn, user } = useUserSession();
           </BreadcrumbList>
         </Breadcrumb>
         <div class="ml-auto flex items-center gap-2">
-          <Button
-            v-if="!loggedIn || !user"
-            variant="default"
-            size="sm"
-            @click="navigateTo('/auth/login')"
-          >
-            <LogInIcon />
-            <span class="hidden sm:flex">Sign In</span>
-          </Button>
+          <ExtensionSlot name="dashboard:header:actions" />
           <component :is="titleControls" v-if="titleControls" />
           <slot name="title-controls" />
         </div>

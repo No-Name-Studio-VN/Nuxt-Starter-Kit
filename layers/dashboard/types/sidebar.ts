@@ -1,7 +1,5 @@
-import type { Component, ComputedRef } from 'vue';
-// The session user, not the database row: sidebar guards run in the browser
-// against whatever `useUserSession()` exposes.
-import type { User } from '#auth-utils';
+import type { Component } from 'vue';
+import type { NavGuard } from '~~/types/extensions';
 
 export type SidebarItem = {
   title: string;
@@ -10,34 +8,19 @@ export type SidebarItem = {
   items?: SidebarItem[];
 };
 
-export type SidebarGuardUser = User | null | undefined;
-
-export type SidebarGuardContext = {
-  flags: Record<string, boolean>;
-};
-
-/**
- * Supplies the live guard context. A module provides one from an app plugin under
- * `SIDEBAR_GUARD_CONTEXT_KEY`; `useSidebarContext()` calls it during component setup.
- */
-export type SidebarGuardContextSource = () => ComputedRef<SidebarGuardContext>;
-
-/** Access guard — return false to hide the entry */
-export type SidebarGuard = (user: SidebarGuardUser, context: SidebarGuardContext) => boolean;
-
 export interface SidebarSection {
   title: string;
   items: SidebarItem[];
   /** Push to bottom of sidebar (e.g. "Support") */
   secondary?: boolean;
   /** Per-section access guard */
-  guard?: SidebarGuard;
+  guard?: NavGuard;
 }
 
 export interface SidebarContext {
   /** Unique key used as transition key */
   id: string;
-  /** Route prefix that activates this context (e.g. '/settings') */
+  /** Route prefix that activates this context (e.g. '/admin') */
   match: string;
   /** Grouped nav sections to render */
   sections: SidebarSection[];
@@ -46,7 +29,7 @@ export interface SidebarContext {
   /** Show "Back" button in header */
   showBack?: boolean;
   /** Access guard — return false to skip this context */
-  guard?: SidebarGuard;
+  guard?: NavGuard;
 }
 
 export interface SidebarContextRecord extends Omit<SidebarContext, 'sections'> {
@@ -78,13 +61,3 @@ export interface SidebarItemRecord extends SidebarItem {
  * sorts each level by `order`.
  */
 export type SidebarNavRecord = SidebarContextRecord | SidebarSectionRecord | SidebarItemRecord;
-
-/** One entry of the `userMenu` nav menu, the account dropdown in the sidebar header. */
-export interface UserMenuRecord {
-  id: string;
-  order: number;
-  title: string;
-  to: string;
-  icon: Component;
-  guard?: SidebarGuard;
-}

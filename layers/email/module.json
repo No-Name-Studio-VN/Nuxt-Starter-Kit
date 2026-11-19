@@ -1,0 +1,7 @@
+{
+  "title": "Email transport",
+  "description": "Transactional email delivery through Resend.",
+  "internal": true,
+  "requires": [],
+  "env": ["NUXT_RESEND_API_KEY", "NUXT_RESEND_FROM_EMAIL"]
+}

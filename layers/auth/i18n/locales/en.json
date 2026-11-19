@@ -13,14 +13,7 @@
     "reset_password_description": "Choose a new password for your account."
   },
   "common": {
-    "back": "Back",
-    "home": "Home",
     "log_out": "Log out",
-    "sign_in": "Sign in",
-    "toggle_sidebar": "Toggle sidebar"
-  },
-  "nav": {
-    "open_breadcrumb": "Show breadcrumb navigation",
-    "quick_search": "Quick search"
+    "sign_in": "Sign in"
   }
 }

@@ -2,21 +2,26 @@
 import { ref, computed, watch } from 'vue';
 import { useMagicKeys } from '@vueuse/core';
 import { Search } from '@lucide/vue';
-import { getAllSidebarItems } from '#layers/auth/app/constants/sidebar';
-import { useHotSearch } from '#layers/auth/app/composables/useHotSearch';
+import { getVisibleSidebarContexts } from '#layers/dashboard/app/constants/sidebar';
+import { useHotSearch } from '#layers/dashboard/app/composables/useHotSearch';
 
 const { isOpen: hotSearchOpen, toggleIsOpen, setIsOpen } = useHotSearch();
 const searchQuery = ref('');
 
-const features = getAllSidebarItems();
+const guardContext = useNavGuardContext();
+const features = computed(() =>
+  getVisibleSidebarContexts(guardContext.value).flatMap((ctx) =>
+    ctx.sections.flatMap((section) => section.items),
+  ),
+);
 
 const filteredFeatures = computed(() => {
-  if (!searchQuery.value) return features;
+  if (!searchQuery.value) return features.value;
   const query = searchQuery.value.toLowerCase();
-  return features.filter((feature) => feature.title.toLowerCase().includes(query));
+  return features.value.filter((feature) => feature.title.toLowerCase().includes(query));
 });
 
-const handleSelectFeature = (feature: (typeof features)[number]) => {
+const handleSelectFeature = (feature: (typeof features.value)[number]) => {
   if (!feature.url) return;
 
   navigateTo(feature.url);

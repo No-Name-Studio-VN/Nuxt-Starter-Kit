@@ -1,4 +1,5 @@
-import type { SidebarNavRecord, UserMenuRecord } from '#layers/auth/types/sidebar';
+import type { User } from '#auth-utils';
+import type { UserMenuRecord } from '#layers/auth/types/userMenu';
 
 declare module '~~/types/extensions' {
   interface ExtensionSlots {
@@ -6,12 +7,16 @@ declare module '~~/types/extensions' {
     'auth:login:alternatives': true;
     /** Login steps; the one whose id matches `?step=` replaces the password form. */
     'auth:login:steps': true;
-    /** Extra entries at the top of the dashboard sidebar footer. */
+    'sidebar:user': true;
     'sidebar:footer': true;
+    'dashboard:header:actions': true;
+  }
+
+  interface NavGuardContext {
+    user?: User | null;
   }
 
   interface NavMenus {
-    sidebar: SidebarNavRecord;
     userMenu: UserMenuRecord;
   }
 }

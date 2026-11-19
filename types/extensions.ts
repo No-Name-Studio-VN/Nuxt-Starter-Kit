@@ -1,4 +1,4 @@
-import type { Component } from 'vue';
+import type { Component, Ref } from 'vue';
 
 export interface ExtensionSlots {
   'app:root': true;
@@ -31,6 +31,20 @@ export interface NavRecord {
     icon?: string;
   }[];
 }
+
+/** Contributions are optional because not every app installs their provider. */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- layers add keys by declaration merging
+export interface NavGuardContext {}
+
+export type NavGuard = (context: NavGuardContext) => boolean;
+export type NavGuardContextProvider<K extends keyof NavGuardContext> = () => Readonly<
+  Ref<NavGuardContext[K]>
+>;
+
+export type NavGuardContextProviders = Map<
+  keyof NavGuardContext,
+  () => (context: NavGuardContext) => void
+>;
 
 export interface NavMenus {
   header: NavRecord;

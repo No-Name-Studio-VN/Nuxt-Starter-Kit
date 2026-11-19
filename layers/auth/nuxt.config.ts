@@ -1,6 +1,18 @@
 import { createResolver } from '@nuxt/kit';
+import type { NuxtConfig } from 'nuxt/schema';
+import { defaultLocale, locales } from '../../i18n-constants';
 
 const { resolve } = createResolver(import.meta.url);
+
+const dashboardAuthRule = { appMiddleware: ['auth'] } satisfies NonNullable<
+  NuxtConfig['routeRules']
+>[string];
+
+const dashboardRouteRules = Object.fromEntries(
+  ['', ...locales.filter((locale) => locale !== defaultLocale).map((locale) => `/${locale}`)]
+    .flatMap((prefix) => [`${prefix}/dashboard`, `${prefix}/dashboard/**`])
+    .map((path) => [path, dashboardAuthRule]),
+);
 
 export default defineNuxtConfig({
   modules: ['nuxt-auth-utils', '@nuxtjs/turnstile'],
@@ -16,11 +28,6 @@ export default defineNuxtConfig({
     turnstile: {
       secretKey: '',
     },
-    // Transactional email, read by server/utils/email.ts.
-    resend: {
-      apiKey: '',
-      fromEmail: '',
-    },
     session: {
       password: '',
       // Without maxAge the session cookie is written with no Expires, so it only
@@ -33,17 +40,12 @@ export default defineNuxtConfig({
     },
   },
 
-  routeRules: {
-    '/settings/**': {
-      ssr: false,
-      prerender: false,
-    },
-  },
+  routeRules: dashboardRouteRules,
 
   nitro: {
     prerender: {
-      // Sign-in and account pages are rendered per request on the Worker.
-      ignore: ['/settings', '/settings/**', '/auth/**'],
+      // Sign-in pages are rendered per request on the Worker.
+      ignore: ['/auth/**'],
     },
     typescript: {
       tsConfig: {
@@ -68,9 +70,5 @@ export default defineNuxtConfig({
 
   turnstile: {
     siteKey: process.env.NUXT_TURNSTILE_SITE_KEY,
-  },
-
-  sitemap: {
-    exclude: ['/settings/**'],
   },
 });

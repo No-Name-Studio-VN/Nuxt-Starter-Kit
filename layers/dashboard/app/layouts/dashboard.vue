@@ -21,10 +21,10 @@
 
 <script setup lang="ts">
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import HotSearch from '#layers/auth/app/components/HotSearch.vue';
+import HotSearch from '#layers/dashboard/app/components/HotSearch.vue';
 
 import BackToTop from '@/components/BackToTop.vue';
-import AppLayout from '#layers/auth/app/components/AppLayout.vue';
+import AppLayout from '#layers/dashboard/app/components/AppLayout.vue';
 import AppSidebar from '../components/AppSidebar.vue';
 
 const { sidebarVariant: contextVariant } = useSidebarContext();

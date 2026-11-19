@@ -1,10 +1,13 @@
 import '#layers/auth/types/extensions';
+import '#layers/dashboard/types/extensions';
 // Declares the adminCards menu that the landing page reads; admin modules fill it.
 import '#layers/admin/types/extensions';
 import { LayoutDashboardIcon, UsersIcon } from '@lucide/vue';
-import type { SidebarGuard, SidebarNavRecord, UserMenuRecord } from '#layers/auth/types/sidebar';
+import type { NavGuard } from '~~/types/extensions';
+import type { UserMenuRecord } from '#layers/auth/types/userMenu';
+import type { SidebarNavRecord } from '#layers/dashboard/types/sidebar';
 
-const isAdmin: SidebarGuard = (user) => user?.isAdmin === true;
+const isAdmin: NavGuard = ({ user }) => user?.isAdmin === true;
 
 // Other modules add their admin pages as items in these sections.
 const sidebarRecords: SidebarNavRecord[] = [
@@ -54,7 +57,6 @@ const sidebarRecords: SidebarNavRecord[] = [
   },
 ];
 
-// Before auth's Account entry (200).
 const userMenuRecords: UserMenuRecord[] = [
   { id: 'admin', order: 100, title: 'Admin', to: '/admin', icon: UsersIcon, guard: isAdmin },
 ];

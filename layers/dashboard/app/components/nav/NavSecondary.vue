@@ -7,7 +7,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar/utils';
-import type { SidebarItem } from '#layers/auth/types/sidebar';
+import type { SidebarItem } from '#layers/dashboard/types/sidebar';
 
 defineProps<{
   items: SidebarItem[];
