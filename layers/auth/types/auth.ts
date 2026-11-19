@@ -23,9 +23,11 @@ export interface SessionUser {
   skipLockOnInit?: boolean;
 }
 
-export type AuthErrorCode = 'validation' | 'unknown';
+export type AuthErrorCode = 'validation' | 'unknown' | 'account-locked' | 'sign-in-step-required';
+
+export type AuthErrorMessage = string | { key: string; fallback: string };
 
 export interface AuthMessages {
-  errors: Record<string, string>;
+  errors: Record<string, AuthErrorMessage>;
   success: Record<string, string>;
 }

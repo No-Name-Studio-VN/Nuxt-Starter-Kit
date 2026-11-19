@@ -42,7 +42,7 @@ export default defineNitroPlugin(() => {
 
       return {
         kind: 'respond',
-        body: sendRedirect(event, verifyEmailNotice(user.email, redirectTo)),
+        respond: () => sendRedirect(event, verifyEmailNotice(user.email, redirectTo)),
       };
     },
   });

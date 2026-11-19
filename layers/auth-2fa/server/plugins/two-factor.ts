@@ -18,19 +18,15 @@ export default defineNitroPlugin(() => {
         return { kind: 'continue' };
       }
 
-      // The user id waits in the secure session until the code is checked.
-      await setUserSession(event, {
-        secure: {
-          pending2faUserId: user.id,
-        },
-      });
-
       return {
         kind: 'respond',
-        body: sendRedirect(
-          event,
-          authRoutes.AUTH_LOGIN + `?step=2fa&redirectTo=${encodeURIComponent(redirectTo)}`,
-        ),
+        async respond() {
+          await setUserSession(event, { secure: { pending2faUserId: user.id } });
+          return sendRedirect(
+            event,
+            authRoutes.AUTH_LOGIN + `?step=2fa&redirectTo=${encodeURIComponent(redirectTo)}`,
+          );
+        },
       };
     },
   });

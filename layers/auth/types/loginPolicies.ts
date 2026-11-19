@@ -14,12 +14,12 @@ export interface LoginPolicyContext {
 
 /**
  * What a policy decided: let the sign-in go on, answer the request itself
- * (`body` is returned by the handler as-is, e.g. a redirect to a challenge), or
+ * (the handler can call `respond` if it supports the challenge), or
  * refuse it with an API error.
  */
 export type LoginPolicyOutcome =
   | { kind: 'continue' }
-  | { kind: 'respond'; body: unknown }
+  | { kind: 'respond'; respond: () => unknown }
   | { kind: 'deny'; error: ApiErrorOptions };
 
 /**

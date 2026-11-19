@@ -198,7 +198,7 @@ describe('completeSignIn', () => {
   });
 
   it.each<LoginPolicyOutcome>([
-    { kind: 'respond', body: { redirect: '/auth/verify-email' } },
+    { kind: 'respond', respond: () => ({ redirect: '/auth/verify-email' }) },
     { kind: 'deny', error: { status: 403, statusText: 'Forbidden', message: 'No' } },
   ])('writes nothing and calls no hook on $kind', async (stop) => {
     const { registerLoginPolicy, completeSignIn } = await loadSignIn();

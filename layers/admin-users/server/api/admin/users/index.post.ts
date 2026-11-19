@@ -1,5 +1,4 @@
 import { adminUserCreateSchema } from '#layers/admin-users/shared/schemas/adminUserSchema';
-import userService from '#layers/auth/server/utils/database/user';
 import { getSignInMethod } from '#layers/auth/server/utils/signInMethods';
 import {
   apiError,
@@ -11,7 +10,7 @@ import type { AdminUserModel } from '#layers/admin-users/types/adminUsers';
 export default defineEventHandler(async (event) => {
   // A new account's only way in is the password set here.
   const passwordMethod = getSignInMethod('password');
-  if (!passwordMethod?.setSecret) {
+  if (!passwordMethod?.createWithSecret) {
     throw apiError({
       status: 404,
       statusText: 'Not Found',
@@ -33,13 +32,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { password, ...userData } = result.data;
-  const newUser = await userService.create(userData);
-  try {
-    await passwordMethod.setSecret(newUser.id, password);
-  } catch (err: unknown) {
-    await userService.delete(newUser.id);
-    throw err;
-  }
+  const newUser = await passwordMethod.createWithSecret(userData, password);
 
   const response: AdminUserModel = {
     id: newUser.id,

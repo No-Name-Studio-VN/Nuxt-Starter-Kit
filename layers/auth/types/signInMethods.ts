@@ -1,3 +1,4 @@
+import type { CreateUserInput, UserUpdateInput } from '#layers/auth/shared/schemas/userSchema';
 import type { User } from '#layers/auth/types/auth';
 import type { LoginPolicyContext } from '#layers/auth/types/loginPolicies';
 
@@ -11,6 +12,10 @@ export interface SignInMethod {
   countCredentials(userId: number): Promise<number>;
   /** Replaces the user's secret, for methods that have one (password). */
   setSecret?(userId: number, secret: string): Promise<void>;
+  /** Creates the user and their first credential together. */
+  createWithSecret?(data: CreateUserInput, secret: string): Promise<User>;
+  /** Saves the profile and replacement credential together, if the user exists. */
+  updateWithSecret?(data: UserUpdateInput, secret: string): Promise<User | undefined>;
 }
 
 /** Method layers augment this interface with evidence specific to their sign-ins. */

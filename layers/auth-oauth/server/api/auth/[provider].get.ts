@@ -1,20 +1,41 @@
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { requireReadyOAuthProvider } from '../../oauth/requireReadyOAuthProvider';
-import { handleOAuthSuccess, rememberOAuthRequest, sendOAuthRedirect } from '../../utils/oauth';
+import {
+  clearOAuthRequest,
+  handleOAuthSuccess,
+  rememberOAuthRequest,
+  sendOAuthRedirect,
+} from '../../utils/oauth';
 
 export default defineEventHandler(async (event) => {
-  const provider = requireReadyOAuthProvider(event, getRouterParam(event, 'provider') ?? '');
-  rememberOAuthRequest(event);
+  const query = getQuery(event);
+  const callback = Object.hasOwn(query, 'code') || Object.hasOwn(query, 'error');
+  const errorPath = `${authRoutes.AUTH_LOGIN}?error=oauth-error`;
+  if (callback && (Object.hasOwn(query, 'error') || !query.code)) {
+    return sendOAuthRedirect(event, errorPath);
+  }
 
-  const handler = provider.createHandler({
-    async onSuccess(event, profile) {
-      await handleOAuthSuccess(event, provider.id, profile);
-    },
-    async onError(event, error) {
-      console.error(`[auth-oauth] ${provider.id}: ${error.statusMessage ?? 'Sign-in failed.'}`);
-      await sendOAuthRedirect(event, `${authRoutes.AUTH_LOGIN}?error=oauth-error`);
-    },
-  });
+  try {
+    const provider = requireReadyOAuthProvider(event, getRouterParam(event, 'provider') ?? '');
+    if (!callback) rememberOAuthRequest(event);
 
-  return handler(event);
+    const handler = provider.createHandler({
+      async onSuccess(event, profile) {
+        return handleOAuthSuccess(event, provider.id, profile);
+      },
+      async onError(event, error) {
+        console.error(`[auth-oauth] ${provider.id}: ${error.statusMessage ?? 'Sign-in failed.'}`);
+        return sendOAuthRedirect(event, errorPath);
+      },
+    });
+
+    return await handler(event);
+  } catch (error) {
+    if (callback) {
+      console.error('[auth-oauth] Callback failed.');
+      return sendOAuthRedirect(event, errorPath);
+    }
+    clearOAuthRequest(event);
+    throw error;
+  }
 });

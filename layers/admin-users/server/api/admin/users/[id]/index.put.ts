@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
   const { password, ...validatedData } = result.data;
   const newPassword = password.trim().length > 0 ? password : undefined;
   const passwordMethod = getSignInMethod('password');
-  if (newPassword && !passwordMethod?.setSecret) {
+  if (newPassword && !passwordMethod?.updateWithSecret) {
     throw apiError({
       status: 400,
       statusText: 'Bad Request',
@@ -41,7 +41,11 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const updatedUser = await userService.update({ ...validatedData, id: userId });
+  const userData = { ...validatedData, id: userId };
+  const updatedUser =
+    newPassword && passwordMethod?.updateWithSecret
+      ? await passwordMethod.updateWithSecret(userData, newPassword)
+      : await userService.update(userData);
   if (!updatedUser) {
     throw apiError({
       status: 404,
@@ -49,10 +53,6 @@ export default defineEventHandler(async (event) => {
       message: 'Not Found. The requested user does not exist.',
       code: 'USER_NOT_FOUND',
     });
-  }
-
-  if (newPassword) {
-    await passwordMethod?.setSecret?.(userId, newPassword);
   }
 
   const user: AdminUserModel = {

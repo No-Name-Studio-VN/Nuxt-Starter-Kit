@@ -7,6 +7,7 @@
     "invalid_response": "Authentication completed but the response URL was invalid. Please try again.",
     "popup_blocked": "The sign-in popup was blocked.",
     "popup_timed_out": "The sign-in popup timed out. Please try again.",
+    "email_in_use": "This email is already in use. Sign in with your existing sign-in method.",
     "cannot_continue": "Unable to continue with this provider right now. Please try again."
   }
 }

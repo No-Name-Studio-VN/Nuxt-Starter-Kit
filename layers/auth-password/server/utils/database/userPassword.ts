@@ -1,4 +1,5 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
+import type { CreateUserInput, UserUpdateInput } from '#layers/auth/shared/schemas/userSchema';
 
 /** The only reader and writer of password hashes. */
 class UserPasswordService {
@@ -35,6 +36,49 @@ class UserPasswordService {
     if (!row) return false;
 
     return verifyPassword(row.passwordHash, password);
+  }
+
+  async createUser(data: CreateUserInput, password: string) {
+    const passwordHash = await hashPassword(password);
+    const db = this.db;
+    const [[user]] = await db.batch([
+      db.insert(tables.users).values(data).returning(),
+      // The preceding insert must succeed, so the unique username identifies the row in this batch.
+      db
+        .insert(tables.userPasswords)
+        .select(
+          this.selectCredential(passwordHash).where(eq(tables.users.username, data.username)),
+        ),
+    ]);
+    if (!user) throw new Error('Creating a password user returned no user.');
+    return user;
+  }
+
+  async updateUser(data: UserUpdateInput, password: string) {
+    const passwordHash = await hashPassword(password);
+    const db = this.db;
+    const matchUser = eq(tables.users.id, data.id);
+    const [[user]] = await db.batch([
+      db.update(tables.users).set(data).where(matchUser).returning(),
+      db
+        .insert(tables.userPasswords)
+        .select(this.selectCredential(passwordHash).where(matchUser))
+        .onConflictDoUpdate({
+          target: tables.userPasswords.userId,
+          set: { passwordHash, updatedAt: new Date() },
+        }),
+    ]);
+    return user;
+  }
+
+  private selectCredential(passwordHash: string) {
+    return this.db
+      .select({
+        userId: tables.users.id,
+        passwordHash: sql`${passwordHash}`.as('password_hash'),
+        updatedAt: sql`${sql.param(new Date(), tables.userPasswords.updatedAt)}`.as('updated_at'),
+      })
+      .from(tables.users);
   }
 
   /** Hashes `password` and sets it as the user's password, adding one if they had none. */

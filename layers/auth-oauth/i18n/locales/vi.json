@@ -7,6 +7,7 @@
     "invalid_response": "Đăng nhập đã hoàn tất nhưng URL phản hồi không hợp lệ. Vui lòng thử lại.",
     "popup_blocked": "Cửa sổ đăng nhập đã bị chặn.",
     "popup_timed_out": "Cửa sổ đăng nhập đã hết thời gian chờ. Vui lòng thử lại.",
+    "email_in_use": "Email này đã được sử dụng. Hãy đăng nhập bằng phương thức bạn đã dùng trước đây.",
     "cannot_continue": "Hiện không thể tiếp tục với nhà cung cấp này. Vui lòng thử lại."
   }
 }

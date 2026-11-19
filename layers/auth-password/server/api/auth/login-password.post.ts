@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
     redirectTo: redirectToStr,
   });
   if (outcome.kind === 'respond') {
-    return outcome.body;
+    return outcome.respond();
   }
   // The form posts natively, so a refusal goes back to the login page as `?error=`.
   if (outcome.kind === 'deny') {

@@ -13,8 +13,7 @@ import { safeRedirectPath } from '#layers/auth/server/utils/safeRedirect';
 import { loginErrorPath } from '#layers/auth/server/utils/loginErrorPath';
 
 export function rememberOAuthRequest(event: H3Event) {
-  const { popup, redirectTo, code, error } = getQuery(event);
-  if (code || error) return;
+  const { popup, redirectTo } = getQuery(event);
 
   const options = {
     httpOnly: true,
@@ -39,11 +38,15 @@ function getOAuthRedirectTo(event: H3Event) {
   return safeRedirectPath(event, getCookie(event, 'oauth_redirect_to'));
 }
 
+export function clearOAuthRequest(event: H3Event) {
+  deleteCookie(event, 'oauth_popup', { path: '/' });
+  deleteCookie(event, 'oauth_redirect_to', { path: '/' });
+}
+
 export function sendOAuthRedirect(event: H3Event, path: string) {
   const target = safeRedirectPath(event, path);
   const popup = getCookie(event, 'oauth_popup') === '1';
-  deleteCookie(event, 'oauth_popup', { path: '/' });
-  deleteCookie(event, 'oauth_redirect_to', { path: '/' });
+  clearOAuthRequest(event);
   return sendRedirect(
     event,
     popup ? `${oauthRoutes.POPUP}?redirectTo=${encodeURIComponent(target)}` : target,
@@ -142,12 +145,13 @@ export async function handleOAuthSuccess(
     return sendOAuthRedirect(event, `${authRoutes.AUTH_LOGIN}?error=unknown`);
   }
 
+  if (completion.status === 'email-in-use') {
+    return sendOAuthRedirect(event, `${authRoutes.AUTH_LOGIN}?error=oauth-email-in-use`);
+  }
+
   const { outcome } = completion;
-  // A policy that answers the request itself has started its response already
-  // (a redirect, as the password policies do); the OAuth handler only waits for it.
   if (outcome.kind === 'respond') {
-    await outcome.body;
-    return;
+    return sendOAuthRedirect(event, `${authRoutes.AUTH_LOGIN}?error=sign-in-step-required`);
   }
   if (outcome.kind === 'deny') {
     return sendOAuthRedirect(event, loginErrorPath(outcome.error, 'oauth-error'));
@@ -185,15 +189,19 @@ export async function completeOAuthLogin(
     return { status: 'signed-in', userId: dbUser.id, outcome };
   }
 
-  const username = await generateUniqueUsername(profile.email);
+  if (await userService.getByEmail(profile.email)) {
+    return { status: 'email-in-use' };
+  }
 
-  const newUser = await userService.create({
+  const username = await generateUniqueUsername(profile.email);
+  const newUser = await userService.createIfEmailAvailable({
     username,
     name: profile.name || username,
     email: profile.email,
     emailVerified: true,
     isAdmin: false,
   });
+  if (!newUser) return { status: 'email-in-use' };
 
   await oauthAccountService.link({
     userId: newUser.id,

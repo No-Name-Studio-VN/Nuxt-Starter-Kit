@@ -78,7 +78,7 @@ watch(
   (queryValue) => {
     const errorCode = getQueryString(queryValue);
     if (errorCode) {
-      error.value = getAuthErrorMessage(errorCode) || 'An error occurred during login';
+      error.value = getAuthErrorMessage(errorCode, t) || 'An error occurred during login';
       success.value = '';
     }
   },
@@ -138,9 +138,10 @@ watch(
         @pending="onMethodPending"
         @error="onMethodError"
       >
-        <p v-if="isDev" role="status" class="text-sm text-muted-foreground">
-          {{ $t('auth.no_sign_in_methods') }}
-        </p>
+        <div role="status" class="space-y-1 text-sm text-muted-foreground">
+          <p>{{ $t('auth.no_sign_in_methods') }}</p>
+          <p v-if="isDev">{{ $t('auth.no_sign_in_methods_hint') }}</p>
+        </div>
         <template #between>
           <AuthMethodDivider />
         </template>

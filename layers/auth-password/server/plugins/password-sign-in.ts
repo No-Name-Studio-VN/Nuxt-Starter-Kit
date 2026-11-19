@@ -8,5 +8,7 @@ export default defineNitroPlugin(() => {
       return (await userPasswordService.hasPassword(userId)) ? 1 : 0;
     },
     setSecret: (userId, secret) => userPasswordService.set(userId, secret),
+    createWithSecret: (data, secret) => userPasswordService.createUser(data, secret),
+    updateWithSecret: (data, secret) => userPasswordService.updateUser(data, secret),
   });
 });

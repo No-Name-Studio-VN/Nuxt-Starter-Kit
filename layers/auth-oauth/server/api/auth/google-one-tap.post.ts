@@ -1,3 +1,4 @@
+import type { H3Event } from 'h3';
 import type { OAuthProfile } from '#layers/auth-oauth/types/providers';
 import type { GoogleOneTapPayload } from '#layers/auth-oauth/types/oauth';
 import {
@@ -5,11 +6,12 @@ import {
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import { completeOAuthLogin } from '#layers/auth-oauth/server/utils/oauth';
+import { clearOAuthRequest, completeOAuthLogin } from '#layers/auth-oauth/server/utils/oauth';
 import { verifyGoogleIdToken } from '#layers/auth-oauth/server/utils/googleIdentity';
+import { OAUTH_EMAIL_IN_USE } from '#layers/auth-oauth/shared/constants/oauthMessages';
 import { googleOneTapBodySchema } from '#layers/auth-oauth/shared/schemas/oauthSchema';
 
-export default defineEventHandler(async (event) => {
+async function signInWithGoogleOneTap(event: H3Event) {
   const session = await getUserSession(event);
   if (session?.user?.id) {
     return success<GoogleOneTapPayload>({ authenticated: true, status: 'signed-in' });
@@ -70,13 +72,36 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  if (loginResult.status === 'email-in-use') {
+    throw apiError({
+      status: 409,
+      statusText: 'Conflict',
+      message: OAUTH_EMAIL_IN_USE,
+      code: 'OAUTH_EMAIL_IN_USE',
+    });
+  }
+
   const { outcome } = loginResult;
   if (outcome.kind === 'respond') {
-    return outcome.body;
+    throw apiError({
+      status: 403,
+      statusText: 'Forbidden',
+      message: 'This account needs another step to sign in. Try a different sign-in method.',
+      code: 'SIGN_IN_STEP_REQUIRED',
+    });
   }
   if (outcome.kind === 'deny') {
     throw apiError(outcome.error);
   }
 
   return success<GoogleOneTapPayload>({ authenticated: true, status: loginResult.status });
+}
+
+export default defineEventHandler(async (event) => {
+  try {
+    return await signInWithGoogleOneTap(event);
+  } catch (error) {
+    clearOAuthRequest(event);
+    throw error;
+  }
 });

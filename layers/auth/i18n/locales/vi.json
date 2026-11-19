@@ -3,7 +3,10 @@
     "login_title": "Đăng nhập",
     "login_description": "Đăng nhập vào tài khoản của bạn để tiếp tục.",
     "method_divider": "hoặc",
-    "no_sign_in_methods": "Không có phương thức đăng nhập. Hãy kiểm tra cấu hình xác thực."
+    "no_sign_in_methods": "Hiện không có phương thức đăng nhập nào. Vui lòng thử lại sau.",
+    "no_sign_in_methods_hint": "Hãy kiểm tra cấu hình xác thực.",
+    "account_locked": "Tài khoản này đã bị khóa. Hãy liên hệ bộ phận hỗ trợ.",
+    "sign_in_step_required": "Tài khoản này cần thêm một bước để đăng nhập. Hãy thử phương thức đăng nhập khác."
   },
   "common": {
     "log_out": "Đăng xuất",

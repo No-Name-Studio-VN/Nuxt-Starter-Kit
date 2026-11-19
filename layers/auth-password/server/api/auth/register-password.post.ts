@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
   const redirectTo = safeRedirectPath(event, result.data['redirect-to']);
 
-  // 1. CHEAP PRE-CHECK: Prevent CPU Exhaustion (DoS) by checking constraints before hashing
+  // Reject existing accounts before spending CPU on a password hash.
   const [existingUsername, existingEmail] = await Promise.all([
     userService.getByUsername(username),
     userService.getByEmail(result.data.email),
@@ -39,56 +39,34 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, passwordRoutes.AUTH_REGISTER + '?error=email-existed');
   }
 
-  // 2. ATOMIC INSERT: Protect against Time-Of-Check to Time-Of-Use (TOCTOU) race conditions
+  // The unique constraints also cover accounts created after the pre-check.
   let newUser: User;
   try {
-    newUser = await userService.create({
-      username: result.data.username,
-      email: result.data.email,
-      name: result.data.name,
-      emailVerified: false,
-      isAdmin: false,
-    });
+    newUser = await userPasswordService.createUser(
+      {
+        username,
+        email: result.data.email,
+        name: result.data.name,
+        emailVerified: false,
+        isAdmin: false,
+      },
+      password,
+    );
   } catch (err: unknown) {
-    let maybeErrCode: string | undefined;
-    let maybeErrMessage: string | undefined;
-    let maybeErrCauseMessage: string | undefined;
-
-    if (isRecord(err)) {
-      const errorRecord = err;
-      if (typeof errorRecord.code === 'string') {
-        maybeErrCode = errorRecord.code;
-      }
-      if (typeof errorRecord.message === 'string') {
-        maybeErrMessage = errorRecord.message;
-      }
-      if (isRecord(errorRecord.cause)) {
-        const causeRecord = errorRecord.cause;
-        if (typeof causeRecord.message === 'string') {
-          maybeErrCauseMessage = causeRecord.message;
-        }
-      }
+    const cause = isRecord(err) ? err.cause : undefined;
+    const messages = [err, cause].map((error) => (isRecord(error) ? error.message : undefined));
+    const isDuplicate = (column: 'email' | 'username') =>
+      messages.some(
+        (message) =>
+          typeof message === 'string' &&
+          message.includes(`UNIQUE constraint failed: users.${column}`),
+      );
+    if (isDuplicate('email')) {
+      return sendRedirect(event, passwordRoutes.AUTH_REGISTER + '?error=email-existed');
     }
-    // Fallback for strict concurrency races relying on standard SQLite constraint codes
-    const isUniqueConstraint =
-      maybeErrCode === 'SQLITE_CONSTRAINT' ||
-      maybeErrCode === 'SQLITE_CONSTRAINT_UNIQUE' ||
-      maybeErrMessage?.includes('UNIQUE');
-    if (isUniqueConstraint) {
-      if (maybeErrMessage?.includes('email') || maybeErrCauseMessage?.includes('email')) {
-        return sendRedirect(event, passwordRoutes.AUTH_REGISTER + '?error=email-existed');
-      }
+    if (isDuplicate('username')) {
       return sendRedirect(event, passwordRoutes.AUTH_REGISTER + '?error=existed');
     }
-    throw err;
-  }
-
-  // 3. EXPENSIVE OPERATION: Hash only once the account exists. Without its
-  // password the account has no way in, so a failure removes it again.
-  try {
-    await userPasswordService.set(newUser.id, password);
-  } catch (err: unknown) {
-    await userService.delete(newUser.id);
     throw err;
   }
 

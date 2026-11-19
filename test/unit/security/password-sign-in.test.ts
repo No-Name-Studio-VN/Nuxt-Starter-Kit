@@ -43,13 +43,14 @@ beforeEach(async () => {
     DROP TABLE IF EXISTS user_passwords;
     DROP TABLE IF EXISTS users;
     CREATE TABLE users (
-      id INTEGER PRIMARY KEY, username TEXT NOT NULL, name TEXT NOT NULL,
-      email TEXT NOT NULL, email_verified INTEGER DEFAULT 0,
+      id INTEGER PRIMARY KEY, username TEXT NOT NULL UNIQUE, name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE, email_verified INTEGER DEFAULT 0,
       is_admin INTEGER DEFAULT 0, is_locked INTEGER DEFAULT 0,
       last_login_at INTEGER, created_at INTEGER, updated_at INTEGER
     );
     CREATE TABLE user_passwords (
-      user_id INTEGER PRIMARY KEY, password_hash TEXT NOT NULL, updated_at INTEGER NOT NULL
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      password_hash TEXT NOT NULL, updated_at INTEGER NOT NULL
     );
   `);
   await db.insert(users).values({
@@ -71,6 +72,7 @@ beforeEach(async () => {
     'readValidatedBody',
     async (_event: object, validate: (input: unknown) => unknown) => validate(body),
   );
+  vi.stubGlobal('getRouterParam', () => '1');
   vi.stubGlobal('verifyTurnstileToken', async () => ({ success: true }));
   vi.stubGlobal('getRequestURL', () => new URL('http://localhost/api/auth/login-password'));
   vi.stubGlobal('sendRedirect', (_event: object, location: string) => ({ redirect: location }));
@@ -126,4 +128,101 @@ describe('password sign-in method', () => {
     });
     expect(setUserSession).not.toHaveBeenCalled();
   });
+});
+
+const newAccount = {
+  username: 'new-member',
+  name: 'New Member',
+  email: 'new@example.com',
+  password: 'Secret#123',
+};
+
+async function registerAccount() {
+  const { default: handler } =
+    await import('../../../layers/auth-password/server/api/auth/register-password.post');
+  body = {
+    ...newAccount,
+    'confirm-password': newAccount.password,
+    'cf-turnstile-response': 'token',
+  };
+  return handler({});
+}
+
+async function adminCreateAccount() {
+  await loadPasswordMethod();
+  const { default: handler } =
+    await import('../../../layers/admin-users/server/api/admin/users/index.post');
+  body = newAccount;
+  return handler({});
+}
+
+async function editAccount() {
+  await loadPasswordMethod();
+  const { default: handler } =
+    await import('../../../layers/admin-users/server/api/admin/users/[id]/index.put');
+  body = { id: '1', name: 'Changed', password: newAccount.password };
+  return handler({});
+}
+
+async function readNewAccount() {
+  return db.select().from(users).where(eq(users.username, newAccount.username)).get();
+}
+
+describe.each([
+  ['password registration', registerAccount],
+  ['admin user creation', adminCreateAccount],
+])('%s', (_name, createAccount) => {
+  it('has no persisted user to strand if hashing is interrupted', async () => {
+    const hashFailure = new Error('hash interrupted');
+    const accountsAtHash: unknown[] = [];
+    vi.stubGlobal('hashPassword', async () => {
+      accountsAtHash.push(await readNewAccount());
+      throw hashFailure;
+    });
+
+    await expect(createAccount()).rejects.toBe(hashFailure);
+    expect(accountsAtHash).toEqual([undefined]);
+    expect(await readNewAccount()).toBeUndefined();
+  });
+
+  it('commits a user and a password for the same account', async () => {
+    await createAccount();
+
+    const [account] = await db
+      .select({ email: users.email, hash: userPasswords.passwordHash })
+      .from(users)
+      .innerJoin(userPasswords, eq(users.id, userPasswords.userId))
+      .where(eq(users.username, newAccount.username));
+    expect(account).toEqual({ email: newAccount.email, hash: 'hashed:Secret#123' });
+  });
+
+  it('rolls back user creation when the password insert fails', async () => {
+    await refusePasswordWrites();
+
+    await expect(createAccount()).rejects.toThrow();
+    expect(await readNewAccount()).toBeUndefined();
+  });
+});
+
+async function refusePasswordWrites() {
+  await client.execute(`
+    CREATE TRIGGER refuse_password BEFORE INSERT ON user_passwords
+    BEGIN SELECT RAISE(ABORT, 'credential write failed'); END;
+  `);
+}
+
+it('leaves an admin-edited profile unchanged when the password write fails', async () => {
+  await refusePasswordWrites();
+
+  await expect(editAccount()).rejects.toThrow();
+  const account = await db.select().from(users).where(eq(users.id, 1)).get();
+  expect(account?.name).toBe('Member');
+});
+
+it('replaces the password and saves the admin-edited profile together', async () => {
+  await db.insert(userPasswords).values({ userId: 1, passwordHash: 'old-hash' });
+
+  expect(await editAccount()).toMatchObject({ success: true, data: { user: { name: 'Changed' } } });
+  const credential = await db.select().from(userPasswords).where(eq(userPasswords.userId, 1)).get();
+  expect(credential?.passwordHash).toBe('hashed:Secret#123');
 });

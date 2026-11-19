@@ -85,6 +85,15 @@ class UserService extends IDatabaseService<SafeUser> {
     return newUser;
   }
 
+  async createIfEmailAvailable(data: CreateUserInput) {
+    return this.db
+      .insert(tables.users)
+      .values(data)
+      .onConflictDoNothing({ target: tables.users.email })
+      .returning()
+      .get();
+  }
+
   /**
    * Update a user by their ID
    */

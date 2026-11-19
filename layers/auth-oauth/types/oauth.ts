@@ -51,6 +51,9 @@ export type OAuthLoginCompletionResult =
     }
   | {
       status: 'missing-user';
+    }
+  | {
+      status: 'email-in-use';
     };
 
 export interface OAuthLinkInput {

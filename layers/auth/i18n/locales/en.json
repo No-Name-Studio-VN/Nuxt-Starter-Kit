@@ -3,7 +3,10 @@
     "login_title": "Sign in",
     "login_description": "Sign in to your account to continue.",
     "method_divider": "or",
-    "no_sign_in_methods": "No sign-in methods are available. Check the authentication configuration."
+    "no_sign_in_methods": "No sign-in methods are available right now. Please try again later.",
+    "no_sign_in_methods_hint": "Check the authentication configuration.",
+    "account_locked": "This account is locked. Contact support for help.",
+    "sign_in_step_required": "This account needs another step to sign in. Try a different sign-in method."
   },
   "common": {
     "log_out": "Log out",
