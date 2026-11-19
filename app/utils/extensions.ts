@@ -58,7 +58,9 @@ export function registerNavGuardContext<K extends keyof NavGuardContext>(
   setup: NavGuardContextProvider<K>,
 ): void {
   const app = useNuxtApp();
-  const providers: NavGuardContextProviders = navGuardProviders.get(app) ?? new Map();
+  const providers: NavGuardContextProviders =
+    navGuardProviders.get(app) ??
+    new Map<keyof NavGuardContext, () => (context: NavGuardContext) => void>();
   providers.set(key, () => {
     const value = setup();
     return (context: NavGuardContext) => {
