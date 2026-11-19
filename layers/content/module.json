@@ -1,19 +1,9 @@
 {
   "title": "Content",
-  "description": "Documentation, blog, search, RSS and Nuxt Studio content editing.",
+  "description": "Documentation, blog, search, and RSS.",
   "group": "Content",
   "requires": [],
-  "dependencies": [
-    "@nuxtjs/mdc",
-    "shiki",
-    "@nuxt/content",
-    "better-sqlite3",
-    "nuxt-studio",
-    "nuxt-component-meta",
-    "feed",
-    "minisearch"
-  ],
+  "dependencies": ["@nuxtjs/mdc", "shiki", "@nuxt/content", "better-sqlite3", "feed", "minisearch"],
   "devDependencies": ["nuxt-content-git"],
-  "env": ["STUDIO_GITHUB_CLIENT_ID", "STUDIO_GITHUB_CLIENT_SECRET"],
   "rootFiles": ["content/**"]
 }

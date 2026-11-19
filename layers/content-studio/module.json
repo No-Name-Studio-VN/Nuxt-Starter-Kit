@@ -1,0 +1,9 @@
+{
+  "title": "Nuxt Studio",
+  "description": "Live content editing with Nuxt Studio and MDC component metadata.",
+  "group": "Content",
+  "parent": "content",
+  "requires": ["content"],
+  "dependencies": ["nuxt-studio", "nuxt-component-meta"],
+  "env": ["STUDIO_GITHUB_CLIENT_ID", "STUDIO_GITHUB_CLIENT_SECRET"]
+}
