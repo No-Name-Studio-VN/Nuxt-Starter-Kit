@@ -41,6 +41,7 @@ export const SITE_CONFIG = {
     ],
   },
   auth: {
+    oauth: ['google'],
     // Keyed by auth page; `default` covers any page without its own entry. Text may be an i18n key.
     quotes: {
       default: {

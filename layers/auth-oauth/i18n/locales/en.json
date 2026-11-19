@@ -1,0 +1,12 @@
+{
+  "auth_oauth": {
+    "popup_title": "Completing sign-in",
+    "popup_description": "Please wait while we finish signing you in.",
+    "continue_with": "Continue with {provider}",
+    "sign_up_with": "Sign up with {provider}",
+    "invalid_response": "Authentication completed but the response URL was invalid. Please try again.",
+    "popup_blocked": "The sign-in popup was blocked.",
+    "popup_timed_out": "The sign-in popup timed out. Please try again.",
+    "cannot_continue": "Unable to continue with this provider right now. Please try again."
+  }
+}

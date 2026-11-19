@@ -15,7 +15,7 @@ import { apiError } from '#layers/server-core/server/utils/apiResponse';
 export async function completeSignIn(
   event: H3Event,
   user: User,
-  { method, redirectTo, oauth }: CompleteSignInOptions,
+  { method, redirectTo, ...methodEvidence }: CompleteSignInOptions,
 ): Promise<LoginPolicyOutcome> {
   const outcome = await runLoginPolicies({ event, user, method, redirectTo });
   if (outcome.kind === 'respond' || outcome.kind === 'deny') {
@@ -32,7 +32,7 @@ export async function completeSignIn(
     });
   }
 
-  await finishSignIn(event, { user, method, ...(oauth ? { oauth } : {}) });
+  await finishSignIn(event, { user, method, ...methodEvidence });
   return outcome;
 }
 

@@ -8,7 +8,7 @@ export function safeRedirectPath(event: H3Event, value: string | undefined, fall
   try {
     const origin = getRequestURL(event).origin;
     const parsed = new URL(value, origin);
-    if (parsed.origin !== origin) {
+    if (parsed.origin !== origin || parsed.pathname.startsWith('//')) {
       return fallback;
     }
 

@@ -1,6 +1,6 @@
 {
   "title": "Authentication",
-  "description": "Sessions, password and OAuth sign-in, and account pages.",
+  "description": "Sessions, password sign-in, and account pages.",
   "group": "Authentication",
   "requires": ["database", "email"],
   "dependencies": ["@nuxtjs/turnstile", "nuxt-auth-utils"],
@@ -8,10 +8,6 @@
     "NUXT_SESSION_PASSWORD",
     "CSRF_SECRET",
     "NUXT_TURNSTILE_SITE_KEY",
-    "NUXT_TURNSTILE_SECRET_KEY",
-    "NUXT_OAUTH_GOOGLE_CLIENT_ID",
-    "NUXT_OAUTH_GOOGLE_CLIENT_SECRET",
-    "NUXT_OAUTH_GITHUB_CLIENT_ID",
-    "NUXT_OAUTH_GITHUB_CLIENT_SECRET"
+    "NUXT_TURNSTILE_SECRET_KEY"
   ]
 }

@@ -152,20 +152,6 @@ export const resetPasswordFormSchema = z
     path: ['confirmPassword'],
   });
 
-export const googleOneTapBodySchema = z.object({
-  credential: z.string().trim().min(1),
-});
-
-export const oauthUrlBodySchema = z.object({
-  provider: z.string().min(1, 'Provider is required'),
-  action: z.enum(['login', 'link']).optional(),
-  redirectTo: z.string().optional(),
-});
-
-export const oauthUnlinkBodySchema = z.object({
-  provider: z.string().min(1, 'Provider is required'),
-});
-
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
@@ -175,6 +161,3 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ForgotPasswordFormInput = z.infer<typeof forgotPasswordFormSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ResetPasswordFormInput = z.infer<typeof resetPasswordFormSchema>;
-export type GoogleOneTapBodyInput = z.infer<typeof googleOneTapBodySchema>;
-export type OAuthUrlBodyInput = z.infer<typeof oauthUrlBodySchema>;
-export type OAuthUnlinkBodyInput = z.infer<typeof oauthUnlinkBodySchema>;

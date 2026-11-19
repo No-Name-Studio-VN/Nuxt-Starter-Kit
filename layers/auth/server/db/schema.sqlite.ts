@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, unique, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 import type { AuthTokenKind } from '../../types/authTokens';
 
@@ -55,46 +55,14 @@ export const userLockScreen = sqliteTable('user_lock_screen', {
   ...timestampColumns,
 });
 
-// ── OAuth Accounts Table ──────────────────────────────────────
-
-export const oauthAccounts = sqliteTable(
-  'oauth_accounts',
-  {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    userId: integer('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    provider: text('provider').notNull(), // 'google', 'github', 'discord', etc.
-    providerAccountId: text('provider_account_id').notNull(), // Google sub, GitHub user id, etc.
-    email: text('email'), // Provider email (display only)
-    name: text('name'), // Provider display name
-    avatarUrl: text('avatar_url'), // Provider avatar
-    ...timestampColumns,
-  },
-  (table) => [
-    unique().on(table.provider, table.providerAccountId), // One link per provider account globally
-    unique().on(table.userId, table.provider), // One provider type per user
-    index('oauth_accounts_user_idx').on(table.userId),
-  ],
-);
-
 export const usersRelations = relations(users, ({ many, one }) => ({
   lockScreen: one(userLockScreen),
-  oauthAccounts: many(oauthAccounts),
   authTokens: many(authTokens),
 }));
 
 export const authTokensRelations = relations(authTokens, ({ one }) => ({
   user: one(users, {
     fields: [authTokens.userId],
-    references: [users.id],
-  }),
-}));
-
-// Relations (useful for queries)
-export const oauthAccountsRelations = relations(oauthAccounts, ({ one }) => ({
-  user: one(users, {
-    fields: [oauthAccounts.userId],
     references: [users.id],
   }),
 }));

@@ -2,7 +2,7 @@ import type { User } from '#layers/auth/types/auth';
 import type { LoginPolicyContext } from '#layers/auth/types/loginPolicies';
 
 /**
- * One way to sign in ('password', 'oauth', 'passkey', ...). Each method layer
+ * One way to sign in (for example, password or a passkey). Each method layer
  * registers its entry from a Nitro plugin.
  */
 export interface SignInMethod {
@@ -13,20 +13,15 @@ export interface SignInMethod {
   setSecret?(userId: number, secret: string): Promise<void>;
 }
 
-/** What a provider proved during this OAuth sign-in. */
-export interface OAuthSignInEvidence {
-  provider: string;
-  providerAccountId: string;
-  /** The email the provider returned for this sign-in, not the one stored on the user. */
-  email: string;
-}
+/** Method layers augment this interface with evidence specific to their sign-ins. */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- sign-in methods own their evidence
+export interface SignInMethodEvidence {}
 
 /** What a sign-in proved, handed to the `auth:signed-in` hook. */
-export interface SignInEvidence {
+export interface SignInEvidence extends Partial<SignInMethodEvidence> {
   user: User;
   method: string;
-  oauth?: OAuthSignInEvidence;
 }
 
-export type CompleteSignInOptions = Pick<SignInEvidence, 'method' | 'oauth'> &
+export type CompleteSignInOptions = Omit<SignInEvidence, 'user'> &
   Pick<LoginPolicyContext, 'redirectTo'>;

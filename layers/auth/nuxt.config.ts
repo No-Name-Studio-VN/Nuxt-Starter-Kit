@@ -59,8 +59,6 @@ export default defineNuxtConfig({
 
   security: {
     headers: {
-      // OAuth and Google One Tap sign in through popups that report back to this window.
-      crossOriginOpenerPolicy: 'same-origin-allow-popups',
       contentSecurityPolicy: {
         // Turnstile's challenge widget.
         'style-src': ['https://challenges.cloudflare.com'],

@@ -12,6 +12,8 @@ export interface ExtensionEntry {
   id: string;
   order: number;
   component: Component;
+  /** Runs in the slot setup, so availability may depend on request data. */
+  useAvailable?: () => Readonly<Ref<boolean>>;
 }
 
 export interface NavRecord {

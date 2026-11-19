@@ -5,12 +5,12 @@
     "forgot_password_description": "Enter your email address to receive a password reset link.",
     "login_title": "Sign in",
     "login_description": "Sign in to your account to continue.",
-    "oauth_popup_title": "Completing sign-in",
-    "oauth_popup_description": "Please wait while we finish signing you in.",
     "register_title": "Create an account",
     "register_description": "Create an account to get started.",
     "reset_password_title": "Reset your password",
-    "reset_password_description": "Choose a new password for your account."
+    "reset_password_description": "Choose a new password for your account.",
+    "method_divider": "or",
+    "no_sign_in_methods": "No sign-in methods are available. Check the authentication configuration."
   },
   "common": {
     "log_out": "Log out",

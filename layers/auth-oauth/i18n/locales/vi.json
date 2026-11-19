@@ -1,0 +1,12 @@
+{
+  "auth_oauth": {
+    "popup_title": "Đang hoàn tất đăng nhập",
+    "popup_description": "Vui lòng đợi trong khi chúng tôi hoàn tất đăng nhập cho bạn.",
+    "continue_with": "Tiếp tục với {provider}",
+    "sign_up_with": "Đăng ký với {provider}",
+    "invalid_response": "Đăng nhập đã hoàn tất nhưng URL phản hồi không hợp lệ. Vui lòng thử lại.",
+    "popup_blocked": "Cửa sổ đăng nhập đã bị chặn.",
+    "popup_timed_out": "Cửa sổ đăng nhập đã hết thời gian chờ. Vui lòng thử lại.",
+    "cannot_continue": "Hiện không thể tiếp tục với nhà cung cấp này. Vui lòng thử lại."
+  }
+}

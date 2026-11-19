@@ -8,14 +8,9 @@ import PasswordStrengthIndicator from '#layers/auth/app/components/PasswordStren
 import { registerUserSchema } from '#layers/auth/shared/schemas/userSchema';
 import { calculatePasswordStrength } from '#layers/auth/app/utils/passwordValidation';
 import { getAuthErrorMessage } from '#layers/auth/shared/constants/authMessages';
-import { AVAILABLE_PROVIDERS } from '#layers/auth/shared/constants/oauthProviders';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
-import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
-import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { Field, FieldLabel, FieldError } from '@/components/ui/field';
-import type { ApiResponse } from '#layers/server-core/types/api';
-import type { OAuthUrlPayload } from '#layers/auth/types/auth';
 
 const siteConfig = useConfig();
 const route = useRoute();
@@ -25,10 +20,6 @@ const showConfirmPassword = ref(false);
 const isLoading = ref(false);
 const error = ref('');
 const turnstileToken = ref('');
-const oauthLoadingProvider = ref<string | null>(null);
-const oauthPopup = ref<Window | null>(null);
-const oauthPopupTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
-const oauthPopupCloseMonitor = ref<ReturnType<typeof setInterval> | null>(null);
 const { t } = useI18n();
 
 const redirectTo = computed(() => {
@@ -48,39 +39,6 @@ const redirectTo = computed(() => {
     return '/';
   }
 });
-
-function stopOAuthPopupTimeout() {
-  if (oauthPopupTimeout.value) {
-    clearTimeout(oauthPopupTimeout.value);
-    oauthPopupTimeout.value = null;
-  }
-}
-
-function stopOAuthPopupCloseMonitor() {
-  if (oauthPopupCloseMonitor.value) {
-    clearInterval(oauthPopupCloseMonitor.value);
-    oauthPopupCloseMonitor.value = null;
-  }
-}
-
-function onOAuthPopupComplete(message: { url: string }) {
-  stopOAuthPopupCloseMonitor();
-  stopOAuthPopupTimeout();
-  oauthPopup.value = null;
-  oauthLoadingProvider.value = null;
-
-  let target: URL;
-  try {
-    target = new URL(message.url);
-  } catch {
-    error.value = 'Authentication completed but response URL was invalid. Please try again.';
-    return;
-  }
-
-  window.location.assign(`${target.pathname}${target.search}${target.hash}`);
-}
-
-const oauthPopupListener = useOAuthPopupListener(onOAuthPopupComplete);
 
 const form = useForm({
   initialValues: {
@@ -135,91 +93,18 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  oauthPopupListener.start();
-});
-
-async function signUpWithProvider(provider: string) {
-  if (oauthLoadingProvider.value) return;
-
-  oauthLoadingProvider.value = provider;
-  error.value = '';
-
-  try {
-    const response = await apiRequest<ApiResponse<OAuthUrlPayload>>(authRoutes.AUTH_OAUTH_URL, {
-      method: 'POST',
-      body: { provider, action: 'login', redirectTo: redirectTo.value },
-    });
-    if (!response.success) {
-      throw response;
-    }
-
-    const popupWidth = Math.min(560, window.outerWidth - 40);
-    const popupHeight = Math.min(720, window.outerHeight - 80);
-    const popupLeft = window.screenX + Math.max(0, (window.outerWidth - popupWidth) / 2);
-    const popupTop = window.screenY + Math.max(0, (window.outerHeight - popupHeight) / 2);
-    const popup = window.open(
-      response.data.url,
-      `oauth-${provider}`,
-      `width=${popupWidth},height=${popupHeight},left=${popupLeft},top=${popupTop},location=0,resizable,scrollbars,toolbar=0,menubar=0,popup=true`,
-    );
-
-    if (!popup) {
-      throw new Error('Popup blocked');
-    }
-
-    popup.focus();
-    oauthPopup.value = popup;
-    stopOAuthPopupCloseMonitor();
-    stopOAuthPopupTimeout();
-
-    oauthPopupCloseMonitor.value = setInterval(() => {
-      if (!oauthPopup.value) {
-        stopOAuthPopupCloseMonitor();
-        return;
-      }
-
-      let isClosed = false;
-      try {
-        isClosed = oauthPopup.value.closed;
-      } catch {
-        return;
-      }
-
-      if (!isClosed) {
-        return;
-      }
-
-      stopOAuthPopupCloseMonitor();
-      stopOAuthPopupTimeout();
-      oauthPopup.value = null;
-      oauthLoadingProvider.value = null;
-    }, 500);
-
-    oauthPopupTimeout.value = setTimeout(() => {
-      stopOAuthPopupCloseMonitor();
-      stopOAuthPopupTimeout();
-      oauthPopup.value = null;
-      oauthLoadingProvider.value = null;
-      error.value = 'OAuth session timed out or popup was closed. Please try again.';
-    }, 120000);
-  } catch (err) {
-    stopOAuthPopupCloseMonitor();
-    stopOAuthPopupTimeout();
-    oauthPopup.value = null;
-    error.value = parseApiError(
-      err,
-      'Unable to continue with provider right now. Please try again.',
-    ).message;
-    oauthLoadingProvider.value = null;
-  }
+function onMethodPending(pending: boolean) {
+  isLoading.value = pending;
+  if (pending) error.value = '';
 }
 
-onBeforeUnmount(() => {
-  stopOAuthPopupCloseMonitor();
-  stopOAuthPopupTimeout();
-  oauthPopupListener.stop();
-});
+function onMethodError(message: string) {
+  error.value = message;
+}
+
+function completeRegistration(redirect: string) {
+  window.location.href = safeRedirectPath(redirect);
+}
 </script>
 
 <template>
@@ -233,29 +118,19 @@ onBeforeUnmount(() => {
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
 
-    <div v-if="AVAILABLE_PROVIDERS.length" class="flex flex-col gap-2">
-      <Button
-        v-for="provider in AVAILABLE_PROVIDERS"
-        :key="provider.id"
-        type="button"
-        variant="outline"
-        class="h-10 w-full"
-        :is-loading="oauthLoadingProvider === provider.id"
-        :disabled="isLoading || oauthLoadingProvider !== null"
-        @click="signUpWithProvider(provider.id)"
-      >
-        <div class="flex size-4 items-center justify-center">
-          <OAuthIcon :provider="provider.id" />
-        </div>
-        Continue with {{ provider.name }}
-      </Button>
-    </div>
-
-    <div v-if="AVAILABLE_PROVIDERS.length" class="flex items-center gap-3">
-      <div class="h-px flex-1 bg-border" />
-      <span class="text-xs text-muted-foreground">or</span>
-      <div class="h-px flex-1 bg-border" />
-    </div>
+    <ExtensionSlot
+      name="auth:register:methods"
+      mode="register"
+      :redirect-to="redirectTo"
+      :pending="isLoading"
+      @done="completeRegistration"
+      @pending="onMethodPending"
+      @error="onMethodError"
+    >
+      <template #after>
+        <AuthMethodDivider />
+      </template>
+    </ExtensionSlot>
 
     <form
       :action="authRoutes.AUTH_REGISTER_PASSWORD"

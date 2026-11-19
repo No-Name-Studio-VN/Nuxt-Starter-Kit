@@ -18,21 +18,12 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   // Password reset errors
   'reset-invalid-token': 'This reset link is invalid or has already been used.',
   'reset-token-expired': 'This reset link has expired. Please request a new one.',
-
-  // OAuth errors
-  'oauth-already-linked': 'This account is already linked to another user.',
-  'oauth-already-connected': 'You already have an account from this provider linked.',
-  'oauth-error': 'Authentication failed. Please try again.',
-  'not-authenticated': 'You need to be logged in to link an account.',
-  'unlink-last-method': "You can't unlink your only sign-in method. Set a password first.",
 };
 
 /**
  * Authentication success messages for user-facing display
  */
 export const AUTH_SUCCESS_MESSAGES: Record<AuthSuccessCode, string> = {
-  'oauth-linked': 'Account linked successfully!',
-  'oauth-unlinked': 'Account unlinked successfully.',
   'password-reset': 'Your password has been reset. You can now sign in with your new password.',
   'reset-link-sent': "If an account exists with that email, we've sent a password reset link.",
 };

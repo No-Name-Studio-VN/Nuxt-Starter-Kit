@@ -5,12 +5,12 @@
     "forgot_password_description": "Nhập địa chỉ email để nhận liên kết đặt lại mật khẩu.",
     "login_title": "Đăng nhập",
     "login_description": "Đăng nhập vào tài khoản của bạn để tiếp tục.",
-    "oauth_popup_title": "Đang hoàn tất đăng nhập",
-    "oauth_popup_description": "Vui lòng đợi trong khi chúng tôi hoàn tất đăng nhập cho bạn.",
     "register_title": "Tạo tài khoản",
     "register_description": "Tạo tài khoản để bắt đầu.",
     "reset_password_title": "Đặt lại mật khẩu",
-    "reset_password_description": "Chọn mật khẩu mới cho tài khoản của bạn."
+    "reset_password_description": "Chọn mật khẩu mới cho tài khoản của bạn.",
+    "method_divider": "hoặc",
+    "no_sign_in_methods": "Không có phương thức đăng nhập. Hãy kiểm tra cấu hình xác thực."
   },
   "common": {
     "log_out": "Đăng xuất",

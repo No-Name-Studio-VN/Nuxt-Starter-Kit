@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/libsql';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { users } from '../../../layers/auth/server/db/schema.sqlite';
 import type { LoginPolicy, LoginPolicyOutcome } from '../../../layers/auth/types/loginPolicies';
+import type { OAuthSignInEvidence } from '../../../layers/auth-oauth/types/oauth';
 import type { SignInEvidence } from '../../../layers/auth/types/signInMethods';
 
 vi.mock('../../../layers/server-core/server/utils/reportServerError', () => ({
@@ -181,7 +182,11 @@ describe('completeSignIn', () => {
       evidence.push(signIn);
       await db.update(users).set({ isAdmin: true }).where(eq(users.id, signIn.user.id));
     });
-    const oauth = { provider: 'github', providerAccountId: '1234567', email: 'gh@example.com' };
+    const oauth: OAuthSignInEvidence = {
+      provider: 'github',
+      providerAccountId: '1234567',
+      email: 'gh@example.com',
+    };
 
     const outcome = await completeSignIn(event, await getUser(), {
       method: 'oauth',
