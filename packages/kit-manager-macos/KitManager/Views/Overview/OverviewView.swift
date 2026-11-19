@@ -8,6 +8,7 @@ struct OverviewView: View {
     let isScanning: Bool
 
     @Environment(AppModel.self) private var model
+    @Environment(\.openKitDiff) private var openKitDiff
 
     private var latestLabel: String {
         model.latestLabel ?? model.latestMain.map { String($0.prefix(7)) } ?? "—"
@@ -28,7 +29,9 @@ struct OverviewView: View {
         Form {
             Section { header(counts: counts) }
             nextSteps
-            OverviewLatestKit(latestLabel: latestLabel, anchor: anchor)
+            OverviewLatestKit(
+                latestLabel: latestLabel, anchor: anchor,
+                onOpen: openKitDiff.map { open in { open(.change($0)) } })
                 .id(anchor)
             Section { footer }
         }

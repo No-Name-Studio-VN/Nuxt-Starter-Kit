@@ -98,6 +98,30 @@ public struct KitRepository: Sendable {
         return ReleaseGrouper.sections(commits: try await commits, tags: try await tags)
     }
 
+    /// Compares commits, or a single commit against its first parent. `nil` paths means all files;
+    /// an empty list means none. Only complete file patches within the byte limit are returned.
+    public func diff(from base: String?, to head: String, limitedTo paths: [String]?, maxBytes: Int) async throws -> KitDiff {
+        try requirePlainRevision(head)
+        if let base { try requirePlainRevision(base) }
+        if paths?.isEmpty == true { return KitDiff(text: "", files: [], isTruncated: false) }
+        let revisions = try await diffRevisions(from: base, to: head)
+        let output = try await git(
+            ["--no-lazy-fetch", "--literal-pathspecs", "-c", "core.quotePath=false"]
+                + Self.diffArguments + ["-M", "--raw", "-z", "--patch", "--src-prefix=a/", "--dst-prefix=b/"]
+                + revisions + ["--"] + (paths ?? [])).stdout
+        return KitDiff.preview(of: output, maxBytes: maxBytes)
+    }
+
+    /// Includes both sides of renames so module scoping can match either the source or destination.
+    public func changedPaths(from base: String?, to head: String) async throws -> [String] {
+        try requirePlainRevision(head)
+        if let base { try requirePlainRevision(base) }
+        let revisions = try await diffRevisions(from: base, to: head)
+        let output = try await git(
+            ["--no-lazy-fetch"] + Self.diffArguments + ["--no-renames", "--name-only", "-z"] + revisions + ["--"]).stdout
+        return output.split(separator: 0).map { String(decoding: $0, as: UTF8.self) }
+    }
+
     /// `v3.0.1` for an exact tag, `v3.0.1 +4` for four commits past it; nil when unrecognised.
     public static func parseDescribe(_ output: String) -> String? {
         let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -116,6 +140,27 @@ public struct KitRepository: Sendable {
     }
 
     // MARK: - Helpers
+
+    private static let diffArguments = [
+        "diff", "--no-color", "--no-ext-diff", "--no-textconv", "--no-relative", "--ignore-submodules=none", "--submodule=short",
+    ]
+
+    private func diffRevisions(from base: String?, to head: String) async throws -> [String] {
+        let target = "\(head)^{commit}"
+        if let base { return ["\(base)^{commit}", target] }
+        // Read the real parent header, so a shallow boundary is not mistaken for a root commit.
+        let commit = try await text(["--no-lazy-fetch", "cat-file", "commit", target])
+        if let parent = commit.split(separator: "\n", omittingEmptySubsequences: false)
+            .prefix(while: { !$0.isEmpty }).first(where: { $0.hasPrefix("parent ") })
+        {
+            let revision = String(parent.dropFirst("parent ".count))
+            try requirePlainRevision(revision)
+            return [revision, target]
+        }
+        // Hash empty stdin instead of assuming the kit uses SHA-1 object IDs.
+        let emptyTree = try await text(["--no-lazy-fetch", "hash-object", "-t", "tree", "--stdin"])
+        return [emptyTree, target]
+    }
 
     private static func parseRecord(_ record: String, mapping: ModuleMapping) -> KitCommit? {
         let parts = record.split(separator: "\0", omittingEmptySubsequences: false)

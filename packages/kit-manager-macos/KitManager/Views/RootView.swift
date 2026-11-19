@@ -16,6 +16,7 @@ struct RootView: View {
     @State private var releases: Loadable<[ReleaseSection]> = .idle
     @State private var searchText = ""
     @State private var importRequest: ImportRequest?
+    @State private var diffRequest: DiffRequest?
     @State private var isScanning = false
     @State private var projectsToRemove: Set<UUID> = []
 
@@ -26,9 +27,17 @@ struct RootView: View {
     }
 
     var body: some View {
+        mainWindow
+            .environment(\.openKitDiff, OpenKitDiffAction { diffRequest = $0 })
+            .sheet(item: $diffRequest) { request in
+                KitDiffSheet(request: request)
+            }
+    }
+
+    private var mainWindow: some View {
         let columns = model.sidebar == .modules || moduleSelection != nil ? moduleColumns : []
         let rows = columns.isEmpty ? [] : ModuleMatrix.rows(catalogue: model.catalogue, columns: columns)
-        Group {
+        return Group {
             if projects.isEmpty && model.sidebar.isProjectList {
                 NavigationSplitView {
                     sidebar
@@ -57,6 +66,7 @@ struct RootView: View {
             await model.bootstrap()
             #if DEBUG
             DebugLaunchOptions.apply(to: model, projects: projects)
+            diffRequest = DebugLaunchOptions.diffRequest
             if DebugLaunchOptions.showsSettings { openSettings() }
             if model.sidebar == .modules, let id = DebugLaunchOptions.moduleSelection,
                 !moduleColumns.isEmpty, model.catalogue.contains(where: { $0.id == id })
@@ -65,6 +75,10 @@ struct RootView: View {
             }
             if model.sidebar == .whatsNew, let id = DebugLaunchOptions.releaseSelection {
                 releaseSelection = id
+            }
+            if let text = DebugLaunchOptions.searchText {
+                // After the page switch above, whose change handler clears the search.
+                Task { @MainActor in searchText = text }
             }
             #endif
         }
@@ -77,8 +91,9 @@ struct RootView: View {
         .onChange(of: rows.map(\.id)) { _, ids in
             if let id = moduleSelection, !ids.contains(id) { moduleSelection = nil }
         }
-        .onChange(of: model.sidebar) { _, item in
-            if !item.isProjectList { searchText = "" }
+        .onChange(of: model.sidebar) { previous, item in
+            // The project lists share one search; any other move starts a fresh one.
+            if !(previous.isProjectList && item.isProjectList) { searchText = "" }
         }
         .onDisappear { model.isSwitcherPresented = false }
         .sheet(isPresented: Bindable(model).isSwitcherPresented) {
@@ -122,6 +137,8 @@ struct RootView: View {
         let sidebar = SidebarView(projects: projects)
         if model.sidebar.isProjectList, !projects.isEmpty {
             sidebar.searchable(text: $searchText, placement: .sidebar, prompt: "Search")
+        } else if model.sidebar == .modules, !model.catalogue.isEmpty {
+            sidebar.searchable(text: $searchText, placement: .sidebar, prompt: "Search Modules")
         } else {
             sidebar
         }
@@ -135,7 +152,9 @@ struct RootView: View {
                 projects: projects, searchText: searchText, importRequest: $importRequest,
                 onRemoveProjects: { projectsToRemove = $0 })
         case .modules:
-            ModulesListView(rows: moduleRows, kitProjectCount: kitProjectCount, selection: $moduleSelection)
+            ModulesListView(
+                rows: moduleRows, kitProjectCount: kitProjectCount, searchText: searchText,
+                selection: $moduleSelection)
         case .whatsNew:
             ReleasesListView(selection: $releaseSelection, releases: $releases)
         }
@@ -164,12 +183,31 @@ struct RootView: View {
             if model.canLoadKitChangelog, model.changelogAnchor != nil, let id = releaseSelection,
                 let release = releases.value?.first(where: { $0.id == id })
             {
-                ReleaseDetailView(release: release, projects: projects)
+                ReleaseDetailView(
+                    release: release, projects: projects,
+                    onOpen: { diffRequest = .change($0) },
+                    onViewAll: releaseRange(release).map { range in
+                        {
+                            diffRequest = DiffRequest(
+                                title: "Changes in \(release.title)", base: range.base, head: range.head, modules: nil)
+                        }
+                    })
                     .id(id)
             } else {
                 ContentUnavailableView("Select a release", systemImage: "shippingbox")
             }
         }
+    }
+
+    /// A release spans from the newest commit of the release below it (or the changelog anchor for
+    /// the oldest one) to its own newest commit.
+    private func releaseRange(_ release: ReleaseSection) -> (base: String, head: String)? {
+        guard let sections = releases.value, let index = sections.firstIndex(where: { $0.id == release.id }),
+            let head = release.commits.first?.id
+        else { return nil }
+        let older = sections.index(after: index)
+        let base = older < sections.endIndex ? sections[older].commits.first?.id : model.changelogAnchor
+        return base.map { (base: $0, head: head) }
     }
 
     private var multipleSelection: some View {

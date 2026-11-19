@@ -17,10 +17,23 @@ public struct ModuleMapping: Sendable {
     /// a path matching a module's `rootFiles` belongs to that module, anything else to `base`.
     public func modules(for paths: [String]) -> Set<String> {
         var result: Set<String> = []
-        for path in paths where !exclude.contains(where: { $0.matches(path) }) {
+        for path in paths where !isExcluded(path) {
             result.insert(owner(of: path))
         }
         return result
+    }
+
+    /// Keeps paths shipped by the base kit or the given modules, in input order.
+    public func paths(_ paths: [String], ownedBy modules: Set<String>) -> [String] {
+        paths.filter { path in
+            guard !isExcluded(path) else { return false }
+            let owner = owner(of: path)
+            return owner == Self.base || modules.contains(owner)
+        }
+    }
+
+    private func isExcluded(_ path: String) -> Bool {
+        exclude.contains { $0.matches(path) }
     }
 
     private func owner(of path: String) -> String {

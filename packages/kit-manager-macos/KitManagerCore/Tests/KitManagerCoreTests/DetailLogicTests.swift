@@ -3,10 +3,10 @@ import Testing
 
 @testable import KitManagerCore
 
-private func commit(_ id: String, _ modules: Set<String>) -> KitCommit {
+private func commit(_ id: String, _ modules: Set<String>, at time: TimeInterval = 0, breaking: Bool = false) -> KitCommit {
     KitCommit(
-        id: id, subject: "feat: \(id)", type: "feat", scope: nil, breaking: false,
-        date: Date(timeIntervalSince1970: 0), modules: modules)
+        id: id, subject: "feat: \(id)", type: "feat", scope: nil, breaking: breaking,
+        date: Date(timeIntervalSince1970: time), modules: modules)
 }
 
 private func file(_ path: String, _ status: InspectStatus, layer: String = "base", expected: Bool = false) -> InspectFile {
@@ -24,23 +24,31 @@ private func report(_ files: [InspectFile]) -> InspectReport {
 
 @Suite("Detail page logic")
 struct DetailLogicTests {
-    @Test func changelogShowsBaseThenInstalledModulesOnly() {
+    @Test func yourModulesShowsEachRelevantChangeOnce() {
         let commits = [
-            commit("a", ["auth"]), commit("b", ["base"]), commit("c", ["blog"]), commit("d", ["auth", "base"]),
-            commit("e", []),
+            commit("installed", ["auth"], at: 8), commit("shared", ["base"], at: 9),
+            commit("foreign", ["pwa"], at: 10, breaking: true),
+            commit("both", ["auth", "base"], at: 11), commit("unshipped", [], at: 12),
         ]
-        let groups = ChangelogGrouper.groups(commits: commits, installed: ["auth", "pwa"], showAll: false)
-        #expect(groups.map(\.module) == ["base", "auth"])
-        #expect(groups[0].commits.map(\.id) == ["b", "d"])
-        // A commit that touched two relevant modules appears under both.
-        #expect(groups[1].commits.map(\.id) == ["a", "d"])
+        let visible = ChangelogGrouper.visibleCommits(commits, installed: ["auth"], showAll: false)
+        #expect(visible.map(\.id) == ["both", "shared", "installed"])
     }
 
-    @Test func showAllAddsOtherModulesAndUnshippedCommits() {
-        let commits = [commit("a", ["blog"]), commit("b", ["auth"]), commit("c", []), commit("d", ["analytics"])]
-        let groups = ChangelogGrouper.groups(commits: commits, installed: ["auth"], showAll: true)
-        #expect(groups.map(\.module) == ["auth", "analytics", "blog", nil])
-        #expect(groups.last?.commits.map(\.id) == ["c"])
+    @Test func allChangesIncludesUnshippedChanges() {
+        let commits = [commit("unshipped", [], at: 5), commit("foreign", ["pwa"], at: 4)]
+        let visible = ChangelogGrouper.visibleCommits(commits, installed: ["auth"], showAll: true)
+        #expect(visible.map(\.id) == ["unshipped", "foreign"])
+        #expect(visible.first?.modules == [])
+    }
+
+    @Test func breakingChangesArePinnedWithEachTierNewestFirst() {
+        let commits = [
+            commit("older", ["base"], at: 10), commit("new", ["base"], at: 15),
+            commit("first break", ["base"], at: 2, breaking: true),
+            commit("newer break", ["base"], at: 3, breaking: true),
+        ]
+        let visible = ChangelogGrouper.visibleCommits(commits, installed: [], showAll: false)
+        #expect(visible.map(\.id) == ["newer break", "first break", "new", "older"])
     }
 
     @Test func commitTitleDropsTheConventionalPrefix() {
@@ -57,9 +65,8 @@ struct DetailLogicTests {
         #expect(titled("chore: ") == "chore: ")
     }
 
-    @Test func changelogWithNothingRelevantHasNoGroups() {
-        #expect(ChangelogGrouper.groups(commits: [commit("a", ["blog"])], installed: [], showAll: false).isEmpty)
-        #expect(ChangelogGrouper.groups(commits: [], installed: [], showAll: true).isEmpty)
+    @Test func moduleChipsOrderBaseThenAlphabetical() {
+        #expect(ChangelogGrouper.ordered(["pwa", "auth", "base", "admin"]) == ["base", "admin", "auth", "pwa"])
     }
 
     @Test func layerBreakdownCountsOnlyScoredFiles() {

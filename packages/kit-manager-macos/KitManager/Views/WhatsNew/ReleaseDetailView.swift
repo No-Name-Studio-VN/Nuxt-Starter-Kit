@@ -5,8 +5,20 @@ import SwiftUI
 struct ReleaseDetailView: View {
     let release: ReleaseSection
     let projects: [Project]
+    let onOpen: ((KitCommit) -> Void)?
+    let onViewAll: (() -> Void)?
 
     @Environment(AppModel.self) private var model
+
+    init(
+        release: ReleaseSection, projects: [Project], onOpen: ((KitCommit) -> Void)? = nil,
+        onViewAll: (() -> Void)? = nil
+    ) {
+        self.release = release
+        self.projects = projects
+        self.onOpen = onOpen
+        self.onViewAll = onViewAll
+    }
 
     private var affectedProjects: [ProjectRow] {
         let modules = Set(release.commits.flatMap(\.modules))
@@ -41,7 +53,26 @@ struct ReleaseDetailView: View {
         .navigationTitle(release.title)
     }
 
+    @ViewBuilder
     private var header: some View {
+        if let onViewAll {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    releaseInfo
+                    Spacer(minLength: 0)
+                    viewChangesButton(action: onViewAll)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    releaseInfo
+                    viewChangesButton(action: onViewAll)
+                }
+            }
+        } else {
+            releaseInfo
+        }
+    }
+
+    private var releaseInfo: some View {
         HStack(spacing: 14) {
             SettingsIcon(symbol: release.iconSymbol, color: release.iconColor, size: 56)
                 .accessibilityHidden(true)
@@ -60,45 +91,21 @@ struct ReleaseDetailView: View {
         .padding(.vertical, 6)
     }
 
+    private func viewChangesButton(action: @escaping () -> Void) -> some View {
+        Button("View code changes", systemImage: "chevron.left.forwardslash.chevron.right", action: action)
+            .buttonStyle(.glass)
+            .controlSize(.small)
+            .fixedSize()
+    }
+
     @ViewBuilder
     private func changes(_ title: String, commits: [KitCommit]) -> some View {
         if !commits.isEmpty {
             Section(title) {
-                ForEach(commits) { commit in commitRow(commit) }
-            }
-        }
-    }
-
-    private func commitRow(_ commit: KitCommit) -> some View {
-        let modules = ChangelogGrouper.ordered(Array(commit.modules)).joined(separator: ", ")
-        let age = commit.date.formatted(.relative(presentation: .named))
-        return HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(commit.kindWord)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(commit.kindColor)
-                .frame(minWidth: 44, alignment: .leading)
-            if commit.breaking {
-                Image(systemName: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
-                    .help("Breaking change")
-                    .accessibilityLabel("Breaking change")
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(commit.title)
-                if !modules.isEmpty {
-                    Text(modules)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .help(modules)
-                        .accessibilityLabel("Modules: \(modules)")
+                ForEach(commits) { commit in
+                    KitChangeRow(commit: commit, onOpen: onOpen.map { open in { open(commit) } })
                 }
             }
-            .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 2)
-        .help("Commit \(commit.id.prefix(7)) · \(age)")
-        .accessibilityElement(children: .combine)
-        .accessibilityValue(age)
     }
 }

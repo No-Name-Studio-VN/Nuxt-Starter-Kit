@@ -19,6 +19,8 @@ export default createConfigForNuxt({
       'server/db/migrations/**',
       // Fixture kits are fake project sources the CLI renders in tests.
       'packages/*/test/fixtures/**',
+      // Vendored minified bundles (oxlint and oxfmt skip these too).
+      '**/*.min.js',
     ],
   })
   .override('nuxt/vue/rules', {

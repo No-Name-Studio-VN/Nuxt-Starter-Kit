@@ -150,6 +150,14 @@ struct KitTests {
         #expect(mapping.modules(for: []).isEmpty)
     }
 
+    @Test func ownedPathsKeepBaseAndInstalledModulesWithoutExcludedPaths() {
+        let mapping = makeMapping()
+        let paths = ["docs/x.md", "layers/auth-2fa/x.ts", "app/app.vue", "content/doc.md", "CLAUDE.md"]
+        #expect(mapping.paths(paths, ownedBy: ["auth-2fa"]) == ["layers/auth-2fa/x.ts", "app/app.vue"])
+        #expect(mapping.paths(paths, ownedBy: ["content"]) == ["app/app.vue", "content/doc.md"])
+        #expect(mapping.paths(paths, ownedBy: []) == ["app/app.vue"])
+    }
+
     // MARK: Relevance
 
     @Test func relevanceUsesBaseAndInstalledModules() {

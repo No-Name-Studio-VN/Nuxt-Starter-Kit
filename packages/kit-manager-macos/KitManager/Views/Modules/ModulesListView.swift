@@ -5,9 +5,42 @@ import SwiftUI
 struct ModulesListView: View {
     let rows: [ModuleMatrix.Row]
     let kitProjectCount: Int
+    let searchText: String
     @Binding var selection: String?
 
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Collapsed kit group names, one per line.
+    @AppStorage("collapsedModuleGroups") private var collapsedStorage = ""
+
+    private var query: String { searchText.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    private var visibleRows: [ModuleMatrix.Row] {
+        guard !query.isEmpty else { return rows }
+        return rows.filter { row in
+            row.module.title.localizedStandardContains(query)
+                || row.id.localizedStandardContains(query)
+                || row.module.description.localizedStandardContains(query)
+        }
+    }
+
+    private var collapsedGroups: Set<String> {
+        Set(collapsedStorage.split(separator: "\n").map(String.init))
+    }
+
+    /// Every group opens while searching, so a match is never hidden in a collapsed one.
+    private func isExpanded(_ group: String) -> Bool {
+        !query.isEmpty || !collapsedGroups.contains(group)
+    }
+
+    private func toggle(_ group: String) {
+        guard query.isEmpty else { return }
+        var groups = collapsedGroups
+        if groups.contains(group) { groups.remove(group) } else { groups.insert(group) }
+        withAnimation(reduceMotion ? nil : .snappy) {
+            collapsedStorage = groups.sorted().joined(separator: "\n")
+        }
+    }
 
     var body: some View {
         content
@@ -30,18 +63,62 @@ struct ModulesListView: View {
                 "No kit projects", systemImage: SidebarItem.modules.symbol,
                 description: Text("Add a project made with the kit to see which modules it uses."))
         } else {
-            List(selection: $selection) {
-                ForEach(groupModules(rows, module: \.module)) { group in
-                    if let name = group.name {
-                        Section(name) { moduleRows(group.entries) }
-                    } else {
-                        moduleRows(group.entries)
+            let visible = visibleRows
+            if visible.isEmpty {
+                ContentUnavailableView.search(text: query)
+            } else {
+                List(selection: $selection) {
+                    ForEach(groupModules(visible, module: \.module)) { group in
+                        if let name = group.name {
+                            let expanded = isExpanded(name)
+                            Section {
+                                if expanded { moduleRows(group.entries) }
+                            } header: {
+                                groupHeader(name, count: group.entries.count, expanded: expanded)
+                            }
+                        } else {
+                            moduleRows(group.entries)
+                        }
                     }
                 }
+                .accessibilityLabel("Modules")
+                .navigationSubtitle(subtitle(visible: visible.count))
             }
-            .accessibilityLabel("Modules")
-            .navigationSubtitle(rows.count == 1 ? "1 module" : "\(rows.count) modules")
         }
+    }
+
+    private func groupHeader(_ name: String, count: Int, expanded: Bool) -> some View {
+        let modules = count == 1 ? "1 module" : "\(count) modules"
+        return Button {
+            toggle(name)
+        } label: {
+            HStack(spacing: 6) {
+                Text(name)
+                if !expanded {
+                    Text(modules)
+                        .foregroundStyle(.tertiary)
+                }
+                Spacer(minLength: 4)
+                if query.isEmpty {
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                }
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help(expanded ? "Collapse \(name)" : "Expand \(name)")
+        .accessibilityLabel("\(name), \(modules)")
+        .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+        .accessibilityHint(expanded ? "Hides the modules in this group" : "Shows the modules in this group")
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private func subtitle(visible: Int) -> String {
+        let total = rows.count == 1 ? "1 module" : "\(rows.count) modules"
+        return query.isEmpty ? total : "\(visible) of \(total)"
     }
 
     private func moduleRows(_ entries: [ModuleSection<ModuleMatrix.Row>.Entry]) -> some View {

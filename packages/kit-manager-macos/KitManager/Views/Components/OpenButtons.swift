@@ -1,3 +1,4 @@
+import KitManagerCore
 import SwiftUI
 
 /// Opens a project in its tools and exposes the other project actions.
@@ -31,6 +32,7 @@ struct OpenButtons: View {
                         }
                         HStack(spacing: 8) {
                             claude
+                            repository
                             menu(flowItem)
                         }
                     }
@@ -46,6 +48,7 @@ struct OpenButtons: View {
             editor
             terminal
             claude
+            repository
             if showsMenu { menu(flowItem) }
         }
     }
@@ -68,9 +71,21 @@ struct OpenButtons: View {
         }
     }
 
+    @ViewBuilder
+    private var repository: some View {
+        if let url = row.snapshot?.repositoryURL {
+            OpenRepositoryButton(model: model, project: project, repository: url, showsActionTitle: false, compact: compact)
+                .buttonStyle(.glass)
+                .fixedSize()
+                .disabled(row.isMissing)
+        }
+    }
+
     private func menu(_ flowItem: FlowMenuItem) -> some View {
         Menu {
-            ProjectMenuItems(model: model, project: project, isMissing: row.isMissing, flowItem: flowItem, onLocate: onLocate)
+            ProjectMenuItems(
+                model: model, project: project, isMissing: row.isMissing, flowItem: flowItem,
+                repositoryURL: row.snapshot?.repositoryURL, onLocate: onLocate)
         } label: {
             Label("More actions", systemImage: "ellipsis")
                 .labelStyle(.iconOnly)
@@ -101,5 +116,43 @@ struct OpenButtons: View {
         .disabled(row.isMissing)
         .accessibilityLabel(actionName)
         .help(actionName)
+    }
+}
+
+/// The repository action shared by the project header, menus and menu bar.
+struct OpenRepositoryButton: View {
+    let model: AppModel
+    let project: Project
+    let repository: URL
+    var showsActionTitle = true
+    var compact = false
+
+    var body: some View {
+        let host = RemoteWebURL.hostName(of: repository)
+        let actionName = "Open on \(host)"
+        let label = Label {
+            Text(showsActionTitle ? actionName : host)
+        } icon: {
+            icon
+        }
+        Button {
+            model.openRepository(project)
+        } label: {
+            if compact {
+                label.labelStyle(.iconOnly)
+            } else {
+                label
+            }
+        }
+        .accessibilityLabel(actionName)
+        .help(actionName)
+    }
+
+    private var icon: Image {
+        if repository.host()?.lowercased() == "github.com" {
+            Image("GitHubMark")
+        } else {
+            Image(systemName: "arrow.up.right.square")
+        }
     }
 }

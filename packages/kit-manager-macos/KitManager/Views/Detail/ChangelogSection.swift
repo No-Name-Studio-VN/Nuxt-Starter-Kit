@@ -1,37 +1,78 @@
 import KitManagerCore
 import SwiftUI
 
-/// Kit changes since the project’s recorded commit, grouped by module.
+/// Kit changes since the project's recorded commit, with breaking changes first.
 struct ChangelogSection: View {
     let snapshot: ProjectSnapshot
+    let onOpenChange: ((KitCommit) -> Void)?
+    let onViewAll: (() -> Void)?
 
     @Environment(AppModel.self) private var model
     @State private var showAll = false
-    @State private var expanded: Set<String> = []
+    @State private var isExpanded = false
 
     private static let collapsedCount = 5
 
-    private var installed: Set<String> { Set(snapshot.kitState?.modules ?? []) }
+    init(snapshot: ProjectSnapshot, onOpenChange: ((KitCommit) -> Void)? = nil, onViewAll: (() -> Void)? = nil) {
+        self.snapshot = snapshot
+        self.onOpenChange = onOpenChange
+        self.onViewAll = onViewAll
+    }
 
     var body: some View {
-        let groups = ChangelogGrouper.groups(commits: snapshot.changelog, installed: installed, showAll: showAll)
-        VStack(alignment: .leading, spacing: 14) {
-            Toggle("Show all kit changes", isOn: $showAll)
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .font(.caption)
+        let installed = Set(snapshot.kitState?.modules ?? [])
+        let commits = ChangelogGrouper.visibleCommits(snapshot.changelog, installed: installed, showAll: showAll)
+        VStack(alignment: .leading, spacing: 8) {
+            controls
             if snapshot.changelog.isEmpty {
                 empty
-            } else if groups.isEmpty {
+            } else if commits.isEmpty {
                 Text("None of the new kit changes touch the base or your modules.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(groups) { group in
-                    groupView(group)
-                }
+                changes(commits)
             }
         }
+        .padding(.top, 4)
+        .onChange(of: showAll) { isExpanded = false }
+    }
+
+    @ViewBuilder
+    private var controls: some View {
+        if let onViewAll {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    scopePicker
+                    Spacer(minLength: 8)
+                    viewChangesButton(action: onViewAll)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    scopePicker
+                    viewChangesButton(action: onViewAll)
+                }
+            }
+        } else {
+            scopePicker
+        }
+    }
+
+    private var scopePicker: some View {
+        Picker("Change scope", selection: $showAll) {
+            Text("Your modules").tag(false)
+            Text("All").tag(true)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .controlSize(.small)
+        .fixedSize()
+    }
+
+    private func viewChangesButton(action: @escaping () -> Void) -> some View {
+        Button("View code changes", systemImage: "chevron.left.forwardslash.chevron.right", action: action)
+            .buttonStyle(.glass)
+            .controlSize(.small)
+            .fixedSize()
     }
 
     @ViewBuilder
@@ -51,66 +92,34 @@ struct ChangelogSection: View {
         }
     }
 
-    private func groupView(_ group: ChangelogGroup) -> some View {
-        let isExpanded = expanded.contains(group.id)
-        let shown = isExpanded ? group.commits : Array(group.commits.prefix(Self.collapsedCount))
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Text(group.module ?? "not shipped")
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(group.module == nil ? Color.secondary : Color.primary)
-                Text("\(group.commits.count)")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+    private func changes(_ commits: [KitCommit]) -> some View {
+        let shown = isExpanded ? commits[...] : commits.prefix(Self.collapsedCount)
+        let breaking = shown.prefix(while: \.breaking)
+        return VStack(alignment: .leading, spacing: 2) {
+            if !breaking.isEmpty {
+                VStack(spacing: 2) {
+                    ForEach(breaking, content: changeRow)
+                }
+                .background(.red.opacity(0.08), in: .rect(cornerRadius: 8))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8).strokeBorder(.red.opacity(0.20))
+                        .allowsHitTesting(false)
+                }
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.isHeader)
-            ForEach(shown) { commit in
-                commitRow(commit)
-            }
-            if group.commits.count > Self.collapsedCount {
-                Button(
-                    isExpanded ? "Show fewer" : "Show \(group.commits.count - Self.collapsedCount) more"
-                ) {
-                    if isExpanded { expanded.remove(group.id) } else { expanded.insert(group.id) }
+            ForEach(shown.dropFirst(breaking.count), content: changeRow)
+            if commits.count > Self.collapsedCount {
+                Button(isExpanded ? "Show fewer" : "Show \(commits.count - Self.collapsedCount) more") {
+                    isExpanded.toggle()
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Color.accentColor)
                 .font(.caption)
+                .padding(.top, 4)
             }
         }
     }
 
-    private func commitRow(_ commit: KitCommit) -> some View {
-        let modules = ChangelogGrouper.ordered(Array(commit.modules)).joined(separator: ", ")
-        return HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(commit.kindWord)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(commit.kindColor)
-                .frame(minWidth: 42, alignment: .leading)
-            if commit.breaking {
-                Image(systemName: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
-                    .help("Breaking change")
-                    .accessibilityLabel("Breaking change")
-            }
-            Text(commit.title)
-                .font(.callout)
-                .foregroundStyle(.primary)
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            if !modules.isEmpty {
-                Text(modules)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .help(modules)
-            }
-            Text(commit.date.formatted(.relative(presentation: .named)))
-                .lineLimit(1)
-                .fixedSize()
-        }
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .accessibilityElement(children: .combine)
+    private func changeRow(_ commit: KitCommit) -> some View {
+        KitChangeRow(commit: commit, onOpen: onOpenChange.map { open in { open(commit) } })
     }
 }

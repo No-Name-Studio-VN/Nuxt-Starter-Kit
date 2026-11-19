@@ -1,3 +1,5 @@
+import Foundation
+
 /// Everything the app knows about one project right now. Derived at runtime, never persisted
 /// (except the preview and inspect results, which are cached separately).
 public struct ProjectSnapshot: Sendable, Equatable {
@@ -6,6 +8,8 @@ public struct ProjectSnapshot: Sendable, Equatable {
     public var isKitSource: Bool
     public var package: PackageInfo?
     public var git: GitStatus?
+    /// The browser URL of the project remote, with credentials removed.
+    public var repositoryURL: URL?
     public var env: EnvCheck?
     public var wrangler: WranglerInfo?
     public var health: SiteHealth?
@@ -29,12 +33,13 @@ public struct ProjectSnapshot: Sendable, Equatable {
         versionLabel: String? = nil, behind: Int? = nil, kitCheckFailure: String? = nil,
         kitUnavailableReason: String? = nil, preview: Loadable<TransitionReport> = .idle,
         inspect: Loadable<InspectReport> = .idle, changelog: [KitCommit] = [],
-        changelogFailure: String? = nil
+        changelogFailure: String? = nil, repositoryURL: URL? = nil
     ) {
         self.kind = kind
         self.isKitSource = isKitSource
         self.package = package
         self.git = git
+        self.repositoryURL = repositoryURL
         self.env = env
         self.wrangler = wrangler
         self.health = health

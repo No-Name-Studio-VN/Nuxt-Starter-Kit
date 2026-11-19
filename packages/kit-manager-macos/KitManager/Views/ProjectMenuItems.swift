@@ -8,6 +8,7 @@ struct ProjectMenuItems: View {
     let project: Project
     let isMissing: Bool
     let flowItem: FlowMenuItem
+    let repositoryURL: URL?
     let onLocate: () -> Void
 
     var body: some View {
@@ -25,6 +26,9 @@ struct ProjectMenuItems: View {
             }
             Button("Continue Claude Session", systemImage: "arrow.clockwise") {
                 Task { await model.openTerminal(project, command: .claudeContinue) }
+            }
+            if let repositoryURL {
+                OpenRepositoryButton(model: model, project: project, repository: repositoryURL)
             }
             switch flowItem {
             case .none:

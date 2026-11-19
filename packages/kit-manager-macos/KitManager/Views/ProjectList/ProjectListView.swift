@@ -111,7 +111,7 @@ struct ProjectListView: View {
             Divider()
             ProjectMenuItems(
                 model: model, project: project, isMissing: row.isMissing,
-                flowItem: model.flowMenuItem(for: project)
+                flowItem: model.flowMenuItem(for: project), repositoryURL: row.snapshot?.repositoryURL
             ) {
                 importRequest = .locate(project)
             }

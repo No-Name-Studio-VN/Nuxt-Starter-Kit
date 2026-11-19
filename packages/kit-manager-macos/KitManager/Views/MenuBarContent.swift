@@ -2,8 +2,8 @@ import AppKit
 import KitManagerCore
 import SwiftUI
 
-/// The menu bar extra's window: how many projects need attention, every project with its open
-/// actions, and a way back to the main window. `MenuBarExtra` is its own scene, so the model is
+/// The menu bar extra's window: how many projects need attention, each project's compact tool
+/// and repository actions, and a way back to the main window. `MenuBarExtra` is its own scene, so the model is
 /// passed in instead of read from the environment.
 struct MenuBarContent: View {
     let model: AppModel

@@ -26,6 +26,17 @@ public struct GitInspector: Sendable {
         )
     }
 
+    /// The fetch URL of `origin`, or of the only configured remote when there is no `origin`.
+    public func remoteURL(_ root: URL) async -> String? {
+        guard let listing = try? await git(root, ["remote"]) else { return nil }
+        let names = String(decoding: listing.stdout, as: UTF8.self).split(whereSeparator: \.isNewline)
+        let name = names.contains("origin") ? "origin" : (names.count == 1 ? names.first : nil)
+        guard let name, let result = try? await git(root, ["remote", "get-url", "--", String(name)])
+        else { return nil }
+        let url = String(decoding: result.stdout, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        return url.isEmpty ? nil : url
+    }
+
     /// SHA-256 hex over HEAD, the porcelain status, and the size and mtime of every dirty or
     /// untracked path, so editing an already-dirty file again changes the result (spec 2.3).
     /// A repository without commits hashes an empty HEAD.

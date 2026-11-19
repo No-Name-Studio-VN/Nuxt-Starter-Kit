@@ -30,6 +30,9 @@
 			exceptions = (
 				A10000000000000000000004 /* Exceptions for "KitManager" folder in "KitManager" target */,
 			);
+			explicitFolders = (
+				Resources/Diff,
+			);
 			path = KitManager;
 			sourceTree = "<group>";
 		};

@@ -5,9 +5,16 @@ import SwiftUI
 struct OverviewLatestKit: View {
     let latestLabel: String
     let anchor: String?
+    let onOpen: ((KitCommit) -> Void)?
 
     @Environment(AppModel.self) private var model
     @State private var commits: [KitCommit] = []
+
+    init(latestLabel: String, anchor: String?, onOpen: ((KitCommit) -> Void)? = nil) {
+        self.latestLabel = latestLabel
+        self.anchor = anchor
+        self.onOpen = onOpen
+    }
 
     var body: some View {
         Section {
@@ -20,7 +27,7 @@ struct OverviewLatestKit: View {
                     commits = Array(sections.lazy.flatMap(\.commits).prefix(3))
                 }
             ForEach(commits) { commit in
-                commitRow(commit)
+                KitChangeRow(commit: commit, onOpen: onOpen.map { open in { open(commit) } })
             }
         } header: {
             Text("Latest Kit")
@@ -43,34 +50,5 @@ struct OverviewLatestKit: View {
                 .buttonStyle(.bordered)
                 .fixedSize()
         }
-    }
-
-    private func commitRow(_ commit: KitCommit) -> some View {
-        let modules = ChangelogGrouper.ordered(Array(commit.modules)).joined(separator: ", ")
-        return HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(commit.kindWord)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(commit.kindColor)
-                .frame(minWidth: 42, alignment: .leading)
-            if commit.breaking {
-                Image(systemName: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
-                    .help("Breaking change")
-                    .accessibilityLabel("Breaking change")
-            }
-            Text(commit.title)
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .help(commit.title)
-            if !modules.isEmpty {
-                Text(modules)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .frame(maxWidth: 110, alignment: .trailing)
-                    .help(modules)
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 }

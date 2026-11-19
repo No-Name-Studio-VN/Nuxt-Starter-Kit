@@ -7,6 +7,23 @@ struct UpgradeSection: View {
     let snapshot: ProjectSnapshot
 
     @Environment(AppModel.self) private var model
+    @Environment(\.openKitDiff) private var openKitDiff
+
+    private var installedModules: Set<String> { Set(snapshot.kitState?.modules ?? []) }
+
+    /// The project's kit commit to the latest main, when both are known.
+    private var updateRange: (base: String, head: String)? {
+        guard let base = snapshot.kitState?.commit, let head = model.latestMain else { return nil }
+        return (base, head)
+    }
+    @State private var isChangelogExpanded: Bool = {
+        #if DEBUG
+        // Launch with -KMDebugExpandChangelog YES to capture the update changelog without clicking.
+        UserDefaults.standard.bool(forKey: "KMDebugExpandChangelog")
+        #else
+        false
+        #endif
+    }()
 
     private var status: ProjectStatus { ProjectStatus(snapshot: snapshot) }
     private var versionLabel: String { snapshot.versionLabel ?? snapshot.kitState.map { String($0.commit.prefix(7)) } ?? "—" }
@@ -40,8 +57,19 @@ struct UpgradeSection: View {
                 }
             }
             if snapshot.usesDefaultTemplate, (snapshot.behind ?? 0) > 0 {
-                DisclosureGroup("What's new in this update") {
-                    ChangelogSection(snapshot: snapshot)
+                DisclosureGroup("What's new in this update", isExpanded: $isChangelogExpanded) {
+                    ChangelogSection(
+                        snapshot: snapshot,
+                        onOpenChange: openKitDiff.map { open in { open(.change($0, modules: installedModules)) } },
+                        onViewAll: updateRange.flatMap { range in
+                            openKitDiff.map { open in
+                                {
+                                    open(DiffRequest(
+                                        title: "Update to \(latestLabel)", base: range.base, head: range.head,
+                                        modules: installedModules))
+                                }
+                            }
+                        })
                 }
             }
         } header: {

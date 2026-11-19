@@ -52,12 +52,14 @@ struct SnapshotLoader: Sendable {
         let url = ref.url
         async let package = PackageReader.read(url)
         async let gitStatus = try? await git.status(url)
+        async let remote = git.remoteURL(url)
         async let fingerprint = try? await git.fingerprint(url)
         async let env = EnvKeys.check(url)
         async let wrangler = WranglerInfo.read(url)
 
         snapshot.package = await package
         snapshot.git = await gitStatus
+        snapshot.repositoryURL = await remote.flatMap { RemoteWebURL.repository(fromRemote: $0) }
         snapshot.env = await env
         snapshot.wrangler = await wrangler
 
