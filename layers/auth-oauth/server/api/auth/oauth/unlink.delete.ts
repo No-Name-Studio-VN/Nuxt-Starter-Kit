@@ -8,6 +8,7 @@ import { assertCanRemoveCredential } from '#layers/auth/server/utils/signInMetho
 import type { OAuthUnlinkPayload } from '#layers/auth-oauth/types/oauth';
 import { oauthUnlinkBodySchema } from '#layers/auth-oauth/shared/schemas/oauthSchema';
 import { getOAuthReadiness } from '../../../oauth/readiness';
+import { isOAuthProviderId } from '../../../oauth/registry';
 
 export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);
@@ -39,7 +40,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { ready } = getOAuthReadiness(useRuntimeConfig(event));
-  if (ready.includes(provider)) {
+  if (isOAuthProviderId(provider) && ready.includes(provider)) {
     await assertCanRemoveCredential(userId);
   }
 
