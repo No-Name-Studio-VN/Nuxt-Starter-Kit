@@ -65,11 +65,23 @@ public struct KitModuleInfo: Codable, Sendable, Hashable, Identifiable {
     public let env: [String]
     public let bindings: [String]
     public let rootFiles: [String]
+    public let group: String?
+    public let parent: String?
+    public let requiresOneOf: [String]
+
+    // The app retains catalogue rows rather than the report, so carry the decoded order with each row.
+    fileprivate(set) var groupPlacement: ModuleGroupPlacement?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, description, requires, `internal`, dependencies, devDependencies, scripts
+        case env, bindings, rootFiles, group, parent, requiresOneOf
+    }
 
     public init(
         id: String, title: String, description: String, requires: [String], internal: Bool,
         dependencies: [String], devDependencies: [String], scripts: [String], env: [String],
-        bindings: [String], rootFiles: [String]
+        bindings: [String], rootFiles: [String], group: String? = nil, parent: String? = nil,
+        requiresOneOf: [String] = []
     ) {
         self.id = id
         self.title = title
@@ -82,6 +94,27 @@ public struct KitModuleInfo: Codable, Sendable, Hashable, Identifiable {
         self.env = env
         self.bindings = bindings
         self.rootFiles = rootFiles
+        self.group = group
+        self.parent = parent
+        self.requiresOneOf = requiresOneOf
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(String.self, forKey: .id)
+        title = try values.decode(String.self, forKey: .title)
+        description = try values.decode(String.self, forKey: .description)
+        requires = try values.decode([String].self, forKey: .requires)
+        self.internal = try values.decode(Bool.self, forKey: .internal)
+        dependencies = try values.decode([String].self, forKey: .dependencies)
+        devDependencies = try values.decode([String].self, forKey: .devDependencies)
+        scripts = try values.decode([String].self, forKey: .scripts)
+        env = try values.decode([String].self, forKey: .env)
+        bindings = try values.decode([String].self, forKey: .bindings)
+        rootFiles = try values.decode([String].self, forKey: .rootFiles)
+        group = try values.decodeIfPresent(String.self, forKey: .group)
+        parent = try values.decodeIfPresent(String.self, forKey: .parent)
+        requiresOneOf = try values.decodeIfPresent([String].self, forKey: .requiresOneOf) ?? []
     }
 }
 
@@ -90,12 +123,35 @@ public struct ModulesReport: Codable, Sendable, Equatable {
     public let commit: String
     public let modules: [KitModuleInfo]
     public let installed: [String]
+    public let groups: [String]
 
-    public init(schema: Int, commit: String, modules: [KitModuleInfo], installed: [String]) {
+    public init(schema: Int, commit: String, modules: [KitModuleInfo], installed: [String], groups: [String] = []) {
         self.schema = schema
         self.commit = commit
-        self.modules = modules
         self.installed = installed
+        self.groups = groups
+        let order = Dictionary(groups.enumerated().map { ($0.element, $0.offset) }, uniquingKeysWith: { first, _ in first })
+        self.modules = modules.map { module in
+            var module = module
+            if order.isEmpty {
+                module.groupPlacement = nil
+            } else if let group = module.group, let index = order[group] {
+                module.groupPlacement = .named(group, index: index)
+            } else {
+                module.groupPlacement = .ungrouped
+            }
+            return module
+        }
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        try self.init(
+            schema: values.decode(Int.self, forKey: .schema),
+            commit: values.decode(String.self, forKey: .commit),
+            modules: values.decode([KitModuleInfo].self, forKey: .modules),
+            installed: values.decode([String].self, forKey: .installed),
+            groups: values.decodeIfPresent([String].self, forKey: .groups) ?? [])
     }
 }
 

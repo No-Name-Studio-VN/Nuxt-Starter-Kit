@@ -1,6 +1,8 @@
 {
   "title": "Two-factor authentication",
   "description": "TOTP second factor at sign-in, with setup, verification and disable endpoints.",
+  "group": "Authentication",
+  "parent": "auth",
   "requires": ["auth"],
   "dependencies": ["vue-input-otp", "otpauth"]
 }

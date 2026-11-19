@@ -2,24 +2,17 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { CliError } from '../errors';
+import type { KitModule, ModuleGroup } from '../types/modules';
+import { readKitConfig, type KitConfig } from './config';
 
-export interface KitModule {
-  id: string;
-  title: string;
-  description: string;
-  requires: string[];
-  internal: boolean;
-  dependencies: string[];
-  devDependencies: string[];
-  scripts: string[];
-  env: string[];
-  bindings: string[];
-  rootFiles: string[];
-}
+export type { KitModule } from '../types/modules';
 
 const moduleSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
+  group: z.string().min(1).optional(),
+  parent: z.string().min(1).optional(),
+  requiresOneOf: z.array(z.string()).default([]),
   requires: z.array(z.string()).default([]),
   internal: z.boolean().default(false),
   dependencies: z.array(z.string()).default([]),
@@ -50,7 +43,8 @@ export async function readKitModule(kitRoot: string, id: string): Promise<KitMod
   return { id, ...result.data };
 }
 
-export async function readKitModules(kitRoot: string): Promise<KitModule[]> {
+export async function readKitModules(kitRoot: string, config?: KitConfig): Promise<KitModule[]> {
+  const { groups } = config ?? (await readKitConfig(kitRoot));
   const layersRoot = join(kitRoot, 'layers');
   const entries = await readdir(layersRoot, { withFileTypes: true }).catch((error: unknown) => {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
@@ -64,11 +58,38 @@ export async function readKitModules(kitRoot: string): Promise<KitModule[]> {
     modules.push(await readKitModule(kitRoot, entry.name));
   }
 
-  const ids = new Set(modules.map((module) => module.id));
+  const byId = new Map(modules.map((module) => [module.id, module]));
   for (const module of modules) {
     for (const id of module.requires) {
-      if (!ids.has(id)) {
+      if (!byId.has(id)) {
         throw new CliError(`Module "${module.id}" requires unknown module "${id}".`);
+      }
+    }
+    for (const id of module.requiresOneOf) {
+      if (!byId.has(id)) {
+        throw new CliError(`Module "${module.id}" lists unknown module "${id}" in requiresOneOf.`);
+      }
+    }
+    if (groups) {
+      if (!module.group && !module.internal) {
+        throw new CliError(`Module "${module.id}" must declare a group.`);
+      }
+      if (module.group && !groups.includes(module.group)) {
+        throw new CliError(`Module "${module.id}" has unknown group "${module.group}".`);
+      }
+    }
+    if (module.parent) {
+      const parent = byId.get(module.parent);
+      if (!parent) {
+        throw new CliError(`Module "${module.id}" has unknown parent "${module.parent}".`);
+      }
+      if (!module.requires.includes(parent.id)) {
+        throw new CliError(`Module "${module.id}" must list parent "${parent.id}" in requires.`);
+      }
+      if (groups && parent.group !== module.group) {
+        throw new CliError(
+          `Module "${module.id}" and its parent "${parent.id}" must be in the same group.`,
+        );
       }
     }
   }
@@ -110,4 +131,46 @@ export function dependentsOf(modules: KitModule[], installed: string[], id: stri
   return installed.filter(
     (candidate) => candidate !== id && resolveSelection(modules, [candidate]).includes(id),
   );
+}
+
+export function validateSelection(modules: KitModule[], selection: string[]): void {
+  const selected = new Set(selection);
+  for (const module of modules) {
+    if (!selected.has(module.id) || module.requiresOneOf.length === 0) continue;
+    if (!module.requiresOneOf.some((id) => selected.has(id))) {
+      throw new CliError(`${module.id} needs at least one of ${module.requiresOneOf.join(', ')}.`);
+    }
+  }
+}
+
+export function groupModules(modules: KitModule[], groups?: string[]): ModuleGroup[] {
+  if (!groups) {
+    return modules.length
+      ? [{ name: undefined, entries: modules.map((module) => ({ module, depth: 0 })) }]
+      : [];
+  }
+
+  const sections: ModuleGroup[] = [];
+  for (const name of [...new Set(groups), undefined]) {
+    const members = modules.filter((module) => module.group === name);
+    if (members.length === 0) continue;
+    const ids = new Set(members.map((module) => module.id));
+    const children = new Map<string | undefined, KitModule[]>();
+    for (const module of members) {
+      const parent = module.parent && ids.has(module.parent) ? module.parent : undefined;
+      const siblings = children.get(parent) ?? [];
+      siblings.push(module);
+      children.set(parent, siblings);
+    }
+    const entries: ModuleGroup['entries'] = [];
+    function visit(parent: string | undefined, depth: number): void {
+      for (const module of children.get(parent) ?? []) {
+        entries.push({ module, depth });
+        visit(module.id, depth + 1);
+      }
+    }
+    visit(undefined, 0);
+    sections.push({ name, entries });
+  }
+  return sections;
 }

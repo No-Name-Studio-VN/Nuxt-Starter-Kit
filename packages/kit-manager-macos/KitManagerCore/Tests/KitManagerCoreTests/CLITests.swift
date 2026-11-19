@@ -105,14 +105,25 @@ struct CLITests {
         let kit = try FakeKit()
         defer { kit.remove() }
         let runner = StubRunner(stdout: try fixture("modules"))
-        let report = try await NuxtSaasCLI(kitRoot: kit.root, runner: runner).modules(at: sha)
-        #expect(report.commit == sha)
+        let commit = "99ee2b306ff92a66babaf1d495e80ff656e60758"
+        let report = try await NuxtSaasCLI(kitRoot: kit.root, runner: runner).modules(at: commit)
+        #expect(report.schema == 1)
+        #expect(report.commit == commit)
+        #expect(report.groups == ["Foundation", "Authentication", "App", "Content"])
         #expect(report.installed.isEmpty)
         #expect(report.modules.count == 12)
         let admin = try #require(report.modules.first { $0.id == "admin" })
+        #expect(admin.group == "App")
+        #expect(admin.parent == nil)
         #expect(admin.requires == ["auth"])
+        #expect(admin.requiresOneOf.isEmpty)
         #expect(admin.scripts == ["db:seed"])
         #expect(!admin.internal)
+        let adminKV = try #require(report.modules.first { $0.id == "admin-kv" })
+        #expect(adminKV.parent == "admin")
+        let serverCore = try #require(report.modules.first { $0.id == "server-core" })
+        #expect(serverCore.group == nil)
+        #expect(serverCore.internal)
 
         let calls = await runner.calls
         let call = try #require(calls.first)
@@ -120,7 +131,7 @@ struct CLITests {
         #expect(call.arguments.contains("--to"))
         #expect(call.arguments.contains("--kit"))
         #expect(call.arguments.contains("--allow-dirty-kit"))
-        #expect(call.arguments.contains(sha))
+        #expect(call.arguments.contains(commit))
     }
 
     @Test func decodesInspectFixture() async throws {

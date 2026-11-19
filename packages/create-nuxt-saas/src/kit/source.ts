@@ -1,11 +1,13 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { downloadTemplate } from 'giget';
+import { z } from 'zod';
 import { CliError } from '../errors';
 import { cleanupOnTermination } from '../util/terminationCleanup';
+import { readKitConfig } from './config';
 import { readKitModules, type KitModule } from './modules';
 
 export type KitSource =
@@ -19,6 +21,7 @@ export interface KitSnapshot {
   commit: string;
   template: string;
   modules: KitModule[];
+  groups?: string[] | undefined;
   cleanup(): Promise<void>;
 }
 
@@ -89,6 +92,22 @@ export async function resolveCommit(source: KitSource): Promise<string> {
   }
 }
 
+const kitPackageSchema = z.object({
+  version: z.string().regex(/^(?:0|[1-9]\d*)\.\d+\.\d+(?:[-+][\w.+-]+)?$/),
+});
+
+export async function readKitMajor(kit: KitSnapshot): Promise<number> {
+  try {
+    const parsed: unknown = JSON.parse(await readFile(join(kit.dir, 'package.json'), 'utf8'));
+    const { version } = kitPackageSchema.parse(parsed);
+    return Number.parseInt(version, 10);
+  } catch (error) {
+    throw new CliError(
+      `Unable to read the kit version in package.json at ${kit.commit}: ${errorMessage(error)}`,
+    );
+  }
+}
+
 export async function openKit(
   source: KitSource,
   commit: string,
@@ -147,8 +166,9 @@ export async function openKit(
         throw unavailable(error);
       }
     }
-    const modules = await readKitModules(dir);
-    return { dir, commit, template, modules, cleanup };
+    const config = await readKitConfig(dir);
+    const modules = await readKitModules(dir, config);
+    return { dir, commit, template, modules, groups: config.groups, cleanup };
   } catch (error) {
     await cleanup();
     if (error instanceof CliError) throw error;

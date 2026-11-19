@@ -10,24 +10,20 @@ struct ModulesSection: View {
     @State private var isManaging = false
     @State private var initialRemoval: String?
 
-    private var installed: [String] { snapshot.kitState?.modules ?? [] }
-
-    private var catalogue: [String: KitModuleInfo] {
-        Dictionary(model.catalogue.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    private var installed: [ModuleChoice] {
+        let catalogue = Dictionary(model.catalogue.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return (snapshot.kitState?.modules ?? []).map { ModuleChoice(id: $0, info: catalogue[$0]) }
     }
 
     private var available: [ModuleChoice] {
-        model.catalogue
-            .filter { !$0.internal && !installed.contains($0.id) }
-            .map { ModuleChoice(id: $0.id, title: $0.title, detail: $0.description) }
+        let installedIDs = Set(snapshot.kitState?.modules ?? [])
+        return model.catalogue
+            .filter { !$0.internal && !installedIDs.contains($0.id) }
+            .map { ModuleChoice(id: $0.id, info: $0) }
     }
 
     private var removable: [ModuleChoice] {
-        installed.compactMap { id in
-            let info = catalogue[id]
-            if info?.internal == true { return nil }
-            return ModuleChoice(id: id, title: info?.title ?? id, detail: info?.description ?? "")
-        }
+        installed.filter { $0.info?.internal != true }
     }
 
     private var canChange: Bool { model.cliStatus == .ready }
@@ -37,7 +33,17 @@ struct ModulesSection: View {
             if installed.isEmpty {
                 Text("No optional modules installed.").foregroundStyle(.secondary)
             } else {
-                ForEach(installed, id: \.self) { id in row(id) }
+                ForEach(groupModules(installed, module: \.info)) { group in
+                    if let name = group.name {
+                        Text(name)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .accessibilityAddTraits(.isHeader)
+                    }
+                    ForEach(group.entries) { entry in
+                        row(entry.item, depth: entry.depth)
+                    }
+                }
             }
             HStack {
                 Spacer()
@@ -81,23 +87,24 @@ struct ModulesSection: View {
         }
     }
 
-    private func row(_ id: String) -> some View {
-        let info = catalogue[id]
-        let title = info?.title ?? id
-        let isRemovable = removable.contains { $0.id == id }
+    private func row(_ choice: ModuleChoice, depth: Int) -> some View {
+        let id = choice.id
+        let title = choice.title
+        let isRemovable = choice.info?.internal != true
         return HStack(spacing: 10) {
             SettingsIcon(symbol: ModuleAppearance.symbol(for: id), color: ModuleAppearance.color(for: id))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                if let description = info?.description, !description.isEmpty {
-                    Text(description)
+                if !choice.detail.isEmpty {
+                    Text(choice.detail)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: 0)
         }
+        .padding(.leading, CGFloat(depth) * 16)
         .contentShape(.rect)
         .accessibilityElement(children: .combine)
         .contextMenu {

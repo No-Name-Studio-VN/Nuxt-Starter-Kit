@@ -1,11 +1,14 @@
 {
   "schema": 1,
-  "commit": "bead6d4c1e7989d369942a70c35cba50c187006d",
+  "commit": "99ee2b306ff92a66babaf1d495e80ff656e60758",
+  "groups": ["Foundation", "Authentication", "App", "Content"],
   "modules": [
     {
       "id": "admin",
       "title": "Admin",
       "description": "Admin area shell: route guards, the seed endpoint, and the admin landing page.",
+      "group": "App",
+      "requiresOneOf": [],
       "requires": ["auth"],
       "internal": false,
       "dependencies": [],
@@ -13,12 +16,16 @@
       "scripts": ["db:seed"],
       "env": ["NUXT_DEFAULT_ADMIN_PASSWORD", "NUXT_SEED_SECRET"],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "parent": null
     },
     {
       "id": "admin-kv",
       "title": "Admin KV browser",
       "description": "Admin screens and APIs for browsing and editing Workers KV entries.",
+      "group": "App",
+      "parent": "admin",
+      "requiresOneOf": [],
       "requires": ["admin"],
       "internal": false,
       "dependencies": ["pretty-bytes", "@codemirror/lang-json", "codemirror"],
@@ -32,6 +39,9 @@
       "id": "admin-users",
       "title": "Admin users panel",
       "description": "Admin screens and APIs for listing, editing, locking and deleting users.",
+      "group": "App",
+      "parent": "admin",
+      "requiresOneOf": [],
       "requires": ["admin"],
       "internal": false,
       "dependencies": [],
@@ -45,6 +55,8 @@
       "id": "auth",
       "title": "Authentication",
       "description": "Sessions, password and OAuth sign-in, account pages, and the dashboard shell.",
+      "group": "Authentication",
+      "requiresOneOf": [],
       "requires": ["database"],
       "internal": false,
       "dependencies": ["@nuxtjs/turnstile", "nuxt-auth-utils"],
@@ -63,12 +75,16 @@
         "NUXT_OAUTH_GITHUB_CLIENT_SECRET"
       ],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "parent": null
     },
     {
       "id": "auth-2fa",
       "title": "Two-factor authentication",
       "description": "TOTP second factor at sign-in, with setup, verification and disable endpoints.",
+      "group": "Authentication",
+      "parent": "auth",
+      "requiresOneOf": [],
       "requires": ["auth"],
       "internal": false,
       "dependencies": ["vue-input-otp", "otpauth"],
@@ -82,6 +98,9 @@
       "id": "auth-email-verification",
       "title": "Email verification",
       "description": "Verification notice, confirmation link and resend endpoint for new accounts.",
+      "group": "Authentication",
+      "parent": "auth",
+      "requiresOneOf": [],
       "requires": ["auth"],
       "internal": false,
       "dependencies": [],
@@ -95,6 +114,9 @@
       "id": "auth-passkeys",
       "title": "Passkeys",
       "description": "Passwordless sign-in with WebAuthn passkeys, plus endpoints to register, list and delete them.",
+      "group": "Authentication",
+      "parent": "auth",
+      "requiresOneOf": [],
       "requires": ["auth"],
       "internal": false,
       "dependencies": ["@simplewebauthn/browser", "@simplewebauthn/server", "reflect-metadata"],
@@ -108,6 +130,8 @@
       "id": "content",
       "title": "Content",
       "description": "Documentation, blog, search, RSS and Nuxt Studio content editing.",
+      "group": "Content",
+      "requiresOneOf": [],
       "requires": [],
       "internal": false,
       "dependencies": [
@@ -124,12 +148,15 @@
       "scripts": [],
       "env": ["STUDIO_GITHUB_CLIENT_ID", "STUDIO_GITHUB_CLIENT_SECRET"],
       "bindings": [],
-      "rootFiles": ["content/**"]
+      "rootFiles": ["content/**"],
+      "parent": null
     },
     {
       "id": "database",
       "title": "Database",
       "description": "A Cloudflare D1 (SQLite) database through NuxtHub and Drizzle ORM, with generated migrations.",
+      "group": "Foundation",
+      "requiresOneOf": [],
       "requires": ["server-core"],
       "internal": false,
       "dependencies": ["@libsql/client", "better-sqlite3", "drizzle-orm", "drizzle-zod"],
@@ -137,12 +164,16 @@
       "scripts": ["db:generate", "deploy:db"],
       "env": [],
       "bindings": ["DB"],
-      "rootFiles": []
+      "rootFiles": [],
+      "parent": null
     },
     {
       "id": "feature-flags",
       "title": "Feature flags",
       "description": "OpenFeature flags backed by KV, with an admin panel and an edge evaluation endpoint.",
+      "group": "App",
+      "parent": "admin",
+      "requiresOneOf": [],
       "requires": ["admin"],
       "internal": false,
       "dependencies": ["@openfeature/server-sdk"],
@@ -156,6 +187,8 @@
       "id": "pwa",
       "title": "Progressive web app",
       "description": "Installable app assets, service worker, offline fallback and page tracking.",
+      "group": "App",
+      "requiresOneOf": [],
       "requires": [],
       "internal": false,
       "dependencies": [
@@ -172,12 +205,14 @@
       "scripts": [],
       "env": [],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "parent": null
     },
     {
       "id": "server-core",
       "title": "Server core",
       "description": "The API response envelope, KV and cache bindings, and error reporting shared by every server module.",
+      "requiresOneOf": [],
       "requires": [],
       "internal": true,
       "dependencies": ["@nuxthub/core"],
@@ -185,7 +220,9 @@
       "scripts": [],
       "env": [],
       "bindings": ["CACHE", "KV"],
-      "rootFiles": []
+      "rootFiles": [],
+      "group": null,
+      "parent": null
     }
   ],
   "installed": []

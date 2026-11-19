@@ -80,6 +80,7 @@ describe('reports', () => {
       description: 'Internal infrastructure',
       internal: true,
       requires: [],
+      requiresOneOf: [],
       dependencies: [],
       devDependencies: [],
       scripts: [],

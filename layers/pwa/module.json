@@ -1,6 +1,7 @@
 {
   "title": "Progressive web app",
   "description": "Installable app assets, service worker, offline fallback and page tracking.",
+  "group": "App",
   "requires": [],
   "dependencies": [
     "@vite-pwa/nuxt",

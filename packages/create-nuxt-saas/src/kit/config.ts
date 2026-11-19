@@ -14,11 +14,13 @@ export const DEFAULT_USER_OWNED = [
 ];
 
 export interface KitConfig {
+  groups?: string[] | undefined;
   exclude: string[];
   userOwned: string[];
 }
 
 const kitConfigSchema = z.object({
+  groups: z.array(z.string().min(1)).optional(),
   exclude: z.array(z.string()),
   userOwned: z.array(z.string()).default(DEFAULT_USER_OWNED),
 });

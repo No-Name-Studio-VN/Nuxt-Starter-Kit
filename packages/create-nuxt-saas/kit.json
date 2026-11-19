@@ -1,4 +1,5 @@
 {
+  "groups": ["Foundation", "Authentication", "App", "Content"],
   "exclude": [
     "packages/**",
     "docs/**",

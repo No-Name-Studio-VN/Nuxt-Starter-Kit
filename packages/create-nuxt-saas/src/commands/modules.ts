@@ -1,5 +1,5 @@
 import { CliError } from '../errors';
-import { dependentsOf, resolveSelection } from '../kit/modules';
+import { dependentsOf, resolveSelection, validateSelection } from '../kit/modules';
 import type { KitSnapshot } from '../kit/source';
 import { assertCleanTree } from '../project/git';
 import { readState, unresolvedConflicts, writeState } from '../project/state';
@@ -42,17 +42,31 @@ export async function runModuleChange(opts: {
   }
   const installed = new Set(state.modules);
   const removed = new Set(opts.remove);
-  const modules = resolveSelection(opts.kit.modules, [...state.modules, ...opts.add])
-    .filter((id) => !removed.has(id))
-    .sort();
+  const catalogue = opts.kit.modules;
+  const combined = resolveSelection(catalogue, [...state.modules, ...opts.add]);
+  let modules = combined;
+  if (removed.size > 0) {
+    const internal = new Set(
+      catalogue.filter((module) => module.internal).map((module) => module.id),
+    );
+    const roots = combined.filter((id) => !internal.has(id) && !removed.has(id));
+    modules = resolveSelection(catalogue, roots).filter((id) => !removed.has(id));
+  }
+  modules.sort();
   for (const id of removed) {
-    const dependents = dependentsOf(opts.kit.modules, modules, id);
+    const dependents = dependentsOf(catalogue, modules, id);
     if (dependents.length > 0) {
       throw new CliError(`Cannot remove module "${id}"; required by: ${dependents.join(', ')}.`);
     }
   }
   for (const id of removed) {
     if (!installed.has(id)) throw new CliError(`Module "${id}" is not installed.`);
+  }
+  try {
+    validateSelection(catalogue, modules);
+  } catch (error) {
+    if (!(error instanceof CliError) || removed.size === 0) throw error;
+    throw new CliError(`Can't remove ${opts.remove.join(', ')}: ${error.message}`);
   }
   if (!opts.check) await assertCleanTree(opts.projectRoot, opts.force);
 

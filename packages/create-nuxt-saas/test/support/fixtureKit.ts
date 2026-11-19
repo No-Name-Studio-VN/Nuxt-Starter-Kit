@@ -12,7 +12,11 @@ export function makeTempDir(prefix: string): Promise<string> {
 }
 
 /** A small, reproducible upstream for render and transition tests. HEAD is v2. */
-export async function createFixtureKit(): Promise<{ root: string; v1: string; v2: string }> {
+export async function createFixtureKit({ nextMajor = false } = {}): Promise<{
+  root: string;
+  v1: string;
+  v2: string;
+}> {
   const root = await makeTempDir('fixture-kit');
   const env = {
     ...process.env,
@@ -47,6 +51,7 @@ export async function createFixtureKit(): Promise<{ root: string; v1: string; v2
   }
   const packageJson = {
     name: 'fixture-kit',
+    version: '3.0.0',
     description: 'A fixture SaaS kit',
     private: true,
     scripts: { dev: 'nuxt dev', 'alpha:run': 'echo alpha' },
@@ -60,6 +65,20 @@ export async function createFixtureKit(): Promise<{ root: string; v1: string; v2
     env: ['ALPHA_KEY'],
     bindings: ['DB'],
   };
+  const access = { title: 'Access', description: 'Access controls' };
+  const beta = {
+    title: 'Beta',
+    description: 'Beta features',
+    requires: ['alpha'],
+    dependencies: ['beta-dep'],
+    bindings: ['KV'],
+  };
+  const docs = {
+    title: 'Docs',
+    description: 'Documentation content',
+    rootFiles: ['content/**'],
+  };
+  const kitConfig = { exclude: ['packages/**', 'docs/**', 'server/db/migrations/**'] };
   const wrangler = `{
   // Fixture worker configuration; preserve comments when composing it.
   "name": "fixture-kit",
@@ -96,9 +115,7 @@ export async function createFixtureKit(): Promise<{ root: string; v1: string; v2
       join(root, 'public/logo.png'),
       Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0x0d, 0x0a]),
     );
-    await writeJsonAtomically(join(root, 'packages/create-nuxt-saas/kit.json'), {
-      exclude: ['packages/**', 'docs/**', 'server/db/migrations/**'],
-    });
+    await writeJsonAtomically(join(root, 'packages/create-nuxt-saas/kit.json'), kitConfig);
     await writeTextFile(
       join(root, 'packages/create-nuxt-saas/templates/README.md'),
       '# {{name}}\n\n{{description}}\n\nModules: {{modules}}\n',
@@ -109,22 +126,13 @@ export async function createFixtureKit(): Promise<{ root: string; v1: string; v2
       join(root, 'layers/alpha/app/pages/alpha.vue'),
       '<template>\n  <h1>Alpha v1</h1>\n</template>\n',
     );
-    await writeJsonAtomically(join(root, 'layers/beta/module.json'), {
-      title: 'Beta',
-      description: 'Beta features',
-      requires: ['alpha'],
-      dependencies: ['beta-dep'],
-      bindings: ['KV'],
-    });
+    await writeJsonAtomically(join(root, 'layers/beta/module.json'), beta);
     await writeTextFile(
       join(root, 'layers/beta/server/db/schema.sqlite.ts'),
       "export const betaTable = { name: 'beta', version: 1 };\n",
     );
-    await writeJsonAtomically(join(root, 'layers/docs/module.json'), {
-      title: 'Docs',
-      description: 'Documentation content',
-      rootFiles: ['content/**'],
-    });
+    await writeJsonAtomically(join(root, 'layers/docs/module.json'), docs);
+    await writeJsonAtomically(join(root, 'layers/access/module.json'), access);
     await git('add', '.');
     await git('commit', '-m', 'fixture: v1');
     const v1 = await git('rev-parse', 'HEAD');
@@ -151,12 +159,55 @@ export async function createFixtureKit(): Promise<{ root: string; v1: string; v2
       join(root, '.env.example'),
       'SITE_URL=\n# Alpha configuration\nALPHA_KEY=\nALPHA_SECOND=\n',
     );
+    await writeJsonAtomically(join(root, 'packages/create-nuxt-saas/kit.json'), {
+      ...kitConfig,
+      groups: ['Foundation', 'App', 'Content'],
+    });
     await writeJsonAtomically(join(root, 'layers/alpha/module.json'), {
       ...alpha,
+      group: 'App',
       env: ['ALPHA_KEY', 'ALPHA_SECOND'],
+    });
+    await writeJsonAtomically(join(root, 'layers/beta/module.json'), {
+      ...beta,
+      group: 'App',
+      parent: 'alpha',
+    });
+    await writeJsonAtomically(join(root, 'layers/docs/module.json'), { ...docs, group: 'Content' });
+    await writeJsonAtomically(join(root, 'layers/access/module.json'), {
+      ...access,
+      group: 'App',
+      requiresOneOf: ['access-key', 'access-link'],
+    });
+    await writeJsonAtomically(join(root, 'layers/access-key/module.json'), {
+      title: 'Access key',
+      description: 'Sign in with an access key',
+      group: 'App',
+      parent: 'access',
+      requires: ['access'],
+    });
+    await writeJsonAtomically(join(root, 'layers/access-link/module.json'), {
+      title: 'Access link',
+      description: 'Sign in with a link',
+      group: 'App',
+      parent: 'access',
+      requires: ['access'],
+    });
+    await writeJsonAtomically(join(root, 'layers/server-core/module.json'), {
+      title: 'Server core',
+      description: 'Shared server functions',
+      internal: true,
+    });
+    await writeTextFile(join(root, 'layers/server-core/server/utils/core.ts'), 'export {};\n');
+    await writeJsonAtomically(join(root, 'layers/storage/module.json'), {
+      title: 'Storage',
+      description: 'Data storage',
+      group: 'Foundation',
+      requires: ['server-core'],
     });
     await writeJsonAtomically(join(root, 'package.json'), {
       ...packageJson,
+      version: nextMajor ? '4.0.0' : '3.1.0',
       dependencies: { ...packageJson.dependencies, 'base-dep': '2.0.0' },
     });
     await writeTextFile(

@@ -85,7 +85,12 @@ describe('local kit sources', () => {
     snapshots.push(snapshot.dir);
     expect(snapshot.commit).toBe(kit.v1);
     expect(snapshot.template).toBe(DEFAULT_TEMPLATE);
-    expect(snapshot.modules.map((module) => module.id)).toEqual(['alpha', 'beta', 'docs']);
+    expect(snapshot.modules.map((module) => module.id)).toEqual([
+      'access',
+      'alpha',
+      'beta',
+      'docs',
+    ]);
     expect(await readFile(join(snapshot.dir, 'app/pages/index.vue'), 'utf8')).toContain('Home v1');
     expect(await pathExists(join(snapshot.dir, 'app/pages/new.vue'))).toBe(false);
     expect(await pathExists(join(snapshot.dir, 'untracked.txt'))).toBe(false);
@@ -182,11 +187,25 @@ describe('GitHub kit sources', () => {
       expect(options?.auth).toBe('test-token');
       if (!options?.dir) throw new Error('Missing snapshot directory');
       snapshots.push(options.dir);
-      await cp(join(kit.root, 'layers'), join(options.dir, 'layers'), { recursive: true });
+      const local = await openKit(
+        { kind: 'local', path: kit.root, allowDirty: false },
+        kit.v1,
+        DEFAULT_TEMPLATE,
+      );
+      try {
+        await cp(local.dir, options.dir, { recursive: true });
+      } finally {
+        await local.cleanup();
+      }
       return { source: input, dir: options.dir };
     });
     const snapshot = await openKit(source, kit.v1, DEFAULT_TEMPLATE);
-    expect(snapshot.modules.map((module) => module.id)).toEqual(['alpha', 'beta', 'docs']);
+    expect(snapshot.modules.map((module) => module.id)).toEqual([
+      'access',
+      'alpha',
+      'beta',
+      'docs',
+    ]);
     await snapshot.cleanup();
     expect(await pathExists(snapshot.dir)).toBe(false);
   });

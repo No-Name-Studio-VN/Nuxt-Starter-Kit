@@ -1,5 +1,7 @@
 {
   "title": "Email verification",
   "description": "Verification notice, confirmation link and resend endpoint for new accounts.",
+  "group": "Authentication",
+  "parent": "auth",
   "requires": ["auth"]
 }

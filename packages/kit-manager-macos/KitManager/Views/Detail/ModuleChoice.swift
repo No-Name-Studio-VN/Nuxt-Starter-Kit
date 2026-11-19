@@ -1,6 +1,10 @@
-/// A module the user can tick in the add/remove sheet.
+import KitManagerCore
+
+/// A project module, which may not have a matching entry in the current catalogue.
 struct ModuleChoice: Identifiable, Hashable {
     let id: String
-    let title: String
-    let detail: String
+    let info: KitModuleInfo?
+
+    var title: String { info?.title ?? id }
+    var detail: String { info?.description ?? "" }
 }

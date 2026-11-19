@@ -27,7 +27,7 @@ export async function initCommand(args: InitOptions): Promise<number> {
   const source = kitSource(args, template);
   const kit = await openKit(source, await resolveCommit(source), template);
   try {
-    const selection = await promptInit(args, kit.modules);
+    const selection = await promptInit(args, kit);
     if (!selection) {
       console.log('Cancelled.');
       return 0;
@@ -117,8 +117,8 @@ export async function modulesCommand(args: ParsedArgs<typeof listArgs>): Promise
   const kit = await openKit(source, commit, template);
   try {
     const installed = state?.modules ?? [];
-    if (args.json) printModulesJson(kit.modules, installed, kit.commit);
-    else printModules(kit.modules, installed);
+    if (args.json) printModulesJson(kit.modules, installed, kit.commit, kit.groups);
+    else printModules(kit.modules, installed, kit.groups);
     return 0;
   } finally {
     await kit.cleanup();
