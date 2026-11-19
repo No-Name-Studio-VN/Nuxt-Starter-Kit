@@ -1,7 +1,7 @@
 import type { InitReport } from './commands/init';
 import type { InspectReport } from './commands/inspect';
 import type { TransitionReport } from './commands/modules';
-import type { KitModule } from './kit/modules';
+import { groupModules, type KitModule } from './kit/modules';
 import type { ChangeKind } from './transition/plan';
 import { JSON_SCHEMA, type JsonDocument } from './types/json';
 
@@ -66,7 +66,16 @@ export function printTransitionJson(
 }
 
 export function printModulesJson(modules: KitModule[], installed: string[], commit: string): void {
-  printJson({ schema: JSON_SCHEMA, commit, modules, installed });
+  printJson({
+    schema: JSON_SCHEMA,
+    commit,
+    modules: modules.map((module) => ({
+      ...module,
+      group: module.group ?? null,
+      parent: module.parent ?? null,
+    })),
+    installed,
+  });
 }
 
 export function printInspectJson(report: InspectReport): void {
@@ -94,14 +103,18 @@ export function printInspect(report: InspectReport): void {
   }
 }
 
-export function printModules(modules: KitModule[], installed: string[]): void {
-  for (const module of modules) {
-    const tags = [
-      installed.includes(module.id) ? 'installed' : '',
-      module.internal ? 'internal' : '',
-    ].filter(Boolean);
-    console.log(
-      `${module.id}${tags.length ? ` [${tags.join(', ')}]` : ''} — ${module.title}: ${module.description}`,
-    );
+export function printModules(modules: KitModule[], installed: string[], groups?: string[]): void {
+  for (const { name, entries } of groupModules(modules, groups)) {
+    if (name) console.log(`${name}:`);
+    for (const { module, depth } of entries) {
+      const tags = [
+        installed.includes(module.id) ? 'installed' : '',
+        module.internal ? 'internal' : '',
+      ].filter(Boolean);
+      const indent = '  '.repeat(depth + (name ? 1 : 0));
+      console.log(
+        `${indent}${module.id}${tags.length ? ` [${tags.join(', ')}]` : ''} — ${module.title}: ${module.description}`,
+      );
+    }
   }
 }

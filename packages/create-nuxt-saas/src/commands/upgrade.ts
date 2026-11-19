@@ -1,6 +1,6 @@
 import { CliError } from '../errors';
-import { resolveSelection } from '../kit/modules';
-import type { KitSnapshot } from '../kit/source';
+import { resolveSelection, validateSelection } from '../kit/modules';
+import { readKitMajor, type KitSnapshot } from '../kit/source';
 import { assertCleanTree } from '../project/git';
 import { readState, unresolvedConflicts, writeState } from '../project/state';
 import { render } from '../render/render';
@@ -27,6 +27,7 @@ export async function runUpgrade(opts: {
     );
   }
   if (opts.from.commit === opts.to.commit && state.kit === opts.to.template) {
+    validateSelection(opts.to.modules, state.modules);
     return {
       changes: [],
       conflicts: [],
@@ -38,6 +39,15 @@ export async function runUpgrade(opts: {
     };
   }
 
+  const [fromMajor, toMajor] = await Promise.all([readKitMajor(opts.from), readKitMajor(opts.to)]);
+  if (fromMajor !== toMajor) {
+    const reason =
+      fromMajor < 4 && toMajor === 4
+        ? 'This project was generated before kit 4.0 split auth into sign-in methods.'
+        : `This project was generated with kit ${fromMajor}.x and cannot upgrade to kit ${toMajor}.x.`;
+    throw new CliError(`${reason} Generate a new project and move your code across.`);
+  }
+
   const known = new Set(opts.to.modules.map((module) => module.id));
   const missing = state.modules.filter((id) => !known.has(id)).sort();
   if (missing.length > 0) {
@@ -45,6 +55,7 @@ export async function runUpgrade(opts: {
   }
   const installed = new Set(state.modules);
   const modules = resolveSelection(opts.to.modules, state.modules).sort();
+  validateSelection(opts.to.modules, modules);
   if (!opts.check) await assertCleanTree(opts.projectRoot, opts.force);
 
   const base = await render(opts.from, state.modules, state.identity);

@@ -1,6 +1,8 @@
 {
   "title": "Feature flags",
   "description": "OpenFeature flags backed by KV, with an admin panel and an edge evaluation endpoint.",
+  "group": "App",
+  "parent": "admin",
   "requires": ["admin"],
   "dependencies": ["@openfeature/server-sdk"]
 }

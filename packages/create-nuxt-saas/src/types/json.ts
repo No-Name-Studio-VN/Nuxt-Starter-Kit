@@ -1,5 +1,5 @@
 import type { InspectReport } from '../commands/inspect';
-import type { KitModule } from '../kit/modules';
+import type { KitModule } from './modules';
 import type { ChangeKind } from '../transition/plan';
 
 export const JSON_SCHEMA = 1;
@@ -27,10 +27,15 @@ export interface JsonErrorReport {
   error: { message: string; kind: 'expected' | 'unexpected' };
 }
 
+export interface JsonModule extends Omit<KitModule, 'group' | 'parent'> {
+  group: string | null;
+  parent: string | null;
+}
+
 export interface JsonModulesReport {
   schema: typeof JSON_SCHEMA;
   commit: string;
-  modules: KitModule[];
+  modules: JsonModule[];
   installed: string[];
 }
 

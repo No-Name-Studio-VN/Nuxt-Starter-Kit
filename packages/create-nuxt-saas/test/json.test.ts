@@ -327,6 +327,34 @@ describe('--json output', () => {
     expect(console.log).not.toHaveBeenCalled();
   });
 
+  it('modules --json includes group, parent and selection rules', async () => {
+    const stdout = captureStdout();
+    expect(await main(['modules', '--json', '--kit', fixture.root, '--dir', parent])).toBe(0);
+    expect(parseJson(written(stdout))).toMatchObject({
+      schema: 1,
+      modules: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'access',
+          group: 'App',
+          parent: null,
+          requiresOneOf: ['access-key', 'access-link'],
+        }),
+        expect.objectContaining({
+          id: 'access-key',
+          group: 'App',
+          parent: 'access',
+          requiresOneOf: [],
+        }),
+        expect.objectContaining({
+          id: 'server-core',
+          group: null,
+          parent: null,
+          requiresOneOf: [],
+        }),
+      ]),
+    });
+  });
+
   it('modules --to is rejected inside a project', async () => {
     await initV1();
     const stdout = captureStdout();

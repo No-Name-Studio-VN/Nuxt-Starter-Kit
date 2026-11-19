@@ -18,6 +18,7 @@ function writeModule(id: string, metadata: Record<string, unknown> = {}): Promis
 
 beforeEach(async () => {
   kitRoot = await makeTempDir('kit-modules');
+  await writeJsonAtomically(join(kitRoot, 'packages/create-nuxt-saas/kit.json'), { exclude: [] });
   await writeModule('c', { requires: ['b'], internal: true });
   await writeModule('b', { requires: ['a'] });
   await writeModule('a', { requires: [] });
@@ -36,6 +37,7 @@ describe('readKitModules', () => {
       title: 'A',
       description: 'Module a',
       requires: [],
+      requiresOneOf: [],
       internal: false,
       dependencies: [],
       devDependencies: [],
@@ -62,6 +64,7 @@ describe('readKitModules', () => {
       title: 'A',
       description: 'Module a',
       requires: [],
+      requiresOneOf: [],
       internal: false,
       dependencies: ['h3'],
       devDependencies: ['typescript'],
@@ -75,6 +78,23 @@ describe('readKitModules', () => {
   it('defaults an omitted requires field', async () => {
     await writeModule('a');
     expect((await readKitModules(kitRoot))[0]?.requires).toEqual([]);
+  });
+
+  it.each([
+    [{ group: 'Unknown' }, /a.*unknown group "Unknown"/i],
+    [{}, /a.*must declare a group/i],
+    [{ group: 'App', parent: 'b' }, /a.*parent "b".*requires/i],
+    [{ group: 'App', parent: 'b', requires: ['b'] }, /a.*parent "b".*same group/i],
+    [{ group: 'App', parent: 'missing' }, /a.*unknown parent "missing"/i],
+    [{ group: 'App', requiresOneOf: ['missing'] }, /a.*unknown module "missing".*requiresOneOf/i],
+  ])('rejects invalid catalogue metadata %j', async (metadata, message) => {
+    await writeJsonAtomically(join(kitRoot, 'packages/create-nuxt-saas/kit.json'), {
+      exclude: [],
+      groups: ['App', 'Other'],
+    });
+    await writeModule('a', metadata);
+    await writeModule('b', { group: 'Other' });
+    await expect(readKitModules(kitRoot)).rejects.toThrow(message);
   });
 
   it('rejects requires naming a missing layer', async () => {

@@ -1,7 +1,7 @@
 import { cp, lstat, mkdir, mkdtemp, readdir, rename, rm, rmdir, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { CliError } from '../errors';
-import { resolveSelection } from '../kit/modules';
+import { resolveSelection, validateSelection } from '../kit/modules';
 import type { KitSnapshot } from '../kit/source';
 import { initRepository } from '../project/git';
 import { writeState } from '../project/state';
@@ -63,6 +63,7 @@ export async function runInit(opts: {
 }): Promise<InitReport> {
   const target = resolve(opts.target);
   const modules = resolveSelection(opts.kit.modules, opts.requested).sort();
+  validateSelection(opts.kit.modules, modules);
   const identity = {
     name: sanitizeProjectName(opts.identity.name),
     description: opts.identity.description,

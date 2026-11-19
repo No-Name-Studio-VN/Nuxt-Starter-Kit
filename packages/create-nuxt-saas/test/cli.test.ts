@@ -13,7 +13,7 @@ import { createFixtureKit, makeTempDir } from './support/fixtureKit';
 
 vi.mock('@clack/prompts', async (importOriginal) => {
   const actual = await importOriginal<typeof prompts>();
-  return { ...actual, text: vi.fn(), multiselect: vi.fn() };
+  return { ...actual, text: vi.fn(), multiselect: vi.fn(), groupMultiselect: vi.fn() };
 });
 
 const run = promisify(execFile);
@@ -51,6 +51,7 @@ afterEach(async () => {
   else Reflect.deleteProperty(process.stdin, 'isTTY');
   vi.mocked(prompts.text).mockReset();
   vi.mocked(prompts.multiselect).mockReset();
+  vi.mocked(prompts.groupMultiselect).mockReset();
   await rm(parent, { recursive: true, force: true });
 });
 
@@ -268,6 +269,106 @@ describe('CLI routing and commands', () => {
     expect(output()).toContain('Beta');
   });
 
+  it('shows group headings in kit order and indents children below their parent', async () => {
+    expect(await main(['modules', ...kitArgs()])).toBe(0);
+    expect(
+      output()
+        .split('\n')
+        .map((line) => line.split(' — ')[0]),
+    ).toEqual([
+      'Foundation:',
+      '  storage',
+      'App:',
+      '  access',
+      '    access-key',
+      '    access-link',
+      '  alpha',
+      '    beta',
+      'Content:',
+      '  docs',
+      'server-core [internal]',
+    ]);
+  });
+
+  it('lists and changes modules at a recorded snapshot without groups', async () => {
+    await initV1();
+    expect(await main(['add', 'access,beta', '--dir', project, ...kitArgs()])).toBe(0);
+    expect(await main(['modules', '--dir', project, ...kitArgs()])).toBe(0);
+    expect(output()).toMatch(/^access \[installed\]/m);
+    expect(output()).not.toMatch(/^App:/m);
+    expect(await main(['remove', 'access,beta', '--dir', project, '--force', ...kitArgs()])).toBe(
+      0,
+    );
+    expect(await readState(project)).toMatchObject({ commit: fixture.v1, modules: ['alpha'] });
+  });
+
+  it('refuses to initialize without choosing one of the required modules', async () => {
+    const target = join(parent, 'not-created', 'app');
+    expect(await main(['init', target, '--modules', 'access', ...kitArgs()])).toBe(1);
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain(
+      'access needs at least one of access-key, access-link.',
+    );
+    expect(await readdir(parent)).toEqual([]);
+  });
+
+  it('refuses to add a module without one of its required choices', async () => {
+    expect(await main(['init', project, '--yes', ...kitArgs()])).toBe(0);
+    expect(await main(['add', 'access', '--dir', project, ...kitArgs()])).toBe(1);
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain(
+      'access needs at least one of access-key, access-link.',
+    );
+    expect((await readState(project)).modules).toEqual([]);
+    expect(await pathExists(join(project, 'layers/access'))).toBe(false);
+  });
+
+  it('refuses to remove the last required choice', async () => {
+    expect(await main(['init', project, '--modules', 'access-key', ...kitArgs()])).toBe(0);
+    expect(await main(['remove', 'access-key', '--dir', project, ...kitArgs()])).toBe(1);
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain(
+      "Can't remove access-key: access needs at least one of access-key, access-link.",
+    );
+    expect((await readState(project)).modules).toEqual(['access', 'access-key']);
+    expect(await pathExists(join(project, 'layers/access-key/module.json'))).toBe(true);
+  });
+
+  it('prunes an orphaned internal module but keeps its edited files', async () => {
+    expect(await main(['init', project, '--modules', 'storage', ...kitArgs()])).toBe(0);
+    expect((await readState(project)).modules).toEqual(['server-core', 'storage']);
+    const edited = 'layers/server-core/server/utils/core.ts';
+    await writeTextFile(join(project, edited), 'user code\n');
+    expect(await main(['remove', 'storage', '--dir', project, '--force', ...kitArgs()])).toBe(0);
+    expect((await readState(project)).modules).toEqual([]);
+    expect(await pathExists(join(project, 'layers/server-core/module.json'))).toBe(false);
+    expect(await readFile(join(project, edited), 'utf8')).toBe('user code\n');
+    expect(output()).toMatch(/^= keep-edited +layers\/server-core\/server\/utils\/core\.ts$/m);
+  });
+
+  it('refuses a same-major upgrade when the existing selection lacks a required choice', async () => {
+    await initV1();
+    expect(await main(['add', 'access', '--dir', project, ...kitArgs()])).toBe(0);
+    expect(await main(['upgrade', '--dir', project, '--force', ...kitArgs()])).toBe(1);
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain(
+      'access needs at least one of access-key, access-link.',
+    );
+    expect((await readState(project)).commit).toBe(fixture.v1);
+    expect(await pathExists(join(project, 'app/pages/new.vue'))).toBe(false);
+  });
+
+  it('refuses a major upgrade without changing the project tree', async () => {
+    const majorKit = await createFixtureKit({ nextMajor: true });
+    try {
+      await initV1();
+      expect(await main(['upgrade', '--dir', project, '--kit', majorKit.root])).toBe(1);
+      expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain(
+        'This project was generated before kit 4.0 split auth into sign-in methods. Generate a new project and move your code across.',
+      );
+      expect((await readState(project)).commit).toBe(fixture.v1);
+      expect((await run('git', ['-C', project, 'status', '--porcelain'])).stdout).toBe('');
+    } finally {
+      await rm(majorKit.root, { recursive: true, force: true });
+    }
+  });
+
   it('treats unknown commands as init directories but refuses non-empty targets', async () => {
     await writeTextFile(join(parent, 'typo', 'keep.txt'), 'user data');
     expect(await main(['typo', '--yes', ...kitArgs()])).toBe(1);
@@ -287,7 +388,7 @@ describe('CLI routing and commands', () => {
 describe('interactive prompts and snapshot cleanup', () => {
   it('cancels the module picker without writing a project and cleans its snapshot', async () => {
     vi.spyOn(process.stdin, 'isTTY', 'get').mockReturnValue(true);
-    vi.mocked(prompts.multiselect).mockResolvedValue(prompts.CANCEL_SYMBOL);
+    vi.mocked(prompts.groupMultiselect).mockResolvedValue(prompts.CANCEL_SYMBOL);
     const opened = vi.spyOn(source, 'openKit');
     expect(await main(['init', project, ...kitArgs()])).toBe(0);
     expect(output()).toContain('Cancelled.');
@@ -300,9 +401,21 @@ describe('interactive prompts and snapshot cleanup', () => {
   it('uses prompted name and module selection', async () => {
     vi.spyOn(process.stdin, 'isTTY', 'get').mockReturnValue(true);
     vi.mocked(prompts.text).mockResolvedValue('prompted-app');
-    vi.mocked(prompts.multiselect).mockResolvedValue(['beta']);
+    vi.mocked(prompts.groupMultiselect).mockResolvedValue(['beta']);
     expect(await main(kitArgs())).toBe(0);
     expect((await readState(join(parent, 'prompted-app'))).modules).toEqual(['alpha', 'beta']);
+  });
+
+  it('shows an invalid selection and lets the user choose again before creating the project', async () => {
+    vi.spyOn(process.stdin, 'isTTY', 'get').mockReturnValue(true);
+    vi.mocked(prompts.groupMultiselect)
+      .mockResolvedValueOnce(['access'])
+      .mockResolvedValueOnce(['access-link']);
+    expect(await main(['init', project, ...kitArgs()])).toBe(0);
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain(
+      'access needs at least one of access-key, access-link.',
+    );
+    expect((await readState(project)).modules).toEqual(['access', 'access-link']);
   });
 
   it('cleans the old snapshot if opening the target kit fails', async () => {

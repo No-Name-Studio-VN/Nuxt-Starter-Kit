@@ -96,18 +96,23 @@ pnpm dlx create-nuxt-saas@latest upgrade --template github:owner/repo#release
 Upgrade resolves the recorded template's ref (normally `main`), or `--to`, to a commit. `--template`
 changes the target template; the old render still comes from the recorded source. Installed module
 IDs must exist in the target kit. Newly required dependencies are included automatically.
-`--dir`, `--check` and `--force` work as for add/remove.
+The CLI refuses upgrades between different major kit versions. A project generated before the
+kit 4.0 auth split must be recreated, then you can move your code across. `add` and `remove`
+continue to work at the project's recorded commit. `--dir`, `--check`, and `--force` work as for
+add/remove.
 
 ### modules
 
-Lists each module's ID, title and description, tagging installed and internal modules. Inside a
+Lists each module's ID, title, and description, tagging installed and internal modules. When the kit
+declares groups, the CLI lists modules by group and indents each child under its parent. Inside a
 project it uses the recorded kit commit. Outside one it uses the default template's `main`, or
 `--template`. `--dir` chooses where to look for project state.
 
 `--to <ref>` lists the modules at another kit ref or commit. It is only valid outside a project;
 inside one the command throws, because the recorded commit decides. `--json` prints one document
 with `schema`, the resolved `commit`, every module with its claims (`dependencies`,
-`devDependencies`, `scripts`, `env`, `bindings`, `rootFiles`) and the `installed` module IDs.
+`devDependencies`, `scripts`, `env`, `bindings`, `rootFiles`), its `group`, `parent`, and
+`requiresOneOf`, and the `installed` module IDs.
 
 ### inspect
 
@@ -235,7 +240,10 @@ field. For example, the existing passkeys layer claims:
 {
   "title": "Passkeys",
   "description": "WebAuthn sign-in and passkey management",
+  "group": "Authentication",
+  "parent": "auth",
   "requires": ["auth"],
+  "requiresOneOf": [],
   "internal": false,
   "dependencies": ["@simplewebauthn/browser", "@simplewebauthn/server"],
   "devDependencies": [],
@@ -247,7 +255,24 @@ field. For example, the existing passkeys layer claims:
 ```
 
 `title` and `description` are required, nonempty strings. All arrays default to `[]`; `internal`
-defaults to `false`. `requires` names other layer IDs, not base; unknown IDs and cycles are rejected.
+defaults to `false`. The CLI uses these fields to display modules and check selections:
+
+- `group` names a heading from `groups` in `kit.json`. If the kit declares `groups`, every
+  non-internal module must name one. The picker and `modules` list use the kit's group order.
+  Older kit snapshots without `groups` display a flat list.
+- `parent` is optional. The CLI displays the module under its parent. The parent must exist in
+  the same group and appear in the module's `requires` list.
+- `requires` names modules the CLI installs automatically, not base. Unknown module IDs and
+  dependency cycles are errors.
+- `requiresOneOf` names alternative modules. If you select a module with a nonempty
+  `requiresOneOf`, the final selection must contain at least one of the listed IDs. The CLI
+  rejects unknown IDs and never installs alternatives automatically. An alternative can
+  require the declaring module without creating a cycle.
+
+`modules --json` includes `group` and `parent` as strings or `null` and `requiresOneOf` as an
+array. When you remove a module, the CLI also removes internal modules that no remaining
+module needs through `requires`. The CLI keeps files you edited and reports them.
+
 The remaining arrays claim **names**, not values:
 
 | Field                              | Names owned in the kit root                                                         |

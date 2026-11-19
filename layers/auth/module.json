@@ -1,6 +1,7 @@
 {
   "title": "Authentication",
   "description": "Sessions, password and OAuth sign-in, account pages, and the dashboard shell.",
+  "group": "Authentication",
   "requires": ["database"],
   "dependencies": ["@nuxtjs/turnstile", "nuxt-auth-utils"],
   "env": [

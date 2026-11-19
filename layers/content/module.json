@@ -1,6 +1,7 @@
 {
   "title": "Content",
   "description": "Documentation, blog, search, RSS and Nuxt Studio content editing.",
+  "group": "Content",
   "requires": [],
   "dependencies": [
     "@nuxtjs/mdc",
