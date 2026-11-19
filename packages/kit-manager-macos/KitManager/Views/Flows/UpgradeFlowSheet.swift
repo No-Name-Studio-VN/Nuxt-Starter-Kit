@@ -118,7 +118,7 @@ struct UpgradeFlowSheet: View {
             } else if model.cliStatus != .ready {
                 Label("Build the nuxt-saas CLI first.", systemImage: "xmark.octagon.fill")
                     .foregroundStyle(Color.red)
-            } else {
+            } else if currentPreview != nil {
                 Label("Ready to update. Your project has no conflicts or unsaved changes.", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(Color.green)
             }
@@ -260,15 +260,29 @@ struct UpgradeFlowSheet: View {
 
     // MARK: Footer
 
-    private var canUpgrade: Bool { model.canUpgrade(project) }
+    private var currentPreview: TransitionReport? {
+        guard case .loaded(let report, stale: false) = snapshot?.preview,
+            report.from == snapshot?.kitState?.commit, report.to == model.latestMain
+        else { return nil }
+        return report
+    }
+
+    private var canUpgrade: Bool { model.canUpgrade(project) && currentPreview != nil }
+
+    private var confirmHelp: String {
+        if let preconditionHelp { return preconditionHelp }
+        if model.cliStatus != .ready { return "Build the nuxt-saas CLI first" }
+        if currentPreview == nil { return "A current update preview is required" }
+        return "Create the branch, apply the update and open Claude"
+    }
 
     /// The branch the app created and the one it started from, read from the model, not the snapshot.
     private var rollbackRecord: UpgradeBranchRecord? { model.rollbackRecord(for: project) }
 
     /// A loaded, current preview with nothing for Claude to do.
     private var isPlainUpgrade: Bool {
-        guard case .loaded(let report, let stale) = snapshot?.preview ?? .idle else { return false }
-        return !stale && report.conflicts.isEmpty && report.followUps.isEmpty
+        guard let report = currentPreview else { return false }
+        return report.conflicts.isEmpty && report.followUps.isEmpty
     }
 
     @ViewBuilder
@@ -291,7 +305,7 @@ struct UpgradeFlowSheet: View {
                 .buttonStyle(.glassProminent)
                 .keyboardShortcut(.defaultAction)
                 .disabled(!canUpgrade)
-                .help(canUpgrade ? "Create the branch, apply the update and open Claude" : (preconditionHelp ?? "Build the nuxt-saas CLI first"))
+                .help(confirmHelp)
             case .running, .rollingBack:
                 Spacer()
             case .finished(.failed(let branch, _)):
@@ -327,6 +341,7 @@ struct UpgradeFlowSheet: View {
     // MARK: Actions
 
     private func start(withClaude: Bool) {
+        guard canUpgrade else { return }
         rollbackError = nil
         resolveError = nil
         phase = .running
