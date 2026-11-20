@@ -108,6 +108,37 @@ struct KitDiffTests {
         #expect(result == KitDiff(text: patch, files: ["new.html"], isTruncated: false))
     }
 
+    @Test func focusedDiffShowsOnlyTheExactChangedFile() async throws {
+        let temp = try TempDirectory()
+        defer { temp.remove() }
+        try await git(temp.url, ["init"])
+        try temp.write("views/index [old].vue", "before\n")
+        try temp.write("views/index.vue", "unrelated before\n")
+        try await git(temp.url, ["add", "."])
+        try await git(temp.url, ["commit", "-m", "base"])
+        try temp.write("views/index [old].vue", "after\n")
+        try temp.write("views/index.vue", "unrelated after\n")
+        try await git(temp.url, ["commit", "-am", "guide updates"])
+        let repository = KitRepository(root: temp.url, runner: realRunner)
+
+        let patch = try #require(try await repository.focusedDiff(
+            from: "HEAD^", to: "HEAD", path: "views/index [old].vue", maxBytes: 1024))
+        #expect(patch.files == ["views/index [old].vue"])
+        #expect(patch.text.contains("\n+after\n"))
+        #expect(!patch.text.contains("unrelated"))
+        #expect(try await repository.focusedDiff(from: "HEAD^", to: "HEAD", path: "views", maxBytes: 1024) == nil)
+        #expect(try await repository.focusedDiff(from: "HEAD^", to: "HEAD", path: "generated.vue", maxBytes: 1024) == nil)
+        #expect(try await repository.focusedDiff(from: "HEAD^", to: "HEAD", path: "", maxBytes: 1024) == nil)
+    }
+
+    @Test func focusedDiffDistinguishesATruncatedMatchFromAMissingFile() async throws {
+        let patch = "diff --git a/a b/a\n@@ -1 +1 @@\n-before\n+after\n"
+        let runner = DiffRunner(["a\0", rawEntry + "a\0\0" + patch])
+        let result = try await runner.repository.focusedDiff(from: "base", to: "head", path: "a", maxBytes: 1)
+        #expect(result?.isTruncated == true)
+        #expect(result?.text == "")
+    }
+
     @Test func realRootAndMergeProduceStandardPatches() async throws {
         let temp = try TempDirectory()
         defer { temp.remove() }

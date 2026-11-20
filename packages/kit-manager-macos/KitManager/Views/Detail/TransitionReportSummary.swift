@@ -4,12 +4,12 @@ import SwiftUI
 /// What a transition report changes: chips per kind, the first files, the conflicts and the follow-ups.
 struct TransitionReportSummary: View {
     let report: TransitionReport
+    var modules: Set<String>? = nil
     var fileLimit = 6
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ChangeSummaryChips(changes: report.changes)
-            ChangeFileList(changes: report.changes, limit: fileLimit)
+            ChangeFileList(report: report, modules: modules, limit: fileLimit)
             if !report.conflicts.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(

@@ -28,10 +28,7 @@ struct RootView: View {
 
     var body: some View {
         mainWindow
-            .environment(\.openKitDiff, OpenKitDiffAction { diffRequest = $0 })
-            .sheet(item: $diffRequest) { request in
-                KitDiffSheet(request: request)
-            }
+            .kitDiffPresentation($diffRequest)
     }
 
     private var mainWindow: some View {
@@ -230,6 +227,7 @@ struct RootView: View {
         switch request {
         case .upgrade(let project):
             UpgradeFlowSheet(project: project)
+                .kitDiffPresentation()
         case .migration(let project):
             if let snapshot = model.snapshots[project.id] {
                 MigrationFlowSheet(project: project, snapshot: snapshot, catalogue: model.catalogue)

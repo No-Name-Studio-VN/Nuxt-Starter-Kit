@@ -355,8 +355,7 @@ struct UpgradeSection: View {
             if report.upToDate == true {
                 note("Nothing to update.")
             } else {
-                ChangeSummaryChips(changes: report.changes)
-                ChangeFileList(changes: report.changes)
+                ChangeFileList(report: report, modules: installedModules)
                 followUps(report.followUps)
             }
             if stale {

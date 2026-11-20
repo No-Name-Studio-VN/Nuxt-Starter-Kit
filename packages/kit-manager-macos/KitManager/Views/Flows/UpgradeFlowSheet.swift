@@ -91,6 +91,7 @@ struct UpgradeFlowSheet: View {
                 }
                 Section("Preview (nothing is changed yet)") {
                     TransitionGroupedCounts(counts: report.groupedCounts)
+                    ChangeFileList(report: report, modules: snapshot?.kitState.map { Set($0.modules) }, limit: 6)
                 }
             } else {
                 Section("Preview (nothing is changed yet)") {
@@ -296,7 +297,7 @@ struct UpgradeFlowSheet: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                TransitionReportSummary(report: report)
+                TransitionReportSummary(report: report, modules: snapshot?.kitState.map { Set($0.modules) })
                 if let resolveError { FailureView(resolveError) }
             }
         case .failed(let branch, let error):

@@ -112,6 +112,12 @@ public struct KitRepository: Sendable {
         return KitDiff.preview(of: output, maxBytes: maxBytes)
     }
 
+    /// Returns nil when the project file has no exact changed path in the kit.
+    public func focusedDiff(from base: String?, to head: String, path: String, maxBytes: Int) async throws -> KitDiff? {
+        guard !path.isEmpty, try await changedPaths(from: base, to: head).contains(path) else { return nil }
+        return try await diff(from: base, to: head, limitedTo: [path], maxBytes: maxBytes)
+    }
+
     /// Includes both sides of renames so module scoping can match either the source or destination.
     public func changedPaths(from base: String?, to head: String) async throws -> [String] {
         try requirePlainRevision(head)

@@ -13,6 +13,29 @@ extension EnvironmentValues {
     @Entry var openKitDiff: OpenKitDiffAction?
 }
 
+extension View {
+    func kitDiffPresentation(_ request: Binding<DiffRequest?>? = nil) -> some View {
+        modifier(KitDiffPresentation(request: request))
+    }
+}
+
+/// A sheet needs its own presenter when the diff is opened from inside another sheet.
+private struct KitDiffPresentation: ViewModifier {
+    let request: Binding<DiffRequest?>?
+
+    @State private var localRequest: DiffRequest?
+
+    func body(content: Content) -> some View {
+        let request = request ?? $localRequest
+        content
+            .environment(\.openKitDiff, OpenKitDiffAction { request.wrappedValue = $0 })
+            .sheet(item: request) { request in
+                KitDiffSheet(request: request)
+                    .presentationSizing(.fitted)
+            }
+    }
+}
+
 extension DiffRequest {
     /// One kit change against its first parent; `modules` scopes it to a project's modules.
     static func change(_ commit: KitCommit, modules: Set<String>? = nil) -> DiffRequest {

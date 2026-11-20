@@ -171,13 +171,15 @@ struct ModuleChangeSheet: View {
             }
             TransitionBackupToggle(backsUp: $backsUp, hasUnsaved: (report.unsaved?.total ?? 0) > 0, isModuleChange: true)
             TransitionGroupedCounts(counts: report.groupedCounts)
-            DisclosureGroup("File details") {
-                TransitionReportSummary(report: report)
-            }
+            TransitionReportSummary(report: report, modules: modules(in: report))
         case .applied(let report, _):
-            TransitionReportSummary(report: report)
+            TransitionReportSummary(report: report, modules: modules(in: report))
             if let resolveError { FailureView(resolveError) }
         }
+    }
+
+    private func modules(in report: TransitionReport) -> Set<String>? {
+        model.snapshots[project.id]?.kitState.map { Set($0.modules + report.addedModules + report.removedModules) }
     }
 
     private var footer: some View {

@@ -10,6 +10,7 @@ enum DiffLayout: String {
 struct DiffWebView: NSViewRepresentable {
     let text: String
     let layout: DiffLayout
+    let showsFileList: Bool
     let onRender: (String?) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(onRender: onRender) }
@@ -18,13 +19,14 @@ struct DiffWebView: NSViewRepresentable {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.underPageBackgroundColor = .windowBackgroundColor
         webView.navigationDelegate = context.coordinator
         context.coordinator.load(in: webView)
         return webView
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
-        context.coordinator.update(text: text, layout: layout, in: webView)
+        context.coordinator.update(text: text, layout: layout, showsFileList: showsFileList, in: webView)
     }
 
     @MainActor
@@ -40,6 +42,7 @@ struct DiffWebView: NSViewRepresentable {
         private struct Render: Equatable {
             let text: String
             let layout: DiffLayout
+            let showsFileList: Bool
         }
 
         init(onRender: @escaping (String?) -> Void) { self.onRender = onRender }
@@ -52,8 +55,8 @@ struct DiffWebView: NSViewRepresentable {
             webView.loadFileURL(assetURL, allowingReadAccessTo: assetURL.deletingLastPathComponent())
         }
 
-        func update(text: String, layout: DiffLayout, in webView: WKWebView) {
-            pending = Render(text: text, layout: layout)
+        func update(text: String, layout: DiffLayout, showsFileList: Bool, in webView: WKWebView) {
+            pending = Render(text: text, layout: layout, showsFileList: showsFileList)
             render(in: webView)
         }
 
@@ -89,7 +92,8 @@ struct DiffWebView: NSViewRepresentable {
             isRendering = true
             // The patch is untrusted data. Never embed it in the script or the page URL.
             webView.callAsyncJavaScript(
-                "window.renderDiff(patch, layout)", arguments: ["patch": pending.text, "layout": pending.layout.rawValue],
+                "window.renderDiff(patch, layout, showsFileList)",
+                arguments: ["patch": pending.text, "layout": pending.layout.rawValue, "showsFileList": pending.showsFileList],
                 in: nil, in: .page
             ) { [weak self, weak webView] result in
                 guard let self, let webView else { return }

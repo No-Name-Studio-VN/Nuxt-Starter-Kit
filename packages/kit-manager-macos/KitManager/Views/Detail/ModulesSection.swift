@@ -54,6 +54,7 @@ struct ModulesSection: View {
             }
             .sheet(isPresented: $isManaging) {
                 ModuleChangeSheet(project: project, additions: available, removals: removable, initialRemoval: initialRemoval)
+                    .kitDiffPresentation()
             }
             #if DEBUG
             .task {

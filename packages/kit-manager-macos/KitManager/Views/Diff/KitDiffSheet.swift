@@ -9,7 +9,7 @@ struct KitDiffSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var layout: DiffLayout = .unified
     @State private var allFiles = false
-    @State private var diff: Loadable<KitDiff> = .idle
+    @State private var diff: Loadable<KitDiffPreview> = .idle
     @State private var renderError: String?
     @State private var isRendered = false
     /// The commit or compare page on the kit's host; nil when the kit checkout has no web remote.
@@ -24,7 +24,7 @@ struct KitDiffSheet: View {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: 860, idealWidth: 980, minHeight: 420, idealHeight: 620)
+        .frame(minWidth: 560, idealWidth: 980, minHeight: 360, idealHeight: 620)
         .task(id: allFiles) { await load() }
         .task { await loadWebURL() }
         #if DEBUG
@@ -33,20 +33,51 @@ struct KitDiffSheet: View {
     }
 
     private var toolbar: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(request.title)
-                    .font(.headline)
-                    .lineLimit(2)
-                    .accessibilityAddTraits(.isHeader)
-                Text(revisionLabel)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .textSelection(.enabled)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                heading.fixedSize(horizontal: true, vertical: false)
+                Spacer(minLength: 4)
+                controls
             }
-            Spacer(minLength: 4)
-            if request.modules != nil {
+            VStack(alignment: .leading, spacing: 10) {
+                heading
+                HStack {
+                    Spacer(minLength: 0)
+                    controls
+                }
+            }
+        }
+    }
+
+    private var heading: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(request.title)
+                .font(.headline)
+                .lineLimit(2)
+                .truncationMode(.middle)
+                .accessibilityAddTraits(.isHeader)
+            if let path = request.focusPath {
+                let directory = NSString(string: path).deletingLastPathComponent
+                if !directory.isEmpty {
+                    Text(directory)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .help(path)
+                }
+            }
+            Text(revisionLabel)
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .textSelection(.enabled)
+        }
+    }
+
+    private var controls: some View {
+        HStack(spacing: 12) {
+            if request.modules != nil && diff.value?.isFocused != true {
                 Picker("File scope", selection: $allFiles) {
                     Text("Your modules").tag(false)
                     Text("All files").tag(true)
@@ -108,21 +139,36 @@ struct KitDiffSheet: View {
             ProgressView("Loading code changes…")
         case .failed(let reason):
             failure(reason)
-        case .loaded(let patch, _):
+        case .loaded(let preview, _):
+            let patch = preview.patch
+            let missingFocus = request.focusPath != nil && !preview.isFocused
             if let renderError {
                 failure(renderError)
             } else if patch.text.isEmpty && !patch.isTruncated {
-                ContentUnavailableView(
-                    request.modules != nil && !allFiles ? "No file changes in your modules" : "No file changes",
-                    systemImage: "doc.text")
+                if missingFocus {
+                    ContentUnavailableView {
+                        Label("No Kit Diff for This File", systemImage: "doc.text")
+                    } description: {
+                        Text("This file did not change between these kit versions. It may have been generated from a template or changed because of the selected modules.")
+                    }
+                } else {
+                    ContentUnavailableView(
+                        request.modules != nil && !allFiles ? "No file changes in your modules" : "No file changes",
+                        systemImage: "doc.text")
+                }
             } else {
                 VStack(spacing: 0) {
+                    if missingFocus {
+                        previewNotice(
+                            "No kit diff for this file", detail: "Showing other kit changes for the selected scope instead.",
+                            symbol: "info.circle", color: .secondary)
+                    }
                     if patch.isTruncated { truncationNotice(files: patch.files.count) }
                     if patch.text.isEmpty {
                         ContentUnavailableView("No files fit in the preview", systemImage: "doc.text")
                             .frame(maxHeight: .infinity)
                     } else {
-                        DiffWebView(text: patch.text, layout: layout) { error in
+                        DiffWebView(text: patch.text, layout: layout, showsFileList: !preview.isFocused) { error in
                             renderError = error
                             isRendered = true
                         }
@@ -136,16 +182,21 @@ struct KitDiffSheet: View {
     }
 
     private func truncationNotice(files: Int) -> some View {
+        previewNotice(
+            "Diff preview truncated",
+            detail: files == 0 ? "The first changed file exceeds the preview limit." : "Only the first \(files) changed files fit within the preview limit.",
+            symbol: "exclamationmark.triangle", color: .orange)
+    }
+
+    private func previewNotice(_ title: String, detail: String, symbol: String, color: Color) -> some View {
         VStack(spacing: 0) {
             Label {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Diff preview truncated").font(.callout.weight(.medium))
-                    Text(files == 0 ? "The first changed file exceeds the preview limit." : "Only the first \(files) changed files fit within the preview limit.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text(title).font(.callout.weight(.medium))
+                    Text(detail).font(.caption).foregroundStyle(.secondary)
                 }
             } icon: {
-                Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                Image(systemName: symbol).foregroundStyle(color)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
@@ -167,7 +218,7 @@ struct KitDiffSheet: View {
         diff = .loading
         renderError = nil
         isRendered = false
-        let result: Loadable<KitDiff>
+        let result: Loadable<KitDiffPreview>
         #if DEBUG
         if let cap = DebugLaunchOptions.diffMaxBytes {
             result = await model.loadKitDiff(request, allFiles: allFiles, maxBytes: cap)
