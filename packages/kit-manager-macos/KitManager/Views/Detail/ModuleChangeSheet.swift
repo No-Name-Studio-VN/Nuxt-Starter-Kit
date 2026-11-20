@@ -1,8 +1,7 @@
 import KitManagerCore
 import SwiftUI
 
-/// Adds or removes modules in two steps: the `--check` plan first, then Apply. Apply never forces
-/// and is disabled while the working tree has uncommitted changes.
+/// Adds or removes modules in two steps: review the `--check` plan, then apply it.
 struct ModuleChangeSheet: View {
     let project: Project
 
@@ -15,6 +14,8 @@ struct ModuleChangeSheet: View {
     @State private var action: ModuleAction
     @State private var selection: Set<String>
     @State private var phase: ModuleChangePhase = .idle
+    @State private var backsUp = true
+    @State private var showsRiskFiles = false
     /// Bumped by "Preview Again" to re-run the `--check` for the same selection.
     @State private var planAttempt = 0
     @State private var pickerHeight: CGFloat = 0
@@ -33,7 +34,10 @@ struct ModuleChangeSheet: View {
 
     private var ids: [String] { selection.sorted() }
 
-    private var dirtyCount: Int { model.snapshots[project.id]?.git?.dirtyCount ?? 0 }
+    private var reviewedRisk: UpgradeRiskSummary? {
+        guard case .planned(let report, _) = phase else { return nil }
+        return report.riskSummary
+    }
 
     private var verb: String { action == .add ? "Add" : "Remove" }
 
@@ -72,12 +76,21 @@ struct ModuleChangeSheet: View {
                 }
             }
             .formStyle(.grouped)
-            .frame(height: 440)
+            .disclosureGroupStyle(.row)
+            .defaultScrollAnchor(.top, for: .sizeChanges)
+            .frame(height: min(formHeight, max(280, (NSScreen.main?.visibleFrame.height ?? 800) - 105)))
             Divider()
             footer.padding(20)
         }
         .frame(width: 540)
+        .interactiveDismissDisabled(isApplying)
         .task(id: ModulePlanRequest(action: action, selection: selection, attempt: planAttempt)) { await runPreview() }
+    }
+
+    private var formHeight: CGFloat {
+        if reviewedRisk?.detail != nil { return showsRiskFiles ? 700 : 610 }
+        if case .planned = phase { return 520 }
+        return 440
     }
 
     // MARK: Pieces
@@ -140,7 +153,14 @@ struct ModuleChangeSheet: View {
                 Text("Applying…").font(.callout).foregroundStyle(.secondary)
             }
         case .planned(let report, _):
-            TransitionReportSummary(report: report)
+            if let risk = report.riskSummary, let unsaved = report.unsaved, risk.risky > 0 {
+                TransitionRiskReview(summary: risk, files: unsaved.risky, showsFiles: $showsRiskFiles)
+            }
+            TransitionBackupToggle(backsUp: $backsUp, hasUnsaved: (report.unsaved?.total ?? 0) > 0, isModuleChange: true)
+            TransitionGroupedCounts(counts: report.groupedCounts)
+            DisclosureGroup("File details") {
+                TransitionReportSummary(report: report)
+            }
         case .applied(let report, _):
             TransitionReportSummary(report: report)
             if let resolveError { FailureView(resolveError) }
@@ -168,14 +188,6 @@ struct ModuleChangeSheet: View {
                     .buttonStyle(.glass)
                     .keyboardShortcut(.cancelAction)
                     .disabled(isApplying)
-                if dirtyCount > 0 {
-                    Label {
-                        Text("Commit or stash your changes first").foregroundStyle(.secondary)
-                    } icon: {
-                        Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
-                    }
-                    .font(.caption)
-                }
                 Spacer()
                 if case .failed = phase, !selection.isEmpty {
                     Button("Preview Again") { planAttempt += 1 }
@@ -185,7 +197,7 @@ struct ModuleChangeSheet: View {
                     .buttonStyle(.glassProminent)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!canApply)
-                    .help(dirtyCount > 0 ? "Commit or stash your changes first" : "Apply the planned change")
+                    .help("Apply the planned change")
             }
         }
     }
@@ -196,9 +208,8 @@ struct ModuleChangeSheet: View {
     }
 
     private var canApply: Bool {
-        guard dirtyCount == 0 else { return false }
-        if case .planned = phase { return true }
-        return false
+        guard case .planned(_, let planned) = phase else { return false }
+        return ids == planned && model.cliStatus == .ready
     }
 
     // MARK: Actions
@@ -217,6 +228,7 @@ struct ModuleChangeSheet: View {
             return
         }
         phase = .previewing
+        showsRiskFiles = false
         let planned = ids
         let plannedAction = action
         let result = await model.previewModuleChange(project, action: plannedAction, ids: planned)
@@ -230,10 +242,12 @@ struct ModuleChangeSheet: View {
 
     /// Applies the plan on screen, with the modules it was made for rather than the live selection.
     private func applyPlanned() {
-        guard case .planned(_, let planned) = phase else { return }
+        guard canApply, case .planned(let report, let planned) = phase else { return }
         phase = .applying
+        let plannedAction = action
+        let backup = backsUp
         Task {
-            switch await model.applyModuleChange(project, action: action, ids: planned) {
+            switch await model.applyModuleChange(project, action: plannedAction, ids: planned, reviewed: report, backup: backup) {
             case .success(let report): phase = .applied(report, ids: planned)
             case .failure(let error): phase = .failed(PresentedError(error))
             }

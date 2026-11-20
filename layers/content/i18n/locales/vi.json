@@ -2,6 +2,7 @@
   "docs": {
     "loading_navigation": "Đang tải điều hướng…",
     "loading_toc": "Đang tải mục lục…",
+    "translation_fallback": "Trang này chưa có bản dịch {requestedLanguage}. Bạn đang xem bản gốc ({fallbackLanguage}).",
     "toc": {
       "title": "Trên trang này"
     },

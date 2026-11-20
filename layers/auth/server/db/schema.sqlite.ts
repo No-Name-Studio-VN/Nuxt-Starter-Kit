@@ -1,5 +1,5 @@
 import { sqliteTable, text, integer, unique, index } from 'drizzle-orm/sqlite-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import type { AuthTokenKind } from '../../types/authTokens';
 
 const timestampColumns = {
@@ -12,13 +12,19 @@ export const users = sqliteTable('users', {
   username: text('username').notNull().unique(),
   name: text('name').notNull(),
   password: text('password').notNull(),
+  passwordChangedAt: integer('password_changed_at', { mode: 'timestamp' }),
   email: text('email').notNull().unique(),
   emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
   isLocked: integer('is_locked', { mode: 'boolean' }).notNull().default(false),
+  onboardingPending: integer('onboarding_pending', { mode: 'boolean' }).notNull().default(false),
+  onboardingCompletedSteps: text('onboarding_completed_steps', { mode: 'json' })
+    .$type<string[]>()
+    .notNull()
+    .default([]),
   lastLoginAt: integer('last_login_at', { mode: 'timestamp' }), // Can be null if never logged in
   ...timestampColumns,
-});
+}, (table) => [index('users_email_lower_idx').on(sql`lower(${table.email})`)]);
 
 export const authTokens = sqliteTable(
   'auth_tokens',
@@ -29,6 +35,7 @@ export const authTokens = sqliteTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     token: text('token').notNull().unique(),
     type: text('type').$type<AuthTokenKind>().notNull(),
+    email: text('email'),
     expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
     usedAt: integer('used_at', { mode: 'timestamp' }),
     ...timestampColumns,

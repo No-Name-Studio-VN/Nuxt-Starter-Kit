@@ -79,6 +79,7 @@ struct MigrationFlowSheet: View {
                 modules
             }
             .formStyle(.grouped)
+            .disclosureGroupStyle(.row)
             .frame(height: catalogue.isEmpty ? 300 : 400)
             Divider()
             footer.padding(20)

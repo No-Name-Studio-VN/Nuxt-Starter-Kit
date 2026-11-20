@@ -2,6 +2,7 @@
   "docs": {
     "loading_navigation": "Loading navigation…",
     "loading_toc": "Loading table of contents…",
+    "translation_fallback": "This page hasn’t been translated into {requestedLanguage} yet. You’re viewing the {fallbackLanguage} version.",
     "toc": {
       "title": "On this page"
     },

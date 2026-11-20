@@ -1,6 +1,7 @@
 import { registerUserSchema } from '#layers/auth/shared/schemas/userSchema';
 import userService from '#layers/auth/server/utils/database/user';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
+import { safeRedirectPath } from '#layers/auth/server/utils/safeRedirect';
 import { runPostRegisterSteps } from '#layers/auth/server/utils/postRegisterSteps';
 import type { User } from '#layers/auth/types/auth';
 import type { RegisterUserInput } from '#layers/auth/shared/schemas/userSchema';
@@ -9,42 +10,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
 }
 
-function safeRedirectPath(value: string | undefined, origin: string): string {
-  if (!value) {
-    return '/';
-  }
-
-  try {
-    const parsed = new URL(value, origin);
-    if (parsed.origin !== origin) {
-      return '/';
-    }
-
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return '/';
-  }
-}
-
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) => registerUserSchema.safeParse(body));
   if (!result.success) {
     return sendRedirect(event, authRoutes.AUTH_REGISTER + '?error=validation');
   }
 
-  const { username, password, 'cf-turnstile-response': token } = result.data;
+  const { username, email, password, 'cf-turnstile-response': token } = result.data;
 
   const tokenValidation = await verifyTurnstileToken(token);
   if (!tokenValidation.success) {
     return sendRedirect(event, authRoutes.AUTH_REGISTER + '?error=captcha');
   }
 
-  const redirectTo = safeRedirectPath(result.data['redirect-to'], getRequestURL(event).origin);
+  const redirectTo = safeRedirectPath(event, result.data['redirect-to']);
 
   // 1. CHEAP PRE-CHECK: Prevent CPU Exhaustion (DoS) by checking constraints before hashing
   const [existingUsername, existingEmail] = await Promise.all([
     userService.getByUsername(username),
-    userService.getByEmail(result.data.email),
+    userService.getByEmail(email),
   ]);
 
   if (existingUsername) {
@@ -66,7 +50,7 @@ export default defineEventHandler(async (event) => {
       isAdmin: boolean;
     } = {
       username: result.data.username,
-      email: result.data.email,
+      email,
       name: result.data.name,
       password: hashedPassword,
       emailVerified: false,
@@ -75,6 +59,7 @@ export default defineEventHandler(async (event) => {
 
     newUser = await userService.create({
       ...createPayload,
+      onboardingPending: true,
     });
   } catch (err: unknown) {
     let maybeErrCode: string | undefined;

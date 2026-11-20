@@ -1,14 +1,18 @@
 import type { H3Event } from 'h3';
+import type { RequestEvent } from 'nuxt/server';
+import { getRequestURL as getNuxtRequestURL } from 'nuxt/server';
 
-export function safeRedirectPath(event: H3Event, value: string | undefined, fallback = '/') {
+export function safeRedirectPath(event: H3Event | RequestEvent, value: string | undefined, fallback = '/') {
   if (!value) {
     return fallback;
   }
 
   try {
-    const origin = getRequestURL(event).origin;
+    const options = { xForwardedProto: true };
+    const { origin } = 'url' in event ? getNuxtRequestURL(event, options) : getRequestURL(event, options);
     const parsed = new URL(value, origin);
-    if (parsed.origin !== origin) {
+    // Returning a path that starts with two slashes is not a same-origin redirect.
+    if (parsed.origin !== origin || parsed.pathname.startsWith('//')) {
       return fallback;
     }
 

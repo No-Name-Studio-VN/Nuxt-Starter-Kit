@@ -12,6 +12,7 @@ import {
 } from '#layers/auth/app/utils/googleOneTap';
 
 const { loggedIn, fetch: refreshSession } = useUserSession();
+const router = useRouter();
 const { public: publicConfig } = useRuntimeConfig();
 
 const googleClientId = computed(() => {
@@ -43,6 +44,9 @@ async function submitCredential(response: GoogleCredentialResponse) {
 
     if (result.success) {
       await refreshSession();
+      if (result.data.status === 'created') {
+        await router.push(authRoutes.ONBOARDING);
+      }
       return;
     }
   } catch {

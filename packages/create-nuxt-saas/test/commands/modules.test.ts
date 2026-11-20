@@ -50,13 +50,13 @@ function init(requested: string[] = [], target = projectRoot, git = true) {
   return runInit({ target, identity, requested, kit, git });
 }
 
-function change(add: string[] = [], remove: string[] = [], check = false, force = false) {
-  return runModuleChange({ projectRoot, add, remove, kit, check, force });
+function change(add: string[] = [], remove: string[] = [], check = false, force = false, backup = true) {
+  return runModuleChange({ projectRoot, add, remove, kit, check, force, backup });
 }
 
 async function projectFiles(root: string, includeState = false): Promise<Map<string, Buffer>> {
   const paths = (await listFiles(root)).filter(
-    (path) => !path.startsWith('.git/') && (includeState || path !== STATE_FILE),
+    (path) => !path.startsWith('.git/') && (includeState || (path !== STATE_FILE && !path.startsWith('.nuxt-saas/'))),
   );
   const files = new Map<string, Buffer>();
   for (const path of paths) files.set(path, await readFile(join(root, path)));
@@ -204,19 +204,28 @@ describe('runModuleChange', () => {
     expect(await projectFiles(projectRoot, true)).toEqual(before);
   });
 
-  it('refuses dirty trees unless force is set', async () => {
+  it('backs up a safe module addition and a forced risky removal', async () => {
     await init();
     await writeTextFile(join(projectRoot, 'user.txt'), 'dirty\n');
-    await expectRefused(change(['beta']), 'commit or stash');
-    expect((await change(['beta'], [], false, true)).applied).toBe(true);
+    expect(await change(['beta'])).toMatchObject({ applied: true, backup: { status: 'complete' } });
+    const path = 'layers/beta/server/db/schema.sqlite.ts';
+    await writeTextFile(join(projectRoot, path), 'user schema\n');
+    await expectRefused(change([], ['beta']), path);
+    expect(await change([], ['beta'], false, true)).toMatchObject({
+      applied: true, unsaved: { risky: [{ path, kind: 'keep-edited' }] }, backup: { status: 'complete' },
+    });
+    const saved: unknown = JSON.parse(await readFile(join(projectRoot, '.nuxt-saas/upgrade-report.json'), 'utf8'));
+    expect(saved).toMatchObject({ command: 'remove', fromVersion: '1.0.0', toVersion: '1.0.0' });
+    expect(await readFile(join(projectRoot, path), 'utf8')).toBe('user schema\n');
     expect(await readFile(join(projectRoot, 'user.txt'), 'utf8')).toBe('dirty\n');
   });
 
-  it('refuses projects without git but permits check and force', async () => {
+  it('requires both --force and --no-backup to change modules outside git', async () => {
     await init([], projectRoot, false);
-    await expectRefused(change(['beta']), 'needs git');
+    await expectRefused(change(['beta']), "isn't in git");
     expect((await change(['beta'], [], true)).applied).toBe(false);
-    expect((await change(['beta'], [], false, true)).applied).toBe(true);
+    await expectRefused(change(['beta'], [], false, true), '--no-backup');
+    expect(await change(['beta'], [], false, true, false)).toMatchObject({ applied: true, backup: null });
   });
 
   it.each(['add', 'remove'])(
@@ -317,7 +326,12 @@ describe('runModuleChange', () => {
       followUps: [],
       addedModules: [],
       removedModules: [],
-      applied: true,
+      applied: false,
+      backup: null,
+      report: null,
+      notes: [],
+      suggestions: [],
+      unsaved: { total: 0, risky: [], touched: [], untouched: 0 },
     });
     expect(await projectFiles(projectRoot, true)).toEqual(before);
   });

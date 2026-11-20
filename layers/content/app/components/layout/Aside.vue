@@ -18,9 +18,9 @@
     >
       <li v-for="link in navigation" :key="link.stem">
         <NuxtLinkLocale
-          :to="link.redirect ?? link.path"
+          :to="navTargetFromPath(link.path, navigation)"
           class="text-foreground/80 hover:bg-muted hover:text-primary flex h-8 items-center gap-2 rounded-md p-2 text-sm"
-          :class="[$route.path.startsWith(link.path) && 'bg-muted text-primary! font-medium']"
+          :class="[isContentPathWithin(path, link.path) && 'bg-muted text-primary! font-medium']"
         >
           <CtIcon v-if="link.icon" :name="link.icon" class="self-center" :size="16" />
           {{ link.title }}
@@ -44,37 +44,22 @@
 </template>
 
 <script setup lang="ts">
-import { useContentHelpers } from '#layers/content/app/composables/useContentHelpers';
-import { usePageData } from '#layers/content/app/composables/usePageData';
+import { navTargetFromPath, useContentHelpers } from '#layers/content/app/composables/useContentHelpers';
+import { isContentPathWithin } from '#layers/content/app/utils/contentPaths';
 import CtIcon from '#layers/content/app/components/content/CtIcon.vue';
 
 defineProps<{ isMobile: boolean }>();
 
-const route = useRoute();
 const config = useDocsConfig();
-const { locale, defaultLocale } = useI18n();
 const { navDirFromPath } = useContentHelpers();
 
-const { navigation } = usePageData();
-// The layout renders before the page fills shared state on the server, while the
-// client already has the final payload. Keep the same fallback through hydration.
-const mounted = shallowRef(false);
-const navigationReady = computed(() => mounted.value && navigation.value !== null);
-onMounted(() => {
-  mounted.value = true;
-});
+const { navigation, path } = useI18nDocs();
+const navigationReady = computed(() => navigation.value !== null);
 
 const tree = computed(() => {
-  const path = route.path.split('/');
   if (config.value.aside.useLevel) {
-    const leveledPath = path.splice(0, locale.value === defaultLocale ? 2 : 3).join('/');
-
-    if (navigation.value) {
-      const dir = navDirFromPath(leveledPath, navigation.value);
-      return dir ?? [];
-    } else {
-      return [];
-    }
+    const leveledPath = path.value.split('/').slice(0, 2).join('/');
+    return navDirFromPath(leveledPath, navigation.value) ?? [];
   }
 
   return navigation.value;

@@ -1,8 +1,11 @@
+import { defineEventHandler } from 'nuxt/server';
 import { getClientSafeWebAuthnResponse } from '#layers/auth-passkeys/server/utils/webauthnResponse';
 import { eq } from 'drizzle-orm';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import { useKV } from '#layers/server-core/server/utils/kv';
 import userService from '#layers/auth/server/utils/database/user';
+import { setCompletedSignIn } from '#layers/auth/server/utils/sessionUser';
+import { loginSchema } from '#layers/auth/shared/schemas/userSchema';
 
 const handler = defineWebAuthnAuthenticateEventHandler({
   async storeChallenge(event, challenge, attemptId) {
@@ -23,7 +26,10 @@ const handler = defineWebAuthnAuthenticateEventHandler({
     return challenge;
   },
   async allowCredentials(event, userName) {
-    const user = await userService.getByUsername(userName);
+    const result = loginSchema.shape.username.safeParse(userName);
+    if (!result.success) return [];
+
+    const user = await userService.getByUsername(result.data);
     if (!user) {
       return [];
     }
@@ -56,14 +62,11 @@ const handler = defineWebAuthnAuthenticateEventHandler({
     return credential;
   },
   async onSuccess(event, { credential }) {
-    await setUserSession(event, {
-      user: {
-        id: credential.user.id,
-        name: credential.user.name,
-        username: credential.user.username,
-        isAdmin: credential.user.isAdmin,
-      },
-    });
+    await setCompletedSignIn(event, credential.user, { method: 'passkey' });
+    await useDB()
+      .update(tables.credentials)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(tables.credentials.id, credential.id));
   },
 });
 

@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "backup": {
+    "ref": "refs/nuxt-saas/backups/2026-11-21T091400Z",
+    "name": "2026-11-21T091400Z",
+    "createdAt": "2026-11-21T09:14:00.123Z",
+    "expiresAt": "2026-12-05T09:14:00Z",
+    "status": "complete"
+  },
+  "restorable": false,
+  "blocked": {
+    "reason": "changes",
+    "message": "You have unsaved changes in 2 files since the upgrade. Undo won't overwrite them.",
+    "paths": ["session.ts", "header.ts"]
+  },
+  "restored": false,
+  "files": 0
+}

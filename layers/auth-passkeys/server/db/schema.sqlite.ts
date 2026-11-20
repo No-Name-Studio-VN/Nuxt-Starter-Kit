@@ -22,6 +22,7 @@ export const credentials = sqliteTable(
     transports: text('transports', { mode: 'json' })
       .notNull()
       .$type<WebAuthnCredential['transports']>(),
+    lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
     ...timestampColumns,
   },
   (table) => ({

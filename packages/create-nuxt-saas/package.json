@@ -1,6 +1,6 @@
 {
   "name": "create-nuxt-saas",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Create and upgrade modular Nuxt SaaS projects: auth, admin, PWA, docs, feature flags.",
   "keywords": [
     "cloudflare",
@@ -44,8 +44,8 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@clack/prompts": "^1.8.1",
-    "@types/node": "^26.6.5",
+    "@clack/prompts": "^1.9.0",
+    "@types/node": "^26.6.6",
     "@typescript/typescript6": "^6.0.2",
     "citty": "^0.2.2",
     "giget": "^3.3.1",
@@ -53,7 +53,7 @@
     "tinyglobby": "^0.2.17",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "unbuild": "^3.6.1",
-    "vitest": "^5.0.5",
+    "vitest": "^5.1.1",
     "zod": "^4.6.7"
   },
   "engines": {

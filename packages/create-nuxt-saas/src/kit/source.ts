@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { downloadTemplate } from 'giget';
 import { CliError } from '../errors';
+import { git } from '../git/snapshot';
 import { cleanupOnTermination } from '../util/terminationCleanup';
 import { readKitModules, type KitModule } from './modules';
 
@@ -39,14 +40,13 @@ export function parseTemplate(template: string): { repo: string; ref: string } {
 export async function resolveCommit(source: KitSource): Promise<string> {
   if (source.kind === 'local') {
     try {
-      const { stdout: status } = await run('git', ['-C', source.path, 'status', '--porcelain']);
+      const status = await git(source.path, ['status', '--porcelain']);
       if (status.trim() && !source.allowDirty) {
         throw new CliError(
           `Kit at ${source.path} has uncommitted changes. Commit them or use --allow-dirty-kit.`,
         );
       }
-      const { stdout } = await run('git', ['-C', source.path, 'rev-parse', 'HEAD']);
-      const commit = stdout.trim();
+      const commit = (await git(source.path, ['rev-parse', 'HEAD'])).trim();
       if (!shaPattern.test(commit))
         throw new CliError(`Invalid commit returned by kit at ${source.path}.`);
       return commit;
@@ -119,9 +119,7 @@ export async function openKit(
       try {
         const archive = join(archiveDir, 'kit.tar');
         try {
-          await run('git', [
-            '-C',
-            source.path,
+          await git(source.path, [
             'archive',
             '--format=tar',
             '--output',

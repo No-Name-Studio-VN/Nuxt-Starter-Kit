@@ -3,11 +3,14 @@ import {
   EMAIL_VERIFICATION_EXPIRY_MS,
   EmailVerificationTokenType,
 } from '#layers/auth-email-verification/shared/constants/emailVerificationTokens';
+import { registerEmailChangedHook } from '#layers/auth/server/utils/emailChangedHooks';
 import { registerLoginPolicy } from '#layers/auth/server/utils/loginPolicies';
 import { registerPostRegisterStep } from '#layers/auth/server/utils/postRegisterSteps';
 import authTokenService from '#layers/auth/server/utils/database/authToken';
 import { emailVerificationRoutes } from '#layers/auth-email-verification/shared/emailVerificationRoutes';
 import { sendVerificationEmail } from '#layers/auth-email-verification/server/utils/verificationEmail';
+import type { User } from '#layers/auth/types/auth';
+import type { EmailChangedContext } from '#layers/auth/types/loginPolicies';
 
 function verifyEmailNotice(email: string, redirectTo: string): string {
   return (
@@ -17,6 +20,23 @@ function verifyEmailNotice(email: string, redirectTo: string): string {
     '&redirectTo=' +
     encodeURIComponent(redirectTo)
   );
+}
+
+async function queueVerificationEmail(event: EmailChangedContext['event'], user: User) {
+  const token = await authTokenService.createEmailBoundToken(
+    user,
+    EmailVerificationTokenType.EmailVerification,
+  );
+
+  const delivery = sendVerificationEmail(user.email, user.username, token).catch((err) => {
+    console.error('[Email Verification] Failed to send verification email:', err);
+  });
+
+  if ('waitUntil' in event && typeof event.waitUntil === 'function') {
+    event.waitUntil(delivery);
+  } else {
+    await delivery;
+  }
 }
 
 /**
@@ -50,18 +70,21 @@ export default defineNitroPlugin(() => {
     id: 'email-verification',
     order: 100,
     async run({ event, user, redirectTo }) {
-      const verificationToken = await authTokenService.createToken(
-        user.id,
-        EmailVerificationTokenType.EmailVerification,
-      );
-      // Non-blocking: a failed send must not fail the registration.
-      event.waitUntil(
-        sendVerificationEmail(user.email, user.username, verificationToken).catch((err) => {
-          console.error('[Register] Failed to send verification email:', err);
-        }),
-      );
-
+      await queueVerificationEmail(event, user);
       return { redirect: verifyEmailNotice(user.email, redirectTo) };
+    },
+  });
+
+  registerEmailChangedHook({
+    id: 'email-verification',
+    order: 100,
+    async run({ event, user }) {
+      try {
+        await queueVerificationEmail(event, user);
+      } catch {
+        // The profile change is already committed; the user can resend verification.
+        console.error('[Email Verification] Failed to prepare verification email after profile update.');
+      }
     },
   });
 });

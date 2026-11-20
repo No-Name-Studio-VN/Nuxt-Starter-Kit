@@ -48,9 +48,8 @@ extension AppModel {
     }
 
     /// Switches to a new `kit-upgrade/…` branch, applies the upgrade onto it, and (with Claude) opens
-    /// Terminal on a prompt. The working tree is checked against git right now, because the branch is
-    /// only a safe place to roll back from when it started clean.
-    func runUpgrade(_ project: Project, withClaude: Bool) async -> UpgradeOutcome {
+    /// Terminal on a prompt. Record whether it started dirty so rollback knows to use a backup.
+    func runUpgrade(_ project: Project, withClaude: Bool, reviewed: TransitionReport, backup: Bool) async -> UpgradeOutcome {
         let precondition = upgradePrecondition(project)
         guard precondition == .ready, let snapshot = snapshots[project.id], let target = latestMain,
             let label = targetLabel, let state = snapshot.kitState
@@ -61,24 +60,33 @@ extension AppModel {
             return .failed(branch: nil, error: PresentedError(CLIFailure.unavailable(cliStatus)))
         }
 
+        guard reviewed.to == target else {
+            return .failed(branch: nil, error: PresentedError(UpdateReportError.previewChanged))
+        }
         let url = project.url
-        let branch: String
-        let previous: String
+        let cli = cli
+        let force = reviewed.unsaved?.risky.isEmpty == false
+        let record: UpgradeBranchRecord
         do {
+            if force {
+                try await limiter.run {
+                    let current = try await cli.upgrade(project: url, to: target, source: .local, check: true)
+                    try reviewed.checkReviewedRisk(against: current)
+                }
+            }
             let status = try await git.status(url)
-            guard status.dirtyCount == 0 else { return Self.failure(.dirtyTree) }
             guard let current = status.branch else { return Self.failure(.noBranch) }
-            previous = current
-            branch = BranchNamer.upgradeBranch(label: label, existing: try await git.localBranches(url))
+            let branch = BranchNamer.upgradeBranch(label: label, existing: try await git.localBranches(url))
             try await git.createAndSwitch(url, branch: branch)
+            record = UpgradeBranchRecord(branch: branch, previous: current, startedDirty: status.dirtyCount > 0)
         } catch {
             return .failed(branch: nil, error: PresentedError(error))
         }
-        upgradeBranches[project.id] = UpgradeBranchRecord(branch: branch, previous: previous)
+        upgradeBranches[project.id] = record
 
         let outcome = await applyUpgrade(
             project, snapshot: snapshot, state: state, target: target, targetLabel: label,
-            branch: branch, previous: previous, withClaude: withClaude)
+            record: record, withClaude: withClaude, force: force, backup: backup)
         await refresh(project, force: true)
         return outcome
     }
@@ -90,16 +98,24 @@ extension AppModel {
 
     private func applyUpgrade(
         _ project: Project, snapshot: ProjectSnapshot, state: KitState, target: String, targetLabel: String,
-        branch: String, previous: String, withClaude: Bool
+        record: UpgradeBranchRecord, withClaude: Bool, force: Bool, backup: Bool
     ) async -> UpgradeOutcome {
         let cli = cli
         let url = project.url
+        let branch = record.branch
+        let previousBackups = record.startedDirty && backup ? try? await cli.backups(project: url) : nil
+        let previousFingerprint = record.startedDirty ? try? await git.fingerprint(url) : nil
         do {
             let report = try await limiter.run {
-                try await cli.upgrade(project: url, to: target, source: .local, check: false)
+                try await cli.upgrade(project: url, to: target, source: .local, check: false, force: force, backup: backup)
             }
             if report.upToDate == true {
-                return await abandonUpToDate(project, branch: branch, previous: previous)
+                return await abandonUpToDate(project, record: record)
+            }
+            if record.startedDirty {
+                upgradeBranches[project.id] = UpgradeBranchRecord(
+                    branch: branch, previous: record.previous, keepsChanges: !report.applied && report.backup == nil,
+                    startedDirty: true, backupName: report.backup?.name)
             }
             guard report.applied else {
                 return .failed(branch: branch, error: PresentedError(message: "The nuxt-saas CLI did not apply the update."))
@@ -116,7 +132,28 @@ extension AppModel {
             upgradeBranches[project.id] = nil
             return .launched(branch: branch)
         } catch {
+            if record.startedDirty, upgradeBranches[project.id] == record {
+                await recordFailedDirtyUpgrade(
+                    project, record: record, cli: cli, previousBackups: previousBackups, previousFingerprint: previousFingerprint)
+            }
             return .failed(branch: branch, error: PresentedError(error))
+        }
+    }
+
+    private func recordFailedDirtyUpgrade(
+        _ project: Project, record: UpgradeBranchRecord, cli: NuxtSaasCLI,
+        previousBackups: BackupList?, previousFingerprint: String?
+    ) async {
+        if let previousBackups, let current = try? await cli.backups(project: project.url),
+            let backup = UpgradeRollback.interruptedBackup(previous: previousBackups, current: current)
+        {
+            upgradeBranches[project.id] = UpgradeBranchRecord(
+                branch: record.branch, previous: record.previous, startedDirty: true, backupName: backup.name)
+            return
+        }
+        if let previousFingerprint, (try? await git.fingerprint(project.url)) == previousFingerprint {
+            upgradeBranches[project.id] = UpgradeBranchRecord(
+                branch: record.branch, previous: record.previous, keepsChanges: true, startedDirty: true)
         }
     }
 
@@ -135,34 +172,48 @@ extension AppModel {
     /// The CLI found nothing to upgrade, so the new branch should be empty. Goes back to `previous` and
     /// deletes the branch without discarding anything. If a file appeared meanwhile it is the user's own
     /// work, so nothing is touched and the only way back offered is a plain switch that keeps it.
-    private func abandonUpToDate(_ project: Project, branch: String, previous: String) async -> UpgradeOutcome {
+    private func abandonUpToDate(_ project: Project, record: UpgradeBranchRecord) async -> UpgradeOutcome {
         do {
-            try await git.abandonBranch(project.url, branch: branch, returningTo: previous)
+            try await git.abandonBranch(project.url, branch: record.branch, returningTo: record.previous)
             upgradeBranches[project.id] = nil
             return Self.failure(.upToDate)
         } catch GitError.uncommittedChanges {
-            upgradeBranches[project.id] = UpgradeBranchRecord(branch: branch, previous: previous, keepsChanges: true)
+            upgradeBranches[project.id] = UpgradeBranchRecord(
+                branch: record.branch, previous: record.previous, keepsChanges: true, startedDirty: record.startedDirty)
             let message = "The project is already up to date, but there are uncommitted changes. They are yours, so nothing was discarded."
-            return .failed(branch: branch, error: PresentedError(message: message))
+            return .failed(branch: record.branch, error: PresentedError(message: message))
         } catch {
-            return .failed(branch: branch, error: PresentedError(error))
+            return .failed(branch: record.branch, error: PresentedError(error))
         }
     }
 
-    /// Switches back to `previous` and deletes `branch`, discarding every uncommitted change on it, unless
-    /// the branch holds the user's own edits: then it only switches. Refused for a branch this app did not
-    /// create from a clean tree, since discarding is only lossless there.
+    /// Switches back and deletes an app-created upgrade branch. Uses undo instead of discarding when
+    /// the branch started dirty; if undo is blocked, leaves the branch and working tree where they are.
     func rollBackUpgrade(_ project: Project, branch: String, previous: String) async throws {
         let url = project.url
         do {
             let current = try await git.status(url).branch
-            switch UpgradeRollback.plan(record: upgradeBranches[project.id], branch: branch, previous: previous, current: current) {
+            let record = upgradeBranches[project.id]
+            switch UpgradeRollback.plan(record: record, branch: branch, previous: previous, current: current) {
             case .refuse(let reason):
                 throw FlowError.rollbackRefused(reason)
             case .discardSwitchAndDelete:
                 try await git.discardChanges(url)
                 try await git.switchTo(url, branch: previous)
                 try await git.deleteBranch(url, branch: branch)
+            case .undoSwitchAndDelete:
+                guard let backupName = record?.backupName else {
+                    throw FlowError.rollbackRefused("No backup was found for this update. Your changes haven't been discarded.")
+                }
+                let cli = cli
+                let result = try await limiter.run { try await cli.undo(project: url, check: false, backup: backupName) }
+                guard result.restored else {
+                    throw FlowError.rollbackRefused(result.blocked?.displayMessage ?? "The backup wasn't restored.")
+                }
+                // If switching fails, a retry only needs to switch and delete, not restore again.
+                upgradeBranches[project.id] = UpgradeBranchRecord(
+                    branch: branch, previous: previous, keepsChanges: true, startedDirty: true)
+                try await git.switchBackKeepingChanges(url, branch: branch, returningTo: previous)
             case .switchKeepingChanges:
                 try await git.switchBackKeepingChanges(url, branch: branch, returningTo: previous)
             case .deleteOnly:

@@ -7,6 +7,7 @@ export interface PasskeyModel {
   name: string;
   transports: string[] | null;
   backedUp: boolean | null;
+  lastUsedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

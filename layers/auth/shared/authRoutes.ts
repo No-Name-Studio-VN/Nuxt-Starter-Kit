@@ -1,12 +1,17 @@
 export const authRoutes = {
   AUTH_LOGIN: '/auth/login',
+  ONBOARDING: '/onboarding',
+  ONBOARDING_STATUS: '/api/onboarding',
+  ONBOARDING_COMPLETE: '/api/onboarding/complete',
   AUTH_REGISTER: '/auth/register',
   AUTH_FORGOT_PASSWORD: '/auth/forgot-password',
   AUTH_RESET_PASSWORD: '/auth/reset-password',
-  AUTH_GOOGLE: '/api/auth/google',
+  AUTH_OAUTH_PROVIDERS: '/api/auth/oauth/providers',
   AUTH_OAUTH_URL: '/api/auth/oauth/url',
   AUTH_OAUTH_UNLINK: '/api/auth/oauth/unlink',
 
+  SETTINGS_PROFILE: '/settings/profile',
+  SETTINGS_SECURITY: '/settings/security',
   MY_PROFILE: '/api/users/me',
   MY_LOCK_SCREEN: '/api/users/me/lock-screen',
 
@@ -18,6 +23,11 @@ export const authRoutes = {
   MY_PASSWORD: '/api/users/me/password',
   ACCOUNT_DELETE: '/api/account',
   MY_PROFILE_UPDATE: '/api/users/me/profile',
+  USERNAME_AVAILABILITY: '/api/users/username-availability',
 
+  onboardingStep: (stepId: string) => `/api/onboarding/steps/${encodeURIComponent(stepId)}`,
+  oauthProvider: (providerId: string) => `/api/auth/${encodeURIComponent(providerId)}`,
+  user: (userId: number) => `/api/users/${userId}`,
   userProfile: (userId: string | number) => `/api/users/${userId}/profile`,
+  userUsername: (userId: string | number) => `/api/users/${userId}/username`,
 };

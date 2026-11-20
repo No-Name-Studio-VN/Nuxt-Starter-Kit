@@ -2,6 +2,7 @@ import { createDefu } from 'defu';
 import type { DocsConfig, NavigationItem } from '#layers/content/types';
 import { navPageOverrides } from './useContentHelpers';
 import { usePageData } from './usePageData';
+import { useI18nDocs } from './useI18nDocs';
 import { APP_MANIFEST } from '#shared/constants/manifest';
 
 const customDefu = createDefu((obj, key, value) => {
@@ -153,14 +154,13 @@ export function useDocsConfig() {
   const appConfig = useRuntimeConfig().public.docs;
   const siteConfig = useConfig();
 
-  const route = useRoute();
-
-  const { page, navigation } = usePageData();
+  const { page } = usePageData();
+  const { navigation, path } = useI18nDocs();
 
   return computed<DocsConfig>(() => {
     const processedConfig = mergeConfig(defaultConfig, customDefu(appConfig, siteConfig.value));
 
-    const navOverrides = navPageOverrides(route.path, OVERRIDE_SECTIONS, navigation.value);
+    const navOverrides = navPageOverrides(path.value, OVERRIDE_SECTIONS, navigation.value);
     const pageData: Record<string, unknown> = { ...page.value };
 
     const sectionOverrides: Record<string, unknown> = {};

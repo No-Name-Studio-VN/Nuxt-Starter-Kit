@@ -44,6 +44,7 @@ describe('two-commit fixture kit', () => {
         'M\tlayers/alpha/module.json',
         'M\tlayers/beta/server/db/schema.sqlite.ts',
         'M\tpackage.json',
+        'M\tpublic/logo.png',
         'M\twrangler.jsonc',
       ].sort(),
     );

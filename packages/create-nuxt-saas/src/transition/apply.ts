@@ -5,8 +5,9 @@ import { hasSymbolicLink, pruneEmptyDirectories } from '../util/fs';
 import { resolveInside } from '../util/paths';
 import type { TransitionPlan } from './plan';
 
-export async function applyPlan(projectRoot: string, plan: TransitionPlan): Promise<void> {
+export async function applyPlan(projectRoot: string, plan: TransitionPlan, signal?: AbortSignal): Promise<void> {
   for (const change of plan.changes) {
+    signal?.throwIfAborted();
     if (change.kind === 'keep-edited' || change.kind === 'keep-protected') continue;
     const path = resolveInside(projectRoot, change.path, 'Transition path');
     if (path === resolve(projectRoot)) throw new CliError('Transition path must name a file.');

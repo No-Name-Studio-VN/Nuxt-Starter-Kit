@@ -9,6 +9,8 @@ import { createResolver, defineNuxtModule } from '@nuxt/kit';
 import { readFileSync, readdirSync, statSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { isEmpty } from 'es-toolkit/compat';
+import { defaultLocale, locales } from '../../../../i18n-constants';
+import { hasContentLocalePrefix, isContentPathWithin } from '../utils/contentPaths';
 
 interface RedirectEntry {
   from: string;
@@ -120,7 +122,8 @@ function parseNavigationFile(filePath: string, contentDir: string): RedirectEntr
  */
 function generateRedirects(contentDir: string): RedirectEntry[] {
   const navigationFiles = findNavigationFiles(contentDir);
-  const redirects: RedirectEntry[] = [];
+  const redirects = new Map<string, string>();
+  const localizedPrefixes = locales.filter((locale) => locale !== defaultLocale);
 
   for (const file of navigationFiles) {
     const redirect = parseNavigationFile(file, contentDir);
@@ -132,11 +135,35 @@ function generateRedirects(contentDir: string): RedirectEntry[] {
         );
         continue;
       }
-      redirects.push(redirect);
+      const locale = localizedPrefixes.find((code) => hasContentLocalePrefix(redirect.from, code));
+      const to = locale ? localizeRedirectTarget(redirect.to, locale) : redirect.to;
+      if (redirect.from !== to && redirect.from + '/' !== to) redirects.set(redirect.from, to);
     }
   }
 
-  return redirects;
+  for (const [from, to] of redirects) {
+    // Only inherit redirects within the docs tree, not legacy targets in other sections.
+    if (!isContentPathWithin(from, '/docs') || !isContentPathWithin(to, '/docs')) continue;
+    for (const locale of localizedPrefixes) {
+      const localizedFrom = `/${locale}${from}`;
+      if (!redirects.has(localizedFrom)) {
+        redirects.set(localizedFrom, localizeRedirectTarget(to, locale));
+      }
+    }
+  }
+
+  return [...redirects].map(([from, to]) => ({ from, to }));
+}
+
+function localizeRedirectTarget(to: string, locale: string): string {
+  if (
+    !to.startsWith('/') ||
+    to.startsWith('//') ||
+    locales.some((code) => hasContentLocalePrefix(to, code))
+  ) {
+    return to;
+  }
+  return to === '/' ? `/${locale}` : `/${locale}${to}`;
 }
 
 export default defineNuxtModule({

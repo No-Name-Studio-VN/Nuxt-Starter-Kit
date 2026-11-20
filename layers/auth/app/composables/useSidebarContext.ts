@@ -9,6 +9,7 @@ const sidebarContextOverride = ref<string | null>(null);
 
 export function useSidebarContext() {
   const route = useRoute();
+  const localePath = useAppLocalePath();
   const { user } = useUserSession();
 
   /**
@@ -44,13 +45,14 @@ export function useSidebarContext() {
     }
 
     const path = route.path;
+    const matches = (match: string) => path.startsWith(match) || path.startsWith(localePath(match) || match);
     return (
       contexts.value.find((ctx) => {
-        if (ctx.match !== '/' && !path.startsWith(ctx.match)) return false;
+        if (ctx.match !== '/' && !matches(ctx.match)) return false;
         if (
           ctx.match === '/' &&
           path !== '/' &&
-          contexts.value.some((c) => c.match !== '/' && path.startsWith(c.match))
+          contexts.value.some((c) => c.match !== '/' && matches(c.match))
         )
           return false;
         if (ctx.guard && !ctx.guard(user.value, guardContext.value)) return false;

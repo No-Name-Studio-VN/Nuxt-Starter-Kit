@@ -1,3 +1,4 @@
+import { defineEventHandler } from 'nuxt/server';
 import { getClientSafeWebAuthnResponse } from '#layers/auth-passkeys/server/utils/webauthnResponse';
 import { eq } from 'drizzle-orm';
 import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';

@@ -1,42 +1,24 @@
-import type { H3Event } from 'h3';
+import type { RequestEvent } from 'nuxt/server';
+import {
+  defineEventHandler,
+  deleteCookie,
+  getRequestURL,
+  getRouterParam,
+  setCookie,
+} from 'nuxt/server';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import { handleOAuthSuccess, sendOAuthRedirect } from '#layers/auth/server/utils/oauth';
+import { getOAuthProvider } from '#layers/auth/server/utils/oauthProviders';
+import { safeRedirectPath } from '#layers/auth/server/utils/safeRedirect';
 
-/** h3 models a query value as a string, a bare flag, or an array of either. */
-function getQueryString(value: unknown) {
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    return value[0] || '';
-  }
-
-  return '';
-}
-
-function safeRedirectPath(value: string, origin: string) {
-  try {
-    const parsed = new URL(value, origin);
-    if (parsed.origin !== origin) {
-      return '/';
-    }
-
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return '/';
-  }
-}
-
-function rememberPopupOAuthRequest(event: H3Event) {
-  const query = getQuery(event);
-  if (getQueryString(query.popup) !== '1') {
+function rememberPopupOAuthRequest(event: RequestEvent) {
+  const { searchParams } = getRequestURL(event);
+  if (searchParams.get('popup') !== '1') {
     return;
   }
 
-  const origin = getRequestURL(event).origin;
-  const redirectTo = getQueryString(query.redirectTo);
+  const redirectTo = searchParams.get('redirectTo');
 
   setCookie(event, 'oauth_popup', '1', {
     httpOnly: true,
@@ -47,7 +29,7 @@ function rememberPopupOAuthRequest(event: H3Event) {
   deleteCookie(event, 'oauth_redirect_to', { path: '/' });
 
   if (redirectTo) {
-    setCookie(event, 'oauth_redirect_to', safeRedirectPath(redirectTo, origin), {
+    setCookie(event, 'oauth_redirect_to', safeRedirectPath(event, redirectTo), {
       httpOnly: true,
       path: '/',
       sameSite: 'lax',
@@ -56,58 +38,30 @@ function rememberPopupOAuthRequest(event: H3Event) {
   }
 }
 
-const googleHandler = defineOAuthGoogleEventHandler({
-  config: {
-    scope: ['openid', 'email', 'profile'],
-  },
-  async onSuccess(event, { user }) {
-    return handleOAuthSuccess(event, 'google', {
-      id: user.sub,
-      email: user.email,
-      name: user.name,
-      avatarUrl: user.picture,
-    });
-  },
-  onError(event, error) {
-    console.error('[Google OAuth] Error:', error);
-    return sendOAuthRedirect(event, `${authRoutes.AUTH_LOGIN}?error=oauth-error`);
-  },
-});
-
-const githubHandler = defineOAuthGitHubEventHandler({
-  config: {
-    emailRequired: true,
-  },
-  async onSuccess(event, { user }) {
-    return handleOAuthSuccess(event, 'github', {
-      id: String(user.id),
-      email: user.email || '',
-      name: user.name || user.login,
-      avatarUrl: user.avatar_url,
-    });
-  },
-  onError(event, error) {
-    console.error('[GitHub OAuth] Error:', error);
-    return sendOAuthRedirect(event, `${authRoutes.AUTH_LOGIN}?error=oauth-error`);
-  },
-});
-
 export default defineEventHandler(async (event) => {
+  const providerId = getRouterParam(event, 'provider') || '';
+  const provider = getOAuthProvider(providerId, useRuntimeConfig());
+  if (!provider) {
+    throw apiError({
+      status: 404,
+      statusText: 'Not Found',
+      message: `OAuth provider '${providerId}' is not supported.`,
+      code: 'OAUTH_PROVIDER_ERROR',
+    });
+  }
+
   rememberPopupOAuthRequest(event);
 
-  const provider = getRouterParam(event, 'provider') || '';
-
-  switch (provider) {
-    case 'google':
-      return googleHandler(event);
-    case 'github':
-      return githubHandler(event);
-    default:
-      throw apiError({
-        status: 404,
-        statusText: 'Not Found',
-        message: `OAuth provider '${provider}' is not supported.`,
-        code: 'OAUTH_PROVIDER_ERROR',
+  const handler = provider.createHandler(
+    async (event, profile) => handleOAuthSuccess(event, providerId, profile),
+    async (event, error) => {
+      // Provider errors can carry callback parameters or token responses in data.
+      console.error(`[${provider.name} OAuth] Error:`, {
+        status: error.status,
+        ...(error.data === undefined ? { message: error.message } : {}),
       });
-  }
+      return sendOAuthRedirect(event, `${authRoutes.AUTH_LOGIN}?error=oauth-error`);
+    },
+  );
+  return handler(event);
 });

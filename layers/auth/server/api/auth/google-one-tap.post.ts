@@ -1,4 +1,4 @@
-import type { GoogleOneTapPayload, OAuthProfile } from '#layers/auth/types/auth';
+import type { GoogleOneTapPayload } from '#layers/auth/types/auth';
 import {
   apiError,
   success,
@@ -6,6 +6,7 @@ import {
 } from '#layers/server-core/server/utils/apiResponse';
 import { completeOAuthLogin } from '#layers/auth/server/utils/oauth';
 import { verifyGoogleIdToken } from '#layers/auth/server/utils/googleIdentity';
+import { googleProfile } from '#layers/auth/server/utils/oauthProviders';
 import { googleOneTapBodySchema } from '#layers/auth/shared/schemas/userSchema';
 
 export default defineEventHandler(async (event) => {
@@ -52,12 +53,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const profile: OAuthProfile = {
-    id: googlePayload.subject,
+  const profile = googleProfile({
+    sub: googlePayload.subject,
     email: googlePayload.email,
+    email_verified: googlePayload.emailVerified,
     name: googlePayload.name,
-    ...(googlePayload.picture === undefined ? {} : { avatarUrl: googlePayload.picture }),
-  };
+    picture: googlePayload.picture,
+    hd: googlePayload.hd,
+  });
 
   const loginResult = await completeOAuthLogin(event, 'google', profile);
   if (loginResult.status === 'missing-user') {
@@ -66,6 +69,18 @@ export default defineEventHandler(async (event) => {
       statusText: 'Unauthorized',
       message: 'The linked Google account could not be found.',
       code: 'UNKNOWN_GOOGLE_ACCOUNT',
+    });
+  }
+
+  if (loginResult.status === 'refused') {
+    const missingEmail = loginResult.code === 'oauth-email-missing';
+    throw apiError({
+      status: missingEmail ? 400 : 409,
+      statusText: missingEmail ? 'Bad Request' : 'Conflict',
+      message: missingEmail
+        ? 'The provider did not share an email address.'
+        : 'Sign in with your existing method and connect the provider from Settings → Security.',
+      code: loginResult.code,
     });
   }
 

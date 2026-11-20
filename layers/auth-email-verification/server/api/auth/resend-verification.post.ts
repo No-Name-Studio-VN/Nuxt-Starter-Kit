@@ -1,4 +1,4 @@
-import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
+import { apiError, success, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
 import userService from '#layers/auth/server/utils/database/user';
 import authTokenService from '#layers/auth/server/utils/database/authToken';
 import { EmailVerificationTokenType } from '#layers/auth-email-verification/shared/constants/emailVerificationTokens';
@@ -42,8 +42,8 @@ export default defineEventHandler(async (event) => {
     user.id,
     EmailVerificationTokenType.EmailVerification,
   );
-  const token = await authTokenService.createToken(
-    user.id,
+  const token = await authTokenService.createEmailBoundToken(
+    user,
     EmailVerificationTokenType.EmailVerification,
   );
   await sendVerificationEmail(user.email, user.username, token);

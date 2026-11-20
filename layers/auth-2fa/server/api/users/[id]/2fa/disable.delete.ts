@@ -3,6 +3,7 @@ import {
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
+import { readValidatedRequestBody } from '#layers/server-core/server/utils/requestBody';
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
 import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwoFactor';
 import userService from '#layers/auth/server/utils/database/user';
@@ -12,7 +13,7 @@ import { disableTotpSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSche
 
 export default defineEventHandler(async (event) => {
   const userId = await getAuthorizedUserId(event);
-  const result = await readValidatedBody(event, (body) => disableTotpSchema.safeParse(body));
+  const result = await readValidatedRequestBody(event, disableTotpSchema.safeParse);
 
   if (!result.success) {
     throw apiError({

@@ -21,6 +21,42 @@ commands stop with this exact message:
 Keep this release on major version 3; do not publish it as a 2.x update. The CLI and kit version
 numbers are separate: `cli-v3.0.0` releases the CLI, while plain `v*` tags use the kit release workflow.
 
+## Writing kit change notes
+
+Add optional `changes` to the owning layer's `module.json`. For shared files, use
+`packages/create-nuxt-saas/kit.json` (the `base` module). For example:
+
+```json
+{
+  "changes": [
+    {
+      "id": "auth.session-expiry",
+      "since": "3.2.0",
+      "title": "Session cookies now expire on password change",
+      "kind": "security",
+      "files": ["layers/auth/server/utils/session.ts"]
+    }
+  ]
+}
+```
+
+Keep IDs unique across the kit and stable across releases: use lowercase letters, digits and
+hyphens in dot-separated segments. `since` is the **kit** version (`x.y.z`), not the CLI version.
+`kind` is `feature` (the default), `fix` or `security`. Use exact, project-relative POSIX file paths,
+including affected deletions. Notes explain what users might miss when their changes conflict with
+the kit or their copy is kept; a non-declined fix or security note recommends taking the kit side.
+
+Before tagging a kit release, commit the version change and notes, then run from the kit root:
+
+```bash
+nuxt-saas notes --kit .
+nuxt-saas notes --kit . --check --since v3.1.0
+```
+
+Use the previous kit tag in `--since`. The check compares it with the committed `HEAD`, skips
+paths matching `kit.json` excludes, and exits 1 if any changed file has no covering note with
+`since` equal to the current root `package.json` version. Use `--json` for the `uncovered` list in CI.
+
 ## Cutting a release
 
 The CLI package already declares `3.0.0`. After the change is reviewed and merged to `main`, verify

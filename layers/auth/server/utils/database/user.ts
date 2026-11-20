@@ -1,7 +1,13 @@
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { SafeUser, User } from '#layers/auth/types/auth';
+import type { OnboardingPendingInput } from '#layers/auth/types/onboarding';
+import authTokenService from '#layers/auth/server/utils/database/authToken';
 import { IDatabaseService } from '#layers/database/types/db/database-service';
 import type { CreateUserInput, UserUpdateInput } from '#layers/auth/shared/schemas/userSchema';
+
+function emailMatches(email: string) {
+  return sql`lower(${tables.users.email}) = lower(${email})`;
+}
 
 class UserService extends IDatabaseService<SafeUser> {
   private static instance: UserService;
@@ -43,13 +49,11 @@ class UserService extends IDatabaseService<SafeUser> {
    * Get a user by their email
    */
   async getByEmail(email: string): Promise<User | undefined> {
-    const user = await this.db
-      .select()
-      .from(tables.users)
-      .where(eq(tables.users.email, email))
-      .get();
+    return this.db.select().from(tables.users).where(emailMatches(email)).limit(1).get();
+  }
 
-    return user;
+  async listByEmail(email: string): Promise<User[]> {
+    return this.db.select().from(tables.users).where(emailMatches(email)).all();
   }
 
   /**
@@ -79,8 +83,11 @@ class UserService extends IDatabaseService<SafeUser> {
   /**
    * Create a new user
    */
-  async create(data: CreateUserInput) {
-    const newUser = await this.db.insert(tables.users).values(data).returning().get();
+  async create(data: CreateUserInput & OnboardingPendingInput) {
+    const newUser = await this.db.insert(tables.users).values({
+      ...data,
+      passwordChangedAt: data.password ? new Date() : undefined,
+    }).returning().get();
 
     return newUser;
   }
@@ -88,14 +95,63 @@ class UserService extends IDatabaseService<SafeUser> {
   /**
    * Update a user by their ID
    */
-  async update(data: UserUpdateInput) {
+  async update(data: UserUpdateInput & OnboardingPendingInput) {
     const updatedUser = await this.db
       .update(tables.users)
-      .set(data)
+      .set({ ...data, passwordChangedAt: data.password ? new Date() : undefined })
       .where(eq(tables.users.id, data.id))
       .returning()
       .get();
 
+    return updatedUser;
+  }
+
+  async setInitialPassword(id: number, previousPassword: string, password: string) {
+    return this.db
+      .update(tables.users)
+      .set({ password, passwordChangedAt: new Date() })
+      .where(and(eq(tables.users.id, id), eq(tables.users.password, previousPassword)))
+      .returning()
+      .get();
+  }
+
+  async completeOnboardingStep(id: number, stepId: string): Promise<User | undefined> {
+    const { onboardingCompletedSteps } = tables.users;
+    // Append in SQL so concurrent requests cannot overwrite or duplicate progress.
+    const updatedUser = await this.db
+      .update(tables.users)
+      .set({ onboardingCompletedSteps: sql`json_insert(${onboardingCompletedSteps}, '$[#]', ${stepId})` })
+      .where(and(
+        eq(tables.users.id, id),
+        sql`not exists (select 1 from json_each(${onboardingCompletedSteps}) where value = ${stepId})`,
+      ))
+      .returning()
+      .get();
+
+    return updatedUser ?? this.getById(id);
+  }
+
+  async updateEmail(
+    id: number,
+    email: string,
+    changes: Omit<UserUpdateInput, 'id' | 'email' | 'emailVerified'>,
+  ): Promise<User | undefined> {
+    const update = this.db
+      .update(tables.users)
+      .set({
+        ...changes,
+        email,
+        emailVerified: false,
+        passwordChangedAt: changes.password ? new Date() : undefined,
+      })
+      .where(eq(tables.users.id, id))
+      .returning();
+
+    // Clear outstanding links and their resend cooldowns in the same write batch.
+    const [[updatedUser]] = await this.db.batch([
+      update,
+      authTokenService.deleteEmailBoundTokensQuery(id),
+    ]);
     return updatedUser;
   }
 

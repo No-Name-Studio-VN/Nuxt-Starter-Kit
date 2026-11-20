@@ -1,5 +1,9 @@
 import { userUpdateSchema } from '#layers/auth/shared/schemas/userSchema';
 import userService from '#layers/auth/server/utils/database/user';
+import { isConstraintFailure } from '#layers/auth/server/utils/database/isConstraintFailure';
+import { emailAlreadyInUseError } from '#layers/auth/server/utils/emailAlreadyInUseError';
+import { runEmailChangedHooks } from '#layers/auth/server/utils/emailChangedHooks';
+import { normalizeEmail } from '#shared/utils/normalizeEmail';
 import {
   apiError,
   success,
@@ -28,25 +32,44 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { password, ...validatedData } = result.data;
+  const userNotFound = () => apiError({
+    status: 404,
+    statusText: 'Not Found',
+    message: 'Not Found. The requested user does not exist.',
+    code: 'USER_NOT_FOUND',
+  });
+  const currentUser = await userService.getById(userId);
+  if (!currentUser) throw userNotFound();
+
+  const { id: _id, email, emailVerified, password, ...fields } = result.data;
+  const previousEmail = currentUser.email;
+  const emailChanged = email !== undefined && email !== normalizeEmail(previousEmail);
+  if (emailChanged) {
+    const matches = await userService.listByEmail(email);
+    if (matches.some((user) => user.id !== userId)) {
+      throw emailAlreadyInUseError();
+    }
+  }
+
   const hashedPassword =
     typeof password === 'string' && password.trim().length > 0
       ? await hashPassword(password)
       : undefined;
-  const updateData = {
-    ...validatedData,
-    id: userId,
-    ...(hashedPassword ? { password: hashedPassword } : {}),
-  };
+  const changes = { ...fields, password: hashedPassword };
+  const updatedUser = await (emailChanged
+    ? userService.updateEmail(userId, email, changes)
+    : userService.update({ ...changes, id: userId, email, emailVerified })
+  ).catch((error: unknown) => {
+    if (isConstraintFailure(error, 'UNIQUE constraint failed: users.email')) {
+      throw emailAlreadyInUseError();
+    }
+    throw error;
+  });
 
-  const updatedUser = await userService.update(updateData);
-  if (!updatedUser) {
-    throw apiError({
-      status: 404,
-      statusText: 'Not Found',
-      message: 'Not Found. The requested user does not exist.',
-      code: 'USER_NOT_FOUND',
-    });
+  if (!updatedUser) throw userNotFound();
+
+  if (emailChanged) {
+    await runEmailChangedHooks({ event, user: updatedUser, previousEmail });
   }
 
   const user: AdminUserModel = {

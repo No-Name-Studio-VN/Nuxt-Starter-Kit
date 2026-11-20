@@ -102,6 +102,7 @@ describe('runInit', () => {
       modules: ['alpha', 'beta'],
       identity,
       conflicts: [],
+      declined: [],
     });
     const { stdout: status } = await run('git', ['-C', target, 'status', '--porcelain']);
     expect(status).toBe('');

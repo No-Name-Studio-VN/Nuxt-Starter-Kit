@@ -3,14 +3,14 @@ import {
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
+import { readValidatedRequestBody } from '#layers/server-core/server/utils/requestBody';
 import oauthAccountService from '#layers/auth/server/utils/database/oauthAccount';
-import userService from '#layers/auth/server/utils/database/user';
 import type { OAuthUnlinkPayload } from '#layers/auth/types/auth';
 import { oauthUnlinkBodySchema } from '#layers/auth/shared/schemas/userSchema';
 
 export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);
-  const result = await readValidatedBody(event, (body) => oauthUnlinkBodySchema.safeParse(body));
+  const result = await readValidatedRequestBody(event, oauthUnlinkBodySchema.safeParse);
   if (!result.success) {
     throw apiError({
       status: 400,
@@ -26,45 +26,25 @@ export default defineEventHandler(async (event) => {
 
   const userId = session.user.id;
 
-  // Verify this provider is actually linked
-  const linkedAccount = await oauthAccountService.getByUserAndProvider(userId, provider);
-  if (!linkedAccount) {
-    throw apiError({
-      status: 404,
-      statusText: 'Not Found',
-      message: 'This provider is not linked to your account.',
-      code: 'OAUTH_PROVIDER_NOT_LINKED',
-    });
-  }
+  const unlinked = await oauthAccountService.unlink(userId, provider);
+  if (!unlinked) {
+    const linkedAccount = await oauthAccountService.getByUserAndProvider(userId, provider);
+    if (!linkedAccount) {
+      throw apiError({
+        status: 404,
+        statusText: 'Not Found',
+        message: 'This provider is not linked to your account.',
+        code: 'OAUTH_PROVIDER_NOT_LINKED',
+      });
+    }
 
-  // Check if user has a password
-  const dbUser = await userService.getById(userId);
-  if (!dbUser) {
-    throw apiError({
-      status: 404,
-      statusText: 'Not Found',
-      message: 'User not found.',
-      code: 'USER_NOT_FOUND',
-    });
-  }
-
-  const hasPassword = !!dbUser.password && dbUser.password.trim().length > 0;
-
-  // Count other linked providers
-  const linkedCount = await oauthAccountService.countByUserId(userId);
-
-  // User must have at least one other auth method (password or another provider)
-  if (!hasPassword && linkedCount <= 1) {
     throw apiError({
       status: 400,
       statusText: 'Bad Request',
-      message: "You can't unlink your only sign-in method. Set a password first.",
+      message: 'Add another sign-in method before unlinking this account.',
       code: 'ONLY_SIGNIN_METHOD',
     });
   }
-
-  // Unlink the provider
-  await oauthAccountService.unlink(userId, provider);
 
   const response: OAuthUnlinkPayload = {
     unlinked: true,

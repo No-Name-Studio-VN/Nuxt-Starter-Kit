@@ -7,22 +7,24 @@ struct ProjectListToolbar: ToolbarContent {
 
     @Environment(AppModel.self) private var model
 
+    // Progress is an effect on the buttons' own symbols, and busy buttons stay enabled. Anything else changes the
+    // toolbar's shape: a `.status` item moves this group to the other edge, and a disabled button or a
+    // ProgressView label splits off into its own capsule. Refreshes are coalesced by the model, and a second
+    // scan is ignored here.
     var body: some ToolbarContent {
         ToolbarItemGroup {
             Button("Add Project", systemImage: "plus") { importRequest = .add }
                 .help("Add project folders")
-            Button("Scan Folder", systemImage: "folder.badge.questionmark") { importRequest = .scan }
-                .help("Find projects inside a folder")
-                .disabled(isScanning)
-            Button("Refresh", systemImage: "arrow.clockwise") { Task { await model.refreshAll(force: true) } }
-                .help("Refresh all projects (⌘R)")
-                .disabled(model.isRefreshing)
-        }
-        if model.isRefreshing || isScanning {
-            ToolbarItem(placement: .status) {
-                ProgressView().controlSize(.small)
-                    .accessibilityLabel(model.isRefreshing ? "Refreshing" : "Scanning for projects")
+            Button("Scan Folder", systemImage: "folder.badge.questionmark") {
+                if !isScanning { importRequest = .scan }
             }
+            .symbolEffect(.pulse, isActive: isScanning)
+            .help(isScanning ? "Scanning for projects…" : "Find projects inside a folder")
+            .accessibilityValue(isScanning ? "Scanning" : "")
+            Button("Refresh", systemImage: "arrow.clockwise") { Task { await model.refreshAll(force: true) } }
+                .symbolEffect(.rotate, isActive: model.isRefreshing)
+                .help(model.isRefreshing ? "Refreshing projects…" : "Refresh all projects (⌘R)")
+                .accessibilityValue(model.isRefreshing ? "Refreshing" : "")
         }
     }
 }

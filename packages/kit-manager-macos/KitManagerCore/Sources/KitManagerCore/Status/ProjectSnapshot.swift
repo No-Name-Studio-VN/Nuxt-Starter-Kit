@@ -19,6 +19,7 @@ public struct ProjectSnapshot: Sendable, Equatable {
     public var kitUnavailableReason: String?
     public var preview: Loadable<TransitionReport>
     public var inspect: Loadable<InspectReport>
+    public var lastReport: SavedReport?
     public var changelog: [KitCommit]
     /// Why the changelog could not be read, when `git log` failed.
     public var changelogFailure: String?
@@ -29,7 +30,7 @@ public struct ProjectSnapshot: Sendable, Equatable {
         versionLabel: String? = nil, behind: Int? = nil, kitCheckFailure: String? = nil,
         kitUnavailableReason: String? = nil, preview: Loadable<TransitionReport> = .idle,
         inspect: Loadable<InspectReport> = .idle, changelog: [KitCommit] = [],
-        changelogFailure: String? = nil
+        changelogFailure: String? = nil, lastReport: SavedReport? = nil
     ) {
         self.kind = kind
         self.isKitSource = isKitSource
@@ -45,6 +46,7 @@ public struct ProjectSnapshot: Sendable, Equatable {
         self.kitUnavailableReason = kitUnavailableReason
         self.preview = preview
         self.inspect = inspect
+        self.lastReport = lastReport
         self.changelog = changelog
         self.changelogFailure = changelogFailure
     }

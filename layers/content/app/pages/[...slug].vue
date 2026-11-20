@@ -41,7 +41,8 @@
       class="px-4 py-6 md:px-8"
       :class="[config.main.padded && 'container']"
     >
-      <ContentRenderer :key="page.id" :value="page" :data="config.data" />
+      <LayoutTranslationNotice v-if="isFallback" class="mb-4" />
+      <ContentRenderer :key="page.id" :value="page" :data="config.data" :lang="contentLocale" />
     </div>
     <main
       v-else
@@ -57,15 +58,23 @@
           v-if="page?.body && config.main.breadCrumb && (page.breadcrumb ?? true)"
           class="mb-4"
         />
+        <LayoutTranslationNotice v-if="isFallback" class="mb-4" />
         <LayoutTitle
           v-if="config.main.showTitle"
+          :lang="contentLocale"
           :title="page?.title"
           :description="page?.description"
           :badges="page?.badges"
           :authors="page?.authors"
         />
 
-        <ContentRenderer :key="page.id" :value="page" :data="config.data" class="docs-content" />
+        <ContentRenderer
+          :key="page.id"
+          :value="page"
+          :data="config.data"
+          :lang="contentLocale"
+          class="docs-content"
+        />
 
         <LayoutDocsFooter />
       </div>
@@ -89,18 +98,25 @@
 // import { findPageHeadline } from '@nuxt/content/utils'
 import { CircleXIcon, SearchIcon } from '@lucide/vue';
 import { useDocsPageContent, usePageData } from '#layers/content/app/composables/usePageData';
+import { normalizeContentPath } from '#layers/content/app/utils/contentPaths';
 
 const route = useRoute();
 // <NuxtPage> is keyed by path, so each instance renders exactly one path.
 const routePath = route.path;
 
-const { page: sharedPage, navigation, surroundings } = usePageData();
+const { page: sharedPage, surroundings } = usePageData();
+const { navigation } = useI18nDocs();
+const { locale, defaultLocale } = useI18n();
+const localePath = useLocalePath();
+const normalizedRoutePath = normalizeContentPath(routePath, locale.value, defaultLocale);
 
 // Step 1: This instance owns its content. It must not render from shared state:
 // while the next route resolves, shared state can still hold the previous page,
 // and swapping it mid-transition unmounts a suspended ContentRenderer.
 const { data: pageData } = await useDocsPageContent(routePath);
-const page = computed(() => pageData.value ?? null);
+const page = computed(() => pageData.value?.page ?? null);
+const isFallback = computed(() => pageData.value?.isFallback ?? false);
+const contentLocale = computed(() => (isFallback.value ? defaultLocale : locale.value));
 // Publish before rendering so the layout, toc, and edit link match this page.
 sharedPage.value = page.value;
 
@@ -111,23 +127,11 @@ if (requestEvent && !page.value) {
   setResponseStatus(requestEvent, 404, 'Page Not Found');
 }
 
-// Step 2: Fetch navigation server-side so docs layout is stable on first render
-const { data: navData } = await useAsyncData('navigation', () => {
-  return queryCollectionNavigation('content', [
-    'title',
-    'description',
-    'path',
-    'icon',
-    'navBadges',
-  ]);
-});
-// Step 3: Prev/next come from the tree above. queryCollectionItemSurroundings would
-// rebuild the whole navigation tree just to read two neighbours.
+// Reuse the layout's navigation so prev/next match the localized sidebar.
 watch(
-  navData,
-  (val) => {
-    navigation.value = val ?? [];
-    surroundings.value = page.value ? findSurroundings(val ?? [], routePath) : null;
+  [navigation, page],
+  ([items, currentPage]) => {
+    surroundings.value = items && currentPage ? findSurroundings(items, normalizedRoutePath) : null;
   },
   { immediate: true },
 );
@@ -151,10 +155,14 @@ useSeo({
     const value = page.value && 'modifiedAt' in page.value ? page.value.modifiedAt : undefined;
     return typeof value === 'string' ? value : undefined;
   }),
-  breadcrumbs:
-    page.value && navigation.value
-      ? computed(() => findPageBreadcrumbs(navigation.value ?? undefined, page.value?.path || ''))
+  breadcrumbs: computed(() =>
+    page.value
+      ? findPageBreadcrumbs(navigation.value ?? undefined, normalizedRoutePath)?.map((item) => ({
+          ...item,
+          path: localePath(navTargetFromPath(item.path, navigation.value)),
+        }))
       : undefined,
+  ),
 });
 
 // defineOgImageComponent(config.value.site.ogImageComponent, {

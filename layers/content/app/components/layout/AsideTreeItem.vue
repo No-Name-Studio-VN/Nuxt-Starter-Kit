@@ -54,6 +54,7 @@
 <script setup lang="ts">
 import { ChevronDownIcon } from '@lucide/vue';
 import type { ContentNavigationItem } from '@nuxt/content';
+import { isContentPathWithin, normalizeContentPath } from '#layers/content/app/utils/contentPaths';
 
 const props = defineProps<{
   link: ContentNavigationItem;
@@ -63,10 +64,12 @@ const props = defineProps<{
 const { collapse, collapseLevel, folderStyle: defaultFolderStyle } = useDocsConfig().value.aside;
 
 const collapsedMapStore = useCollapsedMapStore();
+const { locale, defaultLocale } = useI18n();
 const route = useRoute();
+const path = computed(() => normalizeContentPath(route.path, locale.value, defaultLocale));
 
 function defaultOpen() {
-  if (route.path.includes(props.link.path)) return true;
+  if (isContentPathWithin(path.value, props.link.path)) return true;
   if (props.link.collapse !== undefined) return !props.link.collapse;
 
   return props.level < collapseLevel && !collapse;
@@ -78,11 +81,7 @@ watch(isOpen, (v) => {
   collapsedMapStore.set(props.link.path, v);
 });
 
-function normalizePath(p: string) {
-  const out = p.replace(/\/+$/, '');
-  return out === '' ? '/' : out;
-}
-const isActive = computed(() => normalizePath(props.link.path) === normalizePath(route.path));
+const isActive = computed(() => props.link.path === path.value);
 
 /** `sidebar` is frontmatter, so its shape is checked rather than assumed. */
 const folderStyle = computed(() => {

@@ -29,6 +29,10 @@ export interface LoginAlternativeProps {
   pending: boolean;
 }
 
+export interface LoginAlternativeSlots {
+  default?: (props: { signIn: () => Promise<void> }) => unknown;
+}
+
 export interface LoginAlternativeEmits {
   /** The user is signed in; the page loads `redirect`. */
   done: [redirect: string];

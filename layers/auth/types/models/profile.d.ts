@@ -1,25 +1,9 @@
-import type { SafeUser } from '#layers/auth/types/auth';
-import type { UpdateProfileInput } from '#layers/auth/shared/schemas/userSchema';
+import type { z } from 'zod';
+import type { linkedAccountSchema, userProfileSchema } from '#layers/auth/shared/schemas/userProfileSchema';
 
-export interface LinkedAccount {
-  provider: string;
-  email: string | null;
-  name: string | null;
-  avatarUrl: string | null;
-  linkedAt: Date;
-}
+export type LinkedAccount = z.infer<typeof linkedAccountSchema>;
+export type UserProfileModel = z.infer<typeof userProfileSchema>;
 
-export interface UserProfileModel extends Pick<
-  SafeUser,
-  'id' | 'username' | 'name' | 'email' | 'emailVerified' | 'isAdmin'
-> {
-  createdAt: Date;
-  lastLoginAt: Date;
-  hasPassword: boolean;
-  linkedAccounts: LinkedAccount[];
-}
+export type ProfileUpdateData = Pick<UserProfileModel, 'id' | 'username' | 'name' | 'email'>;
 
-export type ProfileUpdateData = Pick<
-  UserProfileModel,
-  'id' | 'username' | keyof UpdateProfileInput
->;
+export type UsernameAvailabilityData = { available: boolean };

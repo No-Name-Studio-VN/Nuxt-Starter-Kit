@@ -4,3 +4,7 @@ export interface AuthTokenKindRegistration {
   id: AuthTokenKind;
   expiresInMs: number;
 }
+
+export interface PasswordResetData {
+  oauthAccountsDisconnected: boolean;
+}

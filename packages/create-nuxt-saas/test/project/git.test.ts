@@ -3,8 +3,8 @@ import { mkdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CliError } from '../../src/errors';
-import { assertCleanTree, initRepository } from '../../src/project/git';
+import { initRepository } from '../../src/project/git';
+import { assessUnsaved } from '../../src/project/unsaved';
 import { pathExists, writeTextFile } from '../../src/util/fs';
 import { makeTempDir } from '../support/fixtureKit';
 
@@ -29,45 +29,32 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true });
 });
 
-describe('assertCleanTree', () => {
-  it('requires git unless force is given', async () => {
-    const checking = assertCleanTree(root, false);
-    await expect(checking).rejects.toThrow(CliError);
-    await expect(checking).rejects.toThrow('needs git');
-    await expect(assertCleanTree(root, true)).resolves.toBeUndefined();
+describe('assessUnsaved', () => {
+  it('returns null outside git', async () => {
+    expect(await assessUnsaved(root, [])).toBeNull();
   });
 
-  it('accepts a clean repository and rejects tracked, staged and untracked changes', async () => {
-    await writeTextFile(join(root, 'file.txt'), 'initial\n');
-    await initRepository(root);
-    await expect(assertCleanTree(root, false)).resolves.toBeUndefined();
-    await writeTextFile(join(root, 'file.txt'), 'modified\n');
-    await expect(assertCleanTree(root, false)).rejects.toThrow('commit or stash');
-    await git('add', '-A');
-    await expect(assertCleanTree(root, false)).rejects.toThrow('commit or stash');
-    await expect(assertCleanTree(root, true)).resolves.toBeUndefined();
-    await git('reset', '--hard', 'HEAD');
-    await writeTextFile(join(root, 'untracked.txt'), 'new\n');
-    await expect(assertCleanTree(root, false)).rejects.toThrow('commit or stash');
-  });
-
-  it('ignores dirty files outside the project in a containing work tree', async () => {
+  it('classifies staged renames, touched, protected and unrelated paths under the project prefix', async () => {
     const project = join(root, 'packages/my-app');
-    await writeTextFile(join(root, 'other.txt'), 'initial\n');
-    await writeTextFile(join(project, 'file.txt'), 'initial\n');
+    const original = 'original name.txt';
+    const renamed = 'new name.txt';
+    await writeTextFile(join(project, original), 'original\n');
+    await writeTextFile(join(project, 'merge.txt'), 'original\n');
+    await writeTextFile(join(project, 'protected.txt'), 'original\n');
+    await writeTextFile(join(project, '.gitignore'), 'ignored.txt\n');
     await initRepository(root);
-    await writeTextFile(join(root, 'other.txt'), 'dirty\n');
-    await writeTextFile(join(root, 'packages/other-app/untracked.txt'), 'untracked\n');
-    await expect(assertCleanTree(project, false)).resolves.toBeUndefined();
-  });
-
-  it('still rejects dirty files inside a project nested in a containing work tree', async () => {
-    const project = join(root, 'packages/my-app');
-    await writeTextFile(join(root, 'other.txt'), 'initial\n');
-    await writeTextFile(join(project, 'file.txt'), 'initial\n');
-    await initRepository(root);
-    await writeTextFile(join(project, 'file.txt'), 'dirty\n');
-    await expect(assertCleanTree(project, false)).rejects.toThrow('commit or stash');
+    await git('mv', '--', `packages/my-app/${original}`, `packages/my-app/${renamed}`);
+    await writeTextFile(join(project, 'merge.txt'), 'dirty\n');
+    await writeTextFile(join(project, 'protected.txt'), 'dirty\n');
+    await writeTextFile(join(project, 'ignored.txt'), 'ignore me\n');
+    await writeTextFile(join(root, 'outside.txt'), 'outside\n');
+    expect(await assessUnsaved(project, [
+      { path: original, kind: 'keep-edited' },
+      { path: renamed, kind: 'conflict' },
+      { path: 'merge.txt', kind: 'merge' },
+      { path: 'protected.txt', kind: 'keep-protected' },
+      { path: 'ignored.txt', kind: 'conflict' },
+    ])).toEqual({ total: 4, risky: [{ path: renamed, kind: 'conflict' }, { path: original, kind: 'keep-edited' }], touched: ['merge.txt'], untouched: 1 });
   });
 });
 

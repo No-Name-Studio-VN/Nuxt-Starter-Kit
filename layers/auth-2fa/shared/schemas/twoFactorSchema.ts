@@ -36,11 +36,15 @@ export const setupTotpSchema = z.object({
 });
 
 export const setupTotpFormSchema = z.object({
-  password: z.string().min(1, 'validation.password_required'),
+  password: z.string().min(1, 'validation.current_password_required'),
 });
 
 export const disableTotpSchema = z.object({
   password: z.string().min(1, 'Password is required to disable 2FA'),
+});
+
+export const regenerateBackupCodesSchema = z.object({
+  password: z.string().min(1, 'Password is required to regenerate backup codes'),
 });
 
 export const verifyTotpSchema = z.object({

@@ -8,6 +8,7 @@ struct ProjectDetailView: View {
 
     @Environment(AppModel.self) private var model
     @State private var isLocating = false
+    @State private var updateReportSheet: UpdateReportSheet?
 
     var body: some View {
         let snapshot = model.snapshots[project.id]
@@ -24,8 +25,17 @@ struct ProjectDetailView: View {
             }
         }
         .formStyle(.grouped)
+        .disclosureGroupStyle(.row)
         .defaultScrollAnchor(.top)
         .navigationTitle(row.name)
+        .sheet(item: $updateReportSheet, onDismiss: refreshAfterUpdateReview) { sheet in
+            switch sheet {
+            case .walkthrough(let path):
+                UpdateDecisionsSheet(project: project, startingAt: path)
+            case .declined(let ids, let titles):
+                DeclinedFeaturesSheet(project: project, ids: ids, titles: titles)
+            }
+        }
         .fileImporter(isPresented: $isLocating, allowedContentTypes: [.folder]) { result in
             if case .success(let url) = result { model.relocate(project, to: url) }
         }
@@ -45,7 +55,15 @@ struct ProjectDetailView: View {
             HealthSection(project: project, snapshot: snapshot)
         case .kitV3:
             header(row)
-            UpgradeSection(project: project, snapshot: snapshot)
+            if (snapshot.behind ?? 0) > 0 {
+                UpgradeSection(project: project, snapshot: snapshot)
+            }
+            if let report = snapshot.lastReport {
+                LastUpdateSection(project: project, snapshot: snapshot, report: report) { updateReportSheet = $0 }
+            }
+            if (snapshot.behind ?? 0) == 0 {
+                UpgradeSection(project: project, snapshot: snapshot)
+            }
             ModulesSection(project: project, snapshot: snapshot)
             CustomisationSection(project: project, snapshot: snapshot)
             HealthSection(project: project, snapshot: snapshot)
@@ -54,6 +72,10 @@ struct ProjectDetailView: View {
             MigrationSection(project: project, snapshot: snapshot)
             HealthSection(project: project, snapshot: snapshot)
         }
+    }
+
+    private func refreshAfterUpdateReview() {
+        Task { await model.refresh(project, force: true) }
     }
 
     private func header(_ row: ProjectRow) -> some View {

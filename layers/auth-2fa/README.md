@@ -6,6 +6,10 @@ A TOTP second factor (authenticator apps) for password sign-in.
   backup codes, with its service in `server/utils/database/userTwoFactor.ts`.
 - `POST /api/users/:id/2fa/setup`, `/verify` and `DELETE /api/users/:id/2fa/disable` to turn it on
   and off; verifying hands out ten single-use backup codes.
+- `GET /api/users/:id/2fa/status` returns whether 2FA is enabled, its enabled date, and the remaining
+  and total backup-code counts without returning the codes. `POST /api/users/:id/2fa/backup-codes`
+  confirms the current password, invalidates any unused codes, and returns the replacements once.
+  Older setups may show when setup started rather than when it was verified.
 - The `two-factor` login policy (order 200): a password sign-in with 2FA on stops at
   `/auth/login?step=2fa`, and `POST /api/auth/login-2fa` finishes it with a code or a backup code.
 - The `2fa` login step (`auth:login:steps`), with its OTP input (`app/components/ui/input-otp`).

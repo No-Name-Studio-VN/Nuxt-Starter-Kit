@@ -81,7 +81,7 @@
             >
               <Button
                 size="sm"
-                @click="navigateTo(locale == defaultLocale ? '#contact' : `/${locale}#contact`)"
+                @click="navigateTo(localeSectionLink('contact'))"
               >
                 {{ $t('cta.primary') }}
                 <ArrowRight
@@ -181,9 +181,9 @@
                   </button>
 
                   <!-- Direct link item -->
-                  <NuxtLinkLocale
+                  <NuxtLink
                     v-else
-                    :to="item.to"
+                    :to="localePath(item.to)"
                     :target="item.target"
                     class="group relative w-full cursor-pointer py-2 touch-manipulation block"
                     :style="{ transitionDelay: `${index * 60}ms` }"
@@ -202,7 +202,7 @@
                     <span
                       class="absolute bottom-2 left-0 h-0.5 w-0 bg-primary transition-all duration-400 ease-out group-hover:w-3/4"
                     />
-                  </NuxtLinkLocale>
+                  </NuxtLink>
                 </template>
               </TransitionGroup>
 
@@ -242,10 +242,10 @@
                 </button>
 
                 <div class="mt-2 flex flex-col gap-1">
-                  <NuxtLinkLocale
+                  <NuxtLink
                     v-for="link in activeSubmenuNav?.links ?? []"
                     :key="link.title"
-                    :to="link.to"
+                    :to="link.to ? localePath(link.to) : undefined"
                     :target="link.target"
                     class="group relative w-full cursor-pointer py-3 touch-manipulation block"
                     @click="isMobileMenuOpen = false"
@@ -268,7 +268,7 @@
                         </p>
                       </div>
                     </div>
-                  </NuxtLinkLocale>
+                  </NuxtLink>
                 </div>
               </template>
             </div>
@@ -473,7 +473,6 @@ import {
   MailIcon,
 } from '@lucide/vue';
 import { Motion } from 'motion-v';
-import { defaultLocale } from '~~/i18n-constants';
 import { APP_MANIFEST } from '#shared/constants/manifest';
 
 const config = useConfig();
@@ -495,7 +494,8 @@ function closeSubmenu() {
   activeSubmenu.value = null;
 }
 
-const { locale, availableLocales } = useI18n();
+const { availableLocales } = useI18n();
+const localePath = useAppLocalePath();
 // Read directly from i18n: this layout only needs to know whether multiple
 // locales are available, without loading a layer's navigation.
 const i18nEnabled = availableLocales.length > 1;
@@ -541,10 +541,10 @@ watch(isMobileMenuOpen, (isOpen) => {
 
 function handleMobileNavClick(sectionId: string) {
   isMobileMenuOpen.value = false;
-  navigateTo(`/${locale}#${sectionId}`);
+  navigateTo(localeSectionLink(sectionId));
 }
 
 function localeSectionLink(sectionId: string): string {
-  return locale.value === defaultLocale ? `/#${sectionId}` : `/${locale.value}/#${sectionId}`;
+  return localePath(`/#${sectionId}`);
 }
 </script>

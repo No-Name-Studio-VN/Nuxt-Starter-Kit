@@ -6,6 +6,7 @@ export interface GoogleIdTokenPayload {
   emailVerified: true;
   name: string;
   picture?: string;
+  hd?: string;
   issuedAt: number;
   expiresAt: number;
 }
@@ -41,6 +42,7 @@ export interface GoogleIdTokenClaims {
   email_verified: boolean;
   name?: string;
   picture?: string;
+  hd?: string;
   iat: number;
   exp: number;
 }

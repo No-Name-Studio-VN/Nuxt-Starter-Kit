@@ -8,6 +8,7 @@ import PasswordStrengthIndicator from '#layers/auth/app/components/PasswordStren
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import type { ApiResponse } from '#layers/server-core/types/api';
+import type { PasswordResetData } from '#layers/auth/types/authTokens';
 
 const route = useRoute();
 const token = computed(() => {
@@ -20,6 +21,7 @@ const showConfirmPassword = ref(false);
 const isSubmitting = ref(false);
 const error = ref('');
 const success = ref(false);
+const oauthAccountsDisconnected = ref(false);
 const { t } = useI18n();
 
 const { handleSubmit, values, meta } = useForm({
@@ -41,22 +43,20 @@ const onSubmit = handleSubmit(async (formValues) => {
   success.value = false;
 
   try {
-    const response = await apiRequest<ApiResponse<Record<string, never>>>(
-      authRoutes.AUTH_RESET_PASSWORD,
-      {
-        method: 'POST',
-        body: {
-          token: token.value,
-          password: formValues.password,
-          confirmPassword: formValues.confirmPassword,
-        },
+    const response = await apiRequest<ApiResponse<PasswordResetData>>(authRoutes.AUTH_RESET_PASSWORD, {
+      method: 'POST',
+      body: {
+        token: token.value,
+        password: formValues.password,
+        confirmPassword: formValues.confirmPassword,
       },
-    );
+    });
 
     if (!response.success) {
       throw response;
     }
 
+    oauthAccountsDisconnected.value = response.data.oauthAccountsDisconnected;
     success.value = true;
   } catch (err: unknown) {
     error.value = parseApiError(err, 'Something went wrong. Please try again.').message;
@@ -99,7 +99,8 @@ useSeo({
       class="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
     >
       <AlertDescription class="text-green-700 dark:text-green-300">
-        Password reset successfully. You can now sign in with your new password.
+        <p>{{ t('auth.reset_password_success') }}</p>
+        <p v-if="oauthAccountsDisconnected">{{ t('auth.reset_password_oauth_disconnected') }}</p>
       </AlertDescription>
     </Alert>
 

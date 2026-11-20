@@ -4,7 +4,7 @@
       <template v-for="(breadcrumb, index) in breadcrumbs" :key="breadcrumb.title">
         <BreadcrumbItem>
           <NuxtLinkLocale
-            :href="index === 0 ? undefined : breadcrumb.href"
+            :href="index === 0 ? undefined : navTargetFromPath(breadcrumb.href, navigation)"
             class="hover:text-foreground transition-colors"
             :class="{ 'text-foreground': index === breadcrumbs.length - 1 }"
           >
@@ -20,8 +20,6 @@
 <script setup lang="ts">
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbSeparator } from '~/components/ui/breadcrumb';
 
-const { navigation } = usePageData();
-
-const route = useRoute();
-const breadcrumbs = useBreadcrumb(route.path, navigation.value);
+const { navigation, path } = useI18nDocs();
+const breadcrumbs = computed(() => useBreadcrumb(path.value, navigation.value));
 </script>

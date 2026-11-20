@@ -5,6 +5,8 @@ public enum UpgradeRollback {
     public enum Step: Sendable, Equatable {
         /// `git reset --hard`, `git clean -fd`, switch to the previous branch, delete the upgrade branch.
         case discardSwitchAndDelete
+        /// Restore the upgrade's backup before switching and deleting the branch.
+        case undoSwitchAndDelete
         /// `git switch` to the previous branch (which carries uncommitted changes along or refuses), then
         /// delete the upgrade branch. Nothing is discarded.
         case switchKeepingChanges
@@ -21,9 +23,20 @@ public enum UpgradeRollback {
         guard let record, record.branch == branch, record.previous == previous else {
             return .refuse("\(branch) was not created by this upgrade, so it will not be discarded.")
         }
-        if current == branch { return record.keepsChanges ? .switchKeepingChanges : .discardSwitchAndDelete }
+        if current == branch {
+            if record.keepsChanges { return .switchKeepingChanges }
+            return record.startedDirty ? .undoSwitchAndDelete : .discardSwitchAndDelete
+        }
         if current == previous { return .deleteOnly }
         return .refuse("Switch to \(previous) or \(branch) first.")
+    }
+
+    /// An error envelope doesn't identify its backup; never guess when more than one new ref appeared.
+    public static func interruptedBackup(previous: BackupList, current: BackupList) -> Backup? {
+        let known = Set(previous.backups.map(\.name))
+        let new = current.backups.filter { !known.contains($0.name) && $0.status != .restored }
+        guard new.count == 1, let backup = new.first, backup.status != .complete else { return nil }
+        return backup
     }
 
     /// The paths a discard would throw away, one per line, capped so the alert stays readable.

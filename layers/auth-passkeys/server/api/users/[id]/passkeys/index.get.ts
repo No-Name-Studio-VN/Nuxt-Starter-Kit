@@ -11,6 +11,7 @@ export default defineEventHandler(async (event) => {
       id: tables.credentials.id,
       transports: tables.credentials.transports,
       backedUp: tables.credentials.backedUp,
+      lastUsedAt: tables.credentials.lastUsedAt,
       createdAt: tables.credentials.createdAt,
       updatedAt: tables.credentials.updatedAt,
     })
@@ -22,6 +23,7 @@ export default defineEventHandler(async (event) => {
     transports: cred.transports,
     backedUp: cred.backedUp,
     name: generatePasskeyName(cred.transports || null),
+    lastUsedAt: cred.lastUsedAt,
     createdAt: cred.createdAt || new Date(),
     updatedAt: cred.updatedAt || new Date(),
   }));

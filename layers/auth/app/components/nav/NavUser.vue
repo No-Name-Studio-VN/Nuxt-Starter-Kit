@@ -18,6 +18,7 @@ import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 
 const { user, clear, loggedIn } = useUserSession();
+const localePath = useAppLocalePath();
 const { isMobile, setOpenMobile } = useSidebar();
 const { clearSidebarContextOverride, guardContext } = useSidebarContext();
 
@@ -48,7 +49,7 @@ function navigateFromSidebar(path: string) {
     setOpenMobile(false);
   }
 
-  return navigateTo(path);
+  return navigateTo(localePath(path) || path);
 }
 </script>
 

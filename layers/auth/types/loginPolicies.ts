@@ -1,4 +1,5 @@
 import type { H3Event } from 'h3';
+import type { RequestEvent } from 'nuxt/server';
 import type { ApiErrorOptions } from '#layers/server-core/types/api';
 import type { User } from '#layers/auth/types/auth';
 
@@ -31,6 +32,17 @@ export interface LoginPolicy {
   run(ctx: LoginPolicyContext): Promise<LoginPolicyOutcome>;
 }
 
+export interface OAuthLinkPolicyContext {
+  user: User;
+  provider: string;
+}
+
+export interface OAuthLinkPolicy {
+  id: string;
+  order: number;
+  run(ctx: OAuthLinkPolicyContext): Promise<{ allow: boolean }>;
+}
+
 export interface PostRegisterContext {
   event: H3Event;
   /** The account that was just created. */
@@ -49,4 +61,16 @@ export interface PostRegisterStep {
   id: string;
   order: number;
   run(ctx: PostRegisterContext): Promise<PostRegisterResult>;
+}
+
+export interface EmailChangedContext {
+  event: H3Event | RequestEvent;
+  user: User;
+  previousEmail: string;
+}
+
+export interface EmailChangedHook {
+  id: string;
+  order: number;
+  run(ctx: EmailChangedContext): Promise<void>;
 }

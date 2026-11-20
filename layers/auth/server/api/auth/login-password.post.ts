@@ -1,25 +1,10 @@
 import userService from '#layers/auth/server/utils/database/user';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
+import { safeRedirectPath } from '#layers/auth/server/utils/safeRedirect';
 import { loginSchema } from '#layers/auth/shared/schemas/userSchema';
 import { runLoginPolicies } from '#layers/auth/server/utils/loginPolicies';
+import { setCompletedSignIn } from '#layers/auth/server/utils/sessionUser';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
-
-function safeRedirectPath(value: string | undefined, origin: string): string {
-  if (!value) {
-    return '/';
-  }
-
-  try {
-    const parsed = new URL(value, origin);
-    if (parsed.origin !== origin) {
-      return '/';
-    }
-
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return '/';
-  }
-}
 
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) => loginSchema.safeParse(body));
@@ -28,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { username, password, 'cf-turnstile-response': token } = result.data;
-  const redirectToStr = safeRedirectPath(result.data['redirect-to'], getRequestURL(event).origin);
+  const redirectToStr = safeRedirectPath(event, result.data['redirect-to']);
 
   if (!token) {
     return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=captcha');
@@ -77,15 +62,7 @@ export default defineEventHandler(async (event) => {
   await userService.update({ id: user.id, lastLoginAt: new Date() });
 
   // The login policy allowed a direct sign-in (no second factor required)
-  await setUserSession(event, {
-    user: {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      isAdmin: user.isAdmin,
-      skipLockOnInit: true, // Bypass lock screen initial check on fresh login
-    },
-  });
+  await setCompletedSignIn(event, user, { method: 'password' });
 
   return sendRedirect(event, redirectToStr);
 });

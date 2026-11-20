@@ -3,7 +3,8 @@ import { constants } from 'node:os';
 type Cleanup = () => Promise<void>;
 
 const SIGNALS: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
-const pending = new Set<Cleanup>();
+const pending = new Map<Cleanup, boolean>();
+let draining = false;
 
 /** Runs every registered cleanup, then exits like a process killed by `signal` (128 + signal number). */
 export async function terminate(
@@ -15,18 +16,25 @@ export async function terminate(
 }
 
 export async function runPendingCleanups(): Promise<void> {
-  const cleanups = [...pending];
-  pending.clear();
-  uninstall();
-  await Promise.allSettled(cleanups.map((cleanup) => cleanup()));
+  draining = true;
+  try {
+    for (const beforeOtherCleanups of [true, false]) {
+      const cleanups = [...pending].filter(([, first]) => first === beforeOtherCleanups);
+      for (const [cleanup] of cleanups) pending.delete(cleanup);
+      await Promise.allSettled(cleanups.map(async ([cleanup]) => cleanup()));
+    }
+  } finally {
+    draining = false;
+    if (pending.size === 0) uninstall();
+  }
 }
 
 function handle(signal: NodeJS.Signals): void {
-  void terminate(signal);
+  if (!draining) void terminate(signal);
 }
 
 function install(): void {
-  for (const signal of SIGNALS) process.once(signal, handle);
+  for (const signal of SIGNALS) process.on(signal, handle);
 }
 
 function uninstall(): void {
@@ -36,13 +44,14 @@ function uninstall(): void {
 /**
  * Registers a cleanup to run if the process is stopped by SIGINT or SIGTERM, which skip `finally`
  * blocks (the app terminates a timed-out or cancelled run that way). The handlers exist only while
- * something is registered. Returns a function that unregisters the cleanup once it is no longer needed.
+ * something is registered or running. Use beforeOtherCleanups when a cleanup still needs resources
+ * registered for removal. Returns a function that unregisters the cleanup once it is no longer needed.
  */
-export function cleanupOnTermination(cleanup: Cleanup): () => void {
-  if (pending.size === 0) install();
-  pending.add(cleanup);
+export function cleanupOnTermination(cleanup: Cleanup, { beforeOtherCleanups = false } = {}): () => void {
+  if (!draining && pending.size === 0) install();
+  pending.set(cleanup, beforeOtherCleanups);
   return () => {
     pending.delete(cleanup);
-    if (pending.size === 0) uninstall();
+    if (!draining && pending.size === 0) uninstall();
   };
 }

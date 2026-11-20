@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeEmail } from '../utils/normalizeEmail';
 
 export const positiveIdSchema = z.coerce.number().int().positive('validation.id_required');
 
@@ -16,7 +17,7 @@ export function requiredStringSchema(messageKey: string) {
 }
 
 export function emailFieldSchema(error = 'validation.email_required') {
-  return z.email({ error });
+  return z.string({ error }).transform(normalizeEmail).pipe(z.email({ error }));
 }
 
 export function urlFieldSchema(error = 'Must be a valid URL') {

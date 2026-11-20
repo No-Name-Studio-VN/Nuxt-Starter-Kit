@@ -48,11 +48,15 @@ struct UpgradeSection: View {
             Text("Kit Update")
         } footer: {
             if !unresolvedConflicts.isEmpty {
-                Text("Fix the conflict markers in these files before updating again.")
+                if snapshot.lastReport != nil {
+                    Text("Review the files in Last Update before updating again.")
+                } else {
+                    Text("Fix these conflicts before updating again.")
+                }
             } else if status != .upToDate, !canUpgrade {
                 Text(blockedReason)
             } else if case .behind = status {
-                Text("Claude applies the update on a new branch and walks you through anything that needs merging. Your current branch is not touched.")
+                Text("Kit Manager previews what will change, then applies the update on a new branch. You can review any decisions in Last Update or open Claude for help.")
             }
         }
     }
@@ -200,7 +204,8 @@ struct UpgradeSection: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
             }
-            ForEach(unresolvedConflicts, id: \.self) { path in
+            let reported = Set(snapshot.lastReport?.transition.conflicts ?? [])
+            ForEach(unresolvedConflicts.filter { !reported.contains($0) }, id: \.self) { path in
                 Text(path).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
             }
         }

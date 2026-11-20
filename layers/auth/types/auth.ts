@@ -1,3 +1,5 @@
+import type { RuntimeConfig } from 'nuxt/schema';
+import type { EventHandler, NuxtError, RequestEvent } from 'nuxt/server';
 import type { tables } from '#layers/database/server/utils/db';
 
 export type User = typeof tables.users.$inferSelect;
@@ -41,9 +43,11 @@ export interface OAuthProfile {
   email: string;
   name: string;
   avatarUrl?: string;
+  emailVerified: boolean;
+  emailAuthoritative: boolean;
 }
 
-export type GoogleOneTapStatus = 'signed-in' | 'created';
+export type GoogleOneTapStatus = 'signed-in' | 'linked' | 'created';
 
 export interface GoogleOneTapPayload {
   authenticated: true;
@@ -56,13 +60,29 @@ export type OAuthLoginCompletionResult =
       userId: number;
     }
   | {
+      status: 'refused';
+      code: 'oauth-email-in-use' | 'oauth-provider-conflict' | 'oauth-email-missing';
+    }
+  | {
       status: 'missing-user';
     };
 
-export interface OAuthProviderConfig {
+export interface OAuthProviderInfo {
   id: string;
   name: string;
-  route: string;
+  icon: string;
+}
+
+export interface OAuthProvidersPayload {
+  providers: OAuthProviderInfo[];
+}
+
+export interface OAuthProviderDefinition extends OAuthProviderInfo {
+  isEnabled(config: RuntimeConfig): boolean;
+  createHandler(
+    onProfile: (event: RequestEvent, profile: OAuthProfile) => Promise<unknown>,
+    onError: (event: RequestEvent, error: NuxtError) => Promise<unknown>,
+  ): EventHandler;
 }
 
 export interface OAuthLinkInput {
@@ -79,6 +99,8 @@ export interface SessionUser {
   username: string;
   name: string;
   isAdmin: boolean;
+  onboardingPending: boolean;
+  avatarUrl?: string;
   skipLockOnInit?: boolean;
 }
 

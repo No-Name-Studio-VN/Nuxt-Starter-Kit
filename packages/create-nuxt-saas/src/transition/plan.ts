@@ -25,7 +25,7 @@ export interface TransitionPlan {
   changes: FileChange[];
 }
 
-function normalized(content: Buffer): string {
+export function normalized(content: Buffer): string {
   return content.toString('utf8').replaceAll('\r\n', '\n');
 }
 

@@ -3,17 +3,14 @@ import type {
   PostRegisterResult,
   PostRegisterStep,
 } from '#layers/auth/types/loginPolicies';
+import { createOrderedRegistry } from '#layers/server-core/server/utils/orderedRegistry';
 
 // Filled once by Nitro plugins; shared by every request.
-const postRegisterSteps = new Map<string, PostRegisterStep>();
+const postRegisterSteps = createOrderedRegistry<PostRegisterStep>('Post-register step');
 
 /** Throws when the id is taken, so no module can silently replace another's step. */
 export function registerPostRegisterStep(step: PostRegisterStep): void {
-  if (postRegisterSteps.has(step.id)) {
-    throw new Error(`Post-register step "${step.id}" is already registered.`);
-  }
-
-  postRegisterSteps.set(step.id, step);
+  postRegisterSteps.register(step);
 }
 
 /**
@@ -21,7 +18,7 @@ export function registerPostRegisterStep(step: PostRegisterStep): void {
  * than one returns a redirect, the last one wins.
  */
 export async function runPostRegisterSteps(ctx: PostRegisterContext): Promise<PostRegisterResult> {
-  const steps = [...postRegisterSteps.values()].sort((a, b) => a.order - b.order);
+  const steps = postRegisterSteps.list();
   let redirect: string | undefined;
 
   for (const step of steps) {

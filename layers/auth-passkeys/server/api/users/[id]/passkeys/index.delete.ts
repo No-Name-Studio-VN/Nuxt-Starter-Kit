@@ -1,10 +1,12 @@
-import { eq, and, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import {
   apiError,
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import userService from '#layers/auth/server/utils/database/user';
+import { readValidatedRequestBody } from '#layers/server-core/server/utils/requestBody';
+import { hasOtherSignInMethod } from '#layers/auth/server/utils/signInMethods';
+import { passkeySignInMethodSource } from '#layers/auth-passkeys/server/utils/passkeySignInMethods';
 import type { DeletePasskeyResponse } from '#layers/auth-passkeys/types/models/passkey';
 import { deletePasskeySchema } from '#layers/auth-passkeys/shared/schemas/passkeySchema';
 
@@ -13,9 +15,7 @@ export default defineEventHandler(async (event) => {
   const sessionUser = session.user;
   const db = useDB();
 
-  // Parse and validate request body
-  const body = await readBody(event);
-  const result = deletePasskeySchema.safeParse(body);
+  const result = await readValidatedRequestBody(event, deletePasskeySchema.safeParse);
 
   if (!result.success) {
     throw apiError({
@@ -29,49 +29,31 @@ export default defineEventHandler(async (event) => {
 
   const { credentialId } = result.data;
 
-  // Check if the credential belongs to the current user
-  const credential = await db
-    .select()
-    .from(tables.credentials)
-    .where(
-      and(eq(tables.credentials.id, credentialId), eq(tables.credentials.userId, sessionUser.id)),
-    )
-    .get();
+  const { credentials } = tables;
+  const ownedCredential = and(eq(credentials.id, credentialId), eq(credentials.userId, sessionUser.id));
+  const deleted = await db.delete(credentials).where(and(
+    ownedCredential,
+    hasOtherSignInMethod(sessionUser.id, { sourceId: passkeySignInMethodSource.id, credentialId }),
+  )).returning({ id: credentials.id }).get();
 
-  if (!credential) {
-    throw apiError({
-      status: 404,
-      statusText: 'Not Found',
-      message: 'Not Found. The specified passkey was not found or does not belong to this account.',
-      code: 'PASSKEY_NOT_FOUND',
-    });
-  }
+  if (!deleted) {
+    const credential = await db.select({ id: credentials.id }).from(credentials).where(ownedCredential).get();
+    if (!credential) {
+      throw apiError({
+        status: 404,
+        statusText: 'Not Found',
+        message: 'Not Found. The specified passkey was not found or does not belong to this account.',
+        code: 'PASSKEY_NOT_FOUND',
+      });
+    }
 
-  // Check if this is the user's last passkey and they don't have a password
-  const userCredentialsCount = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(tables.credentials)
-    .where(eq(tables.credentials.userId, sessionUser.id))
-    .get();
-
-  const user = await userService.getById(sessionUser.id);
-
-  // If this is the last passkey and user has no password, prevent deletion
-  if (userCredentialsCount?.count === 1 && !user?.password) {
     throw apiError({
       status: 400,
       statusText: 'Bad Request',
-      message:
-        'Bad Request. Cannot delete your last passkey without setting up password authentication first.',
-      code: 'LAST_PASSKEY_REQUIRES_PASSWORD',
+      message: 'Add another sign-in method before removing your last passkey.',
+      code: 'ONLY_SIGNIN_METHOD',
     });
   }
-
-  await db
-    .delete(tables.credentials)
-    .where(
-      and(eq(tables.credentials.id, credentialId), eq(tables.credentials.userId, sessionUser.id)),
-    );
 
   const response: DeletePasskeyResponse = {
     message: 'Passkey deleted successfully',

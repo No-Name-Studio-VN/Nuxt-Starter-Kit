@@ -21,9 +21,13 @@ vi.mock('../../../layers/auth/server/utils/authorization', () => ({
 const client = createClient({ url: ':memory:' });
 const db = drizzle(client);
 const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
-let body = { code: '' };
+const originalEnabledAt = new Date('2026-10-21T10:00:00.000Z');
+const setResponseHeader = vi.fn();
+const verifyPassword = vi.fn(async (hash: string, password: string) => hash === 'hash' && password === 'current-password');
+let body: { code: string } | { password: string } = { code: '' };
 
-const defineHandler = vi.fn((handler: (event: object) => Promise<object>) => () => handler({}));
+const event = { context: {} };
+const defineHandler = vi.fn((handler: (event: object) => Promise<object>) => () => handler(event));
 
 beforeEach(async () => {
   // RFC 6238 SHA-1 vector at 59 seconds: the six-digit token is 287082.
@@ -36,7 +40,9 @@ beforeEach(async () => {
       id INTEGER PRIMARY KEY, username TEXT NOT NULL, name TEXT NOT NULL,
       password TEXT NOT NULL, email TEXT NOT NULL, email_verified INTEGER DEFAULT 0,
       is_admin INTEGER DEFAULT 0, is_locked INTEGER DEFAULT 0,
-      last_login_at INTEGER, created_at INTEGER, updated_at INTEGER
+      onboarding_pending INTEGER NOT NULL DEFAULT 0,
+      onboarding_completed_steps TEXT NOT NULL DEFAULT '[]',
+      last_login_at INTEGER, password_changed_at INTEGER, created_at INTEGER, updated_at INTEGER
     );
     CREATE TABLE user_two_factor (
       user_id INTEGER PRIMARY KEY, secret TEXT, enabled INTEGER NOT NULL DEFAULT 0,
@@ -55,19 +61,25 @@ beforeEach(async () => {
     name: 'Member',
     password: 'hash',
     email: 'member@example.com',
+    onboardingPending: true,
   });
   await db.insert(userTwoFactor).values({
     userId: 1,
     secret,
     enabled: true,
     backupCodes: ['AB12CD34', 'EF56GH78'],
+    updatedAt: originalEnabledAt,
   });
   await db.insert(userLockScreen).values({ userId: 1 });
   vi.stubGlobal('tables', { users, userTwoFactor, userLockScreen });
   vi.stubGlobal('useDB', () => db);
   vi.resetModules();
   defineHandler.mockClear();
+  setResponseHeader.mockClear();
+  verifyPassword.mockClear();
   vi.stubGlobal('defineEventHandler', defineHandler);
+  vi.stubGlobal('setResponseHeader', setResponseHeader);
+  vi.stubGlobal('verifyPassword', verifyPassword);
   vi.stubGlobal(
     'readValidatedBody',
     async (_event: object, validate: (input: unknown) => unknown) => validate(body),
@@ -87,18 +99,130 @@ afterAll(() => client.close());
 
 it('generates ten unique exact-format backup codes even when Math.random returns zero', async () => {
   vi.spyOn(Math, 'random').mockReturnValue(0);
+  await userTwoFactorService.update({ userId: 1, enabled: false, backupCodes: null });
   body = { code: '287082' };
   await import('../../../layers/auth-2fa/server/api/users/[id]/2fa/verify.post');
   const handler = defineHandler.mock.results[0]?.value;
   if (!handler) throw new Error('Missing setup verification handler');
   expect(await handler()).toMatchObject({ success: true });
-  const codes = (await userTwoFactorService.getById(1))?.backupCodes;
+  const enabled = await userTwoFactorService.getById(1);
+  expect(enabled).toMatchObject({ enabled: true, updatedAt: expect.any(Date) });
+  expect(enabled?.updatedAt).not.toEqual(originalEnabledAt);
+  const codes = enabled?.backupCodes;
   expect(codes).toHaveLength(10);
   expect(new Set(codes).size).toBe(10);
   for (const code of codes ?? []) {
     expect(code).toMatch(/^[A-Z0-9]{8}$/);
     expect(loginTwoFactorSchema.safeParse({ code }).success).toBe(true);
   }
+});
+
+it('keeps a newly started setup undated until verification succeeds', async () => {
+  await userTwoFactorService.delete(1);
+  expect(await userTwoFactorService.startSetup(1, secret)).toBe(true);
+  expect(await userTwoFactorService.getById(1)).toMatchObject({ enabled: false, updatedAt: null });
+});
+
+it('does not enable a stale setup or reissue codes from verification after enablement', async () => {
+  await userTwoFactorService.update({ userId: 1, enabled: false, backupCodes: null });
+  expect(await userTwoFactorService.startSetup(1, 'NEW_SECRET')).toBe(true);
+  expect((await userTwoFactorService.getById(1))?.updatedAt).toEqual(originalEnabledAt);
+  expect(await userTwoFactorService.enable(1, secret, ['23456789'], new Date())).toBe(false);
+  await userTwoFactorService.update({ userId: 1, secret, enabled: true, backupCodes: ['AB12CD34'] });
+  expect(await userTwoFactorService.startSetup(1, 'NEW_SECRET')).toBe(false);
+  body = { code: '287082' };
+  await import('../../../layers/auth-2fa/server/api/users/[id]/2fa/verify.post');
+  const handler = defineHandler.mock.results[0]?.value;
+  if (!handler) throw new Error('Missing setup verification handler');
+  await expect(handler()).rejects.toMatchObject({
+    status: 400,
+    data: { error: { code: 'TWO_FACTOR_ALREADY_ENABLED' } },
+  });
+  expect(await userTwoFactorService.getById(1)).toMatchObject({
+    secret,
+    updatedAt: originalEnabledAt,
+    backupCodes: ['AB12CD34'],
+  });
+});
+
+describe('backup-code regeneration', () => {
+  async function regenerate(password: string) {
+    body = { password };
+    await import('../../../layers/auth-2fa/server/api/users/[id]/2fa/backup-codes.post');
+    const handler = defineHandler.mock.results[0]?.value;
+    if (!handler) throw new Error('Missing backup-code regeneration handler');
+    return handler();
+  }
+
+  it('requires a password', async () => {
+    await expect(regenerate('')).rejects.toMatchObject({
+      status: 400,
+      data: { error: { code: 'VALIDATION_ERROR' } },
+    });
+    expect(verifyPassword).not.toHaveBeenCalled();
+  });
+
+  it('does not replace codes with an incorrect password', async () => {
+    await expect(regenerate('wrong-password')).rejects.toMatchObject({
+      status: 401,
+      data: { error: { code: 'INVALID_PASSWORD' } },
+    });
+    expect((await userTwoFactorService.getById(1))?.backupCodes).toEqual(['AB12CD34', 'EF56GH78']);
+  });
+
+  it('does not issue codes for disabled 2FA even with the correct password', async () => {
+    await userTwoFactorService.update({ userId: 1, enabled: false, backupCodes: null });
+    await expect(regenerate('current-password')).rejects.toMatchObject({
+      status: 400,
+      data: { error: { code: 'TWO_FACTOR_NOT_ENABLED' } },
+    });
+    expect((await userTwoFactorService.getById(1))?.backupCodes).toBeNull();
+  });
+
+  it('returns the persisted replacement once, invalidates the previous codes, and preserves the enable date', async () => {
+    await expect(userTwoFactorService.consumeBackupCode(1, 'AB12CD34')).resolves.toBe(true);
+    const response = await regenerate('current-password');
+    const updated = await userTwoFactorService.getById(1);
+    expect(updated?.backupCodes).toHaveLength(10);
+    expect(response).toHaveProperty('data', { backupCodes: updated?.backupCodes });
+    expect(updated?.secret).toBe(secret);
+    expect(updated?.updatedAt).toEqual(originalEnabledAt);
+    expect(setResponseHeader).toHaveBeenCalledWith(event, 'Cache-Control', 'private, no-store');
+    await expect(userTwoFactorService.consumeBackupCode(1, 'EF56GH78')).resolves.toBe(false);
+    const code = updated?.backupCodes?.[0];
+    if (!code) throw new Error('Missing regenerated backup code');
+    await expect(userTwoFactorService.consumeBackupCode(1, code)).resolves.toBe(true);
+    await expect(userTwoFactorService.consumeBackupCode(1, code)).resolves.toBe(false);
+  });
+
+  it.each([{ backupCodes: [] }, { backupCodes: null }])('regenerates even when no codes remain ($backupCodes)', async ({ backupCodes }) => {
+    await userTwoFactorService.update({ userId: 1, backupCodes });
+    await expect(regenerate('current-password')).resolves.toMatchObject({ success: true });
+    expect((await userTwoFactorService.getById(1))?.backupCodes).toHaveLength(10);
+  });
+
+  it('does not overwrite a newer batch or a disabled account using an old snapshot', async () => {
+    const previous = ['AB12CD34', 'EF56GH78'];
+    expect(await userTwoFactorService.replaceBackupCodes(1, secret, previous, ['NEWCODE1'])).toBe(true);
+    expect(await userTwoFactorService.replaceBackupCodes(1, secret, previous, ['NEWCODE2'])).toBe(false);
+    expect((await userTwoFactorService.getById(1))?.backupCodes).toEqual(['NEWCODE1']);
+    await userTwoFactorService.update({ userId: 1, enabled: false });
+    expect(await userTwoFactorService.replaceBackupCodes(1, secret, ['NEWCODE1'], ['NEWCODE2'])).toBe(false);
+  });
+});
+
+it('disables 2FA and clears its codes without moving the enable timestamp', async () => {
+  body = { password: 'current-password' };
+  await import('../../../layers/auth-2fa/server/api/users/[id]/2fa/disable.delete');
+  const handler = defineHandler.mock.results[0]?.value;
+  if (!handler) throw new Error('Missing 2FA disable handler');
+  expect(await handler()).toHaveProperty('success', true);
+  expect(await userTwoFactorService.getById(1)).toMatchObject({
+    enabled: false,
+    secret: null,
+    backupCodes: null,
+    updatedAt: originalEnabledAt,
+  });
 });
 
 describe('two-factor code schemas', () => {
@@ -186,15 +310,20 @@ for (const route of ['login', 'unlock']) {
       if (route === 'login') {
         expect(setUserSession).toHaveBeenCalledOnce();
         expect(setUserSession).toHaveBeenCalledWith(
-          {},
+          event,
           {
             user: {
               id: 1,
               username: 'member',
               name: 'Member',
               isAdmin: false,
+              onboardingPending: true,
               skipLockOnInit: true,
+              avatarUrl: '',
             },
+            loginMethod: 'password',
+            loginProvider: '',
+            loginMethodAt: 59_000,
           },
         );
       }

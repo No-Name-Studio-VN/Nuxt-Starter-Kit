@@ -21,14 +21,14 @@ export default defineNuxtConfig({
       apiKey: '',
       fromEmail: '',
     },
+    oauth: {
+      google: { clientId: '', clientSecret: '' },
+      github: { clientId: '', clientSecret: '' },
+      discord: { clientId: '', clientSecret: '' },
+    },
     session: {
-      password: '',
-      // Without maxAge the session cookie is written with no Expires, so it only
-      // lives as long as the browsing session. Desktop browsers keep (and restore)
-      // that, but mobile browsers and the standalone PWA drop it every time the OS
-      // kills the process, logging mobile users out constantly.
-      // Counted from login, not from last activity: h3 never refreshes createdAt,
-      // so this is an absolute lifetime rather than a sliding window.
+      // Persist the cookie across browser/PWA restarts. Nuxt counts from the
+      // last session write; reading a session does not extend its lifetime.
       maxAge: 60 * 60 * 24 * 30, // 30 days
     },
   },

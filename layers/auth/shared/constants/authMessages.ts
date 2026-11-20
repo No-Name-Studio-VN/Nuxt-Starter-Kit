@@ -39,6 +39,11 @@ export const AUTH_SUCCESS_MESSAGES: Record<AuthSuccessCode, string> = {
 
 export type { AuthErrorCode, AuthSuccessCode } from '../../types/auth';
 
+const oauthErrorMessageKeys = new Map([
+  ['oauth-email-in-use', 'auth.oauth_email_in_use'],
+  ['oauth-provider-conflict', 'auth.oauth_provider_conflict'],
+  ['oauth-email-missing', 'auth.oauth_email_missing'],
+]);
 const extraErrorMessages = new Map<string, string>();
 const extraSuccessMessages = new Map<string, string>();
 
@@ -69,8 +74,13 @@ export function getAuthSuccessMessage(successCode: string): string | null {
 /**
  * Get user-friendly error message by error code
  */
-export function getAuthErrorMessage(errorCode: string | null | undefined): string | null {
+export function getAuthErrorMessage(
+  errorCode: string | null | undefined,
+  translate?: (key: string) => string,
+): string | null {
   if (!errorCode) return null;
+  const key = oauthErrorMessageKeys.get(errorCode);
+  if (key && translate) return translate(key);
   return isAuthErrorCode(errorCode)
     ? AUTH_ERROR_MESSAGES[errorCode]
     : (extraErrorMessages.get(errorCode) ?? 'An error occurred. Please try again.');

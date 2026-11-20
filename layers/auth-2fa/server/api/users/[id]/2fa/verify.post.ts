@@ -7,12 +7,13 @@ import {
 import userLockScreenService from '#layers/auth/server/utils/database/userLockScreen';
 import userTwoFactorService from '#layers/auth-2fa/server/utils/database/userTwoFactor';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
-import type { TwoFactorVerifyPayload } from '#layers/auth-2fa/types/twoFactor';
+import type { TwoFactorBackupCodesPayload } from '#layers/auth-2fa/types/twoFactor';
 import { verifyTotpSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
 import { generateBackupCodes } from '#layers/auth-2fa/server/utils/backupCodes';
 
 export default defineEventHandler(async (event) => {
   const userId = await getAuthorizedUserId(event);
+  setResponseHeader(event, 'Cache-Control', 'private, no-store');
   const result = await readValidatedBody(event, (body) => verifyTotpSchema.safeParse(body));
   if (!result.success) {
     throw apiError({
@@ -33,6 +34,15 @@ export default defineEventHandler(async (event) => {
       statusText: 'Not Found',
       message: 'Not Found. No 2FA setup started.',
       code: 'TWO_FACTOR_SETUP_NOT_FOUND',
+    });
+  }
+
+  if (twoFactor.enabled) {
+    throw apiError({
+      status: 400,
+      statusText: 'Bad Request',
+      message: 'Bad Request. 2FA is already enabled. Disable it first.',
+      code: 'TWO_FACTOR_ALREADY_ENABLED',
     });
   }
 
@@ -65,12 +75,16 @@ export default defineEventHandler(async (event) => {
     userId,
     lastActivityTime: now,
   });
-  await userTwoFactorService.update({
-    userId,
-    enabled: true,
-    backupCodes,
-  });
+  const enabled = await userTwoFactorService.enable(userId, twoFactor.secret, backupCodes, now);
+  if (!enabled) {
+    throw apiError({
+      status: 409,
+      statusText: 'Conflict',
+      message: 'Two-factor setup changed. Refresh and try again.',
+      code: 'TWO_FACTOR_CHANGED',
+    });
+  }
 
-  const response: TwoFactorVerifyPayload = { backupCodes };
+  const response: TwoFactorBackupCodesPayload = { backupCodes };
   return success(response);
 });

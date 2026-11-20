@@ -1,5 +1,6 @@
-import { changePasswordSchema } from '#layers/auth/shared/schemas/userSchema';
+import { changePasswordSchema, setPasswordSchema } from '#layers/auth/shared/schemas/userSchema';
 import userService from '#layers/auth/server/utils/database/user';
+import { hasPassword } from '#layers/auth/server/utils/hasPassword';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import {
   apiError,
@@ -10,19 +11,6 @@ import type { PasswordUpdatePayload } from '#layers/auth/types/userSecurity';
 
 export default defineEventHandler(async (event) => {
   const userId = await getAuthorizedUserId(event);
-
-  const result = await readValidatedBody(event, (body) => changePasswordSchema.safeParse(body));
-  if (!result.success) {
-    throw apiError({
-      status: 400,
-      statusText: 'Bad Request',
-      message: 'Bad Request. The password change request contains invalid data.',
-      code: 'VALIDATION_ERROR',
-      fieldErrors: zodErrorToFieldErrors(result.error),
-    });
-  }
-
-  // Get current user
   const user = await userService.getById(userId);
   if (!user) {
     throw apiError({
@@ -33,9 +21,35 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Verify current password
-  const isValidPassword = await verifyPassword(user.password, result.data.currentPassword);
-  if (!isValidPassword) {
+  const changingPassword = hasPassword(user);
+  if (!changingPassword && Number((await requireUserSession(event)).user.id) !== userId) {
+    throw apiError({
+      status: 403,
+      statusText: 'Forbidden',
+      message: 'You can only set an initial password on your own account.',
+      code: 'USER_ID_MISMATCH',
+    });
+  }
+
+  const result = await readValidatedBody(event, (body) => {
+    return changingPassword
+      ? changePasswordSchema.safeParse(body)
+      : setPasswordSchema.safeParse(body);
+  });
+  if (!result.success) {
+    throw apiError({
+      status: 400,
+      statusText: 'Bad Request',
+      message: 'Bad Request. The password change request contains invalid data.',
+      code: 'VALIDATION_ERROR',
+      fieldErrors: zodErrorToFieldErrors(result.error),
+    });
+  }
+
+  const currentPassword = 'currentPassword' in result.data ? result.data.currentPassword : undefined;
+  if (changingPassword && (
+    typeof currentPassword !== 'string' || !(await verifyPassword(user.password, currentPassword))
+  )) {
     throw apiError({
       status: 401,
       statusText: 'Unauthorized',
@@ -44,16 +58,20 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Hash new password
   const hashedPassword = await hashPassword(result.data.newPassword);
-
-  // Update password
-  const updatedUser = await userService.update({
-    id: userId,
-    password: hashedPassword,
-  });
+  const updatedUser = changingPassword
+    ? await userService.update({ id: userId, password: hashedPassword })
+    : await userService.setInitialPassword(userId, user.password, hashedPassword);
 
   if (!updatedUser) {
+    if (!changingPassword) {
+      throw apiError({
+        status: 409,
+        statusText: 'Conflict',
+        message: 'The account changed while setting its first password.',
+        code: 'PASSWORD_SET_CONFLICT',
+      });
+    }
     throw apiError({
       status: 500,
       statusText: 'Internal Server Error',

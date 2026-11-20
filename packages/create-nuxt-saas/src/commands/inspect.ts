@@ -1,5 +1,7 @@
 import { glob } from 'tinyglobby';
 import { readKitConfig } from '../kit/config';
+import { collectNotes } from '../kit/notes';
+import type { JsonInspectFeatures, JsonNoteReport } from '../types/json';
 import type { KitSnapshot } from '../kit/source';
 import { render, type ProjectIdentity } from '../render/render';
 import { readState, unresolvedConflicts } from '../project/state';
@@ -23,6 +25,7 @@ export interface InspectReport {
   identity: ProjectIdentity;
   conflicts: { recorded: string[]; unresolved: string[] };
   files: InspectFile[];
+  features: JsonInspectFeatures;
   summary: {
     total: number;
     unchanged: number;
@@ -84,6 +87,16 @@ export async function runInspect(opts: {
     files.push({ path, status, layer: layerOf(path), expected: userOwned.has(path) });
   }
 
+  const edited = new Set(files.filter(({ status }) => status === 'edited' || status === 'deleted').map(({ path }) => path));
+  const unresolvedPaths = new Set(unresolved);
+  const declined = new Set(state.declined);
+  const missing = collectNotes(config.changes, kit.modules, state.modules).flatMap((note): JsonNoteReport[] => {
+    if (declined.has(note.id)) return [];
+    const affected = note.files.filter((path) => edited.has(path));
+    if (!affected.length) return [];
+    const outcome = affected.some((path) => unresolvedPaths.has(path)) ? 'conflict' : 'kept';
+    return [{ ...note, affected, outcome }];
+  });
   const count = (status: InspectStatus) => files.filter((file) => file.status === status).length;
   const scored = files.filter((file) => file.status !== 'protected' && !file.expected);
   return {
@@ -93,6 +106,7 @@ export async function runInspect(opts: {
     identity: state.identity,
     conflicts: { recorded: state.conflicts, unresolved },
     files,
+    features: { missing, declined: state.declined },
     summary: {
       total: files.length,
       unchanged: count('unchanged'),

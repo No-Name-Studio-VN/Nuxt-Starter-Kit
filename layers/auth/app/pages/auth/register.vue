@@ -7,15 +7,12 @@ import { Eye, EyeOff } from '@lucide/vue';
 import PasswordStrengthIndicator from '#layers/auth/app/components/PasswordStrengthIndicator.vue';
 import { registerUserSchema } from '#layers/auth/shared/schemas/userSchema';
 import { calculatePasswordStrength } from '#layers/auth/app/utils/passwordValidation';
+import { getQueryString, safeRedirectPath } from '#layers/auth/app/utils/safeRedirect';
 import { getAuthErrorMessage } from '#layers/auth/shared/constants/authMessages';
-import { AVAILABLE_PROVIDERS } from '#layers/auth/shared/constants/oauthProviders';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
-import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { Field, FieldLabel, FieldError } from '@/components/ui/field';
-import type { ApiResponse } from '#layers/server-core/types/api';
-import type { OAuthUrlPayload } from '#layers/auth/types/auth';
 
 const siteConfig = useConfig();
 const route = useRoute();
@@ -25,62 +22,18 @@ const showConfirmPassword = ref(false);
 const isLoading = ref(false);
 const error = ref('');
 const turnstileToken = ref('');
-const oauthLoadingProvider = ref<string | null>(null);
-const oauthPopup = ref<Window | null>(null);
-const oauthPopupTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
-const oauthPopupCloseMonitor = ref<ReturnType<typeof setInterval> | null>(null);
-const { t } = useI18n();
-
-const redirectTo = computed(() => {
-  const value = getQueryString(route.query.redirectTo);
-  if (!value) {
-    return '/';
-  }
-
-  try {
-    const parsed = new URL(value, requestUrl.origin);
-    if (parsed.origin !== requestUrl.origin) {
-      return '/';
-    }
-
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return '/';
-  }
+const { t, te } = useI18n();
+const { data: oauthProviders, error: oauthProvidersError } = useOAuthProviders();
+const { activeProvider: oauthLoadingProvider, open: openOAuthPopup } = useOAuthPopup({
+  onBlocked: () => { error.value = t('auth.oauth_popup_blocked'); },
+  onTimeout: () => { error.value = t('auth.oauth_popup_timeout'); },
+  onError(cause) {
+    const { message } = parseApiError(cause, 'auth.oauth_popup_start_failed');
+    error.value = te(message) ? t(message) : message;
+  },
 });
 
-function stopOAuthPopupTimeout() {
-  if (oauthPopupTimeout.value) {
-    clearTimeout(oauthPopupTimeout.value);
-    oauthPopupTimeout.value = null;
-  }
-}
-
-function stopOAuthPopupCloseMonitor() {
-  if (oauthPopupCloseMonitor.value) {
-    clearInterval(oauthPopupCloseMonitor.value);
-    oauthPopupCloseMonitor.value = null;
-  }
-}
-
-function onOAuthPopupComplete(message: { url: string }) {
-  stopOAuthPopupCloseMonitor();
-  stopOAuthPopupTimeout();
-  oauthPopup.value = null;
-  oauthLoadingProvider.value = null;
-
-  let target: URL;
-  try {
-    target = new URL(message.url);
-  } catch {
-    error.value = 'Authentication completed but response URL was invalid. Please try again.';
-    return;
-  }
-
-  window.location.assign(`${target.pathname}${target.search}${target.hash}`);
-}
-
-const oauthPopupListener = useOAuthPopupListener(onOAuthPopupComplete);
+const redirectTo = computed(() => safeRedirectPath(route.query.redirectTo, '/', requestUrl.origin));
 
 const form = useForm({
   initialValues: {
@@ -129,97 +82,17 @@ watch(
   (queryValue) => {
     const errorCode = getQueryString(queryValue);
     if (errorCode) {
-      error.value = getAuthErrorMessage(errorCode) || 'An error occurred during registration';
+      error.value = getAuthErrorMessage(errorCode, t) ?? '';
     }
   },
   { immediate: true },
 );
 
-onMounted(() => {
-  oauthPopupListener.start();
-});
-
-async function signUpWithProvider(provider: string) {
+function signUpWithProvider(provider: string) {
   if (oauthLoadingProvider.value) return;
-
-  oauthLoadingProvider.value = provider;
   error.value = '';
-
-  try {
-    const response = await apiRequest<ApiResponse<OAuthUrlPayload>>(authRoutes.AUTH_OAUTH_URL, {
-      method: 'POST',
-      body: { provider, action: 'login', redirectTo: redirectTo.value },
-    });
-    if (!response.success) {
-      throw response;
-    }
-
-    const popupWidth = Math.min(560, window.outerWidth - 40);
-    const popupHeight = Math.min(720, window.outerHeight - 80);
-    const popupLeft = window.screenX + Math.max(0, (window.outerWidth - popupWidth) / 2);
-    const popupTop = window.screenY + Math.max(0, (window.outerHeight - popupHeight) / 2);
-    const popup = window.open(
-      response.data.url,
-      `oauth-${provider}`,
-      `width=${popupWidth},height=${popupHeight},left=${popupLeft},top=${popupTop},location=0,resizable,scrollbars,toolbar=0,menubar=0,popup=true`,
-    );
-
-    if (!popup) {
-      throw new Error('Popup blocked');
-    }
-
-    popup.focus();
-    oauthPopup.value = popup;
-    stopOAuthPopupCloseMonitor();
-    stopOAuthPopupTimeout();
-
-    oauthPopupCloseMonitor.value = setInterval(() => {
-      if (!oauthPopup.value) {
-        stopOAuthPopupCloseMonitor();
-        return;
-      }
-
-      let isClosed = false;
-      try {
-        isClosed = oauthPopup.value.closed;
-      } catch {
-        return;
-      }
-
-      if (!isClosed) {
-        return;
-      }
-
-      stopOAuthPopupCloseMonitor();
-      stopOAuthPopupTimeout();
-      oauthPopup.value = null;
-      oauthLoadingProvider.value = null;
-    }, 500);
-
-    oauthPopupTimeout.value = setTimeout(() => {
-      stopOAuthPopupCloseMonitor();
-      stopOAuthPopupTimeout();
-      oauthPopup.value = null;
-      oauthLoadingProvider.value = null;
-      error.value = 'OAuth session timed out or popup was closed. Please try again.';
-    }, 120000);
-  } catch (err) {
-    stopOAuthPopupCloseMonitor();
-    stopOAuthPopupTimeout();
-    oauthPopup.value = null;
-    error.value = parseApiError(
-      err,
-      'Unable to continue with provider right now. Please try again.',
-    ).message;
-    oauthLoadingProvider.value = null;
-  }
+  return openOAuthPopup(provider, redirectTo.value);
 }
-
-onBeforeUnmount(() => {
-  stopOAuthPopupCloseMonitor();
-  stopOAuthPopupTimeout();
-  oauthPopupListener.stop();
-});
 </script>
 
 <template>
@@ -233,27 +106,31 @@ onBeforeUnmount(() => {
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
 
-    <div v-if="AVAILABLE_PROVIDERS.length" class="flex flex-col gap-2">
+    <p v-if="oauthProvidersError" class="text-sm text-muted-foreground" role="status">
+      {{ t('auth.oauth_unavailable') }}
+    </p>
+
+    <div v-if="oauthProviders.length" class="flex flex-col gap-2">
       <Button
-        v-for="provider in AVAILABLE_PROVIDERS"
+        v-for="provider in oauthProviders"
         :key="provider.id"
         type="button"
         variant="outline"
         class="h-10 w-full"
         :is-loading="oauthLoadingProvider === provider.id"
-        :disabled="isLoading || oauthLoadingProvider !== null"
+        :disabled="isLoading || !!oauthLoadingProvider"
         @click="signUpWithProvider(provider.id)"
       >
         <div class="flex size-4 items-center justify-center">
-          <OAuthIcon :provider="provider.id" />
+          <OAuthIcon :icon="provider.icon" />
         </div>
-        Continue with {{ provider.name }}
+        {{ t('auth.oauth_continue_with', { provider: provider.name }) }}
       </Button>
     </div>
 
-    <div v-if="AVAILABLE_PROVIDERS.length" class="flex items-center gap-3">
+    <div v-if="oauthProviders.length" class="flex items-center gap-3">
       <div class="h-px flex-1 bg-border" />
-      <span class="text-xs text-muted-foreground">or</span>
+      <span class="text-xs text-muted-foreground">{{ t('auth.oauth_or') }}</span>
       <div class="h-px flex-1 bg-border" />
     </div>
 

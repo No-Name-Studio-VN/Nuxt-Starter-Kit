@@ -1,6 +1,5 @@
 import authTokenService from '#layers/auth/server/utils/database/authToken';
-import userService from '#layers/auth/server/utils/database/user';
-import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
+import { apiError, success, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
 import { AuthTokenType } from '#layers/auth/shared/constants/authTokens';
 import { resetPasswordSchema } from '#layers/auth/shared/schemas/userSchema';
 
@@ -16,39 +15,21 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const invalidToken = () => apiError({
+    status: 400,
+    statusText: 'Bad Request',
+    message: 'The reset link is invalid or has expired.',
+    code: 'RESET_TOKEN_INVALID',
+  });
   const tokenRecord = await authTokenService.verifyToken(
     result.data.token,
     AuthTokenType.PasswordReset,
   );
-  if (!tokenRecord) {
-    throw apiError({
-      status: 400,
-      statusText: 'Bad Request',
-      message: 'The reset link is invalid or has expired.',
-      code: 'RESET_TOKEN_INVALID',
-    });
-  }
-
-  const user = await userService.getById(tokenRecord.userId);
-  if (!user) {
-    throw apiError({
-      status: 404,
-      statusText: 'Not Found',
-      message: 'User not found.',
-      code: 'USER_NOT_FOUND',
-    });
-  }
+  if (!tokenRecord) throw invalidToken();
 
   const hashedPassword = await hashPassword(result.data.password);
+  const reset = await authTokenService.redeemPasswordReset(tokenRecord, hashedPassword);
+  if (!reset) throw invalidToken();
 
-  await userService.update({ id: user.id, password: hashedPassword });
-  await authTokenService.markUsed(tokenRecord.id);
-  await authTokenService.invalidateUserTokens(user.id);
-
-  // Also verify email if it wasn't verified (user proved email ownership via reset link)
-  if (!user.emailVerified) {
-    await userService.update({ id: user.id, emailVerified: true });
-  }
-
-  return success({});
+  return success(reset);
 });

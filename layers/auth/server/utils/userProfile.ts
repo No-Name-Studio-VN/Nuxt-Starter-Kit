@@ -1,6 +1,8 @@
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import oauthAccountService from '#layers/auth/server/utils/database/oauthAccount';
 import userService from '#layers/auth/server/utils/database/user';
+import { hasPassword } from '#layers/auth/server/utils/hasPassword';
+import { getContributedSignInMethodCount } from '#layers/auth/server/utils/signInMethods';
 import type { UserProfileModel } from '#layers/auth/types/models/profile';
 
 export async function getUserProfileById(userId: number): Promise<UserProfileModel> {
@@ -15,7 +17,10 @@ export async function getUserProfileById(userId: number): Promise<UserProfileMod
     });
   }
 
-  const oauthAccounts = await oauthAccountService.getByUserId(userId);
+  const [oauthAccounts, contributedSignInMethodCount] = await Promise.all([
+    oauthAccountService.getByUserId(userId),
+    getContributedSignInMethodCount(userId),
+  ]);
 
   return {
     id: dbUser.id,
@@ -25,7 +30,9 @@ export async function getUserProfileById(userId: number): Promise<UserProfileMod
     emailVerified: dbUser.emailVerified,
     createdAt: dbUser.createdAt || new Date(),
     lastLoginAt: dbUser.lastLoginAt || dbUser.createdAt || new Date(),
-    hasPassword: !!dbUser.password && dbUser.password.trim().length > 0,
+    hasPassword: hasPassword(dbUser),
+    contributedSignInMethodCount,
+    passwordChangedAt: dbUser.passwordChangedAt,
     isAdmin: dbUser.isAdmin,
     linkedAccounts: oauthAccounts.map((account) => ({
       provider: account.provider,

@@ -7,8 +7,17 @@ export interface TwoFactorSetupPayload {
   secret: string;
 }
 
-export interface TwoFactorVerifyPayload {
+export interface TwoFactorBackupCodesPayload {
   backupCodes: string[];
+}
+
+export type TwoFactorVerifyPayload = TwoFactorBackupCodesPayload;
+
+export interface TwoFactorStatusPayload {
+  enabled: boolean;
+  enabledAt: string | null;
+  backupCodesRemaining: number;
+  backupCodesTotal: number;
 }
 
 export interface LockScreenValidationPayload {

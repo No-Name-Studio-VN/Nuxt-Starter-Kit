@@ -21,6 +21,19 @@ describe('cleanupOnTermination', () => {
     expect(exit).toHaveBeenCalledWith(128 + constants.signals.SIGTERM);
   });
 
+  it('awaits preparation before discarding resources needed by it', async () => {
+    const order: string[] = [];
+    cleanupOnTermination(async () => { order.push('remove resources'); });
+    cleanupOnTermination(async () => {
+      await Promise.resolve();
+      order.push('finish snapshot');
+    }, { beforeOtherCleanups: true });
+
+    await runPendingCleanups();
+
+    expect(order).toEqual(['finish snapshot', 'remove resources']);
+  });
+
   it('does not run a cleanup that was unregistered', async () => {
     const cleanup = vi.fn(async () => {});
     const unregister = cleanupOnTermination(cleanup);

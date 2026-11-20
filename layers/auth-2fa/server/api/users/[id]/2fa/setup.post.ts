@@ -11,8 +11,18 @@ import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
 import type { TwoFactorSetupPayload } from '#layers/auth-2fa/types/twoFactor';
 import { setupTotpSchema } from '#layers/auth-2fa/shared/schemas/twoFactorSchema';
 
+function alreadyEnabled() {
+  return apiError({
+    status: 400,
+    statusText: 'Bad Request',
+    message: 'Bad Request. 2FA is already enabled. Disable it first.',
+    code: 'TWO_FACTOR_ALREADY_ENABLED',
+  });
+}
+
 export default defineEventHandler(async (event) => {
   const userId = await getAuthorizedUserId(event);
+  setResponseHeader(event, 'Cache-Control', 'private, no-store');
   const session = await requireUserSession(event);
   const username = session.user.username || 'User';
 
@@ -68,14 +78,7 @@ export default defineEventHandler(async (event) => {
   const existingLockScreen = await userLockScreenService.getById(userId);
   const now = new Date();
 
-  if (existingTwoFactor?.enabled) {
-    throw apiError({
-      status: 400,
-      statusText: 'Bad Request',
-      message: 'Bad Request. 2FA is already enabled. Disable it first.',
-      code: 'TWO_FACTOR_ALREADY_ENABLED',
-    });
-  }
+  if (existingTwoFactor?.enabled) throw alreadyEnabled();
 
   // The code checks count failed attempts on the account's lock-screen row,
   // so setup makes sure it exists.
@@ -91,19 +94,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (existingTwoFactor) {
-    await userTwoFactorService.update({
-      userId,
-      secret: secret.base32,
-      enabled: false,
-    });
-  } else {
-    await userTwoFactorService.create({
-      userId,
-      secret: secret.base32,
-      enabled: false,
-    });
-  }
+  const started = await userTwoFactorService.startSetup(userId, secret.base32);
+  if (!started) throw alreadyEnabled();
 
   const response: TwoFactorSetupPayload = { uri, secret: secret.base32 };
   return success(response);

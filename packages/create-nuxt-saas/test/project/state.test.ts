@@ -41,7 +41,7 @@ describe('project state', () => {
       identity: { name: 'my-app', description: 'My project' },
       conflicts: [],
     };
-    expect(await readState(root)).toEqual(expected);
+    expect(await readState(root)).toEqual({ ...expected, declined: [] });
     const first = await readFile(join(root, STATE_FILE), 'utf8');
     expect(first).toBe(`${JSON.stringify(expected, null, 2)}\n`);
     await writeState(root, {

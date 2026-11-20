@@ -36,24 +36,29 @@ describe('client-safe WebAuthn responses', () => {
       throw new Error('Missing allowCredentials callback');
     }
 
-    vi.mocked(userService.getByUsername).mockResolvedValue({
+    const member = {
       id: 1,
       username: 'member',
       name: 'Member',
       password: 'internal-hash',
+      passwordChangedAt: null,
       email: 'member@example.com',
       emailVerified: true,
       isAdmin: false,
       isLocked: false,
+      onboardingPending: false,
+      onboardingCompletedSteps: [],
       lastLoginAt: null,
       createdAt: null,
       updatedAt: null,
-    });
-    expect(await options.allowCredentials({}, 'member')).toEqual([{ id, transports }]);
+    };
+    vi.mocked(userService.getByUsername).mockImplementation(async (username) =>
+      username === member.username ? member : undefined);
+
+    expect(await options.allowCredentials({}, '  MemBer ')).toEqual([{ id, transports }]);
     expect(select).toHaveBeenCalledWith({ id: credentials.id, transports: credentials.transports });
 
     select.mockClear();
-    vi.mocked(userService.getByUsername).mockResolvedValue(undefined);
     expect(await options.allowCredentials({}, 'unknown')).toEqual([]);
     expect(select).not.toHaveBeenCalled();
   });

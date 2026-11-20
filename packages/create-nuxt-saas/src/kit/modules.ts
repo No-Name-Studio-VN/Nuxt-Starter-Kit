@@ -2,6 +2,9 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { CliError } from '../errors';
+import { pathExists } from '../util/fs';
+import { KIT_CONFIG_PATH, readKitConfig } from './config';
+import { changeNotesSchema, collectNotes, type KitChangeNote } from './notes';
 
 export interface KitModule {
   id: string;
@@ -15,6 +18,7 @@ export interface KitModule {
   env: string[];
   bindings: string[];
   rootFiles: string[];
+  changes: KitChangeNote[];
 }
 
 const moduleSchema = z.object({
@@ -28,6 +32,7 @@ const moduleSchema = z.object({
   env: z.array(z.string()).default([]),
   bindings: z.array(z.string()).default([]),
   rootFiles: z.array(z.string()).default([]),
+  changes: changeNotesSchema,
 });
 
 /** Reads one layer's metadata; callers validate its graph after assembling it. */
@@ -72,6 +77,8 @@ export async function readKitModules(kitRoot: string): Promise<KitModule[]> {
       }
     }
   }
+  const config = await pathExists(join(kitRoot, KIT_CONFIG_PATH)) ? await readKitConfig(kitRoot) : null;
+  collectNotes(config?.changes ?? [], modules);
   // Validate the entire graph, even when the eventual selection is empty.
   resolveSelection(
     modules,

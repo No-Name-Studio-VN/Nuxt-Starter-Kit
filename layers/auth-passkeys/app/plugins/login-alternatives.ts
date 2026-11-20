@@ -8,6 +8,7 @@ import { defineAsyncComponent } from 'vue';
 export default defineNuxtPlugin(() => {
   registerExtension('auth:login:alternatives', {
     id: 'passkey',
+    rememberedSignInMethod: 'passkey',
     order: 100,
     component: defineAsyncComponent(() => import('../components/auth/PasskeyLoginAlternative.vue')),
   });

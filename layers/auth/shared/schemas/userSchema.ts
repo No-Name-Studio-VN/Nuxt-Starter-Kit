@@ -22,9 +22,13 @@ export const passwordComplexitySchema = z
  */
 export const usernameSchema = z
   .string()
+  .trim()
+  .toLowerCase()
   .min(3, 'validation.username_min')
   .max(50, 'validation.username_max')
   .regex(/^[a-z0-9_-]+$/, 'validation.username_format');
+
+export const updateUsernameSchema = z.object({ username: usernameSchema });
 
 /**
  * Email validation schema
@@ -72,7 +76,7 @@ export const createUserSchema = createInsertSchema(users, {
   emailVerified: z.boolean().default(false),
   lastLoginAt: z.date().optional(),
   isAdmin: z.boolean().default(false),
-});
+}).omit({ passwordChangedAt: true, onboardingPending: true, onboardingCompletedSteps: true });
 
 /**
  * Schema for updating a user (all fields optional except id).
@@ -86,20 +90,15 @@ export const userUpdateSchema = createUpdateSchema(users, {
   emailVerified: z.boolean().optional(),
   isAdmin: z.boolean().optional(),
   isLocked: z.boolean().optional(),
-});
+}).omit({ passwordChangedAt: true, onboardingPending: true, onboardingCompletedSteps: true });
 
 /**
  * Select schema for type inference from database queries.
  */
 export const userSelectSchema = createSelectSchema(users);
 
-/**
- * Schema for changing password (shared between frontend form and API route).
- * Validates current password, new password complexity, and confirmation match.
- */
-export const changePasswordSchema = z
+export const setPasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, 'validation.current_password_required'),
     newPassword: passwordComplexitySchema,
     confirmPassword: z.string().min(1, 'validation.new_password_confirm_required'),
   })
@@ -108,15 +107,22 @@ export const changePasswordSchema = z
     path: ['confirmPassword'],
   });
 
+export const changePasswordSchema = setPasswordSchema.safeExtend({
+  currentPassword: z.string().min(1, 'validation.current_password_required'),
+});
+
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(1, 'validation.name_required'),
   email: emailSchema,
+  currentPassword: z.string().optional(),
 });
 
+export const settingsProfileSchema = updateProfileSchema.extend(updateUsernameSchema.shape);
+
 export const loginSchema = z.object({
-  username: z.string().min(1, 'validation.username_required'),
+  username: z.string().trim().toLowerCase().min(1, 'validation.username_required'),
   password: z.string().min(1, 'validation.password_required'),
   'cf-turnstile-response': z.string(),
   'redirect-to': z.string().optional(),

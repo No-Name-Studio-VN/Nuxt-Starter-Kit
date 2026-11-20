@@ -3,7 +3,8 @@ import { users } from '../../../auth/server/db/schema.sqlite';
 
 const timestampColumns = {
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()), // Auto-set on create
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()), // Auto-set on create (needs trigger or manual update for 'on update')
+  // After insertion, only successful setup verification updates this timestamp.
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 };
 
 // One row per account that has started 2FA setup. The failed-attempt counters

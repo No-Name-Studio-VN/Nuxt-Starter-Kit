@@ -7,7 +7,8 @@ import type { BreadcrumbItemType } from '~~/types/common';
 
 const router = useRouter();
 const route = useRoute();
-const { t } = useI18n();
+const { t, availableLocales } = useI18n();
+const i18nEnabled = availableLocales.length > 1;
 const pageBreadcrumbs = useCurrentPageBreadcrumbs();
 
 function resolveTitle(title: string) {
@@ -195,6 +196,7 @@ const { loggedIn, user } = useUserSession();
           </BreadcrumbList>
         </Breadcrumb>
         <div class="ml-auto flex items-center gap-2">
+          <LangSwitcher v-if="i18nEnabled" />
           <Button
             v-if="!loggedIn || !user"
             variant="default"

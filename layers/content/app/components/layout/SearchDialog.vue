@@ -13,22 +13,22 @@
       <template v-if="!input?.length">
         <template v-for="item in navigation" :key="item.path">
           <CommandGroup v-if="item.children" :heading="item.title" class="p-1.5">
-            <NuxtLink
+            <NuxtLinkLocale
               v-for="child in item.children"
               :key="child.stem"
-              :to="child.path"
+              :to="navTargetFromPath(child.path, navigation)"
               @click="handleClose"
             >
               <CommandItem :value="child.path">
                 <CtIcon
-                  v-if="!isEmpty(child.icon)"
-                  :name="child.icon as string"
+                  v-if="typeof child.icon === 'string' && child.icon"
+                  :name="child.icon"
                   class="mr-2 size-4"
                 />
                 <FileIcon v-else class="mr-2 size-4" />
                 <span>{{ child.title }}</span>
               </CommandItem>
-            </NuxtLink>
+            </NuxtLinkLocale>
           </CommandGroup>
           <CommandSeparator v-if="item.children" />
         </template>
@@ -107,7 +107,7 @@
 import { nextTick } from 'vue';
 import MiniSearch, { type SearchResult } from 'minisearch';
 import { useContentHelpers } from '#layers/content/app/composables/useContentHelpers';
-import { isEmpty } from 'es-toolkit/compat';
+import { localizeSearchSections } from '#layers/content/app/utils/contentSearch';
 import { ChevronRightIcon, FileIcon, SearchXIcon } from '@lucide/vue';
 import CtIcon from '#layers/content/app/components/content/CtIcon.vue';
 
@@ -118,6 +118,8 @@ const open = computed({
 });
 const { setOpen } = store;
 const colorMode = useColorMode();
+const { locale, defaultLocale, availableLocales } = useI18n();
+const localePath = useLocalePath();
 const { placeholderDetailed } = useDocsConfig().value.search;
 
 const input = ref('');
@@ -149,20 +151,24 @@ const { data: searchSections } = await useAsyncData(
   { server: false },
 );
 
-// Initialize MiniSearch instance
-const miniSearch = new MiniSearch({
-  fields: ['title', 'content'],
-  storeFields: ['title', 'content', 'titles', 'id', 'level'],
-  searchOptions: {
-    prefix: true,
-    fuzzy: 0.2,
-  },
+const miniSearch = computed(() => {
+  const index = new MiniSearch({
+    fields: ['title', 'content'],
+    storeFields: ['title', 'content', 'titles', 'id', 'level'],
+    searchOptions: {
+      prefix: true,
+      fuzzy: 0.2,
+    },
+  });
+  const sections = localizeSearchSections(
+    searchSections.value ?? [],
+    locale.value,
+    defaultLocale,
+    availableLocales,
+  );
+  index.addAll(sections);
+  return index;
 });
-
-// Add data to the MiniSearch instance (guard against null data)
-if (searchSections.value) {
-  miniSearch.addAll(searchSections.value);
-}
 
 // Debounced search: watch + shallowRef instead of computed with side effects
 const debouncedSearch = useDebounceFn(() => {
@@ -172,13 +178,13 @@ const debouncedSearch = useDebounceFn(() => {
     searchLoading.value = false;
     return;
   }
-  searchResult.value = miniSearch.search(term);
+  searchResult.value = miniSearch.value.search(term);
   activeSelect.value = 0;
   searchLoading.value = false;
 }, 200);
 
-watch(input, (val) => {
-  if (val?.trim()) {
+watch([input, locale, searchSections], () => {
+  if (input.value.trim()) {
     searchLoading.value = true;
   }
   debouncedSearch();
@@ -202,11 +208,11 @@ function highlightMatches(text: string) {
 }
 
 const { navKeyFromPath } = useContentHelpers();
-const { navigation } = usePageData();
+const { navigation } = useI18nDocs();
 
 function getItemIcon(path: string): string | undefined {
-  const navKey = navKeyFromPath(path, 'icon', navigation.value);
-  return typeof navKey === 'string' && !isEmpty(navKey) ? navKey : undefined;
+  const navKey = navKeyFromPath(path.split('#', 1)[0] ?? '', 'icon', navigation.value);
+  return typeof navKey === 'string' && navKey ? navKey : undefined;
 }
 
 watch(activeSelect, (value) => {
@@ -214,15 +220,12 @@ watch(activeSelect, (value) => {
 });
 
 function handleEnter() {
-  if (searchResult.value?.[activeSelect.value]?.id) {
-    const path = searchResult.value[activeSelect.value]?.id;
-    setOpen(false);
-    resetState();
+  const path = searchResult.value?.[activeSelect.value]?.id;
+  if (typeof path !== 'string') return;
 
-    nextTick(() => {
-      navigateTo(path);
-    });
-  }
+  setOpen(false);
+  resetState();
+  nextTick(() => navigateTo(localePath(path)));
 }
 
 function handleNavigate(delta: -1 | 1) {

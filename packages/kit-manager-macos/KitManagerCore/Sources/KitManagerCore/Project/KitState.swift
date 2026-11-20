@@ -8,10 +8,11 @@ public struct KitState: Codable, Sendable, Hashable {
     public let modules: [String]
     public let identity: KitIdentity
     public let conflicts: [String]
+    public let declined: [String]?
 
     public init(
         version: Int, kit: String, commit: String, modules: [String], identity: KitIdentity,
-        conflicts: [String]
+        conflicts: [String], declined: [String]? = nil
     ) {
         self.version = version
         self.kit = kit
@@ -19,6 +20,7 @@ public struct KitState: Codable, Sendable, Hashable {
         self.modules = modules
         self.identity = identity
         self.conflicts = conflicts
+        self.declined = declined
     }
 }
 

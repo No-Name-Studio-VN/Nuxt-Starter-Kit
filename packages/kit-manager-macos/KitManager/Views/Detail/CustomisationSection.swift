@@ -12,6 +12,9 @@ struct CustomisationSection: View {
     @State private var showAllFiles = false
 
     private static let collapsedCount = 8
+    /// Distinct hues in order of layer size, so neighbouring bar segments never share a colour (module
+    /// icon colours repeat: several modules are blue or gray).
+    private static let palette: [Color] = [.blue, .orange, .green, .purple, .pink, .teal, .yellow, .indigo, .mint, .brown, .cyan]
 
     var body: some View {
         Section {
@@ -63,77 +66,95 @@ struct CustomisationSection: View {
         }
         let files = Customisation.changedFiles(of: report, includeExpected: showExpected)
         let shown = showAllFiles ? files : Array(files.prefix(Self.collapsedCount))
-        let percentage = summary.score.formatted(.percent.precision(.fractionLength(0)))
+        let colors = Dictionary(
+            uniqueKeysWithValues: layers.enumerated().map { ($1.layer, Self.palette[$0 % Self.palette.count]) }
+        )
 
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                if summary.scoredChanged == 0 {
-                    Label {
-                        Text("No kit files edited")
-                    } icon: {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                    }
-                } else {
-                    Text("\(summary.scoredChanged) of \(summary.scored) kit files edited").font(.headline)
-                }
-                Spacer()
-                Text(percentage).font(.title3.weight(.semibold)).monospacedDigit()
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Customisation \(percentage): \(summary.scoredChanged) of \(summary.scored) kit files edited")
+        VStack(alignment: .leading, spacing: 12) {
+            overview(summary, layers: layers)
             if !layers.isEmpty, summary.scored > 0 {
-                layerBar(layers, total: summary.scored)
+                CustomisationBar(
+                    layers: layers, score: summary.score,
+                    color: { colors[$0.layer] ?? .gray }, help: layerHelp
+                )
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 14) { layerLegend(layers) }
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), alignment: .leading)], alignment: .leading) {
-                        layerLegend(layers)
+                    HStack(spacing: 16) { layerLegend(layers, colors: colors) }
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), alignment: .leading)], alignment: .leading) {
+                        layerLegend(layers, colors: colors)
                     }
                 }
+            }
+            if stale {
+                Label("Computed for an earlier state of the project. Inspect again to refresh.", systemImage: "clock")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 4)
 
-        DisclosureGroup("Show Edited Files") {
-            VStack(alignment: .leading, spacing: 8) {
-                fileList(files: files, shown: shown, hiddenExpected: expectedChangeCount(report))
-                if stale {
-                    Label("Computed for an earlier state of the project. Inspect again to refresh.", systemImage: "clock")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+        DisclosureGroup {
+            fileList(files: files, shown: shown, colors: colors, hiddenExpected: expectedChangeCount(report))
+        } label: {
+            HStack(spacing: 6) {
+                Text("Edited Files")
+                Text("\(files.count)")
+                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(.fill.tertiary, in: .capsule)
+                    .accessibilityLabel(files.count == 1 ? "1 file" : "\(files.count) files")
             }
         }
     }
 
-    private func layerBar(_ layers: [LayerCustomisation], total: Int) -> some View {
-        GeometryReader { proxy in
-            let gap: CGFloat = 2
-            let available = max(0, proxy.size.width - CGFloat(layers.count - 1) * gap)
-            let minimum = min(6, available / CGFloat(layers.count))
-            let widths = layers.map { available * CGFloat($0.changed) / CGFloat(total) }
-            // If minimum widths would overflow the track, shrink only the space above those minima.
-            let extra = widths.reduce(CGFloat.zero) { $0 + max(0, $1 - minimum) }
-            let scale = extra > 0 ? min(1, (available - minimum * CGFloat(layers.count)) / extra) : 1
-            HStack(spacing: gap) {
-                ForEach(Array(zip(layers, widths)), id: \.0.id) { layer, width in
-                    Capsule()
-                        .fill(layerColor(layer))
-                        .frame(width: minimum + max(0, width - minimum) * scale)
-                        .help(layerHelp(layer))
+    @ViewBuilder
+    private func overview(_ summary: InspectSummary, layers: [LayerCustomisation]) -> some View {
+        let percentage = summary.score.formatted(.percent.precision(.fractionLength(0)))
+        if summary.scoredChanged == 0 {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.white, .green)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("No kit files edited").font(.headline)
+                    Text("Updates apply without merging.").font(.callout).foregroundStyle(.secondary)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .background(.quaternary, in: .capsule)
+            .accessibilityElement(children: .combine)
+        } else {
+            let edited = layers.reduce(0) { $0 + $1.edited }
+            let deleted = layers.reduce(0) { $0 + $1.deleted }
+            let breakdown = [
+                edited > 0 ? "\(edited) edited" : nil,
+                deleted > 0 ? "\(deleted) deleted" : nil,
+            ].compactMap(\.self).joined(separator: " · ")
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(percentage)
+                    .font(.system(size: 34, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(summary.scoredChanged) of \(summary.scored) kit files changed").font(.headline)
+                    if !breakdown.isEmpty {
+                        Text(breakdown).font(.callout).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Customisation \(percentage): \(summary.scoredChanged) of \(summary.scored) kit files changed. \(breakdown)")
         }
-        .frame(height: 10)
-        .accessibilityHidden(true)
     }
 
-    private func layerLegend(_ layers: [LayerCustomisation]) -> some View {
+    private func layerLegend(_ layers: [LayerCustomisation], colors: [String: Color]) -> some View {
         ForEach(layers) { layer in
-            HStack(spacing: 4) {
-                Circle().fill(layerColor(layer)).frame(width: 7, height: 7)
-                Text("\(layer.layer.capitalized) \(layer.changed)")
+            HStack(spacing: 5) {
+                Circle().fill(colors[layer.layer] ?? .gray).frame(width: 8, height: 8)
+                Text(layerTitle(layer.layer))
+                    .lineLimit(1)
+                Text("\(layer.changed)")
+                    .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
             .font(.caption)
@@ -143,65 +164,53 @@ struct CustomisationSection: View {
         }
     }
 
-    private func layerColor(_ layer: LayerCustomisation) -> Color {
-        layer.layer == ModuleMapping.base ? .blue : ModuleAppearance.color(for: layer.layer)
+    /// The module's name from the kit catalogue, falling back to its id.
+    private func layerTitle(_ layer: String) -> String {
+        if layer == ModuleMapping.base { return "Base" }
+        return model.catalogue.first { $0.id == layer }?.title ?? layer.capitalized
     }
 
     private func layerHelp(_ layer: LayerCustomisation) -> String {
-        "\(layer.layer): \(layer.edited) edited, \(layer.deleted) deleted of \(layer.scored)"
+        "\(layerTitle(layer.layer)): \(layer.edited) edited, \(layer.deleted) deleted of \(layer.scored) files"
     }
 
     @ViewBuilder
-    private func fileList(files: [InspectFile], shown: [InspectFile], hiddenExpected: Int) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text("Edited files").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            if files.isEmpty {
-                Text("No edited files to show.").font(.callout).foregroundStyle(.secondary)
-            }
-            ForEach(shown, id: \.path) { file in
-                fileRow(file)
-            }
-            if files.count > Self.collapsedCount {
-                Button(showAllFiles ? "Show fewer" : "Show all \(files.count) files") { showAllFiles.toggle() }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Color.accentColor)
-                    .font(.caption)
-            }
-            if hiddenExpected > 0 || showExpected {
-                Toggle("Include files meant to be edited (\(hiddenExpected))", isOn: $showExpected)
-                    .toggleStyle(.checkbox)
-                    .font(.caption)
-                    .padding(.top, 4)
-            }
-        }
-    }
-
-    private func fileRow(_ file: InspectFile) -> some View {
-        let isDeleted = file.status == .deleted
-        return Button {
-            Task { await model.openInVSCode(project, relativePath: file.path) }
-        } label: {
-            HStack(spacing: 8) {
-                Text(isDeleted ? "-" : "~")
-                    .font(.callout.monospaced().weight(.bold))
-                    .foregroundStyle(isDeleted ? Color.red : Color.accentColor)
-                    .frame(width: 14)
-                Text(file.path)
-                    .font(.caption.monospaced())
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if file.layer != ModuleMapping.base {
-                    Text(file.layer).font(.caption2).foregroundStyle(.secondary)
+    private func fileList(
+        files: [InspectFile], shown: [InspectFile], colors: [String: Color], hiddenExpected: Int
+    ) -> some View {
+        if files.isEmpty {
+            Text("No edited files to show.").font(.callout).foregroundStyle(.secondary)
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(shown, id: \.path) { file in
+                    EditedFileRow(
+                        file: file,
+                        layerTitle: file.layer == ModuleMapping.base ? nil : layerTitle(file.layer),
+                        layerColor: colors[file.layer] ?? .gray
+                    ) {
+                        Task { await model.openInVSCode(project, relativePath: file.path) }
+                    }
                 }
             }
-            .contentShape(.rect)
         }
-        .buttonStyle(.plain)
-        .disabled(isDeleted)
-        .help(isDeleted ? "\(file.path) was deleted" : "Open \(file.path) in VS Code")
-        .accessibilityLabel("\(isDeleted ? "Deleted" : "Edited"): \(file.path)")
-        .accessibilityHint(isDeleted ? "" : "Opens the file in VS Code")
+        if files.count > Self.collapsedCount || hiddenExpected > 0 || showExpected {
+            HStack(spacing: 12) {
+                if hiddenExpected > 0 || showExpected {
+                    Toggle("Include files meant to be edited (\(hiddenExpected))", isOn: $showExpected)
+                        .toggleStyle(.checkbox)
+                        .font(.caption)
+                }
+                Spacer(minLength: 0)
+                if files.count > Self.collapsedCount {
+                    Button(showAllFiles ? "Show Fewer" : "Show All \(files.count)") {
+                        withAnimation(.snappy) { showAllFiles.toggle() }
+                    }
+                    .buttonStyle(.glass)
+                    .controlSize(.small)
+                }
+            }
+            .padding(.top, 4)
+        }
     }
 
     /// Edited or deleted files that projects are meant to change, which the default list hides.

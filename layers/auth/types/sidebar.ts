@@ -5,6 +5,7 @@ import type { User } from '#auth-utils';
 
 export type SidebarItem = {
   title: string;
+  titleKey?: string;
   url?: string;
   icon?: Component;
   items?: SidebarItem[];

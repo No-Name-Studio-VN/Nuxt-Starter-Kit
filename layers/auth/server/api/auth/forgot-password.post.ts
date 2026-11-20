@@ -1,4 +1,4 @@
-import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
+import { apiError, success, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
 import userService from '#layers/auth/server/utils/database/user';
 import authTokenService from '#layers/auth/server/utils/database/authToken';
 import { sendPasswordResetEmail } from '#layers/auth/server/utils/email';
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
   }
 
   await authTokenService.invalidateUserTokens(user.id, AuthTokenType.PasswordReset);
-  const token = await authTokenService.createToken(user.id, AuthTokenType.PasswordReset);
+  const token = await authTokenService.createEmailBoundToken(user, AuthTokenType.PasswordReset);
   await sendPasswordResetEmail(user.email, user.username, token);
 
   return success({});

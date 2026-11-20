@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { CliError } from '../errors';
+import { noteIdSchema } from '../kit/notes';
 import type { ProjectIdentity } from '../render/render';
 import { hasSymbolicLink, pathExists, writeJsonAtomically } from '../util/fs';
 import { assertRelativePath, resolveInside } from '../util/paths';
@@ -13,6 +14,7 @@ export interface ProjectState {
   modules: string[];
   identity: ProjectIdentity;
   conflicts: string[];
+  declined?: string[];
 }
 
 export const STATE_FILE = '.nuxt-saas.json';
@@ -24,9 +26,10 @@ const stateSchema = z.object({
   modules: z.array(z.string().min(1)),
   identity: z.object({ name: z.string().min(1), description: z.string() }),
   conflicts: z.array(z.string().min(1)),
+  declined: z.array(noteIdSchema).default([]),
 });
 
-function parseState(value: unknown): ProjectState {
+function parseState(value: unknown) {
   const state = stateSchema.parse(value);
   for (const path of state.conflicts) {
     assertRelativePath(path, 'Conflict path');
@@ -35,7 +38,7 @@ function parseState(value: unknown): ProjectState {
   return state;
 }
 
-export async function readState(projectRoot: string): Promise<ProjectState> {
+export async function readState(projectRoot: string): Promise<ProjectState & { declined: string[] }> {
   const path = join(projectRoot, STATE_FILE);
   if (!(await pathExists(path))) {
     if (await pathExists(join(projectRoot, '.nuxt-saas/manifest.json'))) {
@@ -68,12 +71,23 @@ export async function writeState(projectRoot: string, state: ProjectState): Prom
       modules: [...parsed.modules].sort(),
       identity: { name: parsed.identity.name, description: parsed.identity.description },
       conflicts: parsed.conflicts,
+      ...(parsed.declined.length ? { declined: [...new Set(parsed.declined)].sort() } : {}),
     });
   } catch (error) {
     throw new CliError(
       `Unable to write ${path}: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
+}
+
+export function updateDeclined(current: string[], ids: string[], revert: boolean): string[] {
+  const declined = new Set(current);
+  for (const id of ids) {
+    if (!noteIdSchema.safeParse(id).success) throw new CliError(`Invalid change note id "${id}".`);
+    if (revert) declined.delete(id);
+    else declined.add(id);
+  }
+  return [...declined].sort();
 }
 
 export async function unresolvedConflicts(

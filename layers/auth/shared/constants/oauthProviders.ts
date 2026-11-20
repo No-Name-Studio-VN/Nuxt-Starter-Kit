@@ -1,12 +1,11 @@
-import { authRoutes } from '../authRoutes';
-import type { OAuthProviderConfig } from '../../types/auth';
+import type { OAuthProviderInfo } from '#layers/auth/types/auth';
 
-export const OAUTH_PROVIDERS: Record<string, OAuthProviderConfig> = {
-  google: {
-    id: 'google',
-    name: 'Google',
-    route: authRoutes.AUTH_GOOGLE,
-  },
-} as const;
+export const oauthProviderInfo = {
+  google: { id: 'google', name: 'Google', icon: 'google' },
+  github: { id: 'github', name: 'GitHub', icon: 'github' },
+  discord: { id: 'discord', name: 'Discord', icon: 'discord' },
+} satisfies Record<string, OAuthProviderInfo>;
 
-export const AVAILABLE_PROVIDERS = Object.values(OAUTH_PROVIDERS);
+export function getOAuthProviderInfo(id: string): OAuthProviderInfo {
+  return Object.values(oauthProviderInfo).find((provider) => provider.id === id) ?? { id, name: id, icon: id };
+}

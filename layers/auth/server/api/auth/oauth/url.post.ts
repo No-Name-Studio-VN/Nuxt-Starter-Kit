@@ -3,7 +3,8 @@ import {
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
-import { OAUTH_PROVIDERS } from '#layers/auth/shared/constants/oauthProviders';
+import { getOAuthProvider } from '#layers/auth/server/utils/oauthProviders';
+import { authRoutes } from '#layers/auth/shared/authRoutes';
 import type { OAuthUrlPayload } from '#layers/auth/types/auth';
 import { oauthUrlBodySchema } from '#layers/auth/shared/schemas/userSchema';
 
@@ -22,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
   const { provider, action, redirectTo } = result.data;
 
-  if (!Object.prototype.hasOwnProperty.call(OAUTH_PROVIDERS, provider)) {
+  if (!getOAuthProvider(provider, useRuntimeConfig())) {
     throw apiError({
       status: 400,
       statusText: 'Bad Request',
@@ -31,7 +32,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const providerConfig = OAUTH_PROVIDERS[provider];
   const params = new URLSearchParams({ popup: '1' });
   if (action === 'link') {
     params.set('action', 'link');
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     params.set('redirectTo', redirectTo);
   }
 
-  const url = `${providerConfig?.route}?${params.toString()}`;
+  const url = `${authRoutes.oauthProvider(provider)}?${params.toString()}`;
   const response: OAuthUrlPayload = { url };
   return success(response);
 });

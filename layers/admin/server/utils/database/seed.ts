@@ -36,6 +36,7 @@ async function seedAdmin(defaultAdminPassword: string): Promise<SeedAdminResult>
       name: 'Administrator',
       email: 'admin@nnsvn.me',
       password: hashedPassword,
+      passwordChangedAt: new Date(),
       emailVerified: true,
       isAdmin: true,
       createdAt: new Date(),
