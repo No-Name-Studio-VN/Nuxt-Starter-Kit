@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { DBTwoFactor } from '#layers/auth-2fa/types/twoFactor';
 import { IDatabaseService } from '#layers/database/types/db/database-service';
 import type {
@@ -48,13 +48,68 @@ class UserTwoFactorService extends IDatabaseService<DBTwoFactor> {
   /**
    * Update a user's 2FA settings
    */
-  async update(data: UserTwoFactorUpdateInput) {
+  async update(data: Pick<UserTwoFactorUpdateInput, 'userId' | 'secret' | 'enabled' | 'backupCodes'>) {
     return this.db
       .update(tables.userTwoFactor)
-      .set(data)
+      .set({ secret: data.secret, enabled: data.enabled, backupCodes: data.backupCodes })
       .where(eq(tables.userTwoFactor.userId, data.userId))
       .returning()
       .get();
+  }
+
+  async startSetup(userId: number, secret: string): Promise<boolean> {
+    const result = await this.db
+      .insert(tables.userTwoFactor)
+      .values({ userId, secret, updatedAt: null })
+      .onConflictDoUpdate({
+        target: tables.userTwoFactor.userId,
+        set: { secret },
+        setWhere: eq(tables.userTwoFactor.enabled, false),
+      })
+      .returning({ userId: tables.userTwoFactor.userId })
+      .get();
+    return result !== undefined;
+  }
+
+  async enable(userId: number, secret: string, backupCodes: string[], enabledAt: Date): Promise<boolean> {
+    const result = await this.db
+      .update(tables.userTwoFactor)
+      .set({ enabled: true, backupCodes, updatedAt: enabledAt })
+      .where(
+        and(
+          eq(tables.userTwoFactor.userId, userId),
+          eq(tables.userTwoFactor.enabled, false),
+          eq(tables.userTwoFactor.secret, secret),
+        ),
+      )
+      .returning({ userId: tables.userTwoFactor.userId })
+      .get();
+    return result !== undefined;
+  }
+
+  async replaceBackupCodes(
+    userId: number,
+    secret: string,
+    previousCodes: string[] | null,
+    backupCodes: string[],
+  ): Promise<boolean> {
+    // Do not overwrite a new setup or a newer batch of codes from a concurrent request.
+    const result = await this.db
+      .update(tables.userTwoFactor)
+      .set({ backupCodes })
+      .where(
+        and(
+          eq(tables.userTwoFactor.userId, userId),
+          eq(tables.userTwoFactor.enabled, true),
+          eq(tables.userTwoFactor.secret, secret),
+          previousCodes === null
+            ? isNull(tables.userTwoFactor.backupCodes)
+            : eq(tables.userTwoFactor.backupCodes, previousCodes),
+        ),
+      )
+      .returning({ userId: tables.userTwoFactor.userId })
+      .get();
+    return result !== undefined;
   }
 
   /**

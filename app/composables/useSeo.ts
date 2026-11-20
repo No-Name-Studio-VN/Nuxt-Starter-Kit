@@ -12,7 +12,7 @@ export function useSeo(options: UseSeoOptions) {
   const route = useRoute();
   const site = useSiteConfig();
   const { locale, locales } = useI18n();
-  const switchLocalePath = useSwitchLocalePath();
+  const switchLocalePath = useAppSwitchLocalePath();
 
   const title = computed(() => toValue(options.title));
   const description = computed(() => toValue(options.description));

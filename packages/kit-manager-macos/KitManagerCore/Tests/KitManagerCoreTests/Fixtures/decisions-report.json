@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "resolved": { "path": "session.ts", "action": "take-kit" },
+  "decisions": [
+    {
+      "path": "session.ts", "kind": "conflict", "pending": false,
+      "suggestion": { "path": "session.ts", "action": "take-kit", "reason": "The kit change is a security fix.", "notes": ["auth.session"] },
+      "notes": [{ "id": "auth.session", "module": "auth", "title": "Session cookies expire on password change", "kind": "security", "since": "3.2.0", "files": ["session.ts"] }],
+      "resolution": "take-kit", "hasKitVersion": true
+    },
+    {
+      "path": "header.ts", "kind": "keep-edited", "pending": true,
+      "suggestion": null, "notes": [], "resolution": null, "hasKitVersion": false
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import RememberedPasswordSignIn from '../components/auth/RememberedPasswordSignIn.vue';
 import '#layers/auth/types/extensions';
 import PasswordLoginForm from '#layers/auth-password/app/components/auth/PasswordLoginForm.vue';
 import SignUpLink from '#layers/auth-password/app/components/auth/SignUpLink.vue';
@@ -8,6 +9,7 @@ import {
 } from '#layers/auth-password/shared/constants/passwordMessages';
 
 export default defineNuxtPlugin(() => {
+  registerExtension('auth:login:remembered', { id: 'password', order: 100, component: RememberedPasswordSignIn });
   registerExtension('auth:login:methods', {
     id: 'password',
     order: 200,

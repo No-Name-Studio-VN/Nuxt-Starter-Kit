@@ -109,7 +109,7 @@ describe('CLI routing and commands', () => {
 
   it('lists root commands without fetching a kit', async () => {
     expect(await main(['--help'])).toBe(0);
-    for (const name of ['init', 'add', 'remove', 'upgrade', 'modules']) {
+    for (const name of ['init', 'add', 'remove', 'upgrade', 'modules', 'undo']) {
       expect(output()).toContain(name);
     }
   });
@@ -170,18 +170,18 @@ describe('CLI routing and commands', () => {
     const before = await readFile(join(project, '.nuxt-saas.json'), 'utf8');
     expect(await main(['add', 'beta', '--dir', project, '--check', ...kitArgs()])).toBe(0);
     expect(output()).toContain('Preview — nothing was written.');
-    expect(output()).toContain('layers/beta/server/db/schema.sqlite.ts');
+    expect(output()).toMatch(/New files +[1-9]/);
     expect(await readFile(join(project, '.nuxt-saas.json'), 'utf8')).toBe(before);
     expect(await pathExists(join(project, 'layers/beta'))).toBe(false);
   });
 
-  it('reports conflicts and returns 1 for an overlapping upgrade', async () => {
+  it('reports conflicts and returns 3 for an overlapping upgrade', async () => {
     await initV1();
     const home = join(project, 'app/pages/index.vue');
     await writeTextFile(home, (await readFile(home, 'utf8')).replace('Home v1', 'User home'));
-    expect(await main(['upgrade', '--dir', project, '--force', ...kitArgs()])).toBe(1);
-    expect(output()).toContain('Conflicts:');
-    expect(output()).toContain('app/pages/index.vue');
+    expect(await main(['upgrade', '--dir', project, '--force', ...kitArgs()])).toBe(3);
+    expect(output()).toContain('Needs your decision');
+    expect(output()).toContain('Backup saved');
     expect(await readFile(home, 'utf8')).toContain('<<<<<<< yours');
     expect((await readState(project)).commit).toBe(fixture.v2);
   });
@@ -231,14 +231,14 @@ describe('CLI routing and commands', () => {
     );
   });
 
-  it('previews conflicts with exit 1 without writing markers or advancing state', async () => {
+  it('previews conflicts with exit 3 without writing markers or advancing state', async () => {
     await initV1();
     const home = join(project, 'app/pages/index.vue');
     const edited = (await readFile(home, 'utf8')).replace('Home v1', 'User home');
     await writeTextFile(home, edited);
-    expect(await main(['upgrade', '--dir', project, '--check', ...kitArgs()])).toBe(1);
+    expect(await main(['upgrade', '--dir', project, '--check', ...kitArgs()])).toBe(3);
     expect(output()).toContain('Preview — nothing was written.');
-    expect(output()).toContain('Conflicts:');
+    expect(output()).toContain('Needs your decision');
     expect(await readFile(home, 'utf8')).toBe(edited);
     expect((await readState(project)).commit).toBe(fixture.v1);
   });
@@ -253,6 +253,48 @@ describe('CLI routing and commands', () => {
     } finally {
       await rm(join(fixture.root, 'untracked.txt'));
     }
+  });
+
+  it('snapshots the uncommitted kit and records the reachable commit without moving HEAD', async () => {
+    await initV1();
+    const file = join(fixture.root, 'app/pages/index.vue');
+    const original = await readFile(file, 'utf8');
+    await writeTextFile(file, original.replace('Home v2', 'Uncommitted kit home'));
+    const before = await run('git', ['-C', fixture.root, 'status', '--porcelain=v1']);
+    try {
+      expect(await main(['upgrade', '--dir', project, ...kitArgs(), '--use-uncommitted-kit'])).toBe(0);
+      expect(await readFile(join(project, 'app/pages/index.vue'), 'utf8')).toContain('Uncommitted kit home');
+      const { commit } = await readState(project);
+      const git = (args: string[]) => run('git', ['-C', fixture.root, ...args]);
+      expect((await git(['rev-parse', `refs/nuxt-saas/kit-snapshots/${commit}`])).stdout.trim()).toBe(commit);
+      expect((await git(['rev-parse', `${commit}^`, 'HEAD'])).stdout.trim().split('\n')).toEqual([fixture.v2, fixture.v2]);
+      expect((await git(['status', '--porcelain=v1'])).stdout).toBe(before.stdout);
+    } finally {
+      await writeTextFile(file, original);
+    }
+  });
+
+  it('rejects an uncommitted kit snapshot without --kit or with --to', async () => {
+    await initV1();
+    expect(await main(['upgrade', '--dir', project, '--use-uncommitted-kit'])).toBe(1);
+    expect(await main(['upgrade', '--dir', project, ...kitArgs(), '--to', 'HEAD', '--use-uncommitted-kit'])).toBe(1);
+    expect((await readState(project)).commit).toBe(fixture.v1);
+  });
+
+  it('accepts --no-backup and reports no backup for undo', async () => {
+    await initV1();
+    expect(await main(['upgrade', '--dir', project, ...kitArgs(), '--no-backup'])).toBe(0);
+    expect(output()).not.toContain('Backup saved');
+    expect(await main(['undo', '--dir', project, '--yes'])).toBe(1);
+  });
+
+  it('reports exit 3 for a conflicting module add preview and apply', async () => {
+    expect(await main(['init', project, '--yes', ...kitArgs()])).toBe(0);
+    await writeTextFile(join(project, 'layers/alpha/app/pages/alpha.vue'), 'my alpha\n');
+    expect(await main(['add', 'alpha', '--dir', project, ...kitArgs(), '--check'])).toBe(3);
+    expect(await main(['add', 'alpha', '--dir', project, ...kitArgs(), '--force'])).toBe(3);
+    expect(await main(['undo', '--dir', project, '--yes'])).toBe(0);
+    expect(await readFile(join(project, 'layers/alpha/app/pages/alpha.vue'), 'utf8')).toBe('my alpha\n');
   });
 
   it('reads modules at the recorded commit and marks installed modules', async () => {
@@ -340,7 +382,8 @@ describe('CLI routing and commands', () => {
     expect((await readState(project)).modules).toEqual([]);
     expect(await pathExists(join(project, 'layers/server-core/module.json'))).toBe(false);
     expect(await readFile(join(project, edited), 'utf8')).toBe('user code\n');
-    expect(output()).toMatch(/^= keep-edited +layers\/server-core\/server\/utils\/core\.ts$/m);
+    expect(output()).toContain('Kept your version');
+    expect(output()).toContain(`    ${edited}`);
   });
 
   it('refuses a same-major upgrade when the existing selection lacks a required choice', async () => {
@@ -366,6 +409,24 @@ describe('CLI routing and commands', () => {
       expect((await run('git', ['-C', project, 'status', '--porcelain'])).stdout).toBe('');
     } finally {
       await rm(majorKit.root, { recursive: true, force: true });
+    }
+  });
+
+  it('does not write a kit snapshot or project backup for a cross-major upgrade', async () => {
+    await initV1();
+    const packagePath = join(fixture.root, 'package.json');
+    const original = await readFile(packagePath, 'utf8');
+    const refs = () => run('git', ['-C', fixture.root, 'for-each-ref', 'refs/nuxt-saas/kit-snapshots/']);
+    const before = (await refs()).stdout;
+    try {
+      await writeTextFile(packagePath, original.replace('3.1.0', '4.0.0'));
+      expect(await main(['upgrade', '--dir', project, ...kitArgs(), '--use-uncommitted-kit', '--force'])).toBe(1);
+      expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain('before kit 4.0 split auth');
+      expect((await refs()).stdout).toBe(before);
+      expect((await run('git', ['-C', project, 'for-each-ref', 'refs/nuxt-saas/backups/'])).stdout).toBe('');
+      expect((await readState(project)).commit).toBe(fixture.v1);
+    } finally {
+      await writeTextFile(packagePath, original);
     }
   });
 
@@ -437,7 +498,8 @@ describe('interactive prompts and snapshot cleanup', () => {
   it('cleans both snapshots on an upgrade failure', async () => {
     await initV1();
     const opened = vi.spyOn(source, 'openKit');
-    await writeTextFile(join(project, 'user.txt'), 'dirty');
+    const home = join(project, 'app/pages/index.vue');
+    await writeTextFile(home, (await readFile(home, 'utf8')).replace('Home v1', 'User home'));
     expect(await main(['upgrade', '--dir', project, ...kitArgs()])).toBe(1);
     for (const result of opened.mock.results) {
       const snapshot = await result.value;

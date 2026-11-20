@@ -36,18 +36,35 @@
 </template>
 
 <script setup lang="ts">
-import { useDocsPageContent, usePageData } from '#layers/content/app/composables/usePageData';
+import {
+  useDocsNavigation,
+  useDocsPageContent,
+  usePageData,
+} from '#layers/content/app/composables/usePageData';
 
 const route = useRoute();
-const { page } = usePageData();
+const { page, navigation } = usePageData();
 
 // Seed page flags before the shell renders: the page's own fetch runs too late on
 // SSR, and the sidebar/fullpage columns would change on hydration. This runs once
 // per layout mount; on client navigation each page publishes its own content.
 // Do not watch the route here: refetching from the layout swaps the shared page
 // while <NuxtPage> is mid-transition and crashes the renderer.
-const { data: initialPage } = await useDocsPageContent(route.path);
-page.value = initialPage.value ?? null;
+const pageRequest = useDocsPageContent(route.path);
+const navigationRequest = useDocsNavigation();
+// Resolve navigation in the layout too, so server and hydration can render the same tree.
+const [{ data: initialPage }, { data: navData }] = await Promise.all([
+  pageRequest,
+  navigationRequest,
+]);
+page.value = initialPage.value?.page ?? null;
+watch(
+  navData,
+  (value) => {
+    navigation.value = value ?? [];
+  },
+  { immediate: true },
+);
 
 const config = useDocsConfig();
 const { themeClass, radius, setClassTheme } = useThemes();

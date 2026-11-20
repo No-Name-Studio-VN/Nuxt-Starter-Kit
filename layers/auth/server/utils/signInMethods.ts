@@ -1,5 +1,6 @@
+import { sql } from 'drizzle-orm';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
-import type { SignInMethod } from '#layers/auth/types/signInMethods';
+import type { SignInCredential, SignInMethod } from '#layers/auth/types/signInMethods';
 
 // Filled once by Nitro plugins; shared by every request.
 const signInMethods = new Map<string, SignInMethod>();
@@ -34,15 +35,30 @@ export async function countUserCredentials(userId: number): Promise<number> {
   return counts.reduce((total, count) => total + count, 0);
 }
 
-/** Call before deleting a credential: refuses when it is the user's only way in. */
+/** Async-only registrars cannot prove another credential exists atomically. */
+export function hasOtherSignInMethod(userId: number, excluded: SignInCredential) {
+  const counts = [...signInMethods.values()].flatMap((method) => {
+    const count = method.countCredentialsQuery?.(
+      userId,
+      method.id === excluded.methodId ? excluded.credentialId : undefined,
+    );
+    return count ? [sql`coalesce((${count}), 0)`] : [];
+  });
+  return sql`(${sql.join([sql`0`, ...counts], sql` + `)}) > 0`;
+}
+
+export function onlySignInMethodError() {
+  return apiError({
+    status: 400,
+    statusText: 'Bad Request',
+    message: 'Bad Request. This is your only way to sign in. Add another sign-in method before removing it.',
+    code: 'ONLY_SIGNIN_METHOD',
+  });
+}
+
+/** Async compatibility check; new removal paths use hasOtherSignInMethod. */
 export async function assertCanRemoveCredential(userId: number): Promise<void> {
   if ((await countUserCredentials(userId)) <= 1) {
-    throw apiError({
-      status: 400,
-      statusText: 'Bad Request',
-      message:
-        'Bad Request. This is your only way to sign in. Add another sign-in method before removing it.',
-      code: 'ONLY_SIGNIN_METHOD',
-    });
+    throw onlySignInMethodError();
   }
 }

@@ -10,6 +10,8 @@
 import { defineNuxtModule } from '@nuxt/kit';
 import { readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { defaultLocale, locales } from '../../../../i18n-constants';
+import { isContentPathWithin } from '../utils/contentPaths';
 
 /**
  * Recursively find all .md files in a directory
@@ -85,7 +87,8 @@ export default defineNuxtModule({
     // Add content routes to prerender list
     nuxt.hook('nitro:config', (nitroConfig) => {
       const markdownFiles = findMarkdownFiles(contentDir);
-      const routes: string[] = [];
+      const routes = new Set<string>();
+      const localizedPrefixes = locales.filter((locale) => locale !== defaultLocale);
 
       for (const file of markdownFiles) {
         const urlPath = contentFileToUrlPath(file, contentDir);
@@ -93,16 +96,20 @@ export default defineNuxtModule({
         // Skip empty paths
         if (!urlPath || urlPath === '/') continue;
 
-        routes.push(urlPath);
+        routes.add(urlPath);
+        if (isContentPathWithin(urlPath, '/docs') || isContentPathWithin(urlPath, '/blogs')) {
+          for (const locale of localizedPrefixes) {
+            routes.add(`/${locale}${urlPath}`);
+          }
+        }
       }
 
       // Merge with existing prerender routes
-      nitroConfig.prerender = nitroConfig.prerender || {};
-      nitroConfig.prerender.routes = nitroConfig.prerender.routes || [];
-      nitroConfig.prerender.routes.push(...routes);
+      nitroConfig.prerender ??= {};
+      nitroConfig.prerender.routes = [...new Set([...(nitroConfig.prerender.routes ?? []), ...routes])];
 
       console.log(
-        `[content-prerender] Registered ${routes.length} content routes for prerendering`,
+        `[content-prerender] Registered ${routes.size} content routes for prerendering`,
       );
       for (const route of routes) {
         console.log(`[content-prerender]   ${route}`);

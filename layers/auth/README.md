@@ -15,7 +15,8 @@ Accounts and sessions through `nuxt-auth-utils`. Auth has no sign-in method of i
 Extension points for sign-in methods and other modules:
 
 - `registerSignInMethod()` adds a way to sign in. Its `countCredentials` counts the user's ways in,
-  so removing the last one is refused through `assertCanRemoveCredential()`. A method with a secret
+  and `countCredentialsQuery` supplies a scalar SQL predicate for race-safe credential removal. An
+  async-only registration counts in the profile, but is not proof for a credential DELETE. A method with a secret
   also implements `setSecret`; other modules find it with `getSignInMethod(id)`.
 - `registerLoginPolicy()` adds a check between the proof of identity and the session, for every method or
   only the ones in `methods`. Auth's account lock runs at order 150 for every method and answers with a
@@ -28,8 +29,16 @@ Extension points for sign-in methods and other modules:
   `auth:login:footer` entries render under the methods, for example a sign-up link.
 - A matching `?step=` renders an `auth:login:steps` entry in place of the sign-in methods.
   See `types/loginSteps.ts`.
+- `settings:security:sections` accepts `SettingsSectionProps` for optional cards; the authenticated
+  settings pages are under `/settings/profile` and `/settings/security`.
+- `registerOnboardingStep()` adds an ordered server-owned setup step, and `onboarding:steps`
+  renders the matching client component. Self-registered accounts are marked pending; completing
+  or skipping onboarding clears the flag. `auth:login:remembered` hosts method-owned renderers
+  for completed session sign-ins, not pending challenges.
 - Nav menu `userMenu`, through `registerNavItem()`.
 
-Env key to fill: `NUXT_SESSION_PASSWORD` (at least 32 characters).
+Set a stable `NUXT_APP_SECRET` in each Worker or other deployment (generate with `openssl rand -base64 32`).
+`nuxt-auth-utils` 0.6 no longer uses `NUXT_SESSION_PASSWORD`; upgrading invalidates old sessions and
+users must sign in once. There is no old-secret fallback.
 
 Follow-up commands: `pnpm db:generate` to create the auth tables' migrations, then `pnpm deploy:db`.

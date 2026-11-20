@@ -7,4 +7,8 @@ export interface AuthTokenKindRegistration {
   expiresInMs: number;
 }
 
+export interface PasswordResetData {
+  oauthAccountsDisconnected: boolean;
+}
+
 export type DBAuthToken = typeof tables.authTokens.$inferSelect;

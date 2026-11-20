@@ -1,21 +1,16 @@
 import { CliError } from '../errors';
 import { resolveSelection, validateSelection } from '../kit/modules';
-import { readKitMajor, type KitSnapshot } from '../kit/source';
-import { assertCleanTree } from '../project/git';
-import { readState, unresolvedConflicts, writeState } from '../project/state';
+import { assertSameKitMajor, type KitSnapshot } from '../kit/source';
+import { readState, unresolvedConflicts } from '../project/state';
+import { assessUnsaved } from '../project/unsaved';
 import { render } from '../render/render';
-import { applyPlan } from '../transition/apply';
-import { followUpsFor } from '../transition/followUps';
 import { planTransition } from '../transition/plan';
-import type { TransitionReport } from './modules';
+import { runTransition, type SafetyOptions, type TransitionReport } from '../transition/run';
 
-export async function runUpgrade(opts: {
-  projectRoot: string;
+export async function runUpgrade(opts: SafetyOptions & {
   from: KitSnapshot;
   to: KitSnapshot;
-  check: boolean;
-  force: boolean;
-}): Promise<TransitionReport & { upToDate: boolean }> {
+}): Promise<TransitionReport> {
   const state = await readState(opts.projectRoot);
   const unresolved = await unresolvedConflicts(opts.projectRoot, state);
   if (unresolved.length > 0) {
@@ -36,53 +31,31 @@ export async function runUpgrade(opts: {
       removedModules: [],
       applied: false,
       upToDate: true,
+      unsaved: await assessUnsaved(opts.projectRoot, []),
+      backup: null,
+      report: null,
+      notes: [],
+      suggestions: [],
     };
   }
 
-  const [fromMajor, toMajor] = await Promise.all([readKitMajor(opts.from), readKitMajor(opts.to)]);
-  if (fromMajor !== toMajor) {
-    const reason =
-      fromMajor < 4 && toMajor === 4
-        ? 'This project was generated before kit 4.0 split auth into sign-in methods.'
-        : `This project was generated with kit ${fromMajor}.x and cannot upgrade to kit ${toMajor}.x.`;
-    throw new CliError(`${reason} Generate a new project and move your code across.`);
-  }
+  await assertSameKitMajor(opts.from, opts.to);
 
   const known = new Set(opts.to.modules.map((module) => module.id));
   const missing = state.modules.filter((id) => !known.has(id)).sort();
   if (missing.length > 0) {
     throw new CliError(`Installed modules missing from the target kit: ${missing.join(', ')}.`);
   }
-  const installed = new Set(state.modules);
   const modules = resolveSelection(opts.to.modules, state.modules).sort();
   validateSelection(opts.to.modules, modules);
-  if (!opts.check) await assertCleanTree(opts.projectRoot, opts.force);
 
   const base = await render(opts.from, state.modules, state.identity);
   const target = await render(opts.to, modules, state.identity);
   const plan = await planTransition(opts.projectRoot, base, target);
-  const conflicts = plan.changes
-    .filter((change) => change.kind === 'conflict')
-    .map((change) => change.path)
-    .sort();
-  const report: TransitionReport & { upToDate: boolean } = {
-    changes: plan.changes,
-    conflicts,
-    followUps: followUpsFor(base, target, plan.changes, modules),
-    addedModules: modules.filter((id) => !installed.has(id)),
-    removedModules: [],
-    applied: !opts.check,
-    upToDate: false,
-  };
-  if (opts.check) return report;
-
-  await applyPlan(opts.projectRoot, plan);
-  await writeState(opts.projectRoot, {
+  return runTransition(opts, 'upgrade', opts.from, opts.to, base, target, plan, state, {
     ...state,
     kit: opts.to.template,
     commit: opts.to.commit,
     modules,
-    conflicts,
-  });
-  return report;
+  }, false);
 }

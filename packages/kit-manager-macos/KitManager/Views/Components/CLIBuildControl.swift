@@ -13,15 +13,21 @@ struct CLIBuildControl: View {
     }
 
     var body: some View {
-        if model.isBuildingCLI {
-            HStack(spacing: 6) {
-                ProgressView().controlSize(.small)
-                Text("Building…").foregroundStyle(.secondary)
+        // One button for both states, so the glass capsule stays put while the build runs.
+        Button {
+            Task { await model.buildCLI() }
+        } label: {
+            if model.isBuildingCLI {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.mini)
+                    Text("Building…")
+                }
+            } else {
+                Text("Build CLI")
             }
-        } else {
-            Button("Build CLI") { Task { await model.buildCLI() } }
-                .buttonStyle(.glass)
-                .help("Run pnpm build in the kit folder")
         }
+        .buttonStyle(.glass)
+        .disabled(model.isBuildingCLI)
+        .help("Run pnpm build in the kit folder")
     }
 }

@@ -4,5 +4,5 @@
   "group": "Authentication",
   "parent": "auth-password",
   "requires": ["auth-password"],
-  "dependencies": ["vue-input-otp", "otpauth"]
+  "dependencies": ["vue-input-otp", "otpauth", "uqr"]
 }

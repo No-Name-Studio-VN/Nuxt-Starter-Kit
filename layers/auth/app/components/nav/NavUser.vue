@@ -18,6 +18,7 @@ import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 
 const { user, clear, loggedIn } = useUserSession();
+const localePath = useAppLocalePath();
 const { isMobile, setOpenMobile } = useSidebar();
 const emit = defineEmits<{ navigate: [] }>();
 const guardContext = useNavGuardContext();
@@ -47,7 +48,7 @@ function navigateFromSidebar(path: string) {
     setOpenMobile(false);
   }
 
-  return navigateTo(path);
+  return navigateTo(localePath(path) || path);
 }
 </script>
 
@@ -69,7 +70,7 @@ function navigateFromSidebar(path: string) {
           <AuthState>
             <template v-if="user">
               <Avatar class="size-8 rounded-lg">
-                <AvatarImage src="/images/avatar/default.png" :alt="user.name" />
+                <AvatarImage :src="user.avatarUrl || '/images/avatar/default.png'" :alt="user.name" />
                 <AvatarFallback class="rounded-lg">
                   {{ getInitials(user.name) }}
                 </AvatarFallback>
@@ -109,7 +110,7 @@ function navigateFromSidebar(path: string) {
             @click="navigateFromSidebar(item.to)"
           >
             <component :is="item.icon" />
-            {{ item.title }}
+            {{ item.titleKey ? $t(item.titleKey) : item.title }}
           </DropdownMenuItem>
         </DropdownMenuGroup>
 

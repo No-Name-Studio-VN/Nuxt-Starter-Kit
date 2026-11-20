@@ -6,6 +6,7 @@ import { defineAsyncComponent } from 'vue';
  * form renders, so other pages do not ship the WebAuthn browser client.
  */
 export default defineNuxtPlugin(() => {
+  registerExtension('auth:login:remembered', { id: 'passkey', order: 100, component: defineAsyncComponent(() => import('../components/auth/RememberedPasskeySignIn.vue')) });
   registerExtension('auth:login:alternatives', {
     id: 'passkey',
     order: 100,

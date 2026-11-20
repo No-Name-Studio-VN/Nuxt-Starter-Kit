@@ -17,6 +17,7 @@
       "env": ["NUXT_SEED_SECRET"],
       "bindings": [],
       "rootFiles": [],
+      "changes": [],
       "parent": null
     },
     {
@@ -33,7 +34,8 @@
       "scripts": [],
       "env": [],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "changes": []
     },
     {
       "id": "admin-users",
@@ -49,7 +51,8 @@
       "scripts": [],
       "env": [],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "changes": []
     },
     {
       "id": "auth",
@@ -62,9 +65,10 @@
       "dependencies": ["nuxt-auth-utils"],
       "devDependencies": [],
       "scripts": [],
-      "env": ["NUXT_SESSION_PASSWORD"],
+      "env": ["NUXT_APP_SECRET"],
       "bindings": [],
       "rootFiles": [],
+      "changes": [],
       "parent": null
     },
     {
@@ -81,7 +85,8 @@
       "scripts": [],
       "env": [],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "changes": []
     },
     {
       "id": "auth-email-verification",
@@ -97,7 +102,8 @@
       "scripts": [],
       "env": [],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "changes": []
     },
     {
       "id": "auth-oauth",
@@ -123,7 +129,8 @@
         "NUXT_OAUTH_OIDC_OPENID_CONFIG"
       ],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "changes": []
     },
     {
       "id": "auth-passkeys",
@@ -139,7 +146,8 @@
       "scripts": [],
       "env": [],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "changes": []
     },
     {
       "id": "auth-password",
@@ -155,7 +163,8 @@
       "scripts": [],
       "env": ["NUXT_TURNSTILE_SITE_KEY", "NUXT_TURNSTILE_SECRET_KEY"],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "changes": []
     },
     {
       "id": "content",
@@ -178,6 +187,7 @@
       "env": [],
       "bindings": [],
       "rootFiles": ["content/**"],
+      "changes": [],
       "parent": null
     },
     {
@@ -194,7 +204,8 @@
       "scripts": [],
       "env": ["STUDIO_GITHUB_CLIENT_ID", "STUDIO_GITHUB_CLIENT_SECRET"],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "changes": []
     },
     {
       "id": "dashboard",
@@ -210,6 +221,7 @@
       "env": [],
       "bindings": [],
       "rootFiles": [],
+      "changes": [],
       "parent": null
     },
     {
@@ -226,6 +238,7 @@
       "env": [],
       "bindings": ["DB"],
       "rootFiles": [],
+      "changes": [],
       "parent": null
     },
     {
@@ -241,6 +254,7 @@
       "env": ["NUXT_RESEND_API_KEY", "NUXT_RESEND_FROM_EMAIL"],
       "bindings": [],
       "rootFiles": [],
+      "changes": [],
       "group": null,
       "parent": null
     },
@@ -258,7 +272,8 @@
       "scripts": [],
       "env": [],
       "bindings": [],
-      "rootFiles": []
+      "rootFiles": [],
+      "changes": []
     },
     {
       "id": "pwa",
@@ -283,6 +298,7 @@
       "env": [],
       "bindings": [],
       "rootFiles": [],
+      "changes": [],
       "parent": null
     },
     {
@@ -298,6 +314,7 @@
       "env": [],
       "bindings": ["CACHE", "KV"],
       "rootFiles": [],
+      "changes": [],
       "group": null,
       "parent": null
     }

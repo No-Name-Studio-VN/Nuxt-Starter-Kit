@@ -1,9 +1,34 @@
 import { APP_MANIFEST, SEO_CONFIG } from './shared/constants/manifest';
 import { routeRules } from './shared/apiRoutes';
-import { defaultLocale, browserFallbackLocale, languageNames, locales } from './i18n-constants';
+import type { NuxtPage } from 'nuxt/schema';
+import {
+  defaultLocale,
+  browserFallbackLocale,
+  isUnprefixedPage,
+  languageNames,
+  locales,
+} from './i18n-constants';
 import { SITE_CONFIG } from './site.config';
 
+function markUnprefixedPages(pages: NuxtPage[]) {
+  for (const page of pages) {
+    // Route metadata can prefer a layout that isn't in this project's generated LayoutKey type.
+    const preferredLayout = page.meta?.preferredLayout;
+    if (typeof preferredLayout === 'string') page.meta = { ...page.meta, layout: preferredLayout };
+    if (isUnprefixedPage(page)) {
+      page.meta = { ...page.meta, i18n: false, localeIndependent: true };
+    }
+    // i18n keeps the entire subtree of a disabled parent as-is.
+    if (page.children) markUnprefixedPages(page.children);
+  }
+}
+
 export default defineNuxtConfig({
+  hooks: {
+    // Nuxt scans page meta first; i18n registers its pages:resolved hook in modules:done.
+    'pages:resolved': markUnprefixedPages,
+  },
+
   modules: [
     'nuxt-security',
     'shadcn-nuxt',
@@ -28,6 +53,7 @@ export default defineNuxtConfig({
   experimental: {
     localLayerAliases: false,
     early404: true,
+    extraPageMetaExtractionKeys: ['layout', 'preferredLayout'],
     stripNeverHydratedData: true,
     prerenderErrorPages: true,
     navigateToEarlyReturn: true,
@@ -133,7 +159,12 @@ export default defineNuxtConfig({
       // Public pages are served as static files; the Worker renders routes that
       // fail to prerender (see app/modules/worker-routes.ts). 404.html is what
       // Cloudflare serves for unknown URLs.
-      routes: ['/', '/en', '/404.html', '/robots.txt'],
+      routes: [
+        '/',
+        ...locales.filter((locale) => locale !== defaultLocale).map((locale) => `/${locale}`),
+        '/404.html',
+        '/robots.txt',
+      ],
       // A page that fails to prerender stays on the Worker and is reported by
       // app/modules/worker-routes.ts instead of failing the build.
       failOnError: false,
@@ -198,6 +229,7 @@ export default defineNuxtConfig({
     locales: locales.map((locale) => ({
       name: languageNames[locale],
       code: locale,
+      language: locale,
       file: `${locale}.json`,
     })),
   },

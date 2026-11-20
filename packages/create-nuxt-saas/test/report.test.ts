@@ -29,12 +29,13 @@ describe('reports', () => {
     }
   });
 
-  it('formats padded change rows, conflicts and follow-ups after a preview notice', () => {
+  it('separates automatically applied work and new files, then lists conflicts and follow-ups', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     printTransitionReport(
       {
         changes: [
           { kind: 'create', path: 'new.txt' },
+          { kind: 'update', path: 'updated.txt' },
           { kind: 'conflict', path: 'edited.txt' },
           { kind: 'keep-protected', path: '.env' },
         ],
@@ -43,16 +44,21 @@ describe('reports', () => {
         addedModules: [],
         removedModules: [],
         applied: false,
+        unsaved: null,
+        backup: null,
+        report: null,
+        notes: [],
+        suggestions: [],
       },
       true,
     );
     const lines = log.mock.calls.flat().join('\n');
     expect(lines.startsWith('Preview — nothing was written.')).toBe(true);
-    expect(lines).toContain('+ create         new.txt');
-    expect(lines).toContain('! conflict       edited.txt');
-    expect(lines).toContain('= keep-protected .env');
-    expect(lines.indexOf('Conflicts:')).toBeGreaterThan(lines.indexOf('keep-protected'));
-    expect(lines.indexOf('Next:')).toBeGreaterThan(lines.indexOf('Conflicts:'));
+    expect(lines).toMatch(/Applied automatically +1 file\b/);
+    expect(lines).toMatch(/Needs your decision +1 file\b/);
+    expect(lines).toMatch(/New files +1/);
+    expect(lines).toContain('edited.txt');
+    expect(lines.indexOf('Next:')).toBeGreaterThan(lines.indexOf('edited.txt'));
     expect(lines).toContain('pnpm install');
   });
 
@@ -87,6 +93,7 @@ describe('reports', () => {
       env: [],
       bindings: [],
       rootFiles: [],
+      changes: [],
     };
     printModules([module], ['core']);
     expect(log.mock.calls.flat().join('\n')).toMatch(/core.*installed.*internal/);

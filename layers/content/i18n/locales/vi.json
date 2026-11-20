@@ -2,6 +2,7 @@
   "docs": {
     "loading_navigation": "Đang tải điều hướng…",
     "loading_toc": "Đang tải mục lục…",
+    "translation_fallback": "Trang này chưa có bản dịch {requestedLanguage}. Bạn đang xem bản gốc ({fallbackLanguage}).",
     "toc": {
       "title": "Trên trang này"
     },
@@ -29,7 +30,6 @@
     "seo_description": "Chia sẻ kiến thức, hướng dẫn, và cập nhật từ No Name Studio."
   },
   "search": {
-    "title": "Tìm kiếm...",
     "document": "Tìm kiếm tài liệu..."
   },
   "nav": {
@@ -40,7 +40,6 @@
   },
   "errors": {
     "adblock": "Làm ơn hãy ủng hộ chúng tôi bằng cách tắt trình chặn quảng cáo (adblock) T.T",
-    "no_result": "Không tìm thấy kết quả.",
     "empty_page": "Trang trống",
     "not_found": {
       "description": "Trang bạn đang tìm kiếm không tồn tại. \nHãy thử tìm kiếm những gì bạn cần dưới đây.",

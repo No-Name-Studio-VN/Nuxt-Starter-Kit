@@ -5,6 +5,7 @@ const sidebarContextOverride = ref<string | null>(null);
 
 export function useSidebarContext() {
   const route = useRoute();
+  const localePath = useAppLocalePath();
   const guardContext = useNavGuardContext();
   const contexts = computed(() => getVisibleSidebarContexts(guardContext.value));
 
@@ -23,13 +24,16 @@ export function useSidebarContext() {
     }
 
     const path = route.path;
+    const matches = (match: string) => [match, localePath(match)].some(
+      (prefix) => prefix && (path === prefix || path.startsWith(`${prefix}/`)),
+    );
     return (
       contexts.value.find((ctx) => {
-        if (ctx.match !== '/' && !path.startsWith(ctx.match)) return false;
+        if (ctx.match !== '/' && !matches(ctx.match)) return false;
         if (
           ctx.match === '/' &&
           path !== '/' &&
-          contexts.value.some((c) => c.match !== '/' && path.startsWith(c.match))
+          contexts.value.some((c) => c.match !== '/' && matches(c.match))
         )
           return false;
         return true;

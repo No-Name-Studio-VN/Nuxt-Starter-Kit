@@ -1,3 +1,5 @@
+import { defineEventHandler } from 'nuxt/server';
+import { signInUsernameSchema } from '#layers/auth/shared/schemas/userSchema';
 import { getClientSafeWebAuthnResponse } from '#layers/auth-passkeys/server/utils/webauthnResponse';
 import { eq } from 'drizzle-orm';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
@@ -24,7 +26,11 @@ const handler = defineWebAuthnAuthenticateEventHandler({
     return challenge;
   },
   async allowCredentials(event, userName) {
-    const user = await userService.getByUsername(userName);
+    const result = signInUsernameSchema.safeParse(userName);
+    if (!result.success) return [];
+
+    const user = await userService.getByUsername(result.data) ??
+      (userName === result.data ? undefined : await userService.getByUsername(userName));
     if (!user) {
       return [];
     }
@@ -74,6 +80,9 @@ const handler = defineWebAuthnAuthenticateEventHandler({
         code: 'SIGN_IN_STEP_REQUIRED',
       });
     }
+
+    await useDB().update(tables.credentials).set({ lastUsedAt: new Date() })
+      .where(eq(tables.credentials.id, credential.id));
   },
 });
 

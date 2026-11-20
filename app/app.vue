@@ -3,7 +3,7 @@
   <ExtensionSlot name="app:root" />
   <NuxtLoadingIndicator :color="false" class="z-100 bg-primary/80" />
   <TooltipProvider>
-    <NuxtLayout>
+    <NuxtLayout fallback="default">
       <NuxtPage />
     </NuxtLayout>
   </TooltipProvider>

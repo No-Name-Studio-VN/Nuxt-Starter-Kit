@@ -14,10 +14,10 @@ public enum ModuleAction: String, Sendable {
 
 /// Typed wrapper around `packages/create-nuxt-saas/bin/nuxt-saas.mjs` in a kit checkout.
 public struct NuxtSaasCLI: Sendable {
-    public static let minimumVersion = "3.1.0"
+    public static let minimumVersion = "3.2.0"
 
-    private static let supportedSchema = 1
-    /// Read-only runs: `--check`, inspect and modules.
+    static let supportedSchema = 1
+    /// Read-only runs, such as inspect, modules and `--check`.
     static let commandTimeout = Duration.seconds(120)
     /// Runs that write to the project (install, merge, then `pnpm install` follow-ups) take far longer.
     static let writeTimeout = Duration.seconds(15 * 60)
@@ -84,19 +84,60 @@ public struct NuxtSaasCLI: Sendable {
         return try await execute(arguments, as: InspectReport.self)
     }
 
-    public func upgrade(project: URL, to commit: String?, source: KitSourceMode, check: Bool) async throws -> TransitionReport {
+    public func upgrade(
+        project: URL, to commit: String?, source: KitSourceMode, check: Bool, force: Bool = false, backup: Bool = true
+    ) async throws -> TransitionReport {
         if source == .local && commit == nil {
             throw CLIFailure.reported(message: "A local upgrade needs a target commit.", kind: "expected")
         }
         var arguments = ["upgrade", "--json", "--dir", project.path] + kitArguments(for: source)
         if let commit { arguments += ["--to", commit] }
-        if check { arguments.append("--check") }
-        return try await execute(arguments, as: TransitionReport.self, timeout: check ? Self.commandTimeout : Self.writeTimeout)
+        return try await transition(arguments, check: check, force: force, backup: backup)
     }
 
-    public func changeModules(_ action: ModuleAction, ids: [String], project: URL, check: Bool) async throws -> TransitionReport {
-        var arguments = [action.rawValue, ids.joined(separator: ","), "--json", "--dir", project.path] + localKitArguments
+    public func changeModules(
+        _ action: ModuleAction, ids: [String], project: URL, check: Bool, force: Bool = false, backup: Bool = true
+    ) async throws -> TransitionReport {
+        let arguments = [action.rawValue, ids.joined(separator: ","), "--json", "--dir", project.path] + localKitArguments
+        return try await transition(arguments, check: check, force: force, backup: backup)
+    }
+
+    public func undo(project: URL, check: Bool) async throws -> UndoReport {
+        try await undo(project: project, check: check, backup: nil)
+    }
+
+    public func undo(project: URL, check: Bool, backup name: String?) async throws -> UndoReport {
+        var arguments = ["undo", "--json", "--dir", project.path, check ? "--check" : "--yes"]
+        if let name { arguments += ["--backup", name] }
+        return try await execute(arguments, as: UndoReport.self, timeout: check ? Self.commandTimeout : Self.writeTimeout)
+    }
+
+    public func backups(project: URL) async throws -> BackupList {
+        try await execute(["undo", "--list", "--json", "--dir", project.path], as: BackupList.self)
+    }
+
+    public func decisions(project: URL) async throws -> DecisionsReport {
+        try await execute(["resolve", "--json", "--dir", project.path], as: DecisionsReport.self)
+    }
+
+    public func resolve(project: URL, path: String, action: ResolutionAction, decline: Bool) async throws -> DecisionsReport {
+        var arguments = ["resolve", path, "--\(action.rawValue)"]
+        if decline { arguments.append("--decline") }
+        arguments += ["--json", "--dir", project.path]
+        return try await execute(arguments, as: DecisionsReport.self, timeout: Self.writeTimeout)
+    }
+
+    public func decline(project: URL, ids: [String], revert: Bool) async throws -> DeclineReport {
+        var arguments = ["decline", ids.joined(separator: ","), "--json", "--dir", project.path]
+        if revert { arguments.append("--revert") }
+        return try await execute(arguments, as: DeclineReport.self, timeout: Self.writeTimeout)
+    }
+
+    private func transition(_ arguments: [String], check: Bool, force: Bool, backup: Bool) async throws -> TransitionReport {
+        var arguments = arguments
         if check { arguments.append("--check") }
+        if force { arguments.append("--force") }
+        if !backup { arguments.append("--no-backup") }
         return try await execute(arguments, as: TransitionReport.self, timeout: check ? Self.commandTimeout : Self.writeTimeout)
     }
 
@@ -132,7 +173,7 @@ public struct NuxtSaasCLI: Sendable {
         let error: Failure?
     }
 
-    /// Exit code 1 is not itself a failure: a conflicted upgrade exits 1 with a normal report.
+    /// Trust the JSON envelope, not the exit code: a conflicted upgrade exits 3 with a normal report.
     static func decode<Report: Decodable>(_ result: ProcessResult, as type: Report.Type) throws -> Report {
         let decoder = JSONDecoder()
         let stderr = text(result.stderr)

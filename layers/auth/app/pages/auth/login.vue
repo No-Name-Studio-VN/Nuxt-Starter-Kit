@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { ArrowLeft } from '@lucide/vue';
+import { useEventListener } from '@vueuse/core';
+import { Skeleton } from '@/components/ui/skeleton';
+import { forgetLastSignIn, getLastSignInStorage, LAST_SIGN_IN_KEY, readLastSignIn } from '#layers/auth/app/utils/lastSignIn';
+import { getQueryString, safeRedirectPath } from '#layers/auth/app/utils/safeRedirect';
+import type { LastSignIn, LastSignInMode } from '#layers/auth/types/lastSignIn';
 import {
   getAuthErrorMessage,
   getAuthSuccessMessage,
@@ -13,17 +19,46 @@ const error = ref('');
 const success = ref('');
 const { t } = useI18n();
 
-function safeRedirectPath(value: string, baseUrl: string) {
-  try {
-    const parsed = new URL(value, baseUrl);
-    if (parsed.origin !== baseUrl) {
-      return '/';
-    }
+const lastSignIn = shallowRef<LastSignIn | null>(null);
+const mounted = ref(false);
+const signInMode = ref<LastSignInMode>('auto');
+const signInPanel = useTemplateRef<HTMLElement>('signInPanel');
+const rememberedMethod = computed(() => {
+  if (signInMode.value !== 'auto' || error.value || success.value) return undefined;
+  return getExtensions('auth:login:remembered').find((entry) => entry.id === lastSignIn.value?.method);
+});
 
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return '/';
-  }
+function refreshLastSignIn() {
+  lastSignIn.value = readLastSignIn(getLastSignInStorage());
+}
+
+useEventListener('storage', (event: StorageEvent) => {
+  if (event.key === LAST_SIGN_IN_KEY && event.storageArea === getLastSignInStorage()) refreshLastSignIn();
+});
+
+onMounted(() => {
+  refreshLastSignIn();
+  mounted.value = true;
+});
+
+async function showFullForm() {
+  signInMode.value = 'form';
+  await nextTick();
+  const target = signInPanel.value?.querySelector<HTMLElement>('input[autocomplete="username"]')
+    ?? signInPanel.value?.querySelector<HTMLElement>('button');
+  target?.focus({ preventScroll: true });
+}
+
+function forgetDevice() {
+  forgetLastSignIn(getLastSignInStorage());
+  lastSignIn.value = null;
+  void showFullForm();
+}
+
+async function returnToLastSignIn() {
+  signInMode.value = 'auto';
+  await nextTick();
+  signInPanel.value?.querySelector<HTMLElement>('[data-last-sign-in-continue]')?.focus({ preventScroll: true });
 }
 
 definePageMeta({
@@ -40,7 +75,7 @@ useSeo({
 });
 
 const redirectTo = computed(() =>
-  safeRedirectPath(getQueryString(route.query.redirectTo) || '/', requestUrl.origin),
+  safeRedirectPath(route.query.redirectTo, '/', requestUrl.origin),
 );
 
 /**
@@ -53,7 +88,7 @@ const activeLoginStep = computed(() => {
 });
 
 function completeLogin(redirect: string) {
-  window.location.href = safeRedirectPath(redirect, requestUrl.origin);
+  window.location.href = safeRedirectPath(redirect, '/', requestUrl.origin);
 }
 
 function leaveLoginStep() {
@@ -129,23 +164,56 @@ watch(
         <AlertDescription>{{ error }}</AlertDescription>
       </Alert>
 
-      <ExtensionSlot
-        name="auth:login:methods"
-        mode="login"
-        :redirect-to="redirectTo"
-        :pending="isLoading"
-        @done="completeLogin"
-        @pending="onMethodPending"
-        @error="onMethodError"
-      >
-        <div role="status" class="space-y-1 text-sm text-muted-foreground">
-          <p>{{ $t('auth.no_sign_in_methods') }}</p>
-          <p v-if="isDev">{{ $t('auth.no_sign_in_methods_hint') }}</p>
-        </div>
-        <template #between>
-          <AuthMethodDivider />
+      <div ref="signInPanel" class="flex flex-col gap-4">
+        <Skeleton v-if="!mounted && !error && !success" class="min-h-52 motion-reduce:animate-none" aria-hidden="true" />
+        <component
+          :is="rememberedMethod.component"
+          v-else-if="rememberedMethod && lastSignIn"
+          :key="rememberedMethod.id"
+          :record="lastSignIn"
+          :redirect-to="redirectTo"
+          :pending="isLoading"
+          @done="completeLogin"
+          @pending="onMethodPending"
+          @error="onMethodError"
+          @alternate="showFullForm"
+          @forget="forgetDevice"
+          @unavailable="showFullForm"
+          @continue-password="signInMode = 'password'"
+        />
+        <template v-else>
+          <Button
+            v-if="signInMode === 'password' && lastSignIn?.method === 'password'"
+            type="button"
+            variant="ghost"
+            size="sm"
+            class="self-start text-muted-foreground motion-reduce:transition-none"
+            :disabled="isLoading"
+            @click="returnToLastSignIn"
+          >
+            <ArrowLeft aria-hidden="true" />
+            {{ $t('common.back') }}
+          </Button>
+          <ExtensionSlot
+            name="auth:login:methods"
+            mode="login"
+            :remembered-username="signInMode === 'password' ? lastSignIn?.username : undefined"
+            :redirect-to="redirectTo"
+            :pending="isLoading"
+            @done="completeLogin"
+            @pending="onMethodPending"
+            @error="onMethodError"
+          >
+            <div role="status" class="space-y-1 text-sm text-muted-foreground">
+              <p>{{ $t('auth.no_sign_in_methods') }}</p>
+              <p v-if="isDev">{{ $t('auth.no_sign_in_methods_hint') }}</p>
+            </div>
+            <template #between>
+              <AuthMethodDivider />
+            </template>
+          </ExtensionSlot>
         </template>
-      </ExtensionSlot>
+      </div>
 
       <div class="space-y-3">
         <ExtensionSlot name="auth:login:footer" />

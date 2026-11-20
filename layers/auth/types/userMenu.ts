@@ -5,6 +5,7 @@ export interface UserMenuRecord {
   id: string;
   order: number;
   title: string;
+  titleKey?: string;
   to: string;
   icon: Component;
   guard?: NavGuard;

@@ -69,20 +69,10 @@ struct ModulesSection: View {
         } header: {
             Text("Modules")
         } footer: {
-            VStack(alignment: .leading, spacing: 4) {
-                if let dirty = snapshot.git?.dirtyCount, dirty > 0 {
-                    Label {
-                        Text("\(dirty) unsaved \(dirty == 1 ? "change" : "changes"). You can preview a module change, but must commit or stash your changes before applying it.")
-                    } icon: {
-                        Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
-                    }
-                    .font(.callout)
-                }
-                if model.catalogue.isEmpty {
-                    Text("Module descriptions and available modules load once the nuxt-saas CLI is ready.")
-                } else {
-                    Text("\(available.count) more available")
-                }
+            if model.catalogue.isEmpty {
+                Text("Module descriptions and available modules load once the nuxt-saas CLI is ready.")
+            } else {
+                Text("\(available.count) more available")
             }
         }
     }

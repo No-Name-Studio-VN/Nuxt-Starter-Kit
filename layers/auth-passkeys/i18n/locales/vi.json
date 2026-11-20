@@ -1,0 +1,50 @@
+{
+  "auth": {
+    "passkey": {
+      "sign_in": "Đăng nhập bằng khóa truy cập",
+      "username_required": "Nhập tên người dùng để đăng nhập bằng khóa truy cập.",
+      "sign_in_failed": "Không thể đăng nhập bằng khóa truy cập. Hãy thử lại hoặc đăng nhập bằng mật khẩu.",
+      "last_sign_in": "{'@'}{username} · Khóa truy cập"
+    }
+  },
+  "settings": {
+    "passkeys": {
+      "title": "Khóa truy cập",
+      "last_used_on": "Dùng lần cuối ngày {date}",
+      "unavailable": "Không khả dụng",
+      "pending": "Đang tải…",
+      "count": "{count} khóa truy cập",
+      "description": "Đăng nhập bằng Touch ID, Windows Hello hoặc khóa bảo mật — không cần mật khẩu.",
+      "loading": "Đang tải khóa truy cập…",
+      "load_failed": "Không thể tải khóa truy cập của bạn.",
+      "empty": "Bạn chưa thêm khóa truy cập nào.",
+      "created_on": "Đã thêm ngày {date}",
+      "add": "Thêm khóa truy cập",
+      "add_description": "Làm theo hướng dẫn của trình duyệt để tạo khóa truy cập cho tài khoản này.",
+      "added": "Đã thêm khóa truy cập.",
+      "add_failed": "Không thể thêm khóa truy cập. Vui lòng thử lại.",
+      "add_canceled": "Chưa tạo khóa truy cập. Hãy thử lại khi bạn sẵn sàng.",
+      "already_registered": "Thiết bị xác thực này đã có khóa truy cập cho tài khoản.",
+      "unsupported": "Trình duyệt hoặc thiết bị này không hỗ trợ khóa truy cập tại đây.",
+      "missing_username": "Hãy đặt tên người dùng trước khi thêm khóa truy cập.",
+      "skip": "Bỏ qua lúc này",
+      "remove": "Xóa khóa truy cập",
+      "remove_named": "Xóa khóa truy cập: {name}",
+      "remove_title": "Xóa khóa truy cập này?",
+      "remove_description": "Sau khi xóa, bạn sẽ không thể dùng {name} để đăng nhập.",
+      "removed": "Đã xóa khóa truy cập.",
+      "remove_failed": "Không thể xóa khóa truy cập. Vui lòng thử lại.",
+      "not_found": "Khóa truy cập này đã bị xóa.",
+      "only_sign_in": "Hãy thêm phương thức đăng nhập khác trước khi xóa khóa truy cập cuối cùng.",
+      "only_sign_in_note": "Phương thức đăng nhập duy nhất của bạn",
+      "names": {
+        "default": "Khóa truy cập",
+        "usb": "Khóa bảo mật (USB)",
+        "nfc": "Khóa bảo mật (NFC)",
+        "ble": "Khóa bảo mật (Bluetooth)",
+        "internal": "Sinh trắc học trên thiết bị",
+        "hybrid": "Khóa truy cập liên thiết bị"
+      }
+    }
+  }
+}

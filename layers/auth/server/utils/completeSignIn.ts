@@ -1,4 +1,5 @@
-import type { H3Event } from 'h3';
+import { setCompletedSignIn } from '#layers/auth/server/utils/sessionUser';
+import type { SignInRequestEvent } from '#layers/auth/types/loginPolicies';
 import type { User } from '#layers/auth/types/auth';
 import type { LoginPolicyOutcome } from '#layers/auth/types/loginPolicies';
 import type { CompleteSignInOptions, SignInEvidence } from '#layers/auth/types/signInMethods';
@@ -13,9 +14,9 @@ import { apiError } from '#layers/server-core/server/utils/apiResponse';
  * answers in its own transport.
  */
 export async function completeSignIn(
-  event: H3Event,
+  event: SignInRequestEvent,
   user: User,
-  { method, redirectTo, ...methodEvidence }: CompleteSignInOptions,
+  { method, redirectTo, beforeFinish, ...methodEvidence }: CompleteSignInOptions,
 ): Promise<LoginPolicyOutcome> {
   const outcome = await runLoginPolicies({ event, user, method, redirectTo });
   if (outcome.kind === 'respond' || outcome.kind === 'deny') {
@@ -32,6 +33,7 @@ export async function completeSignIn(
     });
   }
 
+  await beforeFinish?.();
   await finishSignIn(event, { user, method, ...methodEvidence });
   return outcome;
 }
@@ -41,7 +43,7 @@ export async function completeSignIn(
  * held by a policy step (a second factor) finishes here once the step passes,
  * so the hook and `lastLoginAt` run once per sign-in.
  */
-export async function finishSignIn(event: H3Event, evidence: SignInEvidence): Promise<void> {
+export async function finishSignIn(event: SignInRequestEvent, evidence: SignInEvidence): Promise<void> {
   await useNitroApp().hooks.callHook('auth:signed-in', evidence);
 
   // The returned row includes what the hook changed, e.g. a newly granted isAdmin.
@@ -55,13 +57,5 @@ export async function finishSignIn(event: H3Event, evidence: SignInEvidence): Pr
     });
   }
 
-  await setUserSession(event, {
-    user: {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      isAdmin: user.isAdmin,
-      skipLockOnInit: true, // Bypass lock screen initial check on fresh login
-    },
-  });
+  await setCompletedSignIn(event, user, evidence);
 }

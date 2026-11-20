@@ -1,29 +1,15 @@
 import { CliError } from '../errors';
 import { dependentsOf, resolveSelection, validateSelection } from '../kit/modules';
 import type { KitSnapshot } from '../kit/source';
-import { assertCleanTree } from '../project/git';
-import { readState, unresolvedConflicts, writeState } from '../project/state';
+import { readState, unresolvedConflicts } from '../project/state';
 import { render } from '../render/render';
-import { applyPlan } from '../transition/apply';
-import { followUpsFor } from '../transition/followUps';
-import { planTransition, type FileChange } from '../transition/plan';
+import { planTransition } from '../transition/plan';
+import { runTransition, type SafetyOptions, type TransitionReport } from '../transition/run';
 
-export interface TransitionReport {
-  changes: FileChange[];
-  conflicts: string[];
-  followUps: string[];
-  addedModules: string[];
-  removedModules: string[];
-  applied: boolean;
-}
-
-export async function runModuleChange(opts: {
-  projectRoot: string;
+export async function runModuleChange(opts: SafetyOptions & {
   add: string[];
   remove: string[];
   kit: KitSnapshot;
-  check: boolean;
-  force: boolean;
 }): Promise<TransitionReport> {
   const state = await readState(opts.projectRoot);
   const unresolved = await unresolvedConflicts(opts.projectRoot, state);
@@ -68,26 +54,9 @@ export async function runModuleChange(opts: {
     if (!(error instanceof CliError) || removed.size === 0) throw error;
     throw new CliError(`Can't remove ${opts.remove.join(', ')}: ${error.message}`);
   }
-  if (!opts.check) await assertCleanTree(opts.projectRoot, opts.force);
 
   const base = await render(opts.kit, state.modules, state.identity);
   const target = await render(opts.kit, modules, state.identity);
   const plan = await planTransition(opts.projectRoot, base, target);
-  const conflicts = plan.changes
-    .filter((change) => change.kind === 'conflict')
-    .map((change) => change.path)
-    .sort();
-  const report: TransitionReport = {
-    changes: plan.changes,
-    conflicts,
-    followUps: followUpsFor(base, target, plan.changes, modules),
-    addedModules: modules.filter((id) => !installed.has(id)),
-    removedModules: state.modules.filter((id) => !modules.includes(id)).sort(),
-    applied: !opts.check,
-  };
-  if (opts.check) return report;
-
-  await applyPlan(opts.projectRoot, plan);
-  await writeState(opts.projectRoot, { ...state, modules, conflicts });
-  return report;
+  return runTransition(opts, opts.remove.length ? 'remove' : 'add', opts.kit, opts.kit, base, target, plan, state, { ...state, modules });
 }

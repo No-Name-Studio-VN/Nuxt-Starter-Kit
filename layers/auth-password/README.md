@@ -9,7 +9,7 @@ Username and password sign-in for auth, with Cloudflare Turnstile on its forms.
   hashes and saves a new password. Other modules set passwords through
   `getSignInMethod('password')?.setSecret` without importing this layer.
 - `POST /api/auth/login-password`, `/register-password`, `/forgot-password` and `/reset-password`, and
-  `PATCH /api/users/:id/password` to change the signed-in user's password. Sign-in finishes through
+  `PATCH /api/users/:id/password` to set an initial password or change it with proof of the old one. Sign-in finishes through
   auth's `completeSignIn()` with `method: 'password'`. A refused sign-in, such as a locked account,
   returns to `/auth/login?error=<code>`.
 - The `/auth/register`, `/auth/forgot-password` and `/auth/reset-password` pages. The password form in
@@ -22,7 +22,10 @@ Username and password sign-in for auth, with Cloudflare Turnstile on its forms.
   the new account goes next. Email verification uses it.
 - The password reset email, sent through the email layer.
 
-A user without a password, such as one who signed up with OAuth, can set one through forgot-password.
+Recovery links are bound to the address at issuance. Old unbound links must be reissued. Resetting a
+password verifies the mailbox and, if the local address was not verified before the reset, disconnects
+existing OAuth accounts in the same write batch. Signed-in users can set an initial password from
+Security settings without using the recovery flow.
 
 Env keys to fill: `NUXT_TURNSTILE_SITE_KEY` and `NUXT_TURNSTILE_SECRET_KEY`. Configure email delivery in
 the email layer.

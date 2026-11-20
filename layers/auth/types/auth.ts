@@ -20,6 +20,8 @@ export interface SessionUser {
   username: string;
   name: string;
   isAdmin: boolean;
+  onboardingPending: boolean;
+  avatarUrl?: string;
   skipLockOnInit?: boolean;
 }
 

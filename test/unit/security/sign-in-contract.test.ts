@@ -41,6 +41,8 @@ beforeEach(async () => {
       id INTEGER PRIMARY KEY, username TEXT NOT NULL, name TEXT NOT NULL,
       email TEXT NOT NULL, email_verified INTEGER DEFAULT 0,
       is_admin INTEGER DEFAULT 0, is_locked INTEGER DEFAULT 0,
+      onboarding_pending INTEGER NOT NULL DEFAULT 0,
+      onboarding_completed_steps TEXT NOT NULL DEFAULT '[]',
       last_login_at INTEGER, created_at INTEGER, updated_at INTEGER
     );
   `);
@@ -192,7 +194,14 @@ describe('completeSignIn', () => {
     expect(outcome).toEqual({ kind: 'continue' });
     expect(evidence).toMatchObject([{ method: 'oauth', oauth, user: { id: 1 } }]);
     expect(setUserSession).toHaveBeenCalledExactlyOnceWith(event, {
-      user: { id: 1, username: 'member', name: 'Member', isAdmin: true, skipLockOnInit: true },
+      user: {
+        id: 1, username: 'member', name: 'Member', isAdmin: true, skipLockOnInit: true,
+        onboardingPending: false, avatarUrl: '',
+      },
+      loginMethod: 'oauth',
+      loginProvider: '',
+      signedInAt: expect.any(Number),
+      loginMethodAt: expect.any(Number),
     });
     expect((await getUser()).lastLoginAt).toBeInstanceOf(Date);
   });

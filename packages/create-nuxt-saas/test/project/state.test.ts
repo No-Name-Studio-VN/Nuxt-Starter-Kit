@@ -41,7 +41,7 @@ describe('project state', () => {
       identity: { name: 'my-app', description: 'My project' },
       conflicts: [],
     };
-    expect(await readState(root)).toEqual(expected);
+    expect(await readState(root)).toEqual({ ...expected, declined: [] });
     const first = await readFile(join(root, STATE_FILE), 'utf8');
     expect(first).toBe(`${JSON.stringify(expected, null, 2)}\n`);
     await writeState(root, {
@@ -106,23 +106,24 @@ describe('project state', () => {
 });
 
 describe('unresolvedConflicts', () => {
-  it('returns only listed files still containing a line beginning with an opening marker', async () => {
+  it('returns only listed files with conflict markers, even if the opening marker was deleted', async () => {
     await writeTextFile(
       join(root, 'open.txt'),
       'intro\n<<<<<<< yours\nlocal\n=======\nkit\n>>>>>>> kit\n',
     );
     await writeTextFile(join(root, 'crlf.txt'), 'intro\r\n<<<<<<< yours\r\n');
+    await writeTextFile(join(root, 'partial.txt'), 'intro\nlocal\n||||||| kit (old)\nbase\n=======\nkit\n>>>>>>> kit (new)\n');
     await writeTextFile(
       join(root, 'resolved.txt'),
-      'text <<<<<<< inline\n <<<<<<< indented\n<<<<<<<\n>>>>>>> kit\n',
+      'text <<<<<<< inline\n <<<<<<< indented\n=======\n',
     );
     await writeTextFile(join(root, 'unlisted.txt'), '<<<<<<< yours\n');
     expect(
       await unresolvedConflicts(root, {
         ...state,
-        conflicts: ['open.txt', 'resolved.txt', 'deleted.txt', 'crlf.txt'],
+        conflicts: ['open.txt', 'resolved.txt', 'deleted.txt', 'crlf.txt', 'partial.txt'],
       }),
-    ).toEqual(['open.txt', 'crlf.txt']);
+    ).toEqual(['open.txt', 'crlf.txt', 'partial.txt']);
   });
 
   it('does not inspect conflict files through symlinks', async () => {

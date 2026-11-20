@@ -6,6 +6,7 @@ import { promisify } from 'node:util';
 import { downloadTemplate } from 'giget';
 import { z } from 'zod';
 import { CliError } from '../errors';
+import { git } from '../git/snapshot';
 import { cleanupOnTermination } from '../util/terminationCleanup';
 import { readKitConfig } from './config';
 import { readKitModules, type KitModule } from './modules';
@@ -42,14 +43,13 @@ export function parseTemplate(template: string): { repo: string; ref: string } {
 export async function resolveCommit(source: KitSource): Promise<string> {
   if (source.kind === 'local') {
     try {
-      const { stdout: status } = await run('git', ['-C', source.path, 'status', '--porcelain']);
+      const status = await git(source.path, ['status', '--porcelain']);
       if (status.trim() && !source.allowDirty) {
         throw new CliError(
           `Kit at ${source.path} has uncommitted changes. Commit them or use --allow-dirty-kit.`,
         );
       }
-      const { stdout } = await run('git', ['-C', source.path, 'rev-parse', 'HEAD']);
-      const commit = stdout.trim();
+      const commit = (await git(source.path, ['rev-parse', 'HEAD'])).trim();
       if (!shaPattern.test(commit))
         throw new CliError(`Invalid commit returned by kit at ${source.path}.`);
       return commit;
@@ -96,7 +96,7 @@ const kitPackageSchema = z.object({
   version: z.string().regex(/^(?:0|[1-9]\d*)\.\d+\.\d+(?:[-+][\w.+-]+)?$/),
 });
 
-export async function readKitMajor(kit: KitSnapshot): Promise<number> {
+async function readKitMajor(kit: Pick<KitSnapshot, 'dir' | 'commit'>): Promise<number> {
   try {
     const parsed: unknown = JSON.parse(await readFile(join(kit.dir, 'package.json'), 'utf8'));
     const { version } = kitPackageSchema.parse(parsed);
@@ -106,6 +106,19 @@ export async function readKitMajor(kit: KitSnapshot): Promise<number> {
       `Unable to read the kit version in package.json at ${kit.commit}: ${errorMessage(error)}`,
     );
   }
+}
+
+export async function assertSameKitMajor(
+  from: Pick<KitSnapshot, 'dir' | 'commit'>,
+  to: Pick<KitSnapshot, 'dir' | 'commit'>,
+): Promise<void> {
+  const [fromMajor, toMajor] = await Promise.all([readKitMajor(from), readKitMajor(to)]);
+  if (fromMajor === toMajor) return;
+  const reason =
+    fromMajor < 4 && toMajor === 4
+      ? 'This project was generated before kit 4.0 split auth into sign-in methods.'
+      : `This project was generated with kit ${fromMajor}.x and cannot upgrade to kit ${toMajor}.x.`;
+  throw new CliError(`${reason} Generate a new project and move your code across.`);
 }
 
 export async function openKit(
@@ -138,9 +151,7 @@ export async function openKit(
       try {
         const archive = join(archiveDir, 'kit.tar');
         try {
-          await run('git', [
-            '-C',
-            source.path,
+          await git(source.path, [
             'archive',
             '--format=tar',
             '--output',

@@ -1,5 +1,5 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-import { relations } from 'drizzle-orm';
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { relations, sql } from 'drizzle-orm';
 
 const timestampColumns = {
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()), // Auto-set on create
@@ -14,9 +14,14 @@ export const users = sqliteTable('users', {
   emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
   isLocked: integer('is_locked', { mode: 'boolean' }).notNull().default(false),
+  onboardingPending: integer('onboarding_pending', { mode: 'boolean' }).notNull().default(false),
+  onboardingCompletedSteps: text('onboarding_completed_steps', { mode: 'json' })
+    .$type<string[]>()
+    .notNull()
+    .default([]),
   lastLoginAt: integer('last_login_at', { mode: 'timestamp' }), // Can be null if never logged in
   ...timestampColumns,
-});
+}, (table) => [index('users_email_lower_idx').on(sql`lower(${table.email})`)]);
 
 export const userLockScreen = sqliteTable('user_lock_screen', {
   userId: integer('user_id')

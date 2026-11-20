@@ -4,16 +4,14 @@ import type {
   LoginPolicyOutcome,
 } from '#layers/auth/types/loginPolicies';
 
+import { createOrderedRegistry } from '#layers/server-core/server/utils/orderedRegistry';
+
 // Filled once by Nitro plugins; shared by every request.
-const loginPolicies = new Map<string, LoginPolicy>();
+const loginPolicies = createOrderedRegistry<LoginPolicy>('Login policy');
 
 /** Throws when the id is taken, so no module can silently replace another's policy. */
 export function registerLoginPolicy(policy: LoginPolicy): void {
-  if (loginPolicies.has(policy.id)) {
-    throw new Error(`Login policy "${policy.id}" is already registered.`);
-  }
-
-  loginPolicies.set(policy.id, policy);
+  loginPolicies.register(policy);
 }
 
 /**
@@ -22,9 +20,7 @@ export function registerLoginPolicy(policy: LoginPolicy): void {
  * host does not know, is returned at once. A policy that throws fails the sign-in.
  */
 export async function runLoginPolicies(ctx: LoginPolicyContext): Promise<LoginPolicyOutcome> {
-  const policies = [...loginPolicies.values()]
-    .filter((policy) => !policy.methods || policy.methods.includes(ctx.method))
-    .sort((a, b) => a.order - b.order);
+  const policies = loginPolicies.list().filter((policy) => !policy.methods || policy.methods.includes(ctx.method));
 
   for (const policy of policies) {
     const outcome = await policy.run(ctx);

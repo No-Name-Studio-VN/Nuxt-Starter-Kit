@@ -1,6 +1,6 @@
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
 import userService from '#layers/auth/server/utils/database/user';
-import { listUserSignInMethods } from '#layers/auth/server/utils/signInMethods';
+import { getSignInMethod, listUserSignInMethods } from '#layers/auth/server/utils/signInMethods';
 import type { UserProfileModel } from '#layers/auth/types/models/profile';
 
 export async function getUserProfileById(userId: number): Promise<UserProfileModel> {
@@ -15,6 +15,8 @@ export async function getUserProfileById(userId: number): Promise<UserProfileMod
     });
   }
 
+  const password = getSignInMethod('password');
+
   return {
     id: dbUser.id,
     username: dbUser.username,
@@ -24,6 +26,7 @@ export async function getUserProfileById(userId: number): Promise<UserProfileMod
     createdAt: dbUser.createdAt || new Date(),
     lastLoginAt: dbUser.lastLoginAt || dbUser.createdAt || new Date(),
     isAdmin: dbUser.isAdmin,
+    passwordChangedAt: await password?.getCredentialUpdatedAt?.(userId),
     signInMethods: await listUserSignInMethods(userId),
   };
 }

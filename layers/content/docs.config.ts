@@ -4,7 +4,7 @@ export const DOCS_CONFIG = {
   headerNav: [
     {
       title: 'nav.docs',
-      to: '/docs',
+      to: '/docs/getting-started/introduction',
       target: '_self',
       showLinkIcon: false,
     },

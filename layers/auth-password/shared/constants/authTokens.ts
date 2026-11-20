@@ -1,5 +1,6 @@
 export enum AuthTokenType {
   PasswordReset = 'password_reset',
+  EmailVerification = 'email_verification',
 }
 
 /** Password reset token expires in 1 hour */

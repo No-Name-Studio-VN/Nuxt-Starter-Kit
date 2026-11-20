@@ -1,52 +1,58 @@
 <script setup lang="ts">
-import { Button } from '@/components/ui/button';
-import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import ResponsiveDialog from '@/components/ResponsiveDialog.vue';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Fingerprint, Shield, Smartphone, CheckCircle, X } from '@lucide/vue';
+import { Fingerprint } from '@lucide/vue';
+import type { PasskeyRegistrationProps } from '#layers/auth-passkeys/types/passkeyRegistration';
+import { parseApiError } from '#layers/server-core/app/utils/apiError';
 
-interface Props {
-  open: boolean;
-  username: string;
-}
-
-const props = defineProps<Props>();
-
+const props = defineProps<PasskeyRegistrationProps>();
 const emit = defineEmits<{
   'update:open': [value: boolean];
   'passkey-created': [];
   'skip-passkey': [];
 }>();
 
-const { register } = useWebAuthn();
-const isLoading = ref(false);
-const error = ref('');
-const success = ref(false);
+const { t } = useI18n();
+const { register, isSupported } = useWebAuthn({ registerEndpoint: props.registerEndpoint });
+const isLoading = shallowRef(false);
+const errorKey = shallowRef('');
+
+watch(() => props.open, () => {
+  errorKey.value = '';
+});
+
+function updateOpen(open: boolean) {
+  if (!isLoading.value) emit('update:open', open);
+}
 
 async function createPasskey() {
+  if (isLoading.value || !isSupported.value) return;
   if (!props.username.trim()) {
-    error.value = 'Username is required';
+    errorKey.value = 'settings.passkeys.missing_username';
     return;
   }
 
   isLoading.value = true;
-  error.value = '';
+  errorKey.value = '';
 
   try {
-    // Use the WebAuthn register flow - modified to handle existing users
-    await register({
+    const verified = await register({
       userName: props.username,
-      displayName: props.username, // Use username as display name
+      displayName: props.displayName?.trim() || props.username,
     });
-
-    success.value = true;
-    setTimeout(() => {
-      emit('passkey-created');
-      emit('update:open', false);
-    }, 2000);
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Failed to create passkey';
-    error.value = errorMessage;
+    if (!verified) {
+      errorKey.value = 'settings.passkeys.add_failed';
+      return;
+    }
+    emit('passkey-created');
+    emit('update:open', false);
+  } catch (error) {
+    const { code } = parseApiError(error);
+    if (code === 'PASSKEY_ALREADY_EXISTS' || code === 'ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED') {
+      errorKey.value = 'settings.passkeys.already_registered';
+    } else if (error instanceof Error && (error.name === 'NotAllowedError' || error.name === 'AbortError')) {
+      errorKey.value = 'settings.passkeys.add_canceled';
+    } else {
+      errorKey.value = 'settings.passkeys.add_failed';
+    }
   } finally {
     isLoading.value = false;
   }
@@ -56,80 +62,39 @@ function skipPasskey() {
   emit('skip-passkey');
   emit('update:open', false);
 }
-
-function closeDialog() {
-  if (!isLoading.value) {
-    emit('update:open', false);
-  }
-}
 </script>
 
 <template>
-  <ResponsiveDialog :open="open" content-class="sm:max-w-md" @update:open="closeDialog">
-    <DialogHeader>
-      <DialogTitle class="flex items-center gap-2">
-        <Shield class="size-5" />
-        Secure Your Account
-      </DialogTitle>
-      <DialogDescription>
-        Create a passkey for faster and more secure authentication
-      </DialogDescription>
-    </DialogHeader>
-
-    <Alert v-if="error" variant="destructive" class="mb-4">
-      <AlertDescription>{{ error }}</AlertDescription>
-    </Alert>
-
-    <Alert v-if="success" class="mb-4">
-      <CheckCircle class="size-4" />
-      <AlertDescription>Passkey created successfully!</AlertDescription>
-    </Alert>
-
-    <div v-if="!success" class="space-y-6">
-      <div class="text-center space-y-4">
-        <div class="mx-auto size-16 bg-primary/10 rounded-full flex items-center justify-center">
-          <Fingerprint class="size-8 text-primary" />
-        </div>
-
-        <div class="space-y-2">
-          <h3 class="font-medium">What is a passkey?</h3>
-          <p class="text-sm text-muted-foreground">
-            A passkey is a secure, passwordless way to sign in using your device's biometric
-            authentication (fingerprint, face recognition) or security key.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 text-sm">
-          <div class="space-y-2">
-            <div class="flex items-center justify-center size-8 bg-green-100 rounded-full mx-auto">
-              <Shield class="size-4 text-green-600" />
-            </div>
-            <p class="text-center">More Secure</p>
-          </div>
-          <div class="space-y-2">
-            <div class="flex items-center justify-center size-8 bg-blue-100 rounded-full mx-auto">
-              <Smartphone class="size-4 text-blue-600" />
-            </div>
-            <p class="text-center">Faster Login</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="space-y-3">
-        <Button class="w-full" :is-loading="isLoading" @click="createPasskey">
-          <Fingerprint class="size-4" />
-          Create Passkey
+  <Dialog :open="open" @update:open="updateOpen">
+    <DialogTrigger v-if="$slots.trigger" as-child>
+      <slot name="trigger" />
+    </DialogTrigger>
+    <DialogContent
+      :show-close-button="false"
+      class="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md"
+      @escape-key-down="(event) => { if (isLoading) event.preventDefault(); }"
+      @interact-outside="(event) => { if (isLoading) event.preventDefault(); }"
+    >
+      <DialogHeader>
+        <DialogTitle>{{ t('settings.passkeys.add') }}</DialogTitle>
+        <DialogDescription>{{ t('settings.passkeys.add_description') }}</DialogDescription>
+      </DialogHeader>
+      <Alert v-if="errorKey || !isSupported" variant="destructive" role="alert">
+        <AlertDescription>{{ t(errorKey || 'settings.passkeys.unsupported') }}</AlertDescription>
+      </Alert>
+      <DialogFooter>
+        <DialogClose v-if="registerEndpoint" as-child>
+          <Button type="button" variant="outline" :disabled="isLoading">{{ t('settings.cancel') }}</Button>
+        </DialogClose>
+        <Button v-else type="button" variant="outline" :disabled="isLoading" @click="skipPasskey">
+          {{ t('settings.passkeys.skip') }}
         </Button>
-
-        <Button variant="ghost" class="w-full" :disabled="isLoading" @click="skipPasskey">
-          <X class="size-4" />
-          Skip for Now
+        <Button type="button" :disabled="isLoading || !isSupported" @click="createPasskey">
+          <Spinner v-if="isLoading" data-icon="inline-start" aria-hidden="true" />
+          <Fingerprint v-else data-icon="inline-start" aria-hidden="true" />
+          {{ t('settings.passkeys.add') }}
         </Button>
-      </div>
-
-      <p class="text-xs text-muted-foreground text-center">
-        You can create a passkey later in your account settings.
-      </p>
-    </div>
-  </ResponsiveDialog>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

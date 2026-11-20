@@ -7,19 +7,21 @@ export interface OidcOAuthResult {
     sub?: unknown;
     email?: unknown;
     name?: unknown;
+    email_verified?: unknown;
     preferred_username?: unknown;
     picture?: unknown;
   };
 }
 
 export interface GoogleOAuthResult {
-  user: { sub?: unknown; email?: unknown; name?: unknown; picture?: unknown };
+  user: { sub?: unknown; email?: unknown; email_verified?: unknown; hd?: unknown; name?: unknown; picture?: unknown };
 }
 
 export interface DiscordOAuthResult {
   user: {
     id?: unknown;
     email?: unknown;
+    verified?: unknown;
     global_name?: unknown;
     username?: unknown;
     avatar?: unknown;

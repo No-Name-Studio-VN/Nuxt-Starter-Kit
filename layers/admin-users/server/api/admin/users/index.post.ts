@@ -1,3 +1,6 @@
+import userService from '#layers/auth/server/utils/database/user';
+import { isConstraintFailure } from '#layers/auth/server/utils/database/isConstraintFailure';
+import { emailAlreadyInUseError } from '#layers/auth/server/utils/emailAlreadyInUseError';
 import { adminUserCreateSchema } from '#layers/admin-users/shared/schemas/adminUserSchema';
 import { getSignInMethod } from '#layers/auth/server/utils/signInMethods';
 import {
@@ -32,7 +35,13 @@ export default defineEventHandler(async (event) => {
   }
 
   const { password, ...userData } = result.data;
-  const newUser = await passwordMethod.createWithSecret(userData, password);
+  if (await userService.getByEmail(userData.email)) throw emailAlreadyInUseError();
+  const newUser = await passwordMethod.createWithSecret(userData, password).catch((error: unknown) => {
+    if (isConstraintFailure(error, 'UNIQUE constraint failed: users.email')) {
+      throw emailAlreadyInUseError();
+    }
+    throw error;
+  });
 
   const response: AdminUserModel = {
     id: newUser.id,

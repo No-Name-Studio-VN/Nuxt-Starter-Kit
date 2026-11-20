@@ -17,6 +17,25 @@ function findInNavigation(
   return null;
 }
 
+function firstNavigablePath(item: NavigationItem): string | undefined {
+  if (typeof item.redirect === 'string' && item.redirect !== item.path) return item.redirect;
+  if (item.page !== false) return item.path;
+  for (const child of item.children ?? []) {
+    const path = firstNavigablePath(child);
+    if (path) return path;
+  }
+  return undefined;
+}
+
+// i18n cannot localize unnamed redirect-only records, or folders with no index page.
+export function navTargetFromPath(
+  path: string,
+  navigation: NavigationItem[] | null | undefined,
+): string {
+  const item = navigation && findInNavigation(navigation, path);
+  return (item && firstNavigablePath(item)) || path;
+}
+
 /**
  * Find a navigation item by path and return a specific key value.
  */

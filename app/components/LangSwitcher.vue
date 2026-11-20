@@ -1,7 +1,12 @@
 <template>
   <DropdownMenu v-if="dropdownType === 'select'">
     <DropdownMenuTrigger as-child>
-      <Button variant="ghost" :size="triggerType === 'icon' ? 'icon' : 'sm'" class="uppercase">
+      <Button
+        variant="ghost"
+        :size="triggerType === 'icon' ? 'icon' : 'sm'"
+        class="uppercase"
+        :aria-label="$t('common.lang')"
+      >
         <LanguagesIcon v-if="triggerType === 'icon'" :size="18" />
         <span v-else>{{ $t('common.lang') }}</span>
       </Button>
@@ -25,7 +30,7 @@
 
   <Popover v-else>
     <PopoverTrigger as-child>
-      <Button variant="ghost" size="icon" class="uppercase">
+      <Button variant="ghost" size="icon" class="uppercase" :aria-label="$t('common.lang')">
         <LanguagesIcon :size="18" />
       </Button>
     </PopoverTrigger>
@@ -62,7 +67,7 @@
 
 <script setup lang="ts">
 import { LanguagesIcon } from '@lucide/vue';
-import { breakpointsTailwind, useBreakpoints, useLocalStorage } from '@vueuse/core';
+import { breakpointsTailwind, useBreakpoints } from '@vueuse/core';
 
 withDefaults(
   defineProps<{
@@ -75,42 +80,12 @@ withDefaults(
   },
 );
 
-const { locale: i18nLocale, locales, setLocale } = useI18n();
+const { locale: currentLocale, locales, setLocale } = useI18n();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const isDesktop = breakpoints.greaterOrEqual('md');
 
-// 1. Optimized Persistence: useLocalStorage handles the JSON parse/stringify & SSR hydration
-const storedLocale = useLocalStorage('ticketrush:locale', i18nLocale.value);
-
-// 2. Computed-like getter for current locale to ensure template reactivity
-const currentLocale = computed(() => i18nLocale.value);
-
-/**
- * 3. Unified Update Function
- * Nuxt i18n setLocale is asynchronous. We sync our local storage after.
- */
-type LocaleCode = (typeof locales.value)[number]['code'];
-
-/** Narrows a stored or clicked code to one i18n actually knows about. */
-function knownLocale(code: string): LocaleCode | undefined {
-  return locales.value.find((entry) => entry.code === code)?.code;
-}
-
 async function updateLocale(code: string) {
-  if (currentLocale.value === code) return;
-
-  const target = knownLocale(code);
-  if (!target) return;
-
-  await setLocale(target);
-  storedLocale.value = target;
+  const target = locales.value.find((entry) => entry.code === code)?.code;
+  if (target && target !== currentLocale.value) await setLocale(target);
 }
-
-// 4. Sync on Init: Check if stored locale differs from default i18n state
-onMounted(() => {
-  if (storedLocale.value && storedLocale.value !== i18nLocale.value) {
-    const target = knownLocale(storedLocale.value);
-    if (target) setLocale(target);
-  }
-});
 </script>

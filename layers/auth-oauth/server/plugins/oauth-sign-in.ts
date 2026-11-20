@@ -1,3 +1,4 @@
+import { signInAvatarUrlSchema } from '#layers/auth/shared/schemas/lastSignInSchema';
 import { registerSignInMethod } from '#layers/auth/server/utils/signInMethods';
 import { getOAuthReadiness } from '../oauth/readiness';
 import oauthAccountService from '../utils/database/oauthAccount';
@@ -28,6 +29,17 @@ export default defineNitroPlugin(() => {
 
   registerSignInMethod({
     id: 'oauth',
+    countCredentialsQuery: (userId, exclude) =>
+      oauthAccountService.countCredentialsQuery(userId, getOAuthReadiness(useRuntimeConfig()).ready, exclude),
+    buildUnverifiedEmailResetCleanup: (userId, redeemable) =>
+      oauthAccountService.buildUnverifiedEmailResetCleanup(userId, redeemable),
+    async resolveSessionPresentation(evidence) {
+      if (evidence.method === 'oauth') {
+        return { provider: evidence.oauth?.provider, avatarUrl: evidence.oauth?.avatarUrl };
+      }
+      const accounts = await oauthAccountService.getByUserId(evidence.user.id);
+      return { avatarUrl: accounts.find((account) => signInAvatarUrlSchema.safeParse(account.avatarUrl).success)?.avatarUrl };
+    },
     countCredentials: (userId) =>
       oauthAccountService.countByUserId(userId, getOAuthReadiness(useRuntimeConfig()).ready),
   });

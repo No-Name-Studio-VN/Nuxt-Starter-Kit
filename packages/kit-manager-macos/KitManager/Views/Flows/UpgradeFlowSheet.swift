@@ -11,6 +11,9 @@ struct UpgradeFlowSheet: View {
 
     @State private var phase: UpgradeFlowPhase = .review
     @State private var branchName: String?
+    @State private var backsUp = true
+    @State private var showsRiskFiles = false
+    @State private var isRefreshingPreview = true
     /// Why the last "Switch back" failed; the button stays so it can be retried.
     @State private var rollbackError: PresentedError?
     /// Why "Resolve with Claude" could not open Terminal; the button stays so it can be retried.
@@ -33,28 +36,37 @@ struct UpgradeFlowSheet: View {
                 content
             }
             .formStyle(.grouped)
-            .frame(height: formHeight)
+            .disclosureGroupStyle(.row)
+            .defaultScrollAnchor(.top, for: .sizeChanges)
+            .frame(height: min(formHeight, max(280, (NSScreen.main?.visibleFrame.height ?? 800) - 105)))
             Divider()
             footer.padding(20)
         }
         .frame(width: 540)
         .interactiveDismissDisabled(isBusy)
-        .task {
+        .task(id: model.latestMain) {
+            guard case .review = phase else { return }
             branchName = await model.proposedUpgradeBranch(for: project)
-            switch snapshot?.preview {
-            case .idle, .failed: await model.loadPreview(project)
-            case .loading, .loaded, nil: break
-            }
+            await refreshPreview()
         }
     }
 
     private var formHeight: CGFloat {
         switch phase {
-        case .review: snapshot?.preview.value?.changes.isEmpty == false ? 380 : 310
+        case .review:
+            if reviewedReport?.riskSummary?.detail != nil { showsRiskFiles ? 730 : 610 }
+            else { reviewedReport == nil ? 320 : 460 }
         case .finished(.applied): 380
         case .finished(.launched), .finished(.failed): 240
         case .running, .rollingBack, .rolledBack: 140
         }
+    }
+
+    private var reviewedReport: TransitionReport? {
+        guard !isRefreshingPreview, case .loaded(let report, stale: false) = snapshot?.preview,
+            report.from == snapshot?.kitState?.commit, report.to == model.latestMain
+        else { return nil }
+        return report
     }
 
     // MARK: Content
@@ -70,10 +82,20 @@ struct UpgradeFlowSheet: View {
                     branchDetails(update: branchName, previous: snapshot?.git?.branch)
                 }
             } header: {
-                Text("Update with Claude").accessibilityAddTraits(.isHeader)
+                Text(model.targetLabel.map { "Update to Kit \($0.trimmingPrefix("v"))" } ?? "Kit Update")
+                    .accessibilityAddTraits(.isHeader)
             }
-            Section("Preview (nothing is changed yet)") {
-                preview
+            if let report = reviewedReport, report.upToDate != true {
+                Section {
+                    TransitionBackupToggle(backsUp: $backsUp, hasUnsaved: (report.unsaved?.total ?? 0) > 0)
+                }
+                Section("Preview (nothing is changed yet)") {
+                    TransitionGroupedCounts(counts: report.groupedCounts)
+                }
+            } else {
+                Section("Preview (nothing is changed yet)") {
+                    preview
+                }
             }
         case .running:
             Section("Kit Update") {
@@ -102,7 +124,15 @@ struct UpgradeFlowSheet: View {
             Image(systemName: "arrow.right").foregroundStyle(.secondary).accessibilityLabel("to")
             Text(model.targetLabel ?? "—")
                 .fontWeight(.medium)
+            if let counts = reviewedReport?.groupedCounts {
+                Spacer(minLength: 8)
+                let changed = counts.appliedAutomatically
+                Text("\(changed) \(changed == 1 ? "file changes" : "files change") · \(counts.newFiles) new")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var preconditionRow: some View {
@@ -118,9 +148,17 @@ struct UpgradeFlowSheet: View {
             } else if model.cliStatus != .ready {
                 Label("Build the nuxt-saas CLI first.", systemImage: "xmark.octagon.fill")
                     .foregroundStyle(Color.red)
-            } else if currentPreview != nil {
-                Label("Ready to update. Your project has no conflicts or unsaved changes.", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(Color.green)
+            } else if let report = reviewedReport {
+                if let risk = report.riskSummary, let unsaved = report.unsaved, risk.risky > 0 {
+                    TransitionRiskReview(summary: risk, files: unsaved.risky, showsFiles: $showsRiskFiles)
+                } else {
+                    Label {
+                        Text(report.riskSummary?.title ?? "Ready to update.")
+                    } icon: {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
             }
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -129,7 +167,7 @@ struct UpgradeFlowSheet: View {
     private var preconditionIndicator: (symbol: String, tone: StatusTone) {
         switch precondition {
         case .upToDate: ("checkmark.circle.fill", .positive)
-        case .dirtyTree, .notKitV3: ("exclamationmark.circle.fill", .warning)
+        case .notKitV3: ("exclamationmark.circle.fill", .warning)
         case .unresolvedConflicts: ("xmark.octagon.fill", .critical)
         default: ("info.circle", .neutral)
         }
@@ -151,7 +189,6 @@ struct UpgradeFlowSheet: View {
         case .notOnMain: "This project's kit version cannot be updated here."
         case .kitUnavailable: "Can't reach the latest kit. Check the kit folder in Settings."
         case .noBranch: "Switch to a branch before updating."
-        case .dirtyTree: "Commit or stash your changes first."
         case .upToDate: "Already up to date with the latest kit."
         case .ready: nil
         }
@@ -183,21 +220,44 @@ struct UpgradeFlowSheet: View {
 
     @ViewBuilder
     private var preview: some View {
-        switch snapshot?.preview ?? .idle {
-        case .idle:
-            Text("No preview yet.").foregroundStyle(.secondary)
-        case .loading:
+        if isRefreshingPreview {
             progress("Previewing update…")
-        case .failed(let message):
-            FailureView(message: message)
-        case .loaded(let report, let stale):
-            TransitionReportSummary(report: report)
-            if stale {
+        } else {
+            switch snapshot?.preview ?? .idle {
+            case .idle:
+                Text("No preview yet.").foregroundStyle(.secondary)
+            case .loading:
+                progress("Previewing update…")
+            case .failed(let message):
+                FailureView(message: message)
+                previewAgain
+            case .loaded(_, true):
                 Label("Computed for an earlier state of the project.", systemImage: "clock")
-                    .font(.caption)
                     .foregroundStyle(.secondary)
+                previewAgain
+            case .loaded(_, false):
+                if reviewedReport?.upToDate == true {
+                    Text("Nothing to update.").foregroundStyle(.secondary)
+                } else {
+                    Label("Computed for an earlier state of the project.", systemImage: "clock")
+                        .foregroundStyle(.secondary)
+                    previewAgain
+                }
             }
         }
+    }
+
+    private var previewAgain: some View {
+        Button("Preview Again", systemImage: "arrow.clockwise") { Task { await refreshPreview() } }
+            .buttonStyle(.glass)
+            .disabled(model.cliStatus != .ready)
+    }
+
+    private func refreshPreview() async {
+        isRefreshingPreview = true
+        defer { isRefreshingPreview = false }
+        guard model.canUpgrade(project) else { return }
+        await model.loadPreview(project)
     }
 
     private func progress(_ text: String) -> some View {
@@ -231,7 +291,7 @@ struct UpgradeFlowSheet: View {
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("Some files conflict with your changes. Resolve them with Claude, or by hand. Nothing is committed.")
+                    Text("Some files conflict with your changes. Review them in Last Update or resolve them with Claude. Nothing is committed.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -260,30 +320,21 @@ struct UpgradeFlowSheet: View {
 
     // MARK: Footer
 
-    private var currentPreview: TransitionReport? {
-        guard case .loaded(let report, stale: false) = snapshot?.preview,
-            report.from == snapshot?.kitState?.commit, report.to == model.latestMain
-        else { return nil }
-        return report
+    private var canUpgrade: Bool {
+        guard let report = reviewedReport, report.upToDate != true else { return false }
+        return model.canUpgrade(project)
     }
-
-    private var canUpgrade: Bool { model.canUpgrade(project) && currentPreview != nil }
 
     private var confirmHelp: String {
         if let preconditionHelp { return preconditionHelp }
         if model.cliStatus != .ready { return "Build the nuxt-saas CLI first" }
-        if currentPreview == nil { return "A current update preview is required" }
+        guard let report = reviewedReport else { return "A current update preview is required" }
+        if report.upToDate == true { return "Already up to date with the latest kit" }
         return "Create the branch, apply the update and open Claude"
     }
 
     /// The branch the app created and the one it started from, read from the model, not the snapshot.
     private var rollbackRecord: UpgradeBranchRecord? { model.rollbackRecord(for: project) }
-
-    /// A loaded, current preview with nothing for Claude to do.
-    private var isPlainUpgrade: Bool {
-        guard let report = currentPreview else { return false }
-        return report.conflicts.isEmpty && report.followUps.isEmpty
-    }
 
     @ViewBuilder
     private var footer: some View {
@@ -292,11 +343,9 @@ struct UpgradeFlowSheet: View {
             case .review:
                 secondaryButton("Cancel", role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
                 Spacer()
-                if isPlainUpgrade {
-                    secondaryButton("Update only") { start(withClaude: false) }
-                        .disabled(!canUpgrade)
-                        .help("Apply the update without opening Claude")
-                }
+                secondaryButton("Update only") { start(withClaude: false) }
+                    .disabled(!canUpgrade)
+                    .help("Apply the update without opening Claude")
                 Button {
                     start(withClaude: true)
                 } label: {
@@ -341,12 +390,13 @@ struct UpgradeFlowSheet: View {
     // MARK: Actions
 
     private func start(withClaude: Bool) {
-        guard canUpgrade else { return }
+        guard canUpgrade, let report = reviewedReport else { return }
         rollbackError = nil
         resolveError = nil
         phase = .running
+        let backup = backsUp
         Task {
-            phase = .finished(await model.runUpgrade(project, withClaude: withClaude))
+            phase = .finished(await model.runUpgrade(project, withClaude: withClaude, reviewed: report, backup: backup))
         }
     }
 

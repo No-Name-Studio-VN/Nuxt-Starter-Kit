@@ -4,10 +4,49 @@
     "popup_description": "Vui lòng đợi trong khi chúng tôi hoàn tất đăng nhập cho bạn.",
     "continue_with": "Tiếp tục với {provider}",
     "sign_up_with": "Đăng ký với {provider}",
-    "invalid_response": "Đăng nhập đã hoàn tất nhưng URL phản hồi không hợp lệ. Vui lòng thử lại.",
-    "popup_blocked": "Cửa sổ đăng nhập đã bị chặn.",
-    "popup_timed_out": "Cửa sổ đăng nhập đã hết thời gian chờ. Vui lòng thử lại.",
-    "email_in_use": "Email này đã được sử dụng. Hãy đăng nhập bằng phương thức bạn đã dùng trước đây.",
-    "cannot_continue": "Hiện không thể tiếp tục với nhà cung cấp này. Vui lòng thử lại."
+    "invalid_response": "Phản hồi xác thực không hợp lệ. Vui lòng thử lại.",
+    "popup_blocked": "Cửa sổ đăng nhập đã bị chặn. Hãy cho phép cửa sổ bật lên rồi thử lại.",
+    "popup_timed_out": "Phiên đăng nhập đã hết thời gian chờ. Vui lòng thử lại.",
+    "email_in_use": "Địa chỉ email này đã được sử dụng. Hãy đăng nhập bằng phương thức hiện tại, nhập mã xác thực nếu được yêu cầu, rồi kết nối nhà cung cấp này trong Cài đặt → Bảo mật.",
+    "cannot_continue": "Hiện không thể tiếp tục với nhà cung cấp này. Vui lòng thử lại.",
+    "last_sign_in_provider": "Đã đăng nhập bằng {provider}",
+    "email_missing": "Nhà cung cấp này không chia sẻ địa chỉ email. Hãy thử phương thức đăng nhập khác. Nếu đã có tài khoản, hãy đăng nhập và kết nối nhà cung cấp này trong Cài đặt → Bảo mật.",
+    "provider_conflict": "Tài khoản của bạn đã kết nối với một tài khoản khác từ nhà cung cấp này. Hãy đăng nhập bằng phương thức hiện tại, nhập mã xác thực nếu được yêu cầu, rồi quản lý các tài khoản đã kết nối trong Cài đặt → Bảo mật.",
+    "unavailable": "Không thể tải danh sách nhà cung cấp đăng nhập. Vui lòng thử lại sau."
+  },
+  "settings": {
+    "connected": {
+      "title": "Tài khoản đã kết nối",
+      "only_sign_in_note": "Phương thức đăng nhập duy nhất của bạn",
+      "count": "{count} đã kết nối",
+      "description": "Đăng nhập bằng tài khoản bạn đang sử dụng.",
+      "empty": "Không có nhà cung cấp đăng nhập nào khả dụng.",
+      "loading": "Đang tải nhà cung cấp đăng nhập…",
+      "load_failed": "Không thể tải danh sách nhà cung cấp.",
+      "link": "Kết nối",
+      "linking": "Đang kết nối…",
+      "link_provider": "Kết nối tài khoản {provider}",
+      "link_failed": "Kết nối không thành công",
+      "linked": "Đã kết nối",
+      "linked_on": "Đã kết nối ngày {date}",
+      "linked_description": "Bây giờ bạn có thể đăng nhập bằng {provider}.",
+      "updated_description": "Đã cập nhật các phương thức đăng nhập của bạn.",
+      "not_connected": "Chưa kết nối",
+      "start_failed": "Không thể bắt đầu kết nối. Vui lòng thử lại.",
+      "unlink": "Ngắt kết nối",
+      "unlink_provider": "Ngắt kết nối tài khoản {provider}",
+      "unlink_title": "Ngắt kết nối tài khoản?",
+      "unlink_description": "Bạn sẽ không thể đăng nhập bằng {provider} cho đến khi kết nối lại.",
+      "unlink_failed": "Không thể ngắt kết nối tài khoản này. Vui lòng thử lại.",
+      "only_sign_in": "Hãy thêm phương thức đăng nhập khác trước khi ngắt liên kết tài khoản này.",
+      "callback": {
+        "oauth-linked": "Đã kết nối tài khoản",
+        "oauth-unlinked": "Đã ngắt kết nối tài khoản",
+        "oauth-already-linked": "Tài khoản của nhà cung cấp này đã được kết nối với người dùng khác.",
+        "oauth-already-connected": "Bạn đã kết nối một tài khoản của nhà cung cấp này.",
+        "oauth-error": "Không thể kết nối tài khoản. Vui lòng thử lại.",
+        "not-authenticated": "Hãy đăng nhập lại trước khi kết nối tài khoản."
+      }
+    }
   }
 }

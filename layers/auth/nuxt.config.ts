@@ -14,6 +14,13 @@ const dashboardRouteRules = Object.fromEntries(
     .map((path) => [path, dashboardAuthRule]),
 );
 
+const privateAccountPageRule = {
+  ssr: false,
+  prerender: false,
+  robots: false,
+  headers: { 'Cache-Control': 'private, no-store' },
+} satisfies NonNullable<NuxtConfig['routeRules']>[string];
+
 export default defineNuxtConfig({
   modules: ['nuxt-auth-utils'],
 
@@ -26,23 +33,22 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     session: {
-      password: '',
-      // Without maxAge the session cookie is written with no Expires, so it only
-      // lives as long as the browsing session. Desktop browsers keep (and restore)
-      // that, but mobile browsers and the standalone PWA drop it every time the OS
-      // kills the process, logging mobile users out constantly.
-      // Counted from login, not from last activity: h3 never refreshes createdAt,
-      // so this is an absolute lifetime rather than a sliding window.
+      // Persist the session across browser and PWA restarts.
       maxAge: 60 * 60 * 24 * 30, // 30 days
     },
   },
 
-  routeRules: dashboardRouteRules,
+  routeRules: {
+    ...dashboardRouteRules,
+    '/settings': privateAccountPageRule,
+    '/settings/**': privateAccountPageRule,
+    '/onboarding': privateAccountPageRule,
+  },
 
   nitro: {
     prerender: {
       // Sign-in pages are rendered per request on the Worker.
-      ignore: ['/auth/**'],
+      ignore: ['/auth/**', '/settings', '/settings/**', '/onboarding'],
     },
     typescript: {
       tsConfig: {

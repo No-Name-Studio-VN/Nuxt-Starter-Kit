@@ -18,7 +18,8 @@
     "color": "Màu",
     "copy": {
       "success": "Đã sao chép vào bảng nhớ tạm"
-    }
+    },
+    "back": "Quay lại"
   },
   "customizer": {
     "radius": "Bán kính",
@@ -43,5 +44,11 @@
     "maintenance": "Bảo trì & Hỗ trợ",
     "copyright": "© {year} No Name Studio. Bảo lưu mọi quyền.",
     "made_in": "Chế tác tại Việt Nam"
+  },
+  "search": {
+    "title": "Tìm kiếm..."
+  },
+  "errors": {
+    "no_result": "Không tìm thấy kết quả."
   }
 }

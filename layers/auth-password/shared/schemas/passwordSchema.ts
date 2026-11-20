@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { requiredStringSchema } from '#shared/schemas/common';
-import { emailSchema, usernameSchema } from '#layers/auth/shared/schemas/userSchema';
+import { emailFieldSchema } from '#shared/schemas/common';
+import { emailSchema, signInUsernameSchema, userNameSchema, usernameSchema } from '#layers/auth/shared/schemas/userSchema';
 
 /**
  * Enhanced password complexity validation
@@ -33,7 +33,7 @@ export const registerUserSchema = z
   .object({
     username: usernameSchema,
     email: emailSchema,
-    name: requiredStringSchema('validation.name_required'),
+    name: userNameSchema,
     password: passwordComplexitySchema,
     'confirm-password': z.string().min(1, 'validation.password_confirm_required'),
     'cf-turnstile-response': z.string().min(1, 'validation.token_required'),
@@ -48,9 +48,8 @@ export const registerUserSchema = z
  * Schema for changing password (shared between frontend form and API route).
  * Validates current password, new password complexity, and confirmation match.
  */
-export const changePasswordSchema = z
+export const setPasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, 'validation.current_password_required'),
     newPassword: passwordComplexitySchema,
     confirmPassword: z.string().min(1, 'validation.new_password_confirm_required'),
   })
@@ -59,22 +58,27 @@ export const changePasswordSchema = z
     path: ['confirmPassword'],
   });
 
+export const changePasswordSchema = setPasswordSchema.safeExtend({
+  currentPassword: z.string().min(1, 'validation.current_password_required'),
+});
+
+export type SetPasswordInput = z.infer<typeof setPasswordSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
 export const loginSchema = z.object({
-  username: z.string().min(1, 'validation.username_required'),
+  username: signInUsernameSchema,
   password: z.string().min(1, 'validation.password_required'),
   'cf-turnstile-response': z.string(),
   'redirect-to': z.string().optional(),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.email(),
+  email: emailFieldSchema(),
   'cf-turnstile-response': z.string().min(1),
 });
 
 export const forgotPasswordFormSchema = z.object({
-  email: z.email('Please enter a valid email address'),
+  email: emailFieldSchema('Please enter a valid email address'),
 });
 
 export const resetPasswordSchema = z

@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "commit": "a23456789abcdef00123456789abcdef00123456",
+  "kit": "github:No-Name-Studio-VN/Nuxt-Starter-Kit",
+  "modules": ["auth"],
+  "identity": { "name": "acme", "description": "Acme app" },
+  "conflicts": { "recorded": [], "unresolved": [] },
+  "files": [{ "path": "header.ts", "status": "edited", "layer": "auth", "expected": false }],
+  "summary": { "total": 1, "unchanged": 0, "edited": 1, "deleted": 0, "protected": 0, "expected": 0, "scored": 1, "scoredChanged": 1 },
+  "features": {
+    "missing": [{ "id": "auth.menu", "module": "auth", "title": "Account & Settings in the user menu", "kind": "feature", "since": "3.2.0", "files": ["header.ts"], "outcome": "kept", "affected": ["header.ts"] }],
+    "declined": ["base.declined"]
+  }
+}

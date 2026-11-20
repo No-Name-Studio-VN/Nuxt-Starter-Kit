@@ -59,6 +59,15 @@ struct KitManagerApp: App {
     /// Falls back to an in-memory store so the app still opens when the on-disk one is unreadable.
     private static func makeContainer() -> (ModelContainer, String?) {
         do {
+            #if DEBUG
+            if let folder = DebugLaunchOptions.projectFolder {
+                let memory = ModelConfiguration(isStoredInMemoryOnly: true)
+                let container = try ModelContainer(for: Project.self, configurations: memory)
+                container.mainContext.insert(Project(path: URL(filePath: folder).standardizedFileURL.path))
+                try container.mainContext.save()
+                return (container, nil)
+            }
+            #endif
             // A named store, so it cannot collide with another app's `default.store`.
             return (try ModelContainer(for: Project.self, configurations: ModelConfiguration("KitManager")), nil)
         } catch {

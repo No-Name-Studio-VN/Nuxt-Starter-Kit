@@ -1,3 +1,5 @@
+import type { KitChangeNote } from '../kit/notes';
+
 export interface KitModule {
   id: string;
   title: string;
@@ -13,6 +15,7 @@ export interface KitModule {
   env: string[];
   bindings: string[];
   rootFiles: string[];
+  changes: KitChangeNote[];
 }
 
 export interface ModuleGroup {

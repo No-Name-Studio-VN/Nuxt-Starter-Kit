@@ -1,6 +1,12 @@
+import { normalizeEmail } from '#shared/utils/normalizeEmail';
 import { updateProfileSchema } from '#layers/auth/shared/schemas/userSchema';
 import userService from '#layers/auth/server/utils/database/user';
+import { isConstraintFailure } from '#layers/auth/server/utils/database/isConstraintFailure';
+import { emailAlreadyInUseError } from '#layers/auth/server/utils/emailAlreadyInUseError';
 import { getAuthorizedUserId } from '#layers/auth/server/utils/authorization';
+import { runEmailChangedHooks } from '#layers/auth/server/utils/emailChangedHooks';
+import { getSignInMethod } from '#layers/auth/server/utils/signInMethods';
+import { refreshSessionUser } from '#layers/auth/server/utils/sessionUser';
 import {
   apiError,
   success,
@@ -23,23 +29,54 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Check if email is already taken by another user
-  const existingUser = await userService.getByEmail(result.data.email);
-  if (existingUser && existingUser.id !== userId) {
+  const currentUser = await userService.getById(userId);
+  if (!currentUser) {
     throw apiError({
-      status: 409,
-      statusText: 'Conflict',
-      code: 'EMAIL_ALREADY_IN_USE',
-      message: 'This email address is already associated with another account.',
+      status: 404,
+      statusText: 'Not Found',
+      code: 'USER_NOT_FOUND',
+      message: 'Not Found. The requested user account does not exist.',
     });
   }
 
-  const updatedUser = await userService.update({
-    id: userId,
-    name: result.data.name,
-    email: result.data.email,
-    // No account holds the new address, so it differs from the current one and is unproven.
-    ...(existingUser ? {} : { emailVerified: false }),
+  const { currentPassword, email, name } = result.data;
+  const previousEmail = currentUser.email;
+  const emailChanged = email !== normalizeEmail(previousEmail);
+  if (emailChanged) {
+    const password = getSignInMethod('password');
+    if (!password?.verifySecret || await password.countCredentials(userId) === 0) {
+      throw apiError({
+        status: 403,
+        statusText: 'Forbidden',
+        code: 'EMAIL_CHANGE_REQUIRES_PASSWORD',
+        message: 'Accounts without a password cannot change their email address.',
+      });
+    }
+
+    if (!currentPassword || !(await password.verifySecret(userId, currentPassword))) {
+      throw apiError({
+        status: 401,
+        statusText: 'Unauthorized',
+        code: 'INVALID_CURRENT_PASSWORD',
+        message: 'Unauthorized. The current password provided is incorrect.',
+        fieldErrors: { currentPassword: ['validation.current_password_incorrect'] },
+      });
+    }
+
+    const matches = await userService.listByEmail(email);
+    if (matches.some((user) => user.id !== userId)) {
+      throw emailAlreadyInUseError();
+    }
+  }
+
+  const updatedUser = await (emailChanged
+    ? userService.updateEmail(userId, email, { name })
+    : userService.update({ id: userId, name })
+  ).catch((error: unknown) => {
+    if (isConstraintFailure(error, 'UNIQUE constraint failed: users.email')) {
+      throw emailAlreadyInUseError();
+    }
+    throw error;
   });
 
   if (!updatedUser) {
@@ -50,6 +87,12 @@ export default defineEventHandler(async (event) => {
       message: 'Failed to update the user profile.',
     });
   }
+
+  if (emailChanged) {
+    await runEmailChangedHooks({ event, user: updatedUser, previousEmail });
+  }
+
+  await refreshSessionUser(event, updatedUser);
 
   const response: ProfileUpdateData = {
     id: updatedUser.id,

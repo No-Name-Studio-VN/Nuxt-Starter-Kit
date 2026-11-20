@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "from": "bead6d4c1e7989d369942a70c35cba50c187006d",
+  "to": "a23456789abcdef00123456789abcdef00123456",
+  "changes": [
+    { "path": "update.ts", "kind": "update" },
+    { "path": "merge.ts", "kind": "merge" },
+    { "path": "delete.ts", "kind": "delete" },
+    { "path": "create.ts", "kind": "create" },
+    { "path": "session.ts", "kind": "conflict" },
+    { "path": "settings.ts", "kind": "conflict" },
+    { "path": "header.ts", "kind": "keep-edited" },
+    { "path": "footer.ts", "kind": "keep-edited" },
+    { "path": "env.ts", "kind": "keep-protected" }
+  ],
+  "conflicts": ["session.ts", "settings.ts"],
+  "followUps": [],
+  "addedModules": [],
+  "removedModules": [],
+  "applied": true,
+  "unsaved": {
+    "total": 5,
+    "risky": [{ "path": "session.ts", "kind": "conflict" }, { "path": "header.ts", "kind": "keep-edited" }],
+    "touched": ["merge.ts"],
+    "untouched": 2
+  },
+  "backup": {
+    "ref": "refs/nuxt-saas/backups/2026-11-21T091400Z",
+    "name": "2026-11-21T091400Z",
+    "createdAt": "2026-11-21T09:14:00.123Z",
+    "expiresAt": "2026-12-05T10:14:00+01:00",
+    "status": "complete"
+  },
+  "notes": [
+    { "id": "auth.session", "module": "auth", "title": "Session cookies expire on password change", "kind": "security", "since": "3.2.0", "files": ["session.ts"], "outcome": "conflict", "affected": ["session.ts"] },
+    { "id": "auth.menu", "module": "auth", "title": "Account & Settings in the user menu", "kind": "feature", "since": "3.2.0", "files": ["header.ts"], "outcome": "kept", "affected": ["header.ts"] },
+    { "id": "base.update", "module": "base", "title": "Update project metadata", "kind": "fix", "since": "3.2.0", "files": ["update.ts"], "outcome": "applied", "affected": [] },
+    { "id": "base.declined", "module": "base", "title": "Show environment details", "kind": "feature", "since": "3.2.0", "files": ["env.ts"], "outcome": "declined", "affected": [] }
+  ],
+  "suggestions": [
+    { "path": "session.ts", "action": "take-kit", "reason": "The kit change is a security fix: Session cookies expire on password change.", "notes": ["auth.session"] },
+    { "path": "settings.ts", "action": "by-hand", "reason": "Both sides changed the same lines.", "notes": [] }
+  ],
+  "report": ".nuxt-saas/upgrade-report.md",
+  "command": "upgrade",
+  "createdAt": "2026-11-21T09:14:01Z",
+  "fromVersion": null,
+  "toVersion": "3.2.0",
+  "resolutions": [
+    { "path": "session.ts", "action": "take-kit", "at": "2026-11-21T09:15:01.000Z" },
+    { "path": "header.ts", "action": "keep-mine", "at": "2026-11-21T09:16:01Z" }
+  ]
+}

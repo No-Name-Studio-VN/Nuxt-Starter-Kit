@@ -62,6 +62,10 @@ struct SnapshotLoader: Sendable {
         snapshot.repositoryURL = await remote.flatMap { RemoteWebURL.repository(fromRemote: $0) }
         snapshot.env = await env
         snapshot.wrangler = await wrangler
+        // Like the CLI, ignore a report for a commit the project is no longer on (rolled back or restored).
+        if case .kitV3(let state) = kind {
+            snapshot.lastReport = SavedReport.read(url).flatMap { $0.transition.to == state.commit ? $0 : nil }
+        }
 
         var work = Work()
         work.healthURL = ProductionURL.resolve(wrangler: snapshot.wrangler, override: ref.productionURL)
@@ -125,7 +129,7 @@ struct SnapshotLoader: Sendable {
         let cli = cli
         do {
             let report = try await limiter.run {
-                try await cli.upgrade(project: ref.url, to: job.target, source: job.source, check: true)
+                try await cli.upgrade(project: ref.url, to: job.target, source: job.source, check: true, force: false, backup: true)
             }
             return Rendered(
                 result: .loaded(report, stale: false),

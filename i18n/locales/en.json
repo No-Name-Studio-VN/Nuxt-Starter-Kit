@@ -18,7 +18,8 @@
     "color": "Color",
     "copy": {
       "success": "Copied to clipboard"
-    }
+    },
+    "back": "Back"
   },
   "customizer": {
     "radius": "Radius",
@@ -43,5 +44,11 @@
     "maintenance": "Maintenance & Support",
     "copyright": "© {year} No Name Studio. All rights reserved.",
     "made_in": "Crafted in Vietnam"
+  },
+  "search": {
+    "title": "Search..."
+  },
+  "errors": {
+    "no_result": "No results found."
   }
 }

@@ -197,11 +197,16 @@ describe('--json output', () => {
       removedModules: [],
       applied: false,
       upToDate: true,
+      unsaved: { total: 0, risky: [], touched: [], untouched: 0 },
+      backup: null,
+      report: null,
+      notes: [],
+      suggestions: [],
     } satisfies JsonTransitionReport);
     expect(console.log).not.toHaveBeenCalled();
   });
 
-  it('an applied upgrade with conflicts exits 1 and still prints exactly one JSON report', async () => {
+  it('an applied upgrade with conflicts exits 3 and still prints exactly one JSON report', async () => {
     await initV1();
     const home = join(project, 'app/pages/index.vue');
     await writeFile(home, (await readFile(home, 'utf8')).replace('Home v1', 'User home'));
@@ -220,7 +225,7 @@ describe('--json output', () => {
       fixture.v2,
     ]);
 
-    expect(code).toBe(1);
+    expect(code).toBe(3);
     const text = written(stdout);
     expect(text.endsWith('\n')).toBe(true);
     // One document: the whole output parses as a single JSON value and the schema key appears once.
@@ -429,6 +434,7 @@ describe('--json output', () => {
       '.envrc',
       'server/db/migrations/0001_fixture.sql',
       'pnpm-lock.yaml',
+      '.nuxt-saas/upgrade-report.md',
       '.nuxt/types.d.ts',
       '.output/server/index.mjs',
       'local/node_modules/fixture/package.json',

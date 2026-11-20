@@ -1,5 +1,8 @@
 import type { AuthMethodProps } from '#layers/auth/types/authMethods';
 import type { User } from '#auth-utils';
+import type { SettingsSectionProps } from '#layers/auth/types/settings';
+import type { OnboardingStepProps } from '#layers/auth/types/onboarding';
+import type { RememberedSignInProps } from '#layers/auth/types/lastSignIn';
 import type { UserMenuRecord } from '#layers/auth/types/userMenu';
 
 declare module '~~/types/extensions' {
@@ -10,6 +13,9 @@ declare module '~~/types/extensions' {
     'auth:login:footer': true;
     /** Login steps; the one whose id matches `?step=` replaces the sign-in methods. */
     'auth:login:steps': true;
+    'auth:login:remembered': RememberedSignInProps;
+    'onboarding:steps': OnboardingStepProps;
+    'settings:security:sections': SettingsSectionProps;
     'sidebar:user': true;
     'sidebar:footer': true;
     'dashboard:header:actions': true;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getQueryString, safeRedirectPath } from '#layers/auth/app/utils/safeRedirect';
 import AuthPageLayout from '#layers/auth/app/components/auth/AuthPageLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,23 +24,8 @@ const error = ref('');
 const turnstileToken = ref('');
 const { t } = useI18n();
 
-const redirectTo = computed(() => {
-  const value = getQueryString(route.query.redirectTo);
-  if (!value) {
-    return '/';
-  }
-
-  try {
-    const parsed = new URL(value, requestUrl.origin);
-    if (parsed.origin !== requestUrl.origin) {
-      return '/';
-    }
-
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return '/';
-  }
-});
+const localePath = useAppLocalePath();
+const redirectTo = computed(() => safeRedirectPath(route.query.redirectTo, '/', requestUrl.origin));
 
 const form = useForm({
   initialValues: {
@@ -70,7 +56,10 @@ useSeo({
 
 const onSubmit = handleSubmit(async () => {
   const formEl = document.querySelector(`form[action="${passwordRoutes.AUTH_REGISTER_PASSWORD}"]`);
-  if (formEl instanceof HTMLFormElement) formEl.submit();
+  if (formEl instanceof HTMLFormElement) {
+    isLoading.value = true;
+    formEl.submit();
+  }
 });
 
 watch(turnstileToken, (val) => {
@@ -89,7 +78,7 @@ watch(
   (queryValue) => {
     const errorCode = getQueryString(queryValue);
     if (errorCode) {
-      error.value = getAuthErrorMessage(errorCode) || 'An error occurred during registration';
+      error.value = getAuthErrorMessage(errorCode, t) || 'An error occurred during registration';
     }
   },
   { immediate: true },
@@ -280,7 +269,7 @@ function completeRegistration(redirect: string) {
         :options="{ size: 'flexible', appearance: 'interaction-only' }"
       />
       <input type="hidden" name="redirect-to" :value="redirectTo" />
-      <Button type="submit" class="h-10 w-full" :disabled="!isFormValid" :is-loading="isLoading">
+      <Button type="submit" class="h-10 w-full" :disabled="!isFormValid || isLoading" :is-loading="isLoading">
         Create account
       </Button>
       <p
@@ -295,7 +284,7 @@ function completeRegistration(redirect: string) {
       <p class="text-center text-sm text-muted-foreground">
         Already have an account?
         <NuxtLink
-          :to="authRoutes.AUTH_LOGIN"
+          :to="localePath(authRoutes.AUTH_LOGIN)"
           class="font-medium text-foreground underline-offset-4 hover:underline"
         >
           Sign in

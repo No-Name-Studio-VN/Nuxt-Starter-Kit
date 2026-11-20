@@ -26,7 +26,7 @@ The app still needs a local kit checkout with the CLI built (see Requirements, m
 - macOS 26 or later
 - Xcode 27 or later
 - Node 22 or later and pnpm
-- The built CLI: run `pnpm --dir packages/create-nuxt-saas build` from the repository root. The app uses the CLI built in the configured kit checkout (it looks for `dist/cli.mjs`) and refuses a CLI older than 3.1.0 (the first version with `--json` and `inspect`).
+- The built CLI: run `pnpm --dir packages/create-nuxt-saas build` from the repository root. The app uses the CLI built in the configured kit checkout (it looks for `dist/cli.mjs`) and requires CLI 3.2.0 or later for upgrade safety previews, backups, and decisions.
 
 ## Layout
 

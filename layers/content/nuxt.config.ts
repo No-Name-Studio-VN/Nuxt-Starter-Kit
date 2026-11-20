@@ -1,5 +1,6 @@
 import { createResolver } from '@nuxt/kit';
 import { DOCS_CONFIG } from './docs.config';
+import { defaultLocale, locales } from '../../i18n-constants';
 
 const { resolve } = createResolver(import.meta.url);
 
@@ -20,7 +21,11 @@ export default defineNuxtConfig({
   workerRoutes: { internalPrefixes: ['/__nuxt_content/'] },
   nitro: {
     prerender: {
-      routes: ['/blogs', '/en/blogs', '/rss.xml'],
+      routes: [
+        '/blogs',
+        ...locales.filter((locale) => locale !== defaultLocale).map((locale) => `/${locale}/blogs`),
+        '/rss.xml',
+      ],
     },
   },
   content: {

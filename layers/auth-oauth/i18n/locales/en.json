@@ -4,10 +4,49 @@
     "popup_description": "Please wait while we finish signing you in.",
     "continue_with": "Continue with {provider}",
     "sign_up_with": "Sign up with {provider}",
-    "invalid_response": "Authentication completed but the response URL was invalid. Please try again.",
-    "popup_blocked": "The sign-in popup was blocked.",
-    "popup_timed_out": "The sign-in popup timed out. Please try again.",
-    "email_in_use": "This email is already in use. Sign in with your existing sign-in method.",
-    "cannot_continue": "Unable to continue with this provider right now. Please try again."
+    "invalid_response": "Authentication completed with an invalid response. Please try again.",
+    "popup_blocked": "The sign-in popup was blocked. Allow popups and try again.",
+    "popup_timed_out": "The sign-in session timed out. Please try again.",
+    "email_in_use": "This email is already in use. Sign in with your existing method, including a verification code if required, then connect this provider in Settings → Security.",
+    "cannot_continue": "Unable to continue with this provider right now. Please try again.",
+    "last_sign_in_provider": "Signed in with {provider}",
+    "email_missing": "This provider didn't share an email address. Try another sign-in method. If you already have an account, sign in and connect this provider in Settings → Security.",
+    "provider_conflict": "Your account is already connected to a different account from this provider. Sign in with your existing method, including a verification code if required, and manage your connected accounts in Settings → Security.",
+    "unavailable": "Could not load sign-in providers. Please try again later."
+  },
+  "settings": {
+    "connected": {
+      "title": "Connected accounts",
+      "only_sign_in_note": "Your only sign-in method",
+      "count": "{count} connected",
+      "description": "Sign in with an account you already use.",
+      "empty": "No sign-in providers are available.",
+      "loading": "Loading sign-in providers…",
+      "load_failed": "Couldn’t load available providers.",
+      "link": "Connect",
+      "linking": "Connecting…",
+      "link_provider": "Link {provider} account",
+      "link_failed": "Connection failed",
+      "linked": "Connected",
+      "linked_on": "Linked {date}",
+      "linked_description": "You can now sign in with {provider}.",
+      "updated_description": "Your sign-in methods have been updated.",
+      "not_connected": "Not connected",
+      "start_failed": "Couldn’t start the connection. Please try again.",
+      "unlink": "Unlink",
+      "unlink_provider": "Unlink {provider} account",
+      "unlink_title": "Unlink account?",
+      "unlink_description": "You won’t be able to sign in with {provider} until you connect it again.",
+      "unlink_failed": "Couldn’t unlink this account. Please try again.",
+      "only_sign_in": "Add another sign-in method before unlinking this account.",
+      "callback": {
+        "oauth-linked": "Account connected",
+        "oauth-unlinked": "Account unlinked",
+        "oauth-already-linked": "This provider account is already linked to another user.",
+        "oauth-already-connected": "You already have an account from this provider connected.",
+        "oauth-error": "Couldn’t connect the account. Please try again.",
+        "not-authenticated": "Sign in again before connecting an account."
+      }
+    }
   }
 }

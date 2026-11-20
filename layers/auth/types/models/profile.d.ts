@@ -1,17 +1,8 @@
-import type { SafeUser } from '#layers/auth/types/auth';
-import type { UpdateProfileInput } from '#layers/auth/shared/schemas/userSchema';
+import type { z } from 'zod';
+import type { userProfileSchema } from '#layers/auth/shared/schemas/userProfileSchema';
 
-export interface UserProfileModel extends Pick<
-  SafeUser,
-  'id' | 'username' | 'name' | 'email' | 'emailVerified' | 'isAdmin'
-> {
-  createdAt: Date;
-  lastLoginAt: Date;
-  /** How many ways in each registered sign-in method gives the user, keyed by method id. */
-  signInMethods: Record<string, number>;
-}
+export type UserProfileModel = z.infer<typeof userProfileSchema>;
 
-export type ProfileUpdateData = Pick<
-  UserProfileModel,
-  'id' | 'username' | keyof UpdateProfileInput
->;
+export type ProfileUpdateData = Pick<UserProfileModel, 'id' | 'username' | 'name' | 'email'>;
+
+export type UsernameAvailabilityData = { available: boolean };

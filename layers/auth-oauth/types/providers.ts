@@ -1,4 +1,4 @@
-import type { H3Error, H3Event } from 'h3';
+import type { RequestEvent } from 'nuxt/server';
 import type { ZodType, z } from 'zod';
 import type { OAUTH_PROVIDERS } from '../shared/constants/oauthProviders';
 import type { oauthProfileSchema } from '../shared/schemas/oauthSchema';
@@ -12,22 +12,26 @@ export interface OAuthProviderDisplay {
 }
 export type OAuthProfile = z.infer<typeof oauthProfileSchema>;
 
+export interface OAuthHandlerError {
+  statusMessage?: string;
+}
+
 export interface OAuthHandlerCallbacks<Result> {
-  onSuccess: (event: H3Event, result: Result) => void | Promise<void>;
-  onError: (event: H3Event, error: Pick<H3Error, 'statusMessage'>) => void | Promise<void>;
+  onSuccess: (event: RequestEvent, result: Result) => unknown;
+  onError: (event: RequestEvent, error: OAuthHandlerError) => unknown;
 }
 
 export interface OAuthProvider<Id extends OAuthProviderId> {
   id: Id;
   credentialsSchema: ZodType;
-  createHandler: (callbacks: OAuthHandlerCallbacks<OAuthProfile>) => (event: H3Event) => unknown;
+  createHandler: (callbacks: OAuthHandlerCallbacks<OAuthProfile>) => (event: RequestEvent) => unknown;
 }
 
 export interface OAuthProviderDefinition<Id extends OAuthProviderId, Result> {
   id: Id;
   credentialsSchema?: ZodType;
-  createHandler: (callbacks: OAuthHandlerCallbacks<Result>) => (event: H3Event) => unknown;
-  toAccount: (result: Result) => Record<keyof OAuthProfile, unknown>;
+  createHandler: (callbacks: OAuthHandlerCallbacks<Result>) => (event: RequestEvent) => unknown;
+  toAccount: (result: Result) => Partial<Record<keyof OAuthProfile, unknown>> | Promise<Partial<Record<keyof OAuthProfile, unknown>>>;
 }
 
 export interface OAuthReadiness {

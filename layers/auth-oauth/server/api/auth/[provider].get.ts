@@ -1,3 +1,4 @@
+import { defineEventHandler, getQuery, getRouterParam } from 'nuxt/server';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { requireReadyOAuthProvider } from '../../oauth/requireReadyOAuthProvider';
 import {
@@ -23,8 +24,8 @@ export default defineEventHandler(async (event) => {
       async onSuccess(event, profile) {
         return handleOAuthSuccess(event, provider.id, profile);
       },
-      async onError(event, error) {
-        console.error(`[auth-oauth] ${provider.id}: ${error.statusMessage ?? 'Sign-in failed.'}`);
+      async onError(event) {
+        console.error(`[auth-oauth] ${provider.id}: Sign-in failed.`);
         return sendOAuthRedirect(event, errorPath);
       },
     });

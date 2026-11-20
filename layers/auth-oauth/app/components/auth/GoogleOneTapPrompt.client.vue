@@ -1,6 +1,7 @@
 <template><span class="hidden" aria-hidden="true"></span></template>
 
 <script setup lang="ts">
+import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { oauthRoutes } from '#layers/auth-oauth/shared/oauthRoutes';
 import type { ApiResponse } from '#layers/server-core/types/api';
 import type { GoogleOneTapPayload } from '#layers/auth-oauth/types/oauth';
@@ -12,6 +13,7 @@ import {
 } from '#layers/auth-oauth/app/utils/googleOneTap';
 
 const { loggedIn, fetch: refreshSession } = useUserSession();
+const router = useRouter();
 const { public: publicConfig } = useRuntimeConfig();
 
 const googleClientId = computed(() => {
@@ -40,6 +42,9 @@ async function submitCredential(response: GoogleCredentialResponse) {
 
     if (result.success) {
       await refreshSession();
+      if (result.data.status === 'created') {
+        await router.push(authRoutes.ONBOARDING);
+      }
       return;
     }
   } catch {

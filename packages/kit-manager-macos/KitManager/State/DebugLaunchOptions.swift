@@ -8,12 +8,20 @@ import Foundation
 /// `-KMDebugSearch <text>` fills the sidebar search.
 /// `-KMDebugDiff <sha|a..b>` opens the code changes sheet. `-KMDebugDiffModules <id,id>` scopes the diff;
 /// `-KMDebugDiffLayout side` and `-KMDebugDiffMaxBytes <bytes>` preview an alternate layout and truncation.
+/// `-KMDebugExpand YES` opens every disclosure and `-KMDebugHealth sourceControl|environment|website` opens a
+/// Health tile's details. `-KMDebugProjectFolder <path>` opens a fixture in a temporary project list.
 enum DebugLaunchOptions {
+    static var projectFolder: String? { UserDefaults.standard.string(forKey: "KMDebugProjectFolder") }
+
     static var searchText: String? { UserDefaults.standard.string(forKey: "KMDebugSearch") }
 
     static var sheet: String? { UserDefaults.standard.string(forKey: "KMDebugSheet") }
 
     static var showsSettings: Bool { UserDefaults.standard.bool(forKey: "KMDebugSettings") }
+
+    static var expandsDisclosures: Bool { UserDefaults.standard.bool(forKey: "KMDebugExpand") }
+
+    static var healthSelection: String? { UserDefaults.standard.string(forKey: "KMDebugHealth") }
 
     static var moduleSelection: String? { UserDefaults.standard.string(forKey: "KMDebugModule") }
 
@@ -67,9 +75,15 @@ enum DebugLaunchOptions {
             })
             return
         }
-        guard let name = defaults.string(forKey: "KMDebugProject"),
-            let project = projects.first(where: { ProjectRow(project: $0, snapshot: model.snapshots[$0.id]).name == name })
-        else { return }
+        let project: Project?
+        if projectFolder != nil {
+            project = projects.first
+        } else if let name = defaults.string(forKey: "KMDebugProject") {
+            project = projects.first { ProjectRow(project: $0, snapshot: model.snapshots[$0.id]).name == name }
+        } else {
+            project = nil
+        }
+        guard let project else { return }
         model.openDetail(project)
         switch sheet {
         case "upgrade": model.flow = .upgrade(project)

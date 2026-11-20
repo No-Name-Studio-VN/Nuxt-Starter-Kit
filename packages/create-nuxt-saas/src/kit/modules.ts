@@ -3,7 +3,9 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { CliError } from '../errors';
 import type { KitModule, ModuleGroup } from '../types/modules';
-import { readKitConfig, type KitConfig } from './config';
+import { pathExists } from '../util/fs';
+import { KIT_CONFIG_PATH, readKitConfig, type KitConfig } from './config';
+import { changeNotesSchema, collectNotes } from './notes';
 
 export type { KitModule } from '../types/modules';
 
@@ -21,6 +23,7 @@ const moduleSchema = z.object({
   env: z.array(z.string()).default([]),
   bindings: z.array(z.string()).default([]),
   rootFiles: z.array(z.string()).default([]),
+  changes: changeNotesSchema,
 });
 
 /** Reads one layer's metadata; callers validate its graph after assembling it. */
@@ -44,7 +47,10 @@ export async function readKitModule(kitRoot: string, id: string): Promise<KitMod
 }
 
 export async function readKitModules(kitRoot: string, config?: KitConfig): Promise<KitModule[]> {
-  const { groups } = config ?? (await readKitConfig(kitRoot));
+  const metadata = config ?? (
+    (await pathExists(join(kitRoot, KIT_CONFIG_PATH))) ? await readKitConfig(kitRoot) : undefined
+  );
+  const groups = metadata?.groups;
   const layersRoot = join(kitRoot, 'layers');
   const entries = await readdir(layersRoot, { withFileTypes: true }).catch((error: unknown) => {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
@@ -93,6 +99,7 @@ export async function readKitModules(kitRoot: string, config?: KitConfig): Promi
       }
     }
   }
+  collectNotes(metadata?.changes ?? [], modules);
   // Validate the entire graph, even when the eventual selection is empty.
   resolveSelection(
     modules,

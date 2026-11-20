@@ -13,11 +13,11 @@ export function defineOAuthProvider<Id extends OAuthProviderId, Result>(
     credentialsSchema: definition.credentialsSchema ?? oauthCredentialsSchema,
     createHandler: ({ onSuccess, onError }) =>
       definition.createHandler({
-        onSuccess(event, result) {
-          const account = oauthProfileSchema.safeParse(definition.toAccount(result));
+        async onSuccess(event, result) {
+          const account = oauthProfileSchema.safeParse(await definition.toAccount(result));
           if (!account.success) {
             return onError(event, {
-              statusMessage: 'OAuth provider did not return a valid account ID and email.',
+              statusMessage: 'OAuth provider did not return a valid account identity.',
             });
           }
 

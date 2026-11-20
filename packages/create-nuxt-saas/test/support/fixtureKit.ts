@@ -12,7 +12,7 @@ export function makeTempDir(prefix: string): Promise<string> {
 }
 
 /** A small, reproducible upstream for render and transition tests. HEAD is v2. */
-export async function createFixtureKit({ nextMajor = false } = {}): Promise<{
+export async function createFixtureKit({ nextMajor = false, notes = false } = {}): Promise<{
   root: string;
   v1: string;
   v2: string;
@@ -121,6 +121,10 @@ export async function createFixtureKit({ nextMajor = false } = {}): Promise<{
       '# {{name}}\n\n{{description}}\n\nModules: {{modules}}\n',
     );
     await writeTextFile(join(root, 'content/hello.md'), '# Hello\n');
+    if (notes) {
+      await writeTextFile(join(root, 'yarn.lock'), 'kit lockfile\n');
+      await writeTextFile(join(root, 'combine.txt'), 'a\nb\nc\n');
+    }
     await writeJsonAtomically(join(root, 'layers/alpha/module.json'), alpha);
     await writeTextFile(
       join(root, 'layers/alpha/app/pages/alpha.vue'),
@@ -159,13 +163,28 @@ export async function createFixtureKit({ nextMajor = false } = {}): Promise<{
       join(root, '.env.example'),
       'SITE_URL=\n# Alpha configuration\nALPHA_KEY=\nALPHA_SECOND=\n',
     );
+    if (notes) {
+      await writeTextFile(join(root, 'combine.txt'), 'a\nb\nd\nc\n');
+      await rm(join(root, 'yarn.lock'));
+      await rm(join(root, 'docs/x.md'));
+    }
     await writeJsonAtomically(join(root, 'packages/create-nuxt-saas/kit.json'), {
       ...kitConfig,
       groups: ['Foundation', 'App', 'Content'],
+      ...(notes ? { changes: [
+        { id: 'base.home', since: '3.1.0', title: 'Safer home', kind: 'security', files: ['app/pages/index.vue'] },
+        { id: 'base.logo', since: '3.1.0', title: 'New logo', files: ['public/logo.png'] },
+        { id: 'base.new', since: '3.1.0', title: 'New page', files: ['app/pages/new.vue'] },
+        { id: 'base.old', since: '3.0.0', title: 'Old note', files: ['public/logo.png'] },
+        { id: 'base.future', since: '3.2.0', title: 'Future note', files: ['public/logo.png'] },
+      ] } : {}),
     });
     await writeJsonAtomically(join(root, 'layers/alpha/module.json'), {
       ...alpha,
       group: 'App',
+      ...(notes ? { changes: [
+        { id: 'alpha.page', since: '3.1.0', title: 'Alpha page', kind: 'fix', files: ['layers/alpha/app/pages/alpha.vue'] },
+      ] } : {}),
       env: ['ALPHA_KEY', 'ALPHA_SECOND'],
     });
     await writeJsonAtomically(join(root, 'layers/beta/module.json'), {
@@ -214,6 +233,7 @@ export async function createFixtureKit({ nextMajor = false } = {}): Promise<{
       join(root, 'wrangler.jsonc'),
       wrangler.replace('  ]\n}', '  ],\n  "compatibility_flags": ["nodejs_compat"]\n}'),
     );
+    await writeFile(join(root, 'public/logo.png'), Buffer.from([0x89, 0x50, 0, 0xff, 0x0d, 0x0a]));
     await git('add', '-A');
     await git('commit', '-m', 'fixture: v2');
     const v2 = await git('rev-parse', 'HEAD');

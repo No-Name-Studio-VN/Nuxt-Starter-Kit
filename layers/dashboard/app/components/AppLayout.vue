@@ -193,6 +193,7 @@ withDefaults(
           </BreadcrumbList>
         </Breadcrumb>
         <div class="ml-auto flex items-center gap-2">
+          <LangSwitcher />
           <ExtensionSlot name="dashboard:header:actions" />
           <component :is="titleControls" v-if="titleControls" />
           <slot name="title-controls" />

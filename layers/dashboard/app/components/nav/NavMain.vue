@@ -16,6 +16,8 @@ import { useSidebar } from '@/components/ui/sidebar/utils';
 import type { SidebarItem } from '#layers/dashboard/types/sidebar';
 
 const route = useRoute();
+const { t } = useI18n();
+const localePath = useAppLocalePath();
 const { isMobile, setOpenMobile } = useSidebar();
 const { clearSidebarContextOverride } = useSidebarContext();
 
@@ -29,11 +31,15 @@ withDefaults(
   },
 );
 
-// `SidebarItem.url` is optional -- a group heading has children but no link of
-// its own -- so both helpers take the same optional shape as the data.
-const isItemActive = (itemUrl?: string) => {
-  return itemUrl !== undefined && route.path === itemUrl;
-};
+function getItemTitle(item: SidebarItem) {
+  return item.titleKey ? t(item.titleKey) : item.title;
+}
+
+function getItemUrl(itemUrl?: string) {
+  return itemUrl ? localePath(itemUrl) || itemUrl : undefined;
+}
+
+const isItemActive = (itemUrl?: string) => route.path === getItemUrl(itemUrl);
 
 const hasActiveSubItem = (items?: SidebarItem[]) => {
   return items?.some((subItem) => isItemActive(subItem.url)) ?? false;
@@ -63,14 +69,14 @@ const handleNavigationClick = () => {
           <SidebarMenuItem>
             <CollapsibleTrigger as-child>
               <SidebarMenuButton
-                :tooltip="item.title"
+                :tooltip="getItemTitle(item)"
                 :close-sidebar-on-mobile="false"
                 :class="{
                   'bg-sidebar-accent text-sidebar-accent-foreground': hasActiveSubItem(item.items),
                 }"
               >
                 <component :is="item.icon" v-if="item.icon" />
-                <span>{{ item.title }}</span>
+                <span>{{ getItemTitle(item) }}</span>
                 <ChevronRight
                   class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
                 />
@@ -81,7 +87,7 @@ const handleNavigationClick = () => {
                 <SidebarMenuSubItem v-for="subItem in item.items" :key="subItem.title">
                   <SidebarMenuSubButton as-child>
                     <nuxt-link
-                      :to="subItem.url"
+                      :to="getItemUrl(subItem.url)"
                       :class="{
                         'bg-sidebar-accent text-sidebar-accent-foreground': isItemActive(
                           subItem.url,
@@ -90,7 +96,7 @@ const handleNavigationClick = () => {
                       @click="handleNavigationClick"
                     >
                       <component :is="subItem.icon" v-if="subItem.icon" />
-                      <span>{{ subItem.title }}</span>
+                      <span>{{ getItemTitle(subItem) }}</span>
                     </nuxt-link>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
@@ -101,16 +107,16 @@ const handleNavigationClick = () => {
 
         <!-- Item without sub-items (simple button) -->
         <SidebarMenuItem v-else>
-          <SidebarMenuButton as-child :tooltip="item.title">
+          <SidebarMenuButton as-child :tooltip="getItemTitle(item)">
             <nuxt-link
-              :to="item.url"
+              :to="getItemUrl(item.url)"
               :class="{
                 'bg-sidebar-accent text-sidebar-accent-foreground': isItemActive(item.url),
               }"
               @click="handleNavigationClick"
             >
               <component :is="item.icon" v-if="item.icon" />
-              <span>{{ item.title }}</span>
+              <span>{{ getItemTitle(item) }}</span>
             </nuxt-link>
           </SidebarMenuButton>
         </SidebarMenuItem>

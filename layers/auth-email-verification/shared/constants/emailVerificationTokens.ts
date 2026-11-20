@@ -1,5 +1,7 @@
+import { AuthTokenType } from '#layers/auth-password/shared/constants/authTokens';
+
 export enum EmailVerificationTokenType {
-  EmailVerification = 'email_verification',
+  EmailVerification = AuthTokenType.EmailVerification,
 }
 
 /** Email verification token expires in 24 hours. */

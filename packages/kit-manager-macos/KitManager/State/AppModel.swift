@@ -9,6 +9,7 @@ import SwiftData
 @Observable
 final class AppModel {
     private(set) var snapshots: [UUID: ProjectSnapshot] = [:]
+    private(set) var snapshotRevisions: [UUID: Int] = [:]
     private(set) var catalogue: [KitModuleInfo] = []
     private(set) var latestMain: String?
     /// `v3.1.0 +2` for `latestMain`; nil while unknown or when git cannot describe it.
@@ -60,7 +61,7 @@ final class AppModel {
     @ObservationIgnored private var rerunRequested: Set<UUID> = []
     /// Renders that failed for their current key, so the CLI is not re-run on every window activation.
     @ObservationIgnored private var failures: [UUID: RenderFailures] = [:]
-    /// Upgrade branches created from a clean tree that have not finished successfully, so only they can be rolled back.
+    /// Upgrade branches the app created and has not finished with; only these can be rolled back.
     var upgradeBranches: [UUID: UpgradeBranchRecord] = [:]
     @ObservationIgnored private var fetchTimer: Task<Void, Never>?
     @ObservationIgnored private var didBootstrap = false
@@ -161,6 +162,8 @@ final class AppModel {
         } catch {
             buildFailure = error.localizedDescription
         }
+        // Read the new status first, so the banner never flashes "Build CLI" again before it goes away.
+        refreshCLIStatus()
         isBuildingCLI = false
         await refreshAll()
     }
@@ -260,6 +263,11 @@ final class AppModel {
     /// Local refresh: no fetch. One project's failure never blocks the others. `force` also retries
     /// renders that failed earlier; window activation does not.
     func refreshAll(force: Bool = false) async {
+        // Ignore repeated manual refreshes without dropping automatic refreshes triggered by kit changes.
+        guard !force || !isRefreshing else { return }
+        refreshingCount += 1
+        defer { refreshingCount -= 1 }
+
         refreshCLIStatus()
         await updateLatestMain()
         let ids = Set(fetchProjects().map(\.id))
@@ -318,6 +326,7 @@ final class AppModel {
         // The project may have been removed while the folder was being read.
         guard fetchProject(id: ref.id) != nil else { return }
         snapshots[ref.id] = loaded.snapshot
+        snapshotRevisions[ref.id, default: 0] += 1
         await run(loaded.work, for: ref)
     }
 
@@ -464,6 +473,7 @@ final class AppModel {
     func remove(_ project: Project) {
         selection.remove(project.id)
         snapshots[project.id] = nil
+        snapshotRevisions[project.id] = nil
         failures[project.id] = nil
         rerunRequested.remove(project.id)
         context.delete(project)

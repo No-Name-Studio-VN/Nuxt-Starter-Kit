@@ -51,6 +51,8 @@ beforeEach(async () => {
       id INTEGER PRIMARY KEY, username TEXT NOT NULL, name TEXT NOT NULL,
       email TEXT NOT NULL, email_verified INTEGER DEFAULT 0,
       is_admin INTEGER DEFAULT 0, is_locked INTEGER DEFAULT 0,
+      onboarding_pending INTEGER NOT NULL DEFAULT 0,
+      onboarding_completed_steps TEXT NOT NULL DEFAULT '[]',
       last_login_at INTEGER, created_at INTEGER, updated_at INTEGER
     );
   `);
@@ -97,7 +99,7 @@ describe('admin access on sign-in', () => {
     expect((await getUser()).isAdmin).toBe(false);
     expect(setUserSession).toHaveBeenCalledWith(
       {},
-      { user: expect.objectContaining({ isAdmin: false }) },
+      expect.objectContaining({ user: expect.objectContaining({ isAdmin: false }) }),
     );
   });
 
@@ -115,7 +117,7 @@ describe('admin access on sign-in', () => {
     expect((await getUser()).isAdmin).toBe(true);
     expect(setUserSession).toHaveBeenCalledWith(
       {},
-      { user: expect.objectContaining({ isAdmin: true }) },
+      expect.objectContaining({ user: expect.objectContaining({ isAdmin: true }) }),
     );
   });
 
@@ -127,7 +129,7 @@ describe('admin access on sign-in', () => {
     expect((await getUser()).isAdmin).toBe(true);
     expect(setUserSession).toHaveBeenCalledWith(
       {},
-      { user: expect.objectContaining({ isAdmin: true }) },
+      expect.objectContaining({ user: expect.objectContaining({ isAdmin: true }) }),
     );
   });
 });

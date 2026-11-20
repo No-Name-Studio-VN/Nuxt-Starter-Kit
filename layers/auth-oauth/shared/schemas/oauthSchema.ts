@@ -1,3 +1,4 @@
+import { emailFieldSchema } from '#shared/schemas/common';
 import { z } from 'zod';
 
 export const googleOneTapBodySchema = z.object({
@@ -31,7 +32,23 @@ export const oidcCredentialsSchema = oauthCredentialsSchema.extend({
 
 export const oauthProfileSchema = z.object({
   providerAccountId: requiredString,
-  email: z.email(),
+  email: emailFieldSchema().optional(),
+  emailVerified: z.boolean(),
+  emailAuthoritative: z.boolean(),
   name: z.string(),
   avatarUrl: z.string().nullish(),
+});
+
+export const githubEmailsSchema = z.array(z.object({
+  email: emailFieldSchema(),
+  primary: z.boolean(),
+  verified: z.boolean(),
+}));
+
+export const linkedAccountSchema = z.object({
+  provider: z.string(),
+  email: z.string().nullable(),
+  name: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
+  linkedAt: z.union([z.date(), z.iso.datetime()]).nullable(),
 });

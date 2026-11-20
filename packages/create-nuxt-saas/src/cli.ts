@@ -1,12 +1,16 @@
 import { defineCommand, runCommand, showUsage, type ArgsDef, type CommandDef } from 'citty';
-import { initArgs, inspectArgs, listArgs, moduleChangeArgs, upgradeArgs } from './arguments';
+import { declineArgs, initArgs, inspectArgs, listArgs, moduleChangeArgs, notesArgs, resolveArgs, undoArgs, upgradeArgs } from './arguments';
 import {
   initCommand,
   inspectCommand,
   moduleCommand,
   modulesCommand,
+  resolveCommand,
   upgradeCommand,
 } from './commands/dispatch';
+import { declineCommand } from './commands/decline';
+import { notesCommand } from './commands/notes';
+import { undoCommand } from './commands/undo';
 import { CliError } from './errors';
 import { printJson } from './report';
 import { JSON_SCHEMA } from './types/json';
@@ -51,6 +55,34 @@ export async function main(argv: string[]): Promise<number> {
         exitCode = await upgradeCommand(args);
       },
     }),
+    undo: route({
+      meta: { name: 'undo', description: 'Restore a project backup before committing a transition' },
+      args: undoArgs,
+      async run({ args }) {
+        exitCode = await undoCommand(args);
+      },
+    }),
+    resolve: route({
+      meta: { name: 'resolve', description: 'Review and resolve upgrade decisions' },
+      args: resolveArgs,
+      async run({ args }) {
+        exitCode = await resolveCommand(args);
+      },
+    }),
+    decline: route({
+      meta: { name: 'decline', description: 'Remember kit changes you do not want' },
+      args: declineArgs,
+      async run({ args }) {
+        exitCode = await declineCommand(args);
+      },
+    }),
+    notes: route({
+      meta: { name: 'notes', description: 'List or check the change notes in a local kit' },
+      args: notesArgs,
+      async run({ args }) {
+        exitCode = await notesCommand(args);
+      },
+    }),
     modules: route({
       meta: { name: 'modules', description: 'List available and installed modules' },
       args: listArgs,
@@ -69,7 +101,7 @@ export async function main(argv: string[]): Promise<number> {
   const root = defineCommand({
     meta: {
       name: 'nuxt-saas',
-      version: '3.1.0',
+      version: '3.2.0',
       description: 'Create and manage modular Nuxt SaaS projects',
     },
     subCommands: {
@@ -77,6 +109,10 @@ export async function main(argv: string[]): Promise<number> {
       add: commands.add.command,
       remove: commands.remove.command,
       upgrade: commands.upgrade.command,
+      undo: commands.undo.command,
+      resolve: commands.resolve.command,
+      decline: commands.decline.command,
+      notes: commands.notes.command,
       modules: commands.modules.command,
       inspect: commands.inspect.command,
     },

@@ -1,4 +1,5 @@
 import type { Component, Ref } from 'vue';
+import type { SidebarNavRecord } from '~~/types/sidebar';
 
 export interface ExtensionSlots {
   'app:root': true;
@@ -50,6 +51,7 @@ export type NavGuardContextProviders = Map<
 
 export interface NavMenus {
   header: NavRecord;
+  sidebar: SidebarNavRecord;
 }
 
 export type NavMenu = keyof NavMenus;

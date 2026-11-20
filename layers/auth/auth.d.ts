@@ -7,12 +7,18 @@ declare module '#auth-utils' {
     username: SessionUser['username'];
     name: SessionUser['name'];
     isAdmin: SessionUser['isAdmin'];
+    onboardingPending: SessionUser['onboardingPending'];
+    avatarUrl?: SessionUser['avatarUrl'];
     /** Set on a fresh sign-in so the lock screen does not challenge immediately. */
     skipLockOnInit?: boolean;
   }
 
   interface UserSession {
     loggedInAt?: Date;
+    signedInAt?: number;
+    loginMethod?: string;
+    loginProvider?: string;
+    loginMethodAt?: number;
   }
 }
 

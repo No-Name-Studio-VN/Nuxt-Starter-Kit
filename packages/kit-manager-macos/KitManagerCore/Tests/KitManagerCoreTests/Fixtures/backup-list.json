@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "backups": [
+    {
+      "ref": "refs/nuxt-saas/undone/2026-11-21T091400Z",
+      "name": "2026-11-21T091400Z",
+      "createdAt": "2026-11-21T09:14:00Z",
+      "expiresAt": "2026-12-05T09:14:00.000Z",
+      "status": "restored"
+    }
+  ]
+}

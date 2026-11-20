@@ -41,7 +41,6 @@ struct CLIBanner: View {
                         .textSelection(.enabled)
                 }
             }
-            .fixedSize(horizontal: false, vertical: true)
         }
     }
 

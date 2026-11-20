@@ -28,6 +28,7 @@ export const authTokens = sqliteTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     token: text('token').notNull().unique(),
     type: text('type').$type<AuthTokenKind>().notNull(),
+    email: text('email'),
     expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
     usedAt: integer('used_at', { mode: 'timestamp' }),
     ...timestampColumns,

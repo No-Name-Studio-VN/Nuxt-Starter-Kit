@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3';
-import type { OAuthProfile } from '#layers/auth-oauth/types/providers';
+import { googleProfile } from '#layers/auth-oauth/server/oauth/providers/google';
 import type { GoogleOneTapPayload } from '#layers/auth-oauth/types/oauth';
 import {
   apiError,
@@ -8,8 +8,8 @@ import {
 } from '#layers/server-core/server/utils/apiResponse';
 import { clearOAuthRequest, completeOAuthLogin } from '#layers/auth-oauth/server/utils/oauth';
 import { verifyGoogleIdToken } from '#layers/auth-oauth/server/utils/googleIdentity';
-import { OAUTH_EMAIL_IN_USE } from '#layers/auth-oauth/shared/constants/oauthMessages';
-import { googleOneTapBodySchema } from '#layers/auth-oauth/shared/schemas/oauthSchema';
+import { OAUTH_ERROR_MESSAGES } from '#layers/auth-oauth/shared/constants/oauthMessages';
+import { googleOneTapBodySchema, oauthProfileSchema } from '#layers/auth-oauth/shared/schemas/oauthSchema';
 
 async function signInWithGoogleOneTap(event: H3Event) {
   const session = await getUserSession(event);
@@ -55,14 +55,24 @@ async function signInWithGoogleOneTap(event: H3Event) {
     });
   }
 
-  const profile: OAuthProfile = {
-    providerAccountId: googlePayload.subject,
+  const profile = oauthProfileSchema.safeParse(googleProfile({
+    sub: googlePayload.subject,
     email: googlePayload.email,
+    email_verified: googlePayload.emailVerified,
     name: googlePayload.name,
-    ...(googlePayload.picture === undefined ? {} : { avatarUrl: googlePayload.picture }),
-  };
+    picture: googlePayload.picture,
+    hd: googlePayload.hd,
+  }));
+  if (!profile.success) {
+    throw apiError({
+      status: 401,
+      statusText: 'Unauthorized',
+      message: 'Google One Tap credential is invalid.',
+      code: 'INVALID_GOOGLE_ONE_TAP_CREDENTIAL',
+    });
+  }
 
-  const loginResult = await completeOAuthLogin(event, 'google', profile);
+  const loginResult = await completeOAuthLogin(event, 'google', profile.data);
   if (loginResult.status === 'missing-user') {
     throw apiError({
       status: 401,
@@ -72,12 +82,13 @@ async function signInWithGoogleOneTap(event: H3Event) {
     });
   }
 
-  if (loginResult.status === 'email-in-use') {
+  if (loginResult.status === 'refused') {
+    const missingEmail = loginResult.code === 'oauth-email-missing';
     throw apiError({
-      status: 409,
-      statusText: 'Conflict',
-      message: OAUTH_EMAIL_IN_USE,
-      code: 'OAUTH_EMAIL_IN_USE',
+      status: missingEmail ? 400 : 409,
+      statusText: missingEmail ? 'Bad Request' : 'Conflict',
+      message: OAUTH_ERROR_MESSAGES[loginResult.code].fallback,
+      code: loginResult.code === 'oauth-email-in-use' ? 'OAUTH_EMAIL_IN_USE' : loginResult.code,
     });
   }
 

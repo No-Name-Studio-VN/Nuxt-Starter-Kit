@@ -1,15 +1,18 @@
 <script setup lang="ts">
+import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { MailCheck } from '@lucide/vue';
+import { safeRedirectPath } from '#layers/auth/app/utils/safeRedirect';
 import { emailVerificationRoutes } from '../../../shared/emailVerificationRoutes';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import type { ApiResponse } from '#layers/server-core/types/api';
 
 const route = useRoute();
 const requestUrl = useRequestURL();
+const localePath = useAppLocalePath();
 const { loggedIn } = useUserSession();
 
 if (loggedIn.value) {
-  navigateTo('/');
+  navigateTo(localePath('/'));
 }
 
 const token = computed(() => {
@@ -28,26 +31,12 @@ const email = computed(() => {
   return typeof val === 'string' ? val : '';
 });
 
-function safeRedirectPath(value: string, baseUrl: string) {
-  try {
-    const parsed = new URL(value, baseUrl);
-    if (parsed.origin !== baseUrl) {
-      return '';
-    }
-
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return '';
-  }
-}
-
 const loginLink = computed(() => {
   const redirectTo = typeof route.query.redirectTo === 'string' ? route.query.redirectTo : '';
-  const safeRedirectTo = redirectTo ? safeRedirectPath(redirectTo, requestUrl.origin) : '';
+  const safeRedirectTo = redirectTo ? safeRedirectPath(redirectTo, '', requestUrl.origin) : '';
 
-  return safeRedirectTo
-    ? `/auth/login?redirectTo=${encodeURIComponent(safeRedirectTo)}`
-    : '/auth/login';
+  const path = localePath(authRoutes.AUTH_LOGIN) || authRoutes.AUTH_LOGIN;
+  return safeRedirectTo ? { path, query: { redirectTo: safeRedirectTo } } : { path };
 });
 
 const isResending = ref(false);

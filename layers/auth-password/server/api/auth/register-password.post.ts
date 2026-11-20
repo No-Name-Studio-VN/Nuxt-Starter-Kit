@@ -1,3 +1,4 @@
+import { isConstraintFailure } from '#layers/auth/server/utils/database/isConstraintFailure';
 import { registerUserSchema } from '#layers/auth-password/shared/schemas/passwordSchema';
 import userService from '#layers/auth/server/utils/database/user';
 import userPasswordService from '#layers/auth-password/server/utils/database/userPassword';
@@ -6,10 +7,6 @@ import { passwordRoutes } from '#layers/auth-password/shared/passwordRoutes';
 import { runPostRegisterSteps } from '#layers/auth-password/server/utils/postRegisterSteps';
 import { safeRedirectPath } from '#layers/auth/server/utils/safeRedirect';
 import type { User } from '#layers/auth/types/auth';
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object';
-}
 
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) => registerUserSchema.safeParse(body));
@@ -49,18 +46,13 @@ export default defineEventHandler(async (event) => {
         name: result.data.name,
         emailVerified: false,
         isAdmin: false,
+        onboardingPending: true,
       },
       password,
     );
   } catch (err: unknown) {
-    const cause = isRecord(err) ? err.cause : undefined;
-    const messages = [err, cause].map((error) => (isRecord(error) ? error.message : undefined));
     const isDuplicate = (column: 'email' | 'username') =>
-      messages.some(
-        (message) =>
-          typeof message === 'string' &&
-          message.includes(`UNIQUE constraint failed: users.${column}`),
-      );
+      isConstraintFailure(err, `UNIQUE constraint failed: users.${column}`);
     if (isDuplicate('email')) {
       return sendRedirect(event, passwordRoutes.AUTH_REGISTER + '?error=email-existed');
     }

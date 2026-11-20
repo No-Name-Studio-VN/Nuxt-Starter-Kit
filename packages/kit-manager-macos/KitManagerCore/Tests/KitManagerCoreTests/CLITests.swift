@@ -63,7 +63,7 @@ private struct FakeKit {
     }
 }
 
-private func fixture(_ name: String) throws -> Data {
+func fixture(_ name: String) throws -> Data {
     guard let url = Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures") else {
         throw CocoaError(.fileNoSuchFile)
     }
@@ -101,6 +101,106 @@ struct CLITests {
         #expect(report.changes.contains { $0.kind == .merge })
     }
 
+    @Test func decodesSafetyFieldsWithConflictExitThree() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let runner = StubRunner(stdout: try fixture("transition-safety"), exitCode: 3)
+        let report = try await NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+            .upgrade(project: project, to: sha, source: .local, check: false, force: true, backup: false)
+        #expect(report.conflicts == ["session.ts", "settings.ts"])
+        #expect(report.unsaved?.risky.map(\.kind) == [.conflict, .keepEdited])
+        #expect(report.backup == nil)
+        #expect(report.notes?.first?.kind == .security)
+        #expect(report.suggestions?.last?.action == .byHand)
+        #expect(report.report == ".nuxt-saas/upgrade-report.md")
+        #expect(await runner.calls.first?.arguments.suffix(2) == ["--force", "--no-backup"])
+    }
+
+    @Test func moduleChangeCanForceWithoutBackup() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let runner = StubRunner(stdout: try fixture("transition"))
+        _ = try await NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+            .changeModules(.remove, ids: ["auth"], project: project, check: false, force: true, backup: false)
+        #expect(await runner.calls.first?.arguments.suffix(2) == ["--force", "--no-backup"])
+    }
+
+    @Test func undoCheckAndRestoreUseDifferentFlagsAndTimeouts() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let checkRunner = StubRunner(stdout: try fixture("undo-report"))
+        let check = try await NuxtSaasCLI(kitRoot: kit.root, runner: checkRunner).undo(project: project, check: true)
+        #expect(!check.restorable)
+        #expect(check.blocked?.reason == .changes)
+        #expect(check.blocked?.paths == ["session.ts", "header.ts"])
+        #expect(await checkRunner.calls.first.map { Array($0.arguments.dropFirst()) } == ["undo", "--json", "--dir", project.path, "--check"])
+        #expect(await checkRunner.timeouts == [.seconds(120)])
+
+        let restoreRunner = StubRunner(stdout: try fixture("undo-restored"))
+        let undo = try await NuxtSaasCLI(kitRoot: kit.root, runner: restoreRunner)
+            .undo(project: project, check: false, backup: "2026-11-21T091400Z")
+        #expect(undo.restored)
+        #expect(undo.files == 2)
+        #expect(undo.backup?.status == .restored)
+        #expect(await restoreRunner.calls.first.map { Array($0.arguments.dropFirst()) } == [
+            "undo", "--json", "--dir", project.path, "--yes", "--backup", "2026-11-21T091400Z",
+        ])
+        #expect(await restoreRunner.timeouts == [.seconds(15 * 60)])
+    }
+
+    @Test func listsRestoredBackups() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let runner = StubRunner(stdout: try fixture("backup-list"))
+        let list = try await NuxtSaasCLI(kitRoot: kit.root, runner: runner).backups(project: project)
+        #expect(list.backups.first?.status == .restored)
+        #expect(await runner.calls.first.map { Array($0.arguments.dropFirst()) } == ["undo", "--list", "--json", "--dir", project.path])
+        #expect(await runner.timeouts == [.seconds(120)])
+    }
+
+    @Test func listsDecisionsAndResolvesWithTheChosenAction() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let listRunner = StubRunner(stdout: try fixture("decisions-list"))
+        let report = try await NuxtSaasCLI(kitRoot: kit.root, runner: listRunner).decisions(project: project)
+        #expect(report.resolved == nil)
+        #expect(report.decisions.map(\.pending) == [true])
+        #expect(report.decisions.first?.notes.first?.id == "auth.session")
+        #expect(await listRunner.calls.first.map { Array($0.arguments.dropFirst()) } == ["resolve", "--json", "--dir", project.path])
+        #expect(await listRunner.timeouts == [.seconds(120)])
+
+        let resolveRunner = StubRunner(stdout: try fixture("decisions-report"))
+        let cli = NuxtSaasCLI(kitRoot: kit.root, runner: resolveRunner)
+        let resolved = try await cli.resolve(project: project, path: "session.ts", action: .takeKit, decline: false)
+        _ = try await cli.resolve(project: project, path: "header.ts", action: .keepMine, decline: true)
+        _ = try await cli.resolve(project: project, path: "settings.ts", action: .combine, decline: false)
+        #expect(resolved.decisions.map(\.pending) == [false, true])
+        #expect(resolved.decisions.last?.kind == .keepEdited)
+        #expect(resolved.decisions.first?.resolution == .takeKit)
+        #expect(resolved.decisions.last?.suggestion == nil)
+        #expect(resolved.resolved?.path == "session.ts")
+        #expect(resolved.resolved?.action == .takeKit)
+        #expect(await resolveRunner.calls.map { Array($0.arguments.dropFirst()) } == [
+            ["resolve", "session.ts", "--take-kit", "--json", "--dir", project.path],
+            ["resolve", "header.ts", "--keep-mine", "--decline", "--json", "--dir", project.path],
+            ["resolve", "settings.ts", "--combine", "--json", "--dir", project.path],
+        ])
+        #expect(await resolveRunner.timeouts == [.seconds(15 * 60), .seconds(15 * 60), .seconds(15 * 60)])
+    }
+
+    @Test func declineRevertPassesCommaSeparatedIDs() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let runner = StubRunner(stdout: try fixture("decline-report"))
+        let report = try await NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+            .decline(project: project, ids: ["auth.menu", "base.update"], revert: true)
+        #expect(report.declined == ["auth.session"])
+        #expect(await runner.calls.first.map { Array($0.arguments.dropFirst()) } == [
+            "decline", "auth.menu,base.update", "--json", "--dir", project.path, "--revert",
+        ])
+        #expect(await runner.timeouts == [.seconds(15 * 60)])
+    }
+
     @Test func decodesModulesFixture() async throws {
         let kit = try FakeKit()
         defer { kit.remove() }
@@ -115,6 +215,8 @@ struct CLITests {
         let auth = try #require(report.modules.first { $0.id == "auth" })
         #expect(auth.group == "Authentication")
         #expect(auth.requiresOneOf == ["auth-password", "auth-oauth"])
+        #expect(auth.env == ["NUXT_APP_SECRET"])
+        #expect(report.modules.allSatisfy { $0.changes?.isEmpty == true })
         let password = try #require(report.modules.first { $0.id == "auth-password" })
         let passkeys = try #require(report.modules.first { $0.id == "auth-passkeys" })
         #expect(password.parent == auth.id)
@@ -278,10 +380,10 @@ struct CLITests {
     }
 
     @Test func rejectsOldCLIVersion() throws {
-        let kit = try FakeKit(version: "3.0.2", built: false)
+        let kit = try FakeKit(version: "3.1.0")
         defer { kit.remove() }
         let cli = NuxtSaasCLI(kitRoot: kit.root, runner: StubRunner(stdout: ""))
-        #expect(cli.status() == .tooOld(found: "3.0.2"))
+        #expect(cli.status() == .tooOld(found: "3.1.0"))
     }
 
     @Test func comparesVersionsNumerically() {

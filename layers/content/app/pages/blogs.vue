@@ -159,7 +159,7 @@ function clearFilters() {
         v-if="filteredPosts.length > 0"
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12 mb-16"
       >
-        <NuxtLink
+        <NuxtLinkLocale
           v-for="post in filteredPosts"
           :key="post.path"
           :to="post.path"
@@ -200,7 +200,7 @@ function clearFilters() {
           <p class="text-muted-foreground line-clamp-2 leading-relaxed grow">
             {{ post.description }}
           </p>
-        </NuxtLink>
+        </NuxtLinkLocale>
       </div>
 
       <!-- Empty State -->

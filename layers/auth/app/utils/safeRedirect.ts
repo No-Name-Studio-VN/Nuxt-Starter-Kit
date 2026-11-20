@@ -20,7 +20,11 @@ export function getQueryString(value: QueryString) {
   return readQueryString(value);
 }
 
-export function safeRedirectPath(value: QueryString, fallback = '/') {
+export function safeRedirectPath(
+  value: QueryString,
+  fallback = '/',
+  origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin,
+) {
   const rawValue = readQueryString(value);
 
   if (!rawValue) {
@@ -28,9 +32,8 @@ export function safeRedirectPath(value: QueryString, fallback = '/') {
   }
 
   try {
-    const origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin;
     const target = new URL(rawValue, origin);
-    if (target.origin !== origin) {
+    if (target.origin !== origin || !target.pathname.startsWith('/') || target.pathname.startsWith('//')) {
       return fallback;
     }
 

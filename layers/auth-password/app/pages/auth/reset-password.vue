@@ -6,11 +6,13 @@ import { resetPasswordFormSchema } from '#layers/auth-password/shared/schemas/pa
 import { calculatePasswordStrength } from '#layers/auth-password/app/utils/passwordValidation';
 import PasswordStrengthIndicator from '#layers/auth-password/app/components/PasswordStrengthIndicator.vue';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
+import type { PasswordResetData } from '#layers/auth-password/types/authTokens';
 import { passwordRoutes } from '#layers/auth-password/shared/passwordRoutes';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import type { ApiResponse } from '#layers/server-core/types/api';
 
 const route = useRoute();
+const localePath = useAppLocalePath();
 const token = computed(() => {
   const val = route.query.token;
   return typeof val === 'string' ? val : '';
@@ -21,6 +23,7 @@ const showConfirmPassword = ref(false);
 const isSubmitting = ref(false);
 const error = ref('');
 const success = ref(false);
+const oauthAccountsDisconnected = ref(false);
 const { t } = useI18n();
 
 const { handleSubmit, values, meta } = useForm({
@@ -42,7 +45,7 @@ const onSubmit = handleSubmit(async (formValues) => {
   success.value = false;
 
   try {
-    const response = await apiRequest<ApiResponse<Record<string, never>>>(
+    const response = await apiRequest<ApiResponse<PasswordResetData>>(
       passwordRoutes.AUTH_RESET_PASSWORD_REQUEST,
       {
         method: 'POST',
@@ -58,9 +61,11 @@ const onSubmit = handleSubmit(async (formValues) => {
       throw response;
     }
 
+    oauthAccountsDisconnected.value = response.data.oauthAccountsDisconnected;
     success.value = true;
   } catch (err: unknown) {
     error.value = parseApiError(err, 'Something went wrong. Please try again.').message;
+  } finally {
     isSubmitting.value = false;
   }
 });
@@ -101,7 +106,8 @@ useSeo({
       class="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
     >
       <AlertDescription class="text-green-700 dark:text-green-300">
-        Password reset successfully. You can now sign in with your new password.
+        <p>{{ t('auth_password.reset_password_success') }}</p>
+        <p v-if="oauthAccountsDisconnected">{{ t('auth_password.reset_password_oauth_disconnected') }}</p>
       </AlertDescription>
     </Alert>
 
@@ -110,7 +116,7 @@ useSeo({
         <p>
           This reset link is invalid or has expired.
           <NuxtLink
-            :to="{ path: passwordRoutes.AUTH_FORGOT_PASSWORD }"
+            :to="localePath(passwordRoutes.AUTH_FORGOT_PASSWORD)"
             class="font-medium underline underline-offset-4"
           >
             Request a new one</NuxtLink
@@ -204,7 +210,7 @@ useSeo({
 
     <p class="text-center text-sm text-muted-foreground">
       <NuxtLink
-        :to="authRoutes.AUTH_LOGIN"
+        :to="localePath(authRoutes.AUTH_LOGIN)"
         class="font-medium text-foreground underline-offset-4 hover:underline"
       >
         Back to sign in

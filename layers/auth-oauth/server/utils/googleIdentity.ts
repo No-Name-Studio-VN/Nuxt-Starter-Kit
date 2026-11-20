@@ -164,7 +164,7 @@ async function defaultVerifySignature(input: GoogleSignatureVerificationInput) {
 
 function readClaims(input: unknown): GoogleIdTokenClaims {
   if (!isRecord(input)) throw new GoogleIdTokenVerificationError('Invalid Google ID token payload');
-  const { iss, aud, sub, email, email_verified, iat, exp, name, picture } = input;
+  const { iss, aud, sub, email, email_verified, iat, exp, name, picture, hd } = input;
   if (
     typeof iss !== 'string' ||
     typeof aud !== 'string' ||
@@ -185,6 +185,10 @@ function readClaims(input: unknown): GoogleIdTokenClaims {
 
   if (typeof picture === 'string') {
     claims.picture = picture;
+  }
+
+  if (typeof hd === 'string' && hd.length > 0) {
+    claims.hd = hd;
   }
 
   return claims;
@@ -260,6 +264,7 @@ export async function verifyGoogleIdToken(
     emailVerified: true,
     name: claims.name ?? claims.email,
     ...(claims.picture ? { picture: claims.picture } : {}),
+    ...(claims.hd ? { hd: claims.hd } : {}),
     issuedAt: claims.iat,
     expiresAt: claims.exp,
   };

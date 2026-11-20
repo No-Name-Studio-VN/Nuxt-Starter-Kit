@@ -6,11 +6,5 @@
     "reload": "Tải lại",
     "rows_selected": "Đã chọn {selected} trên {total} hàng"
   },
-  "no_results_description": "Hãy thử điều chỉnh tìm kiếm hoặc bộ lọc để tìm nội dung bạn cần.",
-  "search": {
-    "title": "Tìm kiếm..."
-  },
-  "errors": {
-    "no_result": "Không tìm thấy kết quả."
-  }
+  "no_results_description": "Hãy thử điều chỉnh tìm kiếm hoặc bộ lọc để tìm nội dung bạn cần."
 }

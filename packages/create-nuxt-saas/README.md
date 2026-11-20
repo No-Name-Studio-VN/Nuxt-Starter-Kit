@@ -26,12 +26,16 @@ pnpm dlx create-nuxt-saas@latest upgrade
 The executable is `nuxt-saas`. These are its commands and flags:
 
 ```text
-init [dir] [--yes] [--modules a,b] [--kit path] [--allow-dirty-kit]
-           [--template github:owner/repo#ref] [--no-git]
-add <modules> [--dir path] [--check] [--force] [--json] [--kit path] [--allow-dirty-kit]
-remove <modules> [--dir path] [--check] [--force] [--json] [--kit path] [--allow-dirty-kit]
-upgrade [--dir path] [--check] [--force] [--json] [--to ref] [--template github:owner/repo#ref]
-        [--kit path] [--allow-dirty-kit]
+init [dir] [--yes] [--modules a,b] [--kit path] [--allow-dirty-kit | --use-uncommitted-kit]
+           [--to ref] [--template github:owner/repo#ref] [--no-git]
+add <modules> [--dir path] [--check] [--force] [--no-backup] [--json] [--kit path] [--allow-dirty-kit]
+remove <modules> [--dir path] [--check] [--force] [--no-backup] [--json] [--kit path] [--allow-dirty-kit]
+upgrade [--dir path] [--check] [--force] [--no-backup] [--json] [--to ref] [--template github:owner/repo#ref]
+        [--kit path] [--allow-dirty-kit | --use-uncommitted-kit]
+undo [--dir path] [--yes | --check | --list] [--backup name] [--json]
+resolve [file] [--keep-mine | --take-kit | --combine] [--decline] [--all] [--dir path] [--json]
+decline <ids> [--revert] [--dir path] [--json]
+notes --kit path [--check --since ref] [--allow-dirty-kit] [--json]
 modules [--dir path] [--json] [--to ref] [--template github:owner/repo#ref] [--kit path]
         [--allow-dirty-kit]
 inspect [--dir path] [--json] [--added] [--kit path] [--allow-dirty-kit]
@@ -43,10 +47,11 @@ go to init. Thus bare `nuxt-saas`, `nuxt-saas my-app` and `nuxt-saas init my-app
 project. A misspelled command is treated as a directory name. `--help` / `-h` lists commands;
 `upgrade --help` (or another subcommand) shows that command's flags.
 
-`--json` (on `add`, `remove`, `upgrade`, `modules` and `inspect`) prints exactly one JSON document on stdout instead of
+`--json` (on every command except `init`) prints exactly one JSON document on stdout instead of
 the text report. Every document carries `"schema": 1`. Failures print
 `{"schema":1,"error":{"message":"…","kind":"expected"|"unexpected"}}` instead of writing to stderr.
-Exit codes are unchanged: 0 ok, 1 expected error or conflicts, 2 unexpected error.
+Exit codes: **0** success or cancelled, **1** expected error, **2** unexpected error,
+**3** finished with conflicts needing a decision (including previews and `resolve` listings).
 
 ### init
 
@@ -66,7 +71,8 @@ npm create nuxt-saas@latest base-app -- --yes
 - Init renders in a temporary sibling directory, then publishes the result into the target.
 - By default it initializes git and attempts an initial commit. It skips this inside an existing
   repository; `--no-git` skips it explicitly. If the commit fails (for example, no git identity),
-  `Git: initialised` means you still need to commit before using add/remove/upgrade.
+  `Git: initialised` means no initial commit was made. Backups still work, but make an initial
+  commit if you want Git to distinguish your edits from the generated files.
 
 ### add and remove
 
@@ -85,9 +91,15 @@ remaining selection breaks a `requiresOneOf` rule. Remove public dependencies ex
 longer need them. The CLI removes internal dependencies that no remaining module needs. You can
 remove every layer and keep only base.
 
-`--dir` selects the project (default `.`). Applying requires a clean git tree; `--force` permits a
-dirty tree or a project without git, but does not bypass conflicts or dependency checks. `--check`
-previews the file plan without writing, even on a dirty tree.
+`--dir` selects the project (default `.`). `--check` previews the plan and assesses unsaved work
+without changing the project. A dirty tree does **not** need `--force` if its unsaved changes will
+be merged cleanly or left alone. If the transition would produce conflicts or keep edited files,
+the CLI asks whether to continue, preview, or cancel. In scripts (including `--json`), pass `--force`
+to proceed over at-risk changes.
+
+The CLI makes a local backup by default without moving your branch or staging files. Use
+`--no-backup` to skip it. Outside Git, writes require both `--force` and `--no-backup`.
+Neither flag bypasses unresolved conflicts from a previous transition or dependency checks.
 
 ### upgrade
 
@@ -102,7 +114,69 @@ changes the target template; the old render still comes from the recorded source
 IDs must exist in the target kit. Newly required dependencies are included automatically.
 The CLI refuses upgrades between different major kit versions. See
 [Moving a 3.x project to 4.0](#moving-a-3x-project-to-40). `add` and `remove` continue to work at the
-project's recorded commit. `--dir`, `--check`, and `--force` work as for add and remove.
+project's recorded commit.
+`--dir`, `--check`, `--force` and `--no-backup` work as for add/remove.
+
+### undo
+
+```bash
+pnpm dlx create-nuxt-saas@latest undo --list
+pnpm dlx create-nuxt-saas@latest undo --check --json
+pnpm dlx create-nuxt-saas@latest undo --yes
+```
+
+Undo restores the most recent upgrade, addition or removal and preserves the work that was on
+disk before it, including staged files. Choose another backup with `--backup <name>`. Use
+`--check` to see whether undo is safe without restoring anything. Undo refuses if HEAD moved to
+another commit, staged entries changed, or files match neither their state before nor after the
+transition. If a restore stops midway, fix the error and run undo again; it skips files already
+restored. Use `--yes` to restore without a prompt, or in non-interactive/JSON mode. `--list` shows
+active and restored backups for this worktree, which are kept for 14 days.
+
+### resolve
+
+```bash
+nuxt-saas resolve
+nuxt-saas resolve --all
+nuxt-saas resolve --json
+nuxt-saas resolve app/pages/index.vue --take-kit
+```
+
+Run `resolve` in a terminal to walk through pending conflicts. `--all` also walks through kept files
+that you haven't acknowledged. For a conflict, `--keep-mine` or `--take-kit` selects that side of
+each conflicting hunk without replacing edits elsewhere in the file. `--combine` keeps the kit's
+additions without bringing back lines you deleted. If you also added lines, it keeps yours first.
+For a kept file, `--keep-mine` acknowledges it and
+`--take-kit` replaces it with the saved kit copy, if available. `--decline` with `--keep-mine`
+remembers the change note IDs for that file.
+
+With `--json`, the CLI lists `decisions` without prompting. An explicit action also returns
+`resolved: { path, action }`. Conflicts can still be resolved when the saved report is missing,
+but suggestions and saved kit copies require the report. If nothing else changed after the
+transition, `resolve` keeps its backup restorable by `undo`.
+
+### decline
+
+```bash
+nuxt-saas decline auth.account-menu,base.new-home
+nuxt-saas decline auth.account-menu --revert
+```
+
+Remember that you don't want the named changes in this project. Pass comma-separated note IDs.
+`--revert` lets the CLI suggest those changes again. This doesn't modify feature files or disable
+modules; it changes how future upgrades and `inspect` report those notes. JSON returns `declined`.
+
+### notes
+
+```bash
+nuxt-saas notes --kit .
+nuxt-saas notes --kit . --check --since v3.1.0
+```
+
+Lists change notes from the local kit's committed HEAD. `--check` lists changed kit files that aren't
+covered by a note for the current kit version and exits 1 if any are uncovered. `--allow-dirty-kit`
+permits a dirty checkout without including uncommitted changes. See [RELEASING.md](RELEASING.md) for
+how to write notes and check release coverage.
 
 ### modules
 
@@ -114,8 +188,8 @@ project it uses the recorded kit commit. Outside one it uses the default templat
 `--to <ref>` lists the modules at another kit ref or commit. It is only valid outside a project;
 inside one the command throws, because the recorded commit decides. `--json` prints one document
 with `schema`, the resolved `commit`, every module with its claims (`dependencies`,
-`devDependencies`, `scripts`, `env`, `bindings`, `rootFiles`), its `group`, `parent`, and
-`requiresOneOf`, and the `installed` module IDs.
+`devDependencies`, `scripts`, `env`, `bindings`, `rootFiles`), its `group`, `parent`,
+`requiresOneOf`, and `changes`, the kit's `groups` order, and the `installed` module IDs.
 
 ### inspect
 
@@ -132,14 +206,17 @@ many of those are edited or deleted. The customisation score is `scoredChanged /
 
 Use `inspect --added` to also list files outside the kit render. It requires a Git working tree and
 includes tracked files still present and untracked files that Git does not ignore. It skips root
-`.env*` files except `.env.example`, migrations, root lockfiles, and `.nuxt-saas.json`. It also skips
-files under `.nuxt`, `.output`, `node_modules`, and `.data`. Added files appear under `Added:` in the
+`.env*` files except `.env.example`, migrations, root lockfiles, and CLI state and reports. It also
+skips files under `.nuxt`, `.output`, `node_modules`, and `.data`. Added files appear under `Added:` in the
 text report. The summary includes them in `total` and counts them separately as `added`. They do not
 change the customisation score.
 
 `--json` prints the full report with `schema`, `commit`, `kit`, `modules`, `identity`, `conflicts`, `files` and
 `summary`. With `--added`, new entries have the same `path`, `status`, `layer`, and `expected` fields.
-Their `status` is `added` and their `expected` is `false`. Exit code is 0 unless the command fails.
+Their `status` is `added` and their `expected` is `false`. The report also includes
+`features: { missing, declined }`. A note is listed in `missing` when an edited or deleted file
+in the recorded kit may be hiding that change and the note hasn't been declined. Exit code is 0
+unless the command fails.
 
 ### Local kit development
 
@@ -150,8 +227,11 @@ pnpm dlx create-nuxt-saas@latest upgrade --dir demo --kit /path/to/kit --to HEAD
 
 `--kit` uses a local git checkout and records its HEAD SHA, not its filesystem path. Dirty kits are
 refused unless `--allow-dirty-kit` is passed. **Even with that flag, rendering uses `git archive` at
-the resolved commit, not uncommitted edits or untracked files.** Commit kit changes to test them.
-For add/remove it archives the project's recorded SHA; upgrade can resolve a local ref with `--to`.
+the resolved commit, not uncommitted edits or untracked files.** To test the working tree instead,
+use `--kit <path> --use-uncommitted-kit` with `init` or `upgrade`. It includes uncommitted and
+untracked, non-ignored kit files, keeps the commit under `refs/nuxt-saas/kit-snapshots/` in the kit
+repository, and leaves your index and branch alone. It cannot be combined with `--to`.
+For add/remove the CLI archives the project's recorded SHA; upgrade can resolve a local ref with `--to`.
 If a recorded commit has not been pushed, supply a local checkout containing it on later commands too.
 `--allow-dirty-kit` concerns the kit; `--force` concerns the generated project's working tree.
 
@@ -176,12 +256,17 @@ files; there is no separate JSON merge. The plan includes changes to all three.
 | You deleted an existing file       | Kept deleted and reported when upstream changes it                      |
 | Binary file changed on both sides  | Kept and reported as `keep-edited`                                      |
 
-Symbols in the report are `+` create, `~` update, `M` merge, `!` conflict, `-` delete and `=` keep.
-Review the plan and use git to review or undo applied changes. The CLI does not commit transitions.
+The terminal groups automatic changes, conflicts, kept versions, and new files. After applying,
+`.nuxt-saas/upgrade-report.md` and `.nuxt-saas/upgrade-report.json` record the result. Target kit
+versions for conflict and kept paths are saved under `.nuxt-saas/kit-versions/` when they exist.
+Newly relevant change notes and suggested conflict actions appear in the terminal and saved reports
+(`notes` and `suggestions` in JSON). These files are Git-ignored. Use `git diff` to review changes or
+`nuxt-saas undo` to restore the backup.
+The CLI does not commit transitions to your branch.
 
-On conflicts, the recorded modules and commit **advance to the target**, and the command exits **1**.
-Resolve the `<<<<<<< yours`, `||||||| kit (old)`, `=======` and `>>>>>>> kit (new)` blocks in each
-listed file, then commit your resolution. The next add/remove/upgrade refuses while a listed file
+On conflicts, the recorded modules and commit **advance to the target**, and the command exits **3**.
+Use `nuxt-saas resolve` or edit the `<<<<<<< yours`, `||||||| kit (old)`, `=======` and
+`>>>>>>> kit (new)` blocks in each listed file, then commit your resolution. The next add/remove/upgrade refuses while a listed file
 still contains an opening conflict marker. Once resolved, the next applied transition writes the
 cleared conflict list; `--check` never changes state. There is no separate continue command.
 
@@ -201,9 +286,6 @@ Follow-ups list `pnpm install` when the package changes, `pnpm db:generate` when
 and new environment keys to fill. Kit migrations are never copied: generate migrations for your
 selected schemas, and never hand-edit generated SQL or snapshots.
 
-Exit codes: **0** success (including cancellation), **1** expected errors or merge conflicts
-(including a preview that finds conflicts), **2** unexpected failures.
-
 ### Moving a 3.x project to 4.0
 
 Kit 4.0 is a clean break. Generate a new project and move your code across instead of running `upgrade`.
@@ -211,7 +293,8 @@ Kit 4.0 is a clean break. Generate a new project and move your code across inste
 1. Generate a 4.0 project with the equivalent modules. If the old project used `auth`, select
    `auth-password`, `auth-oauth`, or both, depending on how users sign in. Both bring in `auth`.
    Include `dashboard` if the app used the dashboard shell or admin area. Include `content-studio`
-   if you used Nuxt Studio.
+   if you used Nuxt Studio. The 4.0 auth layer uses `NUXT_APP_SECRET` in place of
+   `NUXT_SESSION_PASSWORD`; see the generated `.env.example`.
 2. From the old project, run `pnpm dlx create-nuxt-saas@latest inspect --added`. Use the `Added:` and
    `Edited:` lists to identify code to carry over. Copy `server/db/migrations/**` separately to keep
    the database's migration history. The inventory skips migrations.

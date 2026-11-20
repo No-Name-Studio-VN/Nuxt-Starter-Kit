@@ -1,9 +1,13 @@
+import type { SQL } from 'drizzle-orm';
+import type { RequestEvent } from 'nuxt/server';
 import type { H3Event } from 'h3';
 import type { ApiErrorOptions } from '#layers/server-core/types/api';
 import type { User } from '#layers/auth/types/auth';
 
+export type SignInRequestEvent = H3Event | RequestEvent;
+
 export interface LoginPolicyContext {
-  event: H3Event;
+  event: SignInRequestEvent;
   /** The user who just proved who they are. */
   user: User;
   /** The sign-in method the user proved it with, e.g. 'password'. */
@@ -33,4 +37,28 @@ export interface LoginPolicy {
   /** Sign-in method ids the policy applies to; absent means every method. */
   methods?: string[];
   run(ctx: LoginPolicyContext): Promise<LoginPolicyOutcome>;
+}
+
+export interface OAuthLinkPolicyContext {
+  user: User;
+  provider: string;
+}
+
+export interface OAuthLinkPolicy {
+  id: string;
+  order: number;
+  allowWrite?(userId: number): SQL;
+  run(ctx: OAuthLinkPolicyContext): Promise<{ allow: boolean }>;
+}
+
+export interface EmailChangedContext {
+  event: H3Event | RequestEvent;
+  user: User;
+  previousEmail: string;
+}
+
+export interface EmailChangedHook {
+  id: string;
+  order: number;
+  run(ctx: EmailChangedContext): Promise<void>;
 }

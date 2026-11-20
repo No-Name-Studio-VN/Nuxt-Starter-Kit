@@ -6,27 +6,34 @@ import { passwordRoutes } from '#layers/auth-password/shared/passwordRoutes';
 import { loginSchema } from '#layers/auth-password/shared/schemas/passwordSchema';
 import type { AuthMethodEmits, AuthMethodProps } from '#layers/auth/types/authMethods';
 
-const { redirectTo, pending } = defineProps<AuthMethodProps>();
+const { redirectTo, pending, rememberedUsername } = defineProps<AuthMethodProps>();
 const emit = defineEmits<AuthMethodEmits>();
 const showPassword = ref(false);
 const turnstileToken = ref('');
+const form = useTemplateRef<HTMLFormElement>('form');
+const localePath = useAppLocalePath();
 const { handleSubmit, values } = useForm({
   initialValues: {
-    username: '',
+    username: rememberedUsername ?? '',
     password: '',
   },
   validationSchema: loginSchema.pick({ username: true, password: true }),
 });
 
+onMounted(() => {
+  if (rememberedUsername) form.value?.querySelector<HTMLInputElement>('#password')?.focus({ preventScroll: true });
+});
+
 const onSubmit = handleSubmit(async () => {
-  // Native form submission for server-side auth
-  const formEl = document.querySelector(`form[action="${passwordRoutes.AUTH_LOGIN_PASSWORD}"]`);
-  if (formEl instanceof HTMLFormElement) formEl.submit();
+  if (pending || !form.value) return;
+  emit('pending', true);
+  form.value.submit();
 });
 </script>
 
 <template>
   <form
+    ref="form"
     :action="passwordRoutes.AUTH_LOGIN_PASSWORD"
     method="POST"
     class="flex flex-col gap-4"
@@ -59,7 +66,7 @@ const onSubmit = handleSubmit(async () => {
         <div class="flex items-center justify-between">
           <FieldLabel for="password">Password</FieldLabel>
           <NuxtLink
-            :to="{ path: passwordRoutes.AUTH_FORGOT_PASSWORD }"
+            :to="localePath(passwordRoutes.AUTH_FORGOT_PASSWORD)"
             class="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             {{ $t('auth_password.forgot_password') }}

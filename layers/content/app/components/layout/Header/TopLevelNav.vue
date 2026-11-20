@@ -1,6 +1,6 @@
 <template>
   <Tabs
-    :model-value="navigation?.find((link) => path.startsWith(link.path))?.path"
+    :model-value="navigation?.find((link) => isContentPathWithin(path, link.path))?.path"
     class="relative mr-auto w-full"
   >
     <div class="flex items-center justify-between overflow-x-auto">
@@ -13,11 +13,11 @@
           :key="link.path"
           :value="link.path"
           class="text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:text-foreground relative h-9 rounded-none border-b-2 border-b-transparent bg-transparent! px-4 pb-3 pt-2 font-semibold shadow-none transition-none data-[state=active]:shadow-none cursor-pointer"
-          @click="navigateTo(link.redirect ?? link.path)"
+          @click="navigateTo(localePath(navTargetFromPath(link.path, navigation)))"
         >
           <CtIcon
-            v-if="!isEmpty(link.icon)"
-            :name="link.icon as string"
+            v-if="typeof link.icon === 'string' && link.icon"
+            :name="link.icon"
             class="mr-1.5 self-center -mb-0.75"
           />
 
@@ -37,13 +37,11 @@
 <script setup lang="ts">
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CtIcon from '#layers/content/app/components/content/CtIcon.vue';
-import { isEmpty } from 'es-toolkit/compat';
+import { isContentPathWithin } from '#layers/content/app/utils/contentPaths';
 
-const { navigation } = useI18nDocs();
+const { navigation, path } = useI18nDocs();
 const config = useDocsConfig();
-
-const route = useRoute();
-const path = computed(() => route.path);
+const localePath = useLocalePath();
 
 const justifyContent = computed(() => {
   return config.value.aside.headerLevelNavAlign === 'start'

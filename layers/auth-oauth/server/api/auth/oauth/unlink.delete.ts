@@ -1,18 +1,18 @@
+import { getOAuthReadiness } from '../../../oauth/readiness';
+import { isOAuthProviderId } from '../../../oauth/registry';
 import {
   apiError,
   success,
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
+import { readValidatedRequestBody } from '#layers/server-core/server/utils/requestBody';
 import oauthAccountService from '#layers/auth-oauth/server/utils/database/oauthAccount';
-import { assertCanRemoveCredential } from '#layers/auth/server/utils/signInMethods';
 import type { OAuthUnlinkPayload } from '#layers/auth-oauth/types/oauth';
 import { oauthUnlinkBodySchema } from '#layers/auth-oauth/shared/schemas/oauthSchema';
-import { getOAuthReadiness } from '../../../oauth/readiness';
-import { isOAuthProviderId } from '../../../oauth/registry';
 
 export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);
-  const result = await readValidatedBody(event, (body) => oauthUnlinkBodySchema.safeParse(body));
+  const result = await readValidatedRequestBody(event, oauthUnlinkBodySchema.safeParse);
   if (!result.success) {
     throw apiError({
       status: 400,
@@ -28,24 +28,27 @@ export default defineEventHandler(async (event) => {
 
   const userId = session.user.id;
 
-  // Verify this provider is actually linked
-  const linkedAccount = await oauthAccountService.getByUserAndProvider(userId, provider);
-  if (!linkedAccount) {
+  const { ready } = getOAuthReadiness(useRuntimeConfig(event));
+  const requireOtherMethod = isOAuthProviderId(provider) && ready.includes(provider);
+  const unlinked = await oauthAccountService.unlink(userId, provider, requireOtherMethod);
+  if (!unlinked) {
+    const linkedAccount = await oauthAccountService.getByUserAndProvider(userId, provider);
+    if (!linkedAccount) {
+      throw apiError({
+        status: 404,
+        statusText: 'Not Found',
+        message: 'This provider is not linked to your account.',
+        code: 'OAUTH_PROVIDER_NOT_LINKED',
+      });
+    }
+
     throw apiError({
-      status: 404,
-      statusText: 'Not Found',
-      message: 'This provider is not linked to your account.',
-      code: 'OAUTH_PROVIDER_NOT_LINKED',
+      status: 400,
+      statusText: 'Bad Request',
+      message: 'Add another sign-in method before unlinking this account.',
+      code: 'ONLY_SIGNIN_METHOD',
     });
   }
-
-  const { ready } = getOAuthReadiness(useRuntimeConfig(event));
-  if (isOAuthProviderId(provider) && ready.includes(provider)) {
-    await assertCanRemoveCredential(userId);
-  }
-
-  // Unlink the provider
-  await oauthAccountService.unlink(userId, provider);
 
   const response: OAuthUnlinkPayload = {
     unlinked: true,

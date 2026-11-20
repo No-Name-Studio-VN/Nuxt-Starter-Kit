@@ -46,6 +46,8 @@ beforeEach(async () => {
       id INTEGER PRIMARY KEY, username TEXT NOT NULL UNIQUE, name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE, email_verified INTEGER DEFAULT 0,
       is_admin INTEGER DEFAULT 0, is_locked INTEGER DEFAULT 0,
+      onboarding_pending INTEGER NOT NULL DEFAULT 0,
+      onboarding_completed_steps TEXT NOT NULL DEFAULT '[]',
       last_login_at INTEGER, created_at INTEGER, updated_at INTEGER
     );
     CREATE TABLE user_passwords (

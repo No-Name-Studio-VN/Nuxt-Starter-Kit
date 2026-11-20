@@ -45,6 +45,7 @@ describe('readKitModules', () => {
       env: [],
       bindings: [],
       rootFiles: [],
+      changes: [],
     });
     expect(modules[2]?.internal).toBe(true);
   });
@@ -72,6 +73,7 @@ describe('readKitModules', () => {
       env: ['API_KEY'],
       bindings: ['DB'],
       rootFiles: ['server/api/health.get.ts'],
+      changes: [],
     });
   });
 

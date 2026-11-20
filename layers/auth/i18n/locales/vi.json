@@ -6,10 +6,109 @@
     "no_sign_in_methods": "Hiện không có phương thức đăng nhập nào. Vui lòng thử lại sau.",
     "no_sign_in_methods_hint": "Hãy kiểm tra cấu hình xác thực.",
     "account_locked": "Tài khoản này đã bị khóa. Hãy liên hệ bộ phận hỗ trợ.",
-    "sign_in_step_required": "Tài khoản này cần thêm một bước để đăng nhập. Hãy thử phương thức đăng nhập khác."
+    "sign_in_step_required": "Tài khoản này cần thêm một bước để đăng nhập. Hãy thử phương thức đăng nhập khác.",
+    "last_sign_in_label": "Lần đăng nhập gần nhất trên thiết bị này",
+    "last_sign_in_continue": "Tiếp tục với tài khoản {name} — {method}",
+    "last_sign_in_alternate": "Dùng phương thức khác",
+    "last_sign_in_not_you": "Không phải bạn?",
+    "last_sign_in_forget": "Quên thiết bị này",
+    "username_taken": "Tên người dùng này đã được sử dụng.",
+    "onboarding_step_invalid": "Bước thiết lập này không khả dụng."
   },
   "common": {
     "log_out": "Đăng xuất",
     "sign_in": "Đăng nhập"
+  },
+  "onboarding": {
+    "title": "Thiết lập tài khoản",
+    "progress": "Bước {current}/{total}",
+    "continue": "Tiếp tục",
+    "retry": "Thử lại",
+    "loading": "Đang tải phần thiết lập tài khoản…",
+    "load_failed": "Không thể tải phần thiết lập tài khoản. Hãy thử lại.",
+    "step_failed": "Không thể lưu tiến độ. Hãy thử lại.",
+    "complete_failed": "Không thể hoàn tất thiết lập tài khoản. Hãy thử lại.",
+    "sign_out_failed": "Không thể đăng xuất. Hãy thử lại.",
+    "username": {
+      "title": "Chọn tên người dùng",
+      "description": "Bạn có thể giữ tên được gợi ý hoặc chọn một tên của riêng mình.",
+      "label": "Tên người dùng",
+      "checking": "Đang kiểm tra tên người dùng…",
+      "available": "Bạn có thể dùng tên này.",
+      "invalid": "Dùng 3–50 ký tự gồm chữ cái A–Z, chữ số, dấu gạch dưới hoặc gạch ngang.",
+      "failed": "Không thể kiểm tra tên người dùng.",
+      "save_failed": "Không thể lưu tên người dùng. Hãy thử lại."
+    },
+    "preferences": {
+      "title": "Tùy chỉnh theo ý bạn",
+      "description": "Chọn giao diện và ngôn ngữ cho ứng dụng. Bạn có thể thay đổi cả hai bất cứ lúc nào.",
+      "theme": "Giao diện",
+      "light": "Sáng",
+      "dark": "Tối",
+      "system": "Hệ thống",
+      "language": "Ngôn ngữ",
+      "language_failed": "Không thể đổi ngôn ngữ. Hãy thử lại."
+    },
+    "welcome": {
+      "title": "Chào mừng, {name}",
+      "description": "Tài khoản của bạn đã sẵn sàng. Đến bảng điều khiển hoặc thử một trong các bước bên dưới.",
+      "next_steps": "Gợi ý bước tiếp theo",
+      "dashboard": "Đến bảng điều khiển",
+      "description_without_dashboard": "Tài khoản của bạn đã sẵn sàng. Về trang chủ hoặc thử một trong những bước tiếp theo bên dưới.",
+      "home": "Về trang chủ"
+    },
+    "secure_account": {
+      "title": "Bảo mật tài khoản",
+      "description": "Xem lại các phương thức đăng nhập trong cài đặt bảo mật."
+    },
+    "review_profile": {
+      "title": "Xem lại hồ sơ",
+      "description": "Kiểm tra tên và thông tin liên hệ của bạn."
+    }
+  },
+  "account_page": {
+    "title": "Hồ sơ tài khoản",
+    "breadcrumb": "Hồ sơ",
+    "heading": "Thông tin hồ sơ",
+    "full_name": "Họ và tên",
+    "email": "Email",
+    "complete": "Lưu hồ sơ",
+    "saved_toast": "Đã cập nhật hồ sơ",
+    "save_error": "Không thể cập nhật hồ sơ",
+    "delete_title": "Xóa tài khoản vĩnh viễn",
+    "delete_description": "Sau khi xóa tài khoản, bạn sẽ không thể khôi phục. Hãy chắc chắn trước khi tiếp tục. Toàn bộ dữ liệu của bạn sẽ bị xóa vĩnh viễn.",
+    "delete_action": "Xóa tài khoản",
+    "delete_dialog_title": "Xóa tài khoản",
+    "delete_dialog_description": "Bạn có chắc muốn xóa tài khoản không? Hành động này sẽ xóa vĩnh viễn toàn bộ dữ liệu của bạn và không thể hoàn tác.",
+    "delete_error": "Không thể xóa tài khoản",
+    "description": "Cập nhật họ tên, tên người dùng và email đăng nhập.",
+    "profile_description": "Quản lý thông tin liên kết với tài khoản của bạn.",
+    "username": "Tên người dùng",
+    "email_not_verified": "Chưa xác minh",
+    "email_change_note": "Bạn sẽ cần xác minh địa chỉ email mới.",
+    "email_change_requires_password": "Nếu chỉ đăng nhập qua nhà cung cấp bên ngoài, bạn không thể đổi địa chỉ email. Bạn có thể quản lý các tài khoản đã kết nối trong Cài đặt → Bảo mật.",
+    "email_in_use": "Địa chỉ email này đã được sử dụng.",
+    "save_partial": "Đã lưu tên hoặc email, nhưng chưa cập nhật được tên người dùng.",
+    "session_clear_failed": "Tài khoản đã được xóa, nhưng không thể kết thúc phiên đăng nhập. Vui lòng đăng xuất lại.",
+    "current_password": "Mật khẩu hiện tại"
+  },
+  "settings": {
+    "page_title": "Cài đặt",
+    "breadcrumb": "Cài đặt",
+    "security_page_title": "Bảo mật",
+    "security_breadcrumb": "Bảo mật",
+    "cancel": "Hủy",
+    "retry": "Thử lại",
+    "dismiss_notice": "Đóng thông báo",
+    "profile_loading": "Đang tải thông tin tài khoản…",
+    "profile_load_failed": "Không thể tải cài đặt tài khoản.",
+    "security_page_description": "Quản lý cách đăng nhập và bảo vệ tài khoản của bạn."
+  },
+  "validation": {
+    "name_required": "Vui lòng nhập họ và tên",
+    "name_max": "Họ và tên không được dài quá 256 ký tự",
+    "email_required": "Vui lòng nhập email hợp lệ",
+    "current_password_required": "Vui lòng nhập mật khẩu hiện tại",
+    "current_password_incorrect": "Mật khẩu hiện tại không đúng."
   }
 }

@@ -13,7 +13,6 @@ public enum UpgradePrecondition: Sendable, Equatable {
     case upToDate
     /// Not a git repository, no commits, or a detached HEAD: there is no branch to come back to.
     case noBranch
-    case dirtyTree
     case ready
 
     public init(snapshot: ProjectSnapshot, latestMain: String?) {
@@ -33,8 +32,6 @@ public enum UpgradePrecondition: Sendable, Equatable {
             self = .upToDate
         } else if snapshot.git?.branch == nil {
             self = .noBranch
-        } else if (snapshot.git?.dirtyCount ?? 0) > 0 {
-            self = .dirtyTree
         } else {
             self = .ready
         }
@@ -53,7 +50,6 @@ public enum UpgradePrecondition: Sendable, Equatable {
             "The latest kit (origin/main) cannot be read from your kit checkout. Check the kit path in Settings and that it has an origin remote with a main branch."
         case .upToDate: "Already up to date with the latest kit."
         case .noBranch: "Check out a branch first. The project is not on a git branch."
-        case .dirtyTree: "Commit or stash your changes first."
         case .ready: nil
         }
     }

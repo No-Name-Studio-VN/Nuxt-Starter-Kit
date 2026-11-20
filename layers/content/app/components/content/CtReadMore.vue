@@ -29,7 +29,8 @@ const {
   icon?: string;
 }>();
 
-const { navigation } = usePageData();
+const { navigation } = useI18nDocs();
+const { locale, defaultLocale } = useI18n();
 
 const displayTitle = computed(() => {
   if (title) return title;
@@ -37,7 +38,7 @@ const displayTitle = computed(() => {
   if (to.startsWith("http")) return to;
 
   try {
-    return useBreadcrumb(to, navigation.value)
+    return useBreadcrumb(normalizeContentPath(to, locale.value, defaultLocale), navigation.value)
       .map((x) => x.title)
       .join(" > ");
   } catch {

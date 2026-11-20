@@ -13,6 +13,7 @@ defineProps<{
   items: SidebarItem[];
 }>();
 
+const localePath = useAppLocalePath();
 const { isMobile, setOpenMobile } = useSidebar();
 const { clearSidebarContextOverride } = useSidebarContext();
 
@@ -31,9 +32,9 @@ const handleNavigationClick = () => {
       <SidebarMenu>
         <SidebarMenuItem v-for="item in items" :key="item.title">
           <SidebarMenuButton as-child size="sm">
-            <nuxt-link :to="item.url" @click="handleNavigationClick">
+            <nuxt-link :to="item.url ? localePath(item.url) || item.url : undefined" @click="handleNavigationClick">
               <component :is="item.icon" />
-              <span>{{ item.title }}</span>
+              <span>{{ item.titleKey ? $t(item.titleKey) : item.title }}</span>
             </nuxt-link>
           </SidebarMenuButton>
         </SidebarMenuItem>

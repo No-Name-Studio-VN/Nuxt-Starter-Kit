@@ -6,6 +6,45 @@
     "register_title": "Create an account",
     "register_description": "Create an account to get started.",
     "reset_password_title": "Reset your password",
-    "reset_password_description": "Choose a new password for your account."
+    "reset_password_description": "Choose a new password for your account.",
+    "last_sign_in_password": "{'@'}{username} · Password",
+    "reset_password_success": "Password reset successfully. You can now sign in with your new password.",
+    "reset_password_oauth_disconnected": "Your connected sign-in accounts were disconnected. You can reconnect them in Settings → Security after signing in."
+  },
+  "settings": {
+    "password": {
+      "save_failed": "Failed to change password. Please try again.",
+      "title": "Password",
+      "change_action": "Change",
+      "username_changed": "{username} · Last changed {date}",
+      "add_hint": "Add one to sign in without Google or GitHub",
+      "status_unset": "Not set",
+      "status_set": "Set",
+      "description": "Sign in with your username and password.",
+      "configured": "A password is set for your account.",
+      "not_configured": "Your account doesn’t have a password yet.",
+      "change": "Change password",
+      "set": "Set password",
+      "change_description": "Enter your current password and choose a new one.",
+      "set_description": "Choose a password so you can sign in without a connected account.",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "show_field": "Show {field}",
+      "hide_field": "Hide {field}",
+      "requirements": "Use at least 8 characters, including an uppercase letter, a lowercase letter, a number, and a symbol.",
+      "invalid_field": "Check this password field and try again.",
+      "saved": "Password updated.",
+      "set_conflict": "Your account changed while setting the password. Try again with your current password."
+    }
+  },
+  "validation": {
+    "password_min": "Password must be at least 8 characters",
+    "password_lowercase": "Password must contain at least one lowercase letter",
+    "password_uppercase": "Password must contain at least one uppercase letter",
+    "password_number": "Password must contain at least one number",
+    "password_special": "Password must contain at least one special character",
+    "new_password_confirm_required": "Please confirm your new password",
+    "passwords_mismatch": "Passwords do not match"
   }
 }

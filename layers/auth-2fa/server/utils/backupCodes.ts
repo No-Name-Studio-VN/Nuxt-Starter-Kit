@@ -1,8 +1,8 @@
-import { BACKUP_CODE_LENGTH } from '#layers/auth-2fa/shared/constants/totp';
+import { BACKUP_CODE_COUNT, BACKUP_CODE_LENGTH } from '#layers/auth-2fa/shared/constants/totp';
 
-export function generateBackupCodes(): string[] {
+export function generateBackupCodes(previousCodes: readonly string[] = []): string[] {
   const codes = new Set<string>();
-  while (codes.size < 10) {
+  while (codes.size < BACKUP_CODE_COUNT) {
     let code = '';
     while (code.length < BACKUP_CODE_LENGTH) {
       const bytes = crypto.getRandomValues(new Uint8Array(BACKUP_CODE_LENGTH));
@@ -13,7 +13,7 @@ export function generateBackupCodes(): string[] {
         if (code.length === BACKUP_CODE_LENGTH) break;
       }
     }
-    codes.add(code);
+    if (!previousCodes.includes(code)) codes.add(code);
   }
   return [...codes];
 }

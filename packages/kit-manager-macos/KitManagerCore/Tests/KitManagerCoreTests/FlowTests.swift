@@ -75,18 +75,20 @@ struct FlowTests {
         #expect(precondition(readySnapshot(behind: 0)) == .upToDate)
         #expect(precondition(readySnapshot(git: nil)) == .noBranch)
         #expect(precondition(readySnapshot(git: gitStatus(branch: nil))) == .noBranch)
-        #expect(precondition(readySnapshot(git: gitStatus(dirty: 3))) == .dirtyTree)
 
         #expect(
             UpgradePrecondition.pinned(ref: "v3.0.2").reason
                 == "Pinned to v3.0.2. Run nuxt-saas upgrade --template github:No-Name-Studio-VN/Nuxt-Starter-Kit in the project to follow main again.")
-        #expect(UpgradePrecondition.dirtyTree.reason == "Commit or stash your changes first.")
         for blocked: UpgradePrecondition in [
-            .notKitV3, .unresolvedConflicts, .dirtyTree, .notOnMain, .kitUnavailable, .upToDate, .noBranch,
+            .notKitV3, .unresolvedConflicts, .notOnMain, .kitUnavailable, .upToDate, .noBranch,
             .pinned(ref: "x"),
         ] {
             #expect(blocked.reason?.isEmpty == false)
         }
+    }
+
+    @Test func dirtyTreeCanProceedToPreview() {
+        #expect(UpgradePrecondition(snapshot: readySnapshot(git: gitStatus(dirty: 3)), latestMain: latest) == .ready)
     }
 
     @Test func unresolvedConflictsComeFromLoadedInspect() {
@@ -280,6 +282,30 @@ struct FlowTests {
         #expect(
             UpgradeRollback.plan(record: plain, branch: "kit-upgrade/v3.1.0", previous: "main", current: "kit-upgrade/v3.1.0")
                 == .discardSwitchAndDelete)
+    }
+
+    @Test func dirtyStartRollsBackThroughUndoUnlessItOnlyNeedsToSwitchBack() {
+        let branch = "kit-upgrade/v3.2.0"
+        let record = UpgradeBranchRecord(branch: branch, previous: "main", startedDirty: true)
+        let restored = UpgradeBranchRecord(branch: branch, previous: "main", keepsChanges: true, startedDirty: true)
+        #expect(UpgradeRollback.plan(record: record, branch: branch, previous: "main", current: branch) == .undoSwitchAndDelete)
+        #expect(UpgradeRollback.plan(record: restored, branch: branch, previous: "main", current: branch) == .switchKeepingChanges)
+        #expect(UpgradeRollback.plan(record: record, branch: branch, previous: "main", current: "main") == .deleteOnly)
+    }
+
+    @Test func failedDirtyUpgradeNeverSelectsAPreExistingOrAmbiguousBackup() {
+        func backup(_ name: String, status: BackupStatus) -> Backup {
+            let date = Date(timeIntervalSince1970: 0)
+            return Backup(ref: "refs/nuxt-saas/backups/\(name)", name: name, createdAt: date, expiresAt: date, status: status)
+        }
+        let old = backup("old", status: .failed)
+        let interrupted = backup("new", status: .failed)
+        let concurrent = backup("another", status: .complete)
+        let previous = BackupList(schema: 1, backups: [old])
+        #expect(UpgradeRollback.interruptedBackup(previous: previous, current: previous) == nil)
+        #expect(UpgradeRollback.interruptedBackup(previous: previous, current: BackupList(schema: 1, backups: [interrupted, old])) == interrupted)
+        #expect(UpgradeRollback.interruptedBackup(previous: previous, current: BackupList(schema: 1, backups: [concurrent, old])) == nil)
+        #expect(UpgradeRollback.interruptedBackup(previous: previous, current: BackupList(schema: 1, backups: [concurrent, interrupted, old])) == nil)
     }
 
     @Test func discardSummaryListsPathsAndCountsTheRest() {

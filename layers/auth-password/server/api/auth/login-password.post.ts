@@ -7,7 +7,13 @@ import { loginErrorPath } from '#layers/auth/server/utils/loginErrorPath';
 import { safeRedirectPath } from '#layers/auth/server/utils/safeRedirect';
 
 export default defineEventHandler(async (event) => {
-  const result = await readValidatedBody(event, (body) => loginSchema.safeParse(body));
+  let originalUsername: string | undefined;
+  const result = await readValidatedBody(event, (body) => {
+    if (body && typeof body === 'object' && 'username' in body && typeof body.username === 'string') {
+      originalUsername = body.username;
+    }
+    return loginSchema.safeParse(body);
+  });
   if (!result.success) {
     return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=validation');
   }
@@ -25,7 +31,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // Find user by username
-  const user = await userService.getByUsername(username);
+  const user = await userService.getByUsername(username) ??
+    (originalUsername && originalUsername !== username ? await userService.getByUsername(originalUsername) : undefined);
   if (!user) {
     return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=invalid-credentials');
   }

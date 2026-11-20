@@ -6,6 +6,45 @@
     "register_title": "Tạo tài khoản",
     "register_description": "Tạo tài khoản để bắt đầu.",
     "reset_password_title": "Đặt lại mật khẩu",
-    "reset_password_description": "Chọn mật khẩu mới cho tài khoản của bạn."
+    "reset_password_description": "Chọn mật khẩu mới cho tài khoản của bạn.",
+    "last_sign_in_password": "{'@'}{username} · Mật khẩu",
+    "reset_password_success": "Đã đặt lại mật khẩu. Bây giờ bạn có thể đăng nhập bằng mật khẩu mới.",
+    "reset_password_oauth_disconnected": "Các tài khoản đăng nhập liên kết đã được ngắt kết nối. Sau khi đăng nhập, bạn có thể kết nối lại trong Cài đặt → Bảo mật."
+  },
+  "settings": {
+    "password": {
+      "save_failed": "Không thể đổi mật khẩu. Vui lòng thử lại.",
+      "title": "Mật khẩu",
+      "change_action": "Đổi",
+      "username_changed": "{username} · Đổi lần cuối ngày {date}",
+      "add_hint": "Đặt mật khẩu để đăng nhập mà không cần Google hoặc GitHub",
+      "status_unset": "Chưa đặt",
+      "status_set": "Đã đặt",
+      "description": "Đăng nhập bằng tên người dùng và mật khẩu.",
+      "configured": "Tài khoản của bạn đã có mật khẩu.",
+      "not_configured": "Tài khoản của bạn chưa có mật khẩu.",
+      "change": "Đổi mật khẩu",
+      "set": "Đặt mật khẩu",
+      "change_description": "Nhập mật khẩu hiện tại và chọn mật khẩu mới.",
+      "set_description": "Chọn mật khẩu để có thể đăng nhập mà không cần tài khoản đã kết nối.",
+      "currentPassword": "Mật khẩu hiện tại",
+      "newPassword": "Mật khẩu mới",
+      "confirmPassword": "Xác nhận mật khẩu mới",
+      "show_field": "Hiện {field}",
+      "hide_field": "Ẩn {field}",
+      "requirements": "Dùng ít nhất 8 ký tự, gồm một chữ hoa, một chữ thường, một chữ số và một ký tự đặc biệt.",
+      "invalid_field": "Kiểm tra ô mật khẩu này rồi thử lại.",
+      "saved": "Đã cập nhật mật khẩu.",
+      "set_conflict": "Tài khoản đã thay đổi trong khi đặt mật khẩu. Hãy thử lại với mật khẩu hiện tại."
+    }
+  },
+  "validation": {
+    "password_min": "Mật khẩu phải có ít nhất 8 ký tự",
+    "password_lowercase": "Mật khẩu phải có ít nhất một chữ cái thường",
+    "password_uppercase": "Mật khẩu phải có ít nhất một chữ cái hoa",
+    "password_number": "Mật khẩu phải có ít nhất một chữ số",
+    "password_special": "Mật khẩu phải có ít nhất một ký tự đặc biệt",
+    "new_password_confirm_required": "Vui lòng xác nhận mật khẩu mới",
+    "passwords_mismatch": "Mật khẩu không khớp"
   }
 }
