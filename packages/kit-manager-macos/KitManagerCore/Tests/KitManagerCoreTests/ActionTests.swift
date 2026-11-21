@@ -35,7 +35,7 @@ private func report(
 }
 
 private let catalogue = [
-    module("auth", title: "Authentication", description: "Email and OAuth sign-in"),
+    module("auth-password", title: "Password sign-in", description: "Username and password sign-in"),
     module("pwa", title: "PWA", description: "Installable app"),
     module("server-core", title: "Server core", description: "Shared server code", internal: true),
 ]
@@ -89,12 +89,12 @@ struct ActionTests {
         let prompt = PromptBuilder.migration(
             MigrationPromptInput(
                 projectName: "my-app", folderName: "my-app", source: .nuxt,
-                catalogue: catalogue, selected: ["auth", "pwa"],
+                catalogue: catalogue, selected: ["auth-password", "pwa"],
                 temporaryDirectory: URL(filePath: "/tmp/km-migrate")))
 
-        #expect(prompt.contains("npm create nuxt-saas@latest /tmp/km-migrate/my-app -- --yes --modules auth,pwa --no-git"))
+        #expect(prompt.contains("npm create nuxt-saas@latest /tmp/km-migrate/my-app -- --yes --modules auth-password,pwa --no-git"))
         #expect(prompt.contains("kit-migration"))
-        #expect(prompt.contains("auth — Authentication: Email and OAuth sign-in"))
+        #expect(prompt.contains("auth-password — Password sign-in: Username and password sign-in"))
         #expect(prompt.contains("pwa — PWA: Installable app"))
         #expect(!prompt.contains("server-core"))
         #expect(prompt.contains("success()"))
@@ -107,9 +107,9 @@ struct ActionTests {
         let prompt = PromptBuilder.migration(
             MigrationPromptInput(
                 projectName: "my-app", folderName: "my-app", source: .other,
-                catalogue: catalogue, selected: ["auth"],
+                catalogue: catalogue, selected: ["auth-password"],
                 temporaryDirectory: URL(filePath: "/tmp/km migrate")))
-        #expect(prompt.contains("npm create nuxt-saas@latest '/tmp/km migrate/my-app' -- --yes --modules auth --no-git"))
+        #expect(prompt.contains("npm create nuxt-saas@latest '/tmp/km migrate/my-app' -- --yes --modules auth-password --no-git"))
     }
 
     @Test func legacyMigrationQuotesCLIGuidance() {

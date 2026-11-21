@@ -9,7 +9,7 @@
       "description": "Admin area shell: route guards, who becomes an admin, the seed endpoint, and the admin landing page.",
       "group": "App",
       "requiresOneOf": [],
-      "requires": ["auth", "dashboard"],
+      "requires": ["server-core", "auth", "dashboard"],
       "internal": false,
       "dependencies": [],
       "devDependencies": [],
@@ -27,7 +27,7 @@
       "group": "App",
       "parent": "admin",
       "requiresOneOf": [],
-      "requires": ["admin"],
+      "requires": ["server-core", "admin", "kv", "cache"],
       "internal": false,
       "dependencies": ["pretty-bytes", "@codemirror/lang-json", "codemirror"],
       "devDependencies": [],
@@ -44,7 +44,7 @@
       "group": "App",
       "parent": "admin",
       "requiresOneOf": [],
-      "requires": ["admin"],
+      "requires": ["server-core", "admin"],
       "internal": false,
       "dependencies": [],
       "devDependencies": [],
@@ -60,7 +60,7 @@
       "description": "Accounts, sessions and the sign-in page that sign-in methods plug into.",
       "group": "Authentication",
       "requiresOneOf": ["auth-password", "auth-oauth"],
-      "requires": ["database"],
+      "requires": ["server-core", "database"],
       "internal": false,
       "dependencies": ["nuxt-auth-utils"],
       "devDependencies": [],
@@ -78,9 +78,9 @@
       "group": "Authentication",
       "parent": "auth-password",
       "requiresOneOf": [],
-      "requires": ["auth-password"],
+      "requires": ["server-core", "auth-password"],
       "internal": false,
-      "dependencies": ["vue-input-otp", "otpauth"],
+      "dependencies": ["vue-input-otp", "otpauth", "uqr"],
       "devDependencies": [],
       "scripts": [],
       "env": [],
@@ -95,7 +95,7 @@
       "group": "Authentication",
       "parent": "auth-password",
       "requiresOneOf": [],
-      "requires": ["auth-password"],
+      "requires": ["server-core", "auth-password"],
       "internal": false,
       "dependencies": [],
       "devDependencies": [],
@@ -112,7 +112,7 @@
       "group": "Authentication",
       "parent": "auth",
       "requiresOneOf": [],
-      "requires": ["auth"],
+      "requires": ["server-core", "auth"],
       "internal": false,
       "dependencies": [],
       "devDependencies": [],
@@ -139,7 +139,7 @@
       "group": "Authentication",
       "parent": "auth-password",
       "requiresOneOf": [],
-      "requires": ["auth-password"],
+      "requires": ["server-core", "auth-password", "kv"],
       "internal": false,
       "dependencies": ["@simplewebauthn/browser", "@simplewebauthn/server", "reflect-metadata"],
       "devDependencies": [],
@@ -152,19 +152,114 @@
     {
       "id": "auth-password",
       "title": "Password sign-in",
-      "description": "Username and password sign-in, registration and password reset, protected by Cloudflare Turnstile.",
+      "description": "Username and password sign-in, registration and password reset.",
       "group": "Authentication",
       "parent": "auth",
       "requiresOneOf": [],
-      "requires": ["auth", "email"],
+      "requires": ["server-core", "auth", "email"],
       "internal": false,
-      "dependencies": ["@nuxtjs/turnstile"],
+      "dependencies": [],
       "devDependencies": [],
       "scripts": [],
-      "env": ["NUXT_TURNSTILE_SITE_KEY", "NUXT_TURNSTILE_SECRET_KEY"],
+      "env": [],
       "bindings": [],
       "rootFiles": [],
-      "changes": []
+      "changes": [
+        {
+          "id": "auth-password.optional-bot-protection",
+          "since": "4.0.0",
+          "title": "Turnstile is no longer built into password forms. Add bot-protection to keep bot checks on sign-in, registration and password reset.",
+          "kind": "feature",
+          "files": [
+            "layers/auth-password/README.md",
+            "layers/auth-password/app/components/auth/PasswordLoginForm.vue",
+            "layers/auth-password/app/pages/auth/forgot-password.vue",
+            "layers/auth-password/app/pages/auth/register.vue",
+            "layers/auth-password/i18n/locales/en.json",
+            "layers/auth-password/i18n/locales/vi.json",
+            "layers/auth-password/module.json",
+            "layers/auth-password/nuxt.config.ts",
+            "layers/auth-password/server/api/auth/forgot-password.post.ts",
+            "layers/auth-password/server/api/auth/login-password.post.ts",
+            "layers/auth-password/server/api/auth/register-password.post.ts",
+            "layers/auth-password/shared/constants/passwordMessages.ts",
+            "layers/auth-password/shared/schemas/passwordSchema.ts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bot-protection",
+      "title": "Bot protection",
+      "description": "Opt-in bot protection for public forms and API routes, with Cloudflare Turnstile by default.",
+      "group": "Foundation",
+      "requiresOneOf": [],
+      "requires": ["server-core"],
+      "internal": false,
+      "dependencies": [
+        "@nuxtjs/turnstile"
+      ],
+      "devDependencies": [],
+      "scripts": [],
+      "env": [
+        "NUXT_TURNSTILE_SITE_KEY",
+        "NUXT_TURNSTILE_SECRET_KEY"
+      ],
+      "bindings": [],
+      "rootFiles": [],
+      "changes": [
+        {
+          "id": "bot-protection.add",
+          "since": "4.0.0",
+          "title": "Add provider-based bot protection with Turnstile as the default.",
+          "kind": "feature",
+          "files": [
+            "layers/bot-protection/app/widgets/TurnstileChallenge.vue",
+            "layers/bot-protection/app/widgets/turnstile-widget.ts",
+            "layers/bot-protection/i18n/locales/en.json",
+            "layers/bot-protection/i18n/locales/vi.json",
+            "layers/bot-protection/module.json",
+            "layers/bot-protection/module.ts",
+            "layers/bot-protection/nuxt.config.ts",
+            "layers/bot-protection/server/middleware/botProtection.ts",
+            "layers/bot-protection/server/providers/turnstile.ts",
+            "layers/bot-protection/server/utils/botProtection.ts",
+            "layers/bot-protection/shared/constants/turnstile.ts",
+            "layers/bot-protection/types/botProtection.ts",
+            "layers/bot-protection/README.md"
+          ]
+        }
+      ],
+      "parent": null
+    },
+    {
+      "id": "cache",
+      "title": "Cache storage",
+      "description": "NuxtHub-backed storage for Nitro's cache.",
+      "requiresOneOf": [],
+      "requires": ["server-core"],
+      "internal": true,
+      "dependencies": ["@nuxthub/core"],
+      "devDependencies": [],
+      "scripts": [],
+      "env": [],
+      "bindings": ["CACHE"],
+      "rootFiles": [],
+      "changes": [
+        {
+          "id": "cache.add",
+          "since": "4.0.0",
+          "title": "Add a dedicated module for Nitro's shared cache storage.",
+          "kind": "feature",
+          "files": [
+            "layers/cache/nuxt.config.ts",
+            "layers/cache/module.json",
+            "layers/cache/README.md"
+          ]
+        }
+      ],
+      "group": null,
+      "parent": null
     },
     {
       "id": "content",
@@ -232,7 +327,7 @@
       "requiresOneOf": [],
       "requires": ["server-core"],
       "internal": false,
-      "dependencies": ["@libsql/client", "better-sqlite3", "drizzle-orm", "drizzle-zod"],
+      "dependencies": ["@libsql/client", "@nuxthub/core", "better-sqlite3", "drizzle-orm", "drizzle-zod"],
       "devDependencies": ["@types/better-sqlite3", "drizzle-kit"],
       "scripts": ["db:generate", "deploy:db"],
       "env": [],
@@ -265,7 +360,7 @@
       "group": "App",
       "parent": "admin",
       "requiresOneOf": [],
-      "requires": ["admin"],
+      "requires": ["server-core", "admin", "kv", "cache"],
       "internal": false,
       "dependencies": ["@openfeature/server-sdk"],
       "devDependencies": [],
@@ -274,6 +369,36 @@
       "bindings": [],
       "rootFiles": [],
       "changes": []
+    },
+    {
+      "id": "kv",
+      "title": "KV storage",
+      "description": "NuxtHub key-value storage and the useKV() server utility.",
+      "requiresOneOf": [],
+      "requires": ["server-core"],
+      "internal": true,
+      "dependencies": ["@nuxthub/core"],
+      "devDependencies": [],
+      "scripts": [],
+      "env": [],
+      "bindings": ["KV"],
+      "rootFiles": [],
+      "changes": [
+        {
+          "id": "kv.add",
+          "since": "4.0.0",
+          "title": "Add a dedicated KV storage module with the useKV() server utility.",
+          "kind": "feature",
+          "files": [
+            "layers/kv/nuxt.config.ts",
+            "layers/kv/module.json",
+            "layers/kv/README.md",
+            "layers/kv/server/utils/kv.ts"
+          ]
+        }
+      ],
+      "group": null,
+      "parent": null
     },
     {
       "id": "pwa",
@@ -304,17 +429,32 @@
     {
       "id": "server-core",
       "title": "Server core",
-      "description": "The API response envelope, KV and cache bindings, and error reporting shared by every server module.",
+      "description": "The API response envelope, error helpers and request utilities shared by server modules.",
       "requiresOneOf": [],
       "requires": [],
       "internal": true,
-      "dependencies": ["@nuxthub/core"],
+      "dependencies": [],
       "devDependencies": [],
       "scripts": [],
       "env": [],
-      "bindings": ["CACHE", "KV"],
+      "bindings": [],
       "rootFiles": [],
-      "changes": [],
+      "changes": [
+        {
+          "id": "server-core.storage-split",
+          "since": "4.0.0",
+          "title": "Move NuxtHub storage out of server-core into the database, kv and cache modules.",
+          "kind": "feature",
+          "files": [
+            "layers/server-core/nuxt.config.ts",
+            "layers/server-core/module.json",
+            "layers/server-core/README.md",
+            "layers/database/nuxt.config.ts",
+            "layers/database/module.json",
+            "layers/database/README.md"
+          ]
+        }
+      ],
       "group": null,
       "parent": null
     }
