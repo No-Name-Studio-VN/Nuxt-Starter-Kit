@@ -1,8 +1,21 @@
 {
   "title": "Server core",
-  "description": "The API response envelope, KV and cache bindings, and error reporting shared by every server module.",
+  "description": "The API response envelope, error helpers and request utilities shared by server modules.",
   "requires": [],
   "internal": true,
-  "dependencies": ["@nuxthub/core"],
-  "bindings": ["CACHE", "KV"]
+  "changes": [
+    {
+      "id": "server-core.storage-split",
+      "since": "4.0.0",
+      "title": "Move NuxtHub storage out of server-core into the database, kv and cache modules.",
+      "files": [
+        "layers/server-core/nuxt.config.ts",
+        "layers/server-core/module.json",
+        "layers/server-core/README.md",
+        "layers/database/nuxt.config.ts",
+        "layers/database/module.json",
+        "layers/database/README.md"
+      ]
+    }
+  ]
 }
