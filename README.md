@@ -82,10 +82,15 @@ A comprehensive, production-ready SaaS starter kit built with Nuxt 4, featuring 
 npm create nuxt-saas@latest my-app
 ```
 
-Select the modules you need. Base is always included; each selected feature lives in
+Select the modules you need. Add `bot-protection` to enable Turnstile on public forms, or register your own verification provider. Base is always included; each selected feature lives in
 `layers/<id>/` and its dependencies are included automatically. To create a base-only project
-without prompts, pass `-- --yes`; to select modules explicitly, use
-`-- --yes --modules auth,pwa`. The generated app uses pnpm (Node.js 22+ for the CLI).
+without prompts, pass `-- --yes`; to select modules explicitly, use:
+
+```bash
+npm create nuxt-saas@latest my-app -- --yes --modules auth-password,pwa
+```
+
+The generated app uses pnpm (Node.js 22+ for the CLI).
 
 The [CLI README](packages/create-nuxt-saas/README.md) covers all commands, upgrade/conflict handling
 and module authoring. Projects created with CLI 2.x must be regenerated, not upgraded to 3.0.
@@ -161,7 +166,7 @@ run `pnpm db:generate` for the selected schemas. Keep `.nuxt-saas.json` in versi
 add/remove use its recorded kit commit, while upgrade moves to a new commit.
 
 ```bash
-pnpm dlx create-nuxt-saas@latest add auth
+pnpm dlx create-nuxt-saas@latest add auth-password
 pnpm dlx create-nuxt-saas@latest upgrade --check
 pnpm dlx create-nuxt-saas@latest upgrade
 ```
