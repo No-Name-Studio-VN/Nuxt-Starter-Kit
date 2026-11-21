@@ -71,6 +71,7 @@
 
 <script setup lang="ts">
 import { ArrowRight, Check, Download, Smartphone } from '@lucide/vue';
+import { useMounted } from '@vueuse/core';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ResponsiveDialog from '@/components/ResponsiveDialog.vue';
@@ -91,8 +92,9 @@ const { $pwa } = useNuxtApp();
 const config = useRuntimeConfig();
 
 const isDialogOpen = ref(false);
+const isMounted = useMounted();
 
-const isPWA = computed(() => $pwa?.isPWAInstalled ?? false);
+const isPWA = computed(() => isMounted.value && ($pwa?.isPWAInstalled ?? false));
 const canInstall = computed(() => $pwa?.showInstallPrompt ?? false);
 
 function onInstallClick() {
