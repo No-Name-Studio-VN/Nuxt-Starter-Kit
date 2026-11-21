@@ -67,22 +67,34 @@ struct ModulesListView: View {
             if visible.isEmpty {
                 ContentUnavailableView.search(text: query)
             } else {
-                List(selection: $selection) {
-                    ForEach(groupModules(visible, module: \.module)) { group in
-                        if let name = group.name {
-                            let expanded = isExpanded(name)
-                            Section {
-                                if expanded { moduleRows(group.entries) }
-                            } header: {
-                                groupHeader(name, count: group.entries.count, expanded: expanded)
+                let groups = groupModules(visible, showsInternalSection: true, module: \.module)
+                let selectedGroup = groups.first { $0.entries.contains { $0.id == selection } }
+                let collapsedGroup = selectedGroup?.name.flatMap { isExpanded($0) ? nil : $0 }
+                ScrollViewReader { proxy in
+                    List(selection: $selection) {
+                        ForEach(groups) { group in
+                            if let name = group.name {
+                                let expanded = isExpanded(name)
+                                Section {
+                                    if expanded { moduleRows(group.entries) }
+                                } header: {
+                                    groupHeader(name, count: group.entries.count, expanded: expanded)
+                                }
+                            } else {
+                                moduleRows(group.entries)
                             }
-                        } else {
-                            moduleRows(group.entries)
                         }
                     }
+                    .onChange(of: selection, initial: true) {
+                        if let collapsedGroup { toggle(collapsedGroup) }
+                    }
+                    // Wait for the selected row to be visible before scrolling, including after expanding a group.
+                    .onChange(of: selectedGroup != nil && collapsedGroup == nil ? selection : nil, initial: true) { _, id in
+                        if let id { proxy.scrollTo(id) }
+                    }
+                    .accessibilityLabel("Modules")
+                    .navigationSubtitle(subtitle(visible: visible.count))
                 }
-                .accessibilityLabel("Modules")
-                .navigationSubtitle(subtitle(visible: visible.count))
             }
         }
     }
@@ -164,5 +176,6 @@ struct ModulesListView: View {
         .accessibilityLabel("\(spokenTitle), \(count), \(row.behindCount) behind\(internalLabel)")
         .accessibilityHint("Shows the module and the projects that use it")
         .tag(id)
+        .id(id)
     }
 }
