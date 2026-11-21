@@ -1,0 +1,21 @@
+{
+  "title": "KV storage",
+  "description": "NuxtHub key-value storage and the useKV() server utility.",
+  "internal": true,
+  "requires": ["server-core"],
+  "dependencies": ["@nuxthub/core"],
+  "bindings": ["KV"],
+  "changes": [
+    {
+      "id": "kv.add",
+      "since": "4.0.0",
+      "title": "Add a dedicated KV storage module with the useKV() server utility.",
+      "files": [
+        "layers/kv/nuxt.config.ts",
+        "layers/kv/module.json",
+        "layers/kv/README.md",
+        "layers/kv/server/utils/kv.ts"
+      ]
+    }
+  ]
+}
