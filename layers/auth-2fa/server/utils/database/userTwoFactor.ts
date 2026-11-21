@@ -1,5 +1,6 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { DBTwoFactor } from '#layers/auth-2fa/types/twoFactor';
+import { databaseValues } from '#layers/database/server/utils/databaseValues';
 import { IDatabaseService } from '#layers/database/types/db/database-service';
 import type {
   UserTwoFactorCreateInput,
@@ -155,7 +156,7 @@ class UserTwoFactorService extends IDatabaseService<DBTwoFactor> {
   async bulkDelete(userIds: number[]): Promise<void> {
     if (userIds.length === 0) return;
 
-    await this.db.delete(tables.userTwoFactor).where(inArray(tables.userTwoFactor.userId, userIds));
+    await this.db.delete(tables.userTwoFactor).where(inArray(tables.userTwoFactor.userId, databaseValues(userIds)));
   }
 }
 
