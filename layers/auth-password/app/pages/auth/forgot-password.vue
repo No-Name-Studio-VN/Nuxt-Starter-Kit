@@ -8,7 +8,8 @@ import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import type { ApiResponse } from '#layers/server-core/types/api';
 
-const turnstileToken = ref('');
+const challenge = useFormChallenge();
+const { pending: challengePending } = challenge;
 const isSubmitting = ref(false);
 const isSubmitted = ref(false);
 const error = ref('');
@@ -20,6 +21,7 @@ const { handleSubmit } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
+  if (isSubmitting.value || challengePending.value) return;
   isSubmitting.value = true;
   error.value = '';
 
@@ -28,10 +30,8 @@ const onSubmit = handleSubmit(async (values) => {
       passwordRoutes.AUTH_FORGOT_PASSWORD_REQUEST,
       {
         method: 'POST',
-        body: {
-          email: values.email,
-          'cf-turnstile-response': turnstileToken.value,
-        },
+        headers: challenge.headers(),
+        body: { email: values.email },
       },
     );
     if (!response.success) {
@@ -39,8 +39,10 @@ const onSubmit = handleSubmit(async (values) => {
     }
     isSubmitted.value = true;
   } catch (err: unknown) {
-    error.value = parseApiError(err, 'Something went wrong. Please try again.').message;
+    const parsed = parseApiError(err, 'Something went wrong. Please try again.');
+    error.value = challenge.errorMessage(parsed) ?? parsed.message;
   } finally {
+    challenge.reset();
     isSubmitting.value = false;
   }
 });
@@ -116,16 +118,13 @@ useSeo({
         </Field>
       </VeeField>
 
-      <NuxtTurnstile
-        v-model="turnstileToken"
-        :options="{ size: 'flexible', appearance: 'interaction-only' }"
-      />
+      <FormChallenge :challenge="challenge.challenge" />
 
       <Button
         type="submit"
         class="h-10 w-full"
         :is-loading="isSubmitting"
-        :disabled="!turnstileToken"
+        :disabled="challengePending"
       >
         Send reset link
       </Button>

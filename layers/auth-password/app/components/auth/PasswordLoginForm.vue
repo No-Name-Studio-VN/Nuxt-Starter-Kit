@@ -9,7 +9,8 @@ import type { AuthMethodEmits, AuthMethodProps } from '#layers/auth/types/authMe
 const { redirectTo, pending, rememberedUsername } = defineProps<AuthMethodProps>();
 const emit = defineEmits<AuthMethodEmits>();
 const showPassword = ref(false);
-const turnstileToken = ref('');
+const challenge = useFormChallenge();
+const { pending: challengePending } = challenge;
 const form = useTemplateRef<HTMLFormElement>('form');
 const localePath = useAppLocalePath();
 const { handleSubmit, values } = useForm({
@@ -25,7 +26,7 @@ onMounted(() => {
 });
 
 const onSubmit = handleSubmit(async () => {
-  if (pending || !form.value) return;
+  if (pending || challengePending.value || !form.value) return;
   emit('pending', true);
   form.value.submit();
 });
@@ -102,12 +103,9 @@ const onSubmit = handleSubmit(async () => {
       </Field>
     </VeeField>
 
-    <NuxtTurnstile
-      v-model="turnstileToken"
-      :options="{ size: 'flexible', appearance: 'interaction-only' }"
-    />
+    <FormChallenge :challenge="challenge.challenge" />
 
-    <Button type="submit" class="h-10 w-full" :is-loading="pending">Sign in</Button>
+    <Button type="submit" class="h-10 w-full" :disabled="challengePending" :is-loading="pending">Sign in</Button>
 
     <ExtensionSlot
       name="auth:login:alternatives"

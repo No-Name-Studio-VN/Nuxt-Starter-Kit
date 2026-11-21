@@ -21,7 +21,9 @@ const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const isLoading = ref(false);
 const error = ref('');
-const turnstileToken = ref('');
+const formEl = useTemplateRef<HTMLFormElement>('registerForm');
+const challenge = useFormChallenge();
+const { pending: challengePending } = challenge;
 const { t } = useI18n();
 
 const localePath = useAppLocalePath();
@@ -34,12 +36,11 @@ const form = useForm({
     email: '',
     password: '',
     'confirm-password': '',
-    'cf-turnstile-response': '',
   },
   validationSchema: registerUserSchema,
 });
 
-const { handleSubmit, values, meta, setFieldValue } = form;
+const { handleSubmit, values, meta } = form;
 
 definePageMeta({
   title: 'auth_password.register_title',
@@ -55,15 +56,9 @@ useSeo({
 });
 
 const onSubmit = handleSubmit(async () => {
-  const formEl = document.querySelector(`form[action="${passwordRoutes.AUTH_REGISTER_PASSWORD}"]`);
-  if (formEl instanceof HTMLFormElement) {
-    isLoading.value = true;
-    formEl.submit();
-  }
-});
-
-watch(turnstileToken, (val) => {
-  setFieldValue('cf-turnstile-response', val);
+  if (isLoading.value || challengePending.value || !formEl.value) return;
+  onMethodPending(true);
+  formEl.value.submit();
 });
 
 const passwordStrength = computed(() => calculatePasswordStrength(values.password || ''));
@@ -124,6 +119,7 @@ function completeRegistration(redirect: string) {
     </ExtensionSlot>
 
     <form
+      ref="registerForm"
       :action="passwordRoutes.AUTH_REGISTER_PASSWORD"
       method="POST"
       class="flex flex-col gap-4"
@@ -264,12 +260,9 @@ function completeRegistration(redirect: string) {
         <PasswordStrengthIndicator :password="values.password || ''" :strength="passwordStrength" />
       </div>
 
-      <NuxtTurnstile
-        v-model="turnstileToken"
-        :options="{ size: 'flexible', appearance: 'interaction-only' }"
-      />
+      <FormChallenge :challenge="challenge.challenge" />
       <input type="hidden" name="redirect-to" :value="redirectTo" />
-      <Button type="submit" class="h-10 w-full" :disabled="!isFormValid || isLoading" :is-loading="isLoading">
+      <Button type="submit" class="h-10 w-full" :disabled="!isFormValid || isLoading || challengePending" :is-loading="isLoading">
         Create account
       </Button>
       <p

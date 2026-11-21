@@ -1,5 +1,6 @@
 {
   "auth_password": {
+    "bot_protection_failed": "Security verification failed. Please try again.",
     "forgot_password": "Forgot password?",
     "forgot_password_title": "Forgot your password?",
     "forgot_password_description": "Enter your email address to receive a password reset link.",

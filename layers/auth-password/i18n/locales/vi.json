@@ -1,5 +1,6 @@
 {
   "auth_password": {
+    "bot_protection_failed": "Xác minh bảo mật không thành công. Vui lòng thử lại.",
     "forgot_password": "Quên mật khẩu?",
     "forgot_password_title": "Bạn quên mật khẩu?",
     "forgot_password_description": "Nhập địa chỉ email để nhận liên kết đặt lại mật khẩu.",

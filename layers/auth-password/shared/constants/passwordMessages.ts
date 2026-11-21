@@ -1,6 +1,10 @@
 export const PASSWORD_ERROR_MESSAGES = {
+  'bot-protection': {
+    key: 'auth_password.bot_protection_failed',
+    fallback: 'Security verification failed. Please try again.',
+  },
+
   // Registration errors
-  captcha: 'Security verification failed. Please refresh the page and try again.',
   existed: 'This username is already taken. Please choose a different username.',
   'email-existed': 'This email is already in use. Please choose a different email.',
 
