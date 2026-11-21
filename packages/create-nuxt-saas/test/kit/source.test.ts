@@ -101,14 +101,14 @@ describe('local kit sources', () => {
     expect(await pathExists(snapshot.dir)).toBe(false);
   });
 
-  it('explains an unavailable commit and suggests a local kit', async () => {
+  it('explains how to recover an unavailable commit in a local kit', async () => {
     await expect(
       openKit(
         { kind: 'local', path: kit.root, allowDirty: false },
         '0'.repeat(40),
         DEFAULT_TEMPLATE,
       ),
-    ).rejects.toThrow(/was never pushed.*--kit/s);
+    ).rejects.toThrow(/not in the local kit checkout.*Fetch the ref.*another clone/s);
   });
 
   it('wraps invalid local repositories in a CLI error', async () => {

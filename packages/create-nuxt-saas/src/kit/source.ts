@@ -132,7 +132,7 @@ export async function openKit(
       `Kit commit ${commit} from ${label} was never pushed or is unavailable. Use --kit <path> to provide a local checkout. ${errorMessage(error)}`,
     );
   }
-  if (!shaPattern.test(commit)) throw unavailable('Expected a full 40-character SHA.');
+  if (!shaPattern.test(commit)) throw new CliError(`Invalid kit commit ${commit}. Expected a full 40-character SHA.`);
   const dir = await mkdtemp(join(tmpdir(), 'nuxt-saas-kit-'));
   const removeDir = () => rm(dir, { recursive: true, force: true });
   // A killed run (the app's cancel or timeout) never reaches `finally`, so the signal handler removes the copy.
@@ -143,6 +143,13 @@ export async function openKit(
   };
   try {
     if (source.kind === 'local') {
+      try {
+        await git(source.path, ['cat-file', '-e', `${commit}^{commit}`]);
+      } catch {
+        throw new CliError(
+          `Kit commit ${commit} is not in the local kit checkout at ${source.path}. Fetch the ref containing that commit or use --kit with another clone that has it.`,
+        );
+      }
       // Keep the archive outside the snapshot so only tracked kit files remain.
       const archiveDir = await mkdtemp(join(tmpdir(), 'nuxt-saas-kit-archive-'));
       const stopWatchingArchive = cleanupOnTermination(() =>
@@ -150,17 +157,7 @@ export async function openKit(
       );
       try {
         const archive = join(archiveDir, 'kit.tar');
-        try {
-          await git(source.path, [
-            'archive',
-            '--format=tar',
-            '--output',
-            archive,
-            commit,
-          ]);
-        } catch (error) {
-          throw unavailable(error);
-        }
+        await git(source.path, ['archive', '--format=tar', '--output', archive, commit]);
         await run('tar', ['-xf', archive, '-C', dir]);
       } finally {
         stopWatchingArchive();

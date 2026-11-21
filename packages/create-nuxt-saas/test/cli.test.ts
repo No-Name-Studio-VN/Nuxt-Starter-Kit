@@ -131,6 +131,19 @@ describe('CLI routing and commands', () => {
     );
   });
 
+  it('explains how to recover a recorded commit missing from a local checkout', async () => {
+    await initV1();
+    const shallowKit = join(parent, 'shallow-kit');
+    await run('git', ['clone', '--depth', '1', `file://${fixture.root}`, shallowKit]);
+
+    expect(await main(['inspect', '--dir', project, '--kit', shallowKit])).toBe(1);
+    const error = vi.mocked(console.error).mock.calls.flat().join('\n');
+    expect(error).toContain(fixture.v1);
+    expect(error).toContain(`is not in the local kit checkout at ${shallowKit}`);
+    expect(error).toMatch(/fetch|another clone/i);
+    expect(error).not.toMatch(/fatal:|to provide a local checkout/);
+  });
+
   it('shows upgrade-specific help', async () => {
     expect(await main(['upgrade', '--help'])).toBe(0);
     expect(output()).toContain('--to');
