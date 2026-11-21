@@ -53,11 +53,56 @@ struct ModuleGroupingTests {
         #expect(group.entries.map(\.depth) == [0, 0])
     }
 
+    @Test func separatesUngroupedInternalModulesOnlyWhenRequested() {
+        let report = ModulesReport(schema: 1, commit: "commit", modules: [
+            module("cache", internal: true),
+            module("feature-flags", group: "App"),
+            module("legacy"),
+            module("kv", internal: true),
+            module("email", group: "Foundation", internal: true),
+        ], installed: [], groups: ["Foundation", "App"])
+
+        let groups = groupModules(report.modules, showsInternalSection: true, module: { $0 })
+        #expect(groups.map(\.name) == ["Foundation", "App", nil, "Internal"])
+        #expect(groups.map { $0.entries.map(\.id) } == [["email"], ["feature-flags"], ["legacy"], ["cache", "kv"]])
+
+        let defaultGroups = groupModules(report.modules, module: { $0 })
+        #expect(defaultGroups.map(\.name) == ["Foundation", "App", nil])
+        #expect(defaultGroups.last?.entries.map(\.id) == ["cache", "legacy", "kv"])
+    }
+
+    @Test func showsInternalSectionWithoutKitGroups() {
+        let report = ModulesReport(schema: 1, commit: "commit", modules: [
+            module("child", parent: "parent"),
+            module("kv", internal: true),
+            module("parent"),
+        ], installed: [])
+
+        let groups = groupModules(report.modules, showsInternalSection: true, module: { $0 })
+        #expect(groups.map(\.name) == [nil, "Internal"])
+        #expect(groups.map { $0.entries.map(\.id) } == [["child", "parent"], ["kv"]])
+        #expect(groups.first?.entries.map(\.depth) == [0, 0])
+    }
+
+    @Test func requiredByOnlyIncludesDirectRequirements() {
+        let catalogue = [
+            module("kv", internal: true),
+            module("admin-kv", requires: ["kv"]),
+            module("extension", requires: ["admin-kv"]),
+            module("feature-flags", requires: ["admin", "kv"]),
+            module("optional", requiresOneOf: ["kv", "cache"]),
+        ]
+
+        #expect(modulesRequiring("kv", in: catalogue).map(\.id) == ["admin-kv", "feature-flags"])
+        #expect(modulesRequiring("cache", in: catalogue).isEmpty)
+    }
+
     private func module(
-        _ id: String, group: String? = nil, parent: String? = nil, requiresOneOf: [String] = []
+        _ id: String, group: String? = nil, parent: String? = nil, internal: Bool = false,
+        requires: [String]? = nil, requiresOneOf: [String] = []
     ) -> KitModuleInfo {
         KitModuleInfo(
-            id: id, title: id, description: "", requires: parent.map { [$0] } ?? [], internal: false,
+            id: id, title: id, description: "", requires: requires ?? parent.map { [$0] } ?? [], internal: `internal`,
             dependencies: [], devDependencies: [], scripts: [], env: [], bindings: [], rootFiles: [],
             group: group, parent: parent, requiresOneOf: requiresOneOf)
     }

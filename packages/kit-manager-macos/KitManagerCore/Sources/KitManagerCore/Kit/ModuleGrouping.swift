@@ -1,15 +1,22 @@
 enum ModuleGroupPlacement: Hashable, Sendable {
     case named(String, index: Int)
     case ungrouped
+    case internalModules
 
     var name: String? {
-        if case .named(let name, _) = self { return name }
-        return nil
+        switch self {
+        case .named(let name, _): name
+        case .ungrouped: nil
+        case .internalModules: "Internal"
+        }
     }
 
     var index: Int {
-        if case .named(_, let index) = self { return index }
-        return .max
+        switch self {
+        case .named(_, let index): index
+        case .ungrouped: .max - 1
+        case .internalModules: .max
+        }
     }
 }
 
@@ -28,18 +35,22 @@ public struct ModuleSection<Item: Identifiable>: Identifiable {
 }
 
 /// Orders the supplied rows by kit group, then by ancestry. Rows whose parent is missing or
-/// filtered out become roots. Without group metadata, the input stays flat and in order.
+/// filtered out become roots. Without group metadata, rows stay flat and in order within each section.
 public func groupModules<Item: Identifiable>(
-    _ items: [Item], module: (Item) -> KitModuleInfo?
+    _ items: [Item], showsInternalSection: Bool = false, module: (Item) -> KitModuleInfo?
 ) -> [ModuleSection<Item>] where Item.ID == String {
-    guard !items.isEmpty else { return [] }
     let rows = items.map { (item: $0, module: module($0)) }
-    guard rows.contains(where: { $0.module?.groupPlacement != nil }) else {
-        return [ModuleSection(name: nil, entries: items.map { .init(item: $0, depth: 0) })]
+    let hasGroupMetadata = rows.contains { $0.module?.groupPlacement != nil }
+    let groups = Dictionary(grouping: rows) { row -> ModuleGroupPlacement in
+        if showsInternalSection, let module = row.module, module.internal, module.group == nil {
+            return .internalModules
+        }
+        return row.module?.groupPlacement ?? .ungrouped
     }
-
-    let groups = Dictionary(grouping: rows) { $0.module?.groupPlacement ?? .ungrouped }
     return groups.sorted { $0.key.index < $1.key.index }.map { placement, members in
+        guard hasGroupMetadata else {
+            return ModuleSection(name: placement.name, entries: members.map { .init(item: $0.item, depth: 0) })
+        }
         let ids = Set(members.map(\.item.id))
         let children = Dictionary(grouping: members) { row in
             row.module?.parent.flatMap { ids.contains($0) ? $0 : nil }
@@ -54,4 +65,9 @@ public func groupModules<Item: Identifiable>(
         visit(nil, depth: 0)
         return ModuleSection(name: placement.name, entries: entries)
     }
+}
+
+/// Direct requirements only; alternatives and transitive dependencies do not count.
+public func modulesRequiring(_ moduleID: String, in catalogue: [KitModuleInfo]) -> [KitModuleInfo] {
+    catalogue.filter { $0.requires.contains(moduleID) }
 }
