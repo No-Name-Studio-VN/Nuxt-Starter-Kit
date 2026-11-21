@@ -5,7 +5,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { credentials } from '../../../layers/auth-passkeys/server/db/schema.sqlite';
 import { success } from '../../../layers/server-core/server/utils/apiResponse';
 
-vi.mock('../../../layers/server-core/server/utils/kv', () => ({ useKV: vi.fn() }));
+vi.mock('../../../layers/kv/server/utils/kv', () => ({ useKV: vi.fn() }));
 const { completeSignIn } = vi.hoisted(() => ({ completeSignIn: vi.fn() }));
 vi.mock('../../../layers/auth/server/utils/completeSignIn', () => ({ completeSignIn }));
 

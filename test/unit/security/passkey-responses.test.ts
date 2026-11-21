@@ -5,7 +5,7 @@ import { getClientSafeWebAuthnResponse } from '../../../layers/auth-passkeys/ser
 vi.mock('../../../layers/auth/server/utils/database/user', () => ({
   default: { getByUsername: vi.fn() },
 }));
-vi.mock('../../../layers/server-core/server/utils/kv', () => ({ useKV: vi.fn() }));
+vi.mock('../../../layers/kv/server/utils/kv', () => ({ useKV: vi.fn() }));
 
 afterEach(() => {
   vi.unstubAllGlobals();

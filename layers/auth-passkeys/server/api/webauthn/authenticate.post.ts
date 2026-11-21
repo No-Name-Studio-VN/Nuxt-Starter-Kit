@@ -3,7 +3,7 @@ import { signInUsernameSchema } from '#layers/auth/shared/schemas/userSchema';
 import { getClientSafeWebAuthnResponse } from '#layers/auth-passkeys/server/utils/webauthnResponse';
 import { eq } from 'drizzle-orm';
 import { apiError } from '#layers/server-core/server/utils/apiResponse';
-import { useKV } from '#layers/server-core/server/utils/kv';
+import { useKV } from '#layers/kv/server/utils/kv';
 import userService from '#layers/auth/server/utils/database/user';
 import { completeSignIn } from '#layers/auth/server/utils/completeSignIn';
 

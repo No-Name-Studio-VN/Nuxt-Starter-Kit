@@ -2,7 +2,7 @@ import { defineEventHandler } from 'nuxt/server';
 import { getClientSafeWebAuthnResponse } from '#layers/auth-passkeys/server/utils/webauthnResponse';
 import { eq } from 'drizzle-orm';
 import { apiError, zodErrorToFieldErrors } from '#layers/server-core/server/utils/apiResponse';
-import { useKV } from '#layers/server-core/server/utils/kv';
+import { useKV } from '#layers/kv/server/utils/kv';
 import { webauthnAddPasskeyUserSchema } from '#layers/auth-passkeys/shared/schemas/passkeySchema';
 
 const handler = defineWebAuthnRegisterEventHandler({
