@@ -23,9 +23,9 @@ const quote = computed(() => {
   };
 });
 
-// three.js is heavy, so the background ships in its own chunk and only loads on auth pages.
+// Keep three.js in its own chunk. Worker SSR does not tag the import as an ES module.
 const HeroGeometric = defineAsyncComponent(
-  () => import('@/components/ui/hero-geometric/HeroGeometric.vue'),
+  () => import('@/components/ui/hero-geometric/HeroGeometric.vue').then((module) => module.default),
 );
 
 const colorMode = useColorMode();
