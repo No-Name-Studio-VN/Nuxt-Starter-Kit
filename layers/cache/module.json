@@ -1,0 +1,20 @@
+{
+  "title": "Cache storage",
+  "description": "NuxtHub-backed storage for Nitro's cache.",
+  "internal": true,
+  "requires": ["server-core"],
+  "dependencies": ["@nuxthub/core"],
+  "bindings": ["CACHE"],
+  "changes": [
+    {
+      "id": "cache.add",
+      "since": "4.0.0",
+      "title": "Add a dedicated module for Nitro's shared cache storage.",
+      "files": [
+        "layers/cache/nuxt.config.ts",
+        "layers/cache/module.json",
+        "layers/cache/README.md"
+      ]
+    }
+  ]
+}
