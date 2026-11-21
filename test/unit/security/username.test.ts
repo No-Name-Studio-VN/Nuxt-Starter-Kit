@@ -119,16 +119,14 @@ describe('username validation', () => {
 describe('username sign-in', () => {
   it('accepts a mixed-case username after normalized password registration', async () => {
     const password = 'ValidPassword1!';
-    const credentials = { username: '  Jane_Doe ', password, 'cf-turnstile-response': 'test-token' };
-    const post = (path: string, body: object) => callHandler(createEvent(path, {}, {
+    const credentials = { username: '  Jane_Doe ', password };
+    const post = (path: string, body: Record<string, string>) => callHandler(createEvent(path, {}, {
       method: 'POST',
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' },
+      body: new URLSearchParams(body),
     }));
     session = { id: 'anonymous' };
     vi.stubGlobal('getRequestURL', getRequestURL);
     vi.stubGlobal('sendRedirect', (_event: RequestEvent, target: string) => target);
-    vi.stubGlobal('verifyTurnstileToken', async () => ({ success: true }));
     vi.stubGlobal('hashPassword', async () => 'test-hash');
     vi.stubGlobal('verifyPassword', async (hash: string, input: string) =>
       hash === 'test-hash' && input === password);

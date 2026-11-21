@@ -98,7 +98,6 @@ beforeEach(async () => {
     return session;
   });
   vi.stubGlobal('sendRedirect', (_event: RequestEvent, target: string) => target);
-  vi.stubGlobal('verifyTurnstileToken', async () => ({ success: true }));
   vi.stubGlobal('hashPassword', async () => 'password-hash');
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -224,7 +223,7 @@ describe('onboarding at account creation', () => {
     const password = 'ValidPassword1!';
     const result = await handler(createEvent('/api/auth/register-password', 'POST', {}, {
       username: 'self_signup', name: 'New Member', email: 'signup@example.test', password,
-      'confirm-password': password, 'cf-turnstile-response': 'test-token',
+      'confirm-password': password,
     }));
 
     expect(result).toBe('/auth/login?redirectTo=%2F');

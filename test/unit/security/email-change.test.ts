@@ -86,7 +86,6 @@ async function register(email: string) {
     name: 'New Member',
     password,
     'confirm-password': password,
-    'cf-turnstile-response': 'test-token',
   };
   await import('../../../layers/auth-password/server/api/auth/register-password.post');
   return callHandler(createRequestEvent());
@@ -141,7 +140,6 @@ beforeEach(async () => {
   vi.stubGlobal('defineNitroPlugin', (registerPlugin: () => void) => registerPlugin());
   vi.stubGlobal('readValidatedBody', async (_event: RequestEvent, validate: (input: unknown) => unknown) => validate(body));
   vi.stubGlobal('createError', (options: object) => Object.assign(new Error('API error'), options));
-  vi.stubGlobal('verifyTurnstileToken', async () => ({ success: true }));
   vi.stubGlobal('getRequestURL', (event: RequestEvent) => event.url);
   vi.stubGlobal('getQuery', (event: RequestEvent) => Object.fromEntries(event.url.searchParams));
   vi.stubGlobal('sendRedirect', (_event: RequestEvent, location: string) => location);
@@ -502,7 +500,7 @@ async function loadEmailBoundFlow(type: AuthTokenType | EmailVerificationTokenTy
     authTokenService,
     sendEmail,
     async issue() {
-      body = { email: 'john@x.com', 'cf-turnstile-response': 'test-token' };
+      body = { email: 'john@x.com' };
       if (isReset) {
         await import('../../../layers/auth-password/server/api/auth/forgot-password.post');
       } else {

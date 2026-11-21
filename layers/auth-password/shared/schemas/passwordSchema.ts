@@ -16,7 +16,6 @@ export const passwordComplexitySchema = z
 
 /**
  * Schema for user registration (frontend form).
- * Includes Turnstile token validation.
  *
  * @example
  * ```ts
@@ -36,7 +35,6 @@ export const registerUserSchema = z
     name: userNameSchema,
     password: passwordComplexitySchema,
     'confirm-password': z.string().min(1, 'validation.password_confirm_required'),
-    'cf-turnstile-response': z.string().min(1, 'validation.token_required'),
     'redirect-to': z.string().optional(),
   })
   .refine((data) => data['confirm-password'] === data.password, {
@@ -68,13 +66,11 @@ export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export const loginSchema = z.object({
   username: signInUsernameSchema,
   password: z.string().min(1, 'validation.password_required'),
-  'cf-turnstile-response': z.string(),
   'redirect-to': z.string().optional(),
 });
 
 export const forgotPasswordSchema = z.object({
   email: emailFieldSchema(),
-  'cf-turnstile-response': z.string().min(1),
 });
 
 export const forgotPasswordFormSchema = z.object({

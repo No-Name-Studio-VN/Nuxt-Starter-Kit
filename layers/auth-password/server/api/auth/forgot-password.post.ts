@@ -11,19 +11,9 @@ export default defineEventHandler(async (event) => {
     throw apiError({
       status: 400,
       statusText: 'Bad Request',
-      message: 'Valid email and security verification are required.',
+      message: 'A valid email is required.',
       code: 'VALIDATION_ERROR',
       fieldErrors: zodErrorToFieldErrors(result.error),
-    });
-  }
-
-  const tokenValidation = await verifyTurnstileToken(result.data['cf-turnstile-response']);
-  if (!tokenValidation.success) {
-    throw apiError({
-      status: 400,
-      statusText: 'Bad Request',
-      message: 'Security verification failed. Please try again.',
-      code: 'CAPTCHA_VERIFICATION_FAILED',
     });
   }
 

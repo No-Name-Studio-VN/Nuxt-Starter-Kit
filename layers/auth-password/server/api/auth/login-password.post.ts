@@ -18,17 +18,8 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=validation');
   }
 
-  const { username, password, 'cf-turnstile-response': token } = result.data;
+  const { username, password } = result.data;
   const redirectToStr = safeRedirectPath(event, result.data['redirect-to']);
-
-  if (!token) {
-    return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=captcha');
-  }
-
-  const tokenValidation = await verifyTurnstileToken(token);
-  if (!tokenValidation.success) {
-    return sendRedirect(event, authRoutes.AUTH_LOGIN + '?error=captcha');
-  }
 
   // Find user by username
   const user = await userService.getByUsername(username) ??

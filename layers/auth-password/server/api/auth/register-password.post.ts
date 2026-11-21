@@ -14,12 +14,7 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, passwordRoutes.AUTH_REGISTER + '?error=validation');
   }
 
-  const { username, password, 'cf-turnstile-response': token } = result.data;
-
-  const tokenValidation = await verifyTurnstileToken(token);
-  if (!tokenValidation.success) {
-    return sendRedirect(event, passwordRoutes.AUTH_REGISTER + '?error=captcha');
-  }
+  const { username, password } = result.data;
 
   const redirectTo = safeRedirectPath(event, result.data['redirect-to']);
 

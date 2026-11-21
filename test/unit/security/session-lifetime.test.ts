@@ -94,7 +94,7 @@ describe('session cookie budget', () => {
   it('caps every user-facing name schema at 256 characters', () => {
     const account = { id: user.id, username: user.username, email: user.email };
     for (const schema of [createUserSchema, userUpdateSchema, updateProfileSchema, registerUserSchema]) {
-      const profile = { ...account, password: 'SafePass1!', 'confirm-password': 'SafePass1!', 'cf-turnstile-response': 'token' };
+      const profile = { ...account, password: 'SafePass1!', 'confirm-password': 'SafePass1!' };
       expect(schema.safeParse({ ...profile, name: 'a'.repeat(256) }).success).toBe(true);
       expect(schema.safeParse({ ...profile, name: 'a'.repeat(257) }).error?.issues).toContainEqual(expect.objectContaining({
         path: ['name'], message: 'validation.name_max',

@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+import type * as H3 from 'h3';
 import { createClient } from '@libsql/client';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
@@ -34,7 +36,7 @@ async function loadPasswordMethod() {
 async function signInWithPassword(password: string) {
   const { default: handler } =
     await import('../../../layers/auth-password/server/api/auth/login-password.post');
-  body = { username: 'member', password, 'cf-turnstile-response': 'token', 'redirect-to': '/app' };
+  body = { username: 'member', password, 'redirect-to': '/app' };
   return handler({});
 }
 
@@ -75,7 +77,6 @@ beforeEach(async () => {
     async (_event: object, validate: (input: unknown) => unknown) => validate(body),
   );
   vi.stubGlobal('getRouterParam', () => '1');
-  vi.stubGlobal('verifyTurnstileToken', async () => ({ success: true }));
   vi.stubGlobal('getRequestURL', () => new URL('http://localhost/api/auth/login-password'));
   vi.stubGlobal('sendRedirect', (_event: object, location: string) => ({ redirect: location }));
   vi.stubGlobal('setUserSession', setUserSession);
@@ -120,6 +121,42 @@ describe('password sign-in method', () => {
     expect(await signInWithPassword('Changed#456')).toEqual({ redirect: '/app' });
   });
 
+  it('signs in a legacy mixed-case username from a protected native form post', async () => {
+    const { setSecret } = await loadPasswordMethod();
+    await setSecret(1, 'Secret#123');
+    await db.update(users).set({ username: 'Alice' });
+
+    const nuxtRequire = createRequire(import.meta.resolve('nuxt'));
+    const nitroRequire = createRequire(nuxtRequire.resolve('@nuxt/nitro-server'));
+    const { createApp, getRequestHeader, readBody, readValidatedBody, sendRedirect, toWebHandler }: typeof H3 = await import(
+      createRequire(nitroRequire.resolve('nitropack/package.json')).resolve('h3')
+    );
+    vi.stubGlobal('getRequestHeader', getRequestHeader);
+    vi.stubGlobal('getRouteRules', () => ({ botProtection: { redirect: '/auth/login' } }));
+    vi.stubGlobal('readBody', readBody);
+    vi.stubGlobal('readValidatedBody', readValidatedBody);
+    vi.stubGlobal('sendRedirect', sendRedirect);
+    vi.stubGlobal('useRuntimeConfig', () => ({ botProtection: { provider: 'native-form-fixture' } }));
+
+    const { registerBotProtectionProvider } = await import('../../../layers/bot-protection/server/utils/botProtection');
+    const verify = vi.fn(({ token }) => token === 'form-token');
+    registerBotProtectionProvider('native-form-fixture', verify);
+    const { default: middleware } = await import('../../../layers/bot-protection/server/middleware/botProtection');
+    const { default: handler } = await import('../../../layers/auth-password/server/api/auth/login-password.post');
+    const app = createApp();
+    app.use(middleware);
+    app.use(handler);
+    const response = await toWebHandler(app)(new Request('http://localhost/api/auth/login-password', {
+      method: 'POST',
+      body: new URLSearchParams({ username: 'Alice', password: 'Secret#123', 'redirect-to': '/app', 'bot-protection-token': 'form-token' }),
+    }));
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('/app');
+    expect(setUserSession).toHaveBeenCalledOnce();
+    expect(verify).toHaveBeenCalledOnce();
+  });
+
   it('sends a locked account back to the login page with account-locked', async () => {
     const { setSecret } = await loadPasswordMethod();
     await setSecret(1, 'Secret#123');
@@ -145,7 +182,6 @@ async function registerAccount() {
   body = {
     ...newAccount,
     'confirm-password': newAccount.password,
-    'cf-turnstile-response': 'token',
   };
   return handler({});
 }
