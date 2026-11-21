@@ -33,5 +33,59 @@
     "site.config.ts",
     "i18n/**",
     "public/**"
+  ],
+  "changes": [
+    {
+      "id": "base.form-challenges",
+      "since": "4.0.0",
+      "title": "Expose form challenges without requiring an auth or server layer.",
+      "kind": "feature",
+      "files": [
+        ".env.example",
+        "README.md",
+        "app/components/ExtensionSlot.vue",
+        "app/components/FormChallenge.vue",
+        "app/composables/useFormChallenge.ts",
+        "layers/auth-email-verification/app/pages/auth/verify-email.vue",
+        "layers/auth-email-verification/nuxt.config.ts",
+        "shared/constants/formChallenge.ts",
+        "types/botProtection.ts",
+        "types/extensions.ts"
+      ]
+    },
+    {
+      "id": "base.d1-bulk-delete",
+      "since": "4.0.0",
+      "title": "Keep large SQLite deletes within D1’s parameter limit in one statement.",
+      "kind": "fix",
+      "files": [
+        "layers/auth/server/utils/database/user.ts",
+        "layers/auth/server/utils/database/userLockScreen.ts",
+        "layers/auth-2fa/server/utils/database/userTwoFactor.ts",
+        "layers/database/server/utils/databaseValues.ts",
+        "layers/feature-flags/server/utils/database/featureFlag.ts"
+      ]
+    },
+    {
+      "id": "base.worker-hydration",
+      "since": "4.0.0",
+      "title": "Restore async auth and PWA components in Cloudflare SSR and prevent installed-state hydration mismatches.",
+      "kind": "fix",
+      "files": [
+        "layers/auth/app/components/auth/AuthPageLayout.vue",
+        "layers/pwa/app/components/InstallPrompter.vue",
+        "layers/pwa/app/plugins/extensions.ts"
+      ]
+    },
+    {
+      "id": "content.scaffold-examples",
+      "since": "4.0.0",
+      "title": "Use working password-module selections in installation examples.",
+      "kind": "fix",
+      "files": [
+        "content/docs/1.getting-started/1.introduction.md",
+        "content/docs/1.getting-started/2.installation.md"
+      ]
+    }
   ]
 }
