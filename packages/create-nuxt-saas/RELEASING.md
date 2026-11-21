@@ -71,9 +71,15 @@ git tag cli-v3.0.0
 git push origin cli-v3.0.0
 ```
 
-For later releases, update `packages/create-nuxt-saas/package.json` and the workspace lockfile with
-pnpm, commit both, then tag the matching version. Do not change the root kit version for a CLI-only
-release. Never bypass commit hooks.
+For later releases, set the version with the release script, commit it, then tag the matching
+version. The CLI and Kit Manager always share a version, so the script sets both: the CLI
+`package.json` and Kit Manager's `MARKETING_VERSION`, plus a new app build number.
+
+```bash
+pnpm --dir packages/create-nuxt-saas release:version 4.1.0
+```
+
+Do not change the root kit version for a CLI-only release. Never bypass commit hooks.
 
 `.github/workflows/cli-release.yml` runs for `cli-v*` tags and manual dispatches. It:
 

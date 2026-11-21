@@ -39,6 +39,7 @@
   },
   "scripts": {
     "build": "unbuild",
+    "release:version": "node scripts/set-version.mjs",
     "typecheck": "tsc6 --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
