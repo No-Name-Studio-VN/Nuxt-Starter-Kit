@@ -5,7 +5,7 @@ import {
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
 import { serializeAdminKvValue } from '#layers/admin-kv/server/utils/adminKv';
-import { useKV } from '#layers/server-core/server/utils/kv';
+import { useKV } from '#layers/kv/server/utils/kv';
 import type { AdminKvValuesResponsePayload } from '#layers/admin-kv/types/adminKv';
 
 export default defineEventHandler(async (event) => {

@@ -5,7 +5,7 @@ import {
   zodErrorToFieldErrors,
 } from '#layers/server-core/server/utils/apiResponse';
 import { getAdminKvWriteValue, serializeAdminKvValue } from '#layers/admin-kv/server/utils/adminKv';
-import { useKV } from '#layers/server-core/server/utils/kv';
+import { useKV } from '#layers/kv/server/utils/kv';
 
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, (body) => adminKvMutationSchema.safeParse(body));

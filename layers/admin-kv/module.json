@@ -3,6 +3,6 @@
   "description": "Admin screens and APIs for browsing and editing Workers KV entries.",
   "group": "App",
   "parent": "admin",
-  "requires": ["admin"],
+  "requires": ["server-core", "admin", "kv", "cache"],
   "dependencies": ["pretty-bytes", "@codemirror/lang-json", "codemirror"]
 }

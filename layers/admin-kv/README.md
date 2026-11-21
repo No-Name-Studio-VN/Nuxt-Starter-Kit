@@ -10,5 +10,5 @@ A browser for the `KV` namespace, built on the admin shell.
 - Its card on the `/admin` landing page.
 - Route constants in `shared/adminKvRoutes.ts` and request schemas in `shared/schemas/adminKvSchema.ts`.
 
-No env keys to fill. The `KV` binding comes from server-core; configure it in `wrangler.jsonc` before
+No env keys to fill. The `KV` binding comes from `kv`; configure it in `wrangler.jsonc` before
 using the browser.
