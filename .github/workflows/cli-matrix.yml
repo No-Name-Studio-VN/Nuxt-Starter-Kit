@@ -77,6 +77,8 @@ jobs:
             modules: ''
           - name: base + pwa
             modules: pwa
+          - name: base + bot protection
+            modules: bot-protection
           - name: base + content
             modules: content
           - name: base + content studio
@@ -93,12 +95,14 @@ jobs:
             modules: auth-password,auth-oauth
           - name: base + password add-ons
             modules: auth-2fa,auth-email-verification,auth-passkeys
+          - name: base + passkeys
+            modules: auth-passkeys
           - name: base + admin users without password
             modules: admin-users,auth-oauth
           - name: base + admin kv and feature flags
             modules: admin-kv,feature-flags,auth-password
           - name: all modules
-            modules: admin,admin-kv,admin-users,auth,auth-2fa,auth-email-verification,auth-oauth,auth-passkeys,auth-password,content,content-studio,dashboard,database,feature-flags,pwa
+            modules: admin,admin-kv,admin-users,auth,auth-2fa,auth-email-verification,auth-oauth,auth-passkeys,auth-password,bot-protection,content,content-studio,dashboard,database,feature-flags,pwa
           - name: lifecycle (oauth, then password and its add-ons)
             modules: auth-oauth
             lifecycle: true
