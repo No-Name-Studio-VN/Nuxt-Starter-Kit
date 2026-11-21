@@ -3,6 +3,7 @@ import type {
   FeatureFlagInput,
   FeatureFlagUpdateInput,
 } from '#layers/feature-flags/shared/schemas/featureFlagSchema';
+import { databaseValues } from '#layers/database/server/utils/databaseValues';
 import { IDatabaseService } from '#layers/database/types/db/database-service';
 import type {
   CachedFlagConfig,
@@ -98,7 +99,7 @@ class FeatureFlagService extends IDatabaseService<DBFeatureFlag> {
   async bulkDelete(keys: string[]): Promise<void> {
     if (keys.length === 0) return;
 
-    await this.db.delete(tables.featureFlags).where(inArray(tables.featureFlags.key, keys));
+    await this.db.delete(tables.featureFlags).where(inArray(tables.featureFlags.key, databaseValues(keys)));
 
     await this.syncToKV();
   }
