@@ -1,9 +1,33 @@
 {
   "title": "Password sign-in",
-  "description": "Username and password sign-in, registration and password reset, protected by Cloudflare Turnstile.",
+  "description": "Username and password sign-in, registration and password reset.",
   "group": "Authentication",
   "parent": "auth",
-  "requires": ["auth", "email"],
-  "dependencies": ["@nuxtjs/turnstile"],
-  "env": ["NUXT_TURNSTILE_SITE_KEY", "NUXT_TURNSTILE_SECRET_KEY"]
+  "requires": [
+    "server-core",
+    "auth",
+    "email"
+  ],
+  "changes": [
+    {
+      "id": "auth-password.optional-bot-protection",
+      "since": "4.0.0",
+      "title": "Turnstile is no longer built into password forms. Add bot-protection to keep bot checks on sign-in, registration and password reset.",
+      "files": [
+        "layers/auth-password/README.md",
+        "layers/auth-password/app/components/auth/PasswordLoginForm.vue",
+        "layers/auth-password/app/pages/auth/forgot-password.vue",
+        "layers/auth-password/app/pages/auth/register.vue",
+        "layers/auth-password/i18n/locales/en.json",
+        "layers/auth-password/i18n/locales/vi.json",
+        "layers/auth-password/module.json",
+        "layers/auth-password/nuxt.config.ts",
+        "layers/auth-password/server/api/auth/forgot-password.post.ts",
+        "layers/auth-password/server/api/auth/login-password.post.ts",
+        "layers/auth-password/server/api/auth/register-password.post.ts",
+        "layers/auth-password/shared/constants/passwordMessages.ts",
+        "layers/auth-password/shared/schemas/passwordSchema.ts"
+      ]
+    }
+  ]
 }

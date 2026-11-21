@@ -1,6 +1,6 @@
 # Password sign-in
 
-Username and password sign-in for auth, with Cloudflare Turnstile on its forms.
+Username and password sign-in for auth. Add `bot-protection` to require a challenge on password forms.
 
 - The `user_passwords` table (`server/db/schema.sqlite.ts`): one row per user who has a password, holding
   the hash. A user without a row has no password. `server/utils/database/userPassword.ts` is the only code
@@ -27,7 +27,7 @@ password verifies the mailbox and, if the local address was not verified before 
 existing OAuth accounts in the same write batch. Signed-in users can set an initial password from
 Security settings without using the recovery flow.
 
-Env keys to fill: `NUXT_TURNSTILE_SITE_KEY` and `NUXT_TURNSTILE_SECRET_KEY`. Configure email delivery in
+Configure email delivery in
 the email layer.
 
 Follow-up commands: `pnpm db:generate` to record the `user_passwords` and `auth_tokens` tables in your
