@@ -3,6 +3,6 @@
   "description": "OpenFeature flags backed by KV, with an admin panel and an edge evaluation endpoint.",
   "group": "App",
   "parent": "admin",
-  "requires": ["admin"],
+  "requires": ["server-core", "admin", "kv", "cache"],
   "dependencies": ["@openfeature/server-sdk"]
 }
