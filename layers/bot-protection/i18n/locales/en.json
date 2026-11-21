@@ -1,0 +1,8 @@
+{
+  "bot_protection": {
+    "required": "Complete the security check and try again.",
+    "failed": "Security verification failed. Please try again.",
+    "unavailable": "Security verification is unavailable. Please try again later.",
+    "retry": "Retry security check"
+  }
+}

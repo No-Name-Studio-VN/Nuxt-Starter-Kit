@@ -1,0 +1,35 @@
+{
+  "title": "Bot protection",
+  "description": "Opt-in bot protection for public forms and API routes, with Cloudflare Turnstile by default.",
+  "group": "Foundation",
+  "requires": ["server-core"],
+  "dependencies": [
+    "@nuxtjs/turnstile"
+  ],
+  "env": [
+    "NUXT_TURNSTILE_SITE_KEY",
+    "NUXT_TURNSTILE_SECRET_KEY"
+  ],
+  "changes": [
+    {
+      "id": "bot-protection.add",
+      "since": "4.0.0",
+      "title": "Add provider-based bot protection with Turnstile as the default.",
+      "files": [
+        "layers/bot-protection/app/widgets/TurnstileChallenge.vue",
+        "layers/bot-protection/app/widgets/turnstile-widget.ts",
+        "layers/bot-protection/i18n/locales/en.json",
+        "layers/bot-protection/i18n/locales/vi.json",
+        "layers/bot-protection/module.json",
+        "layers/bot-protection/module.ts",
+        "layers/bot-protection/nuxt.config.ts",
+        "layers/bot-protection/server/middleware/botProtection.ts",
+        "layers/bot-protection/server/providers/turnstile.ts",
+        "layers/bot-protection/server/utils/botProtection.ts",
+        "layers/bot-protection/shared/constants/turnstile.ts",
+        "layers/bot-protection/types/botProtection.ts",
+        "layers/bot-protection/README.md"
+      ]
+    }
+  ]
+}

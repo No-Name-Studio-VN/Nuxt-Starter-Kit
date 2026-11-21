@@ -1,0 +1,8 @@
+{
+  "bot_protection": {
+    "required": "Hãy hoàn thành bước kiểm tra bảo mật rồi thử lại.",
+    "failed": "Xác minh bảo mật không thành công. Vui lòng thử lại.",
+    "unavailable": "Hiện không thể xác minh bảo mật. Vui lòng thử lại sau.",
+    "retry": "Thử lại bước kiểm tra bảo mật"
+  }
+}
