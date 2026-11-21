@@ -3,5 +3,5 @@
   "description": "Verification notice, confirmation link and resend endpoint for new accounts.",
   "group": "Authentication",
   "parent": "auth-password",
-  "requires": ["auth-password"]
+  "requires": ["server-core", "auth-password"]
 }

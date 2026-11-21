@@ -2,7 +2,7 @@
   "title": "Authentication",
   "description": "Accounts, sessions and the sign-in page that sign-in methods plug into.",
   "group": "Authentication",
-  "requires": ["database"],
+  "requires": ["server-core", "database"],
   "requiresOneOf": ["auth-password", "auth-oauth"],
   "dependencies": ["nuxt-auth-utils"],
   "env": ["NUXT_APP_SECRET"]

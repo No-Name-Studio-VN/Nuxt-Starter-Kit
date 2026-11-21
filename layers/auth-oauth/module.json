@@ -3,7 +3,7 @@
   "description": "Optional sign-in with Google, GitHub, Discord, or an OpenID Connect provider.",
   "group": "Authentication",
   "parent": "auth",
-  "requires": ["auth"],
+  "requires": ["server-core", "auth"],
   "env": [
     "NUXT_OAUTH_GOOGLE_CLIENT_ID",
     "NUXT_OAUTH_GOOGLE_CLIENT_SECRET",

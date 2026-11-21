@@ -3,5 +3,5 @@
   "description": "Admin screens and APIs for listing, editing, locking and deleting users.",
   "group": "App",
   "parent": "admin",
-  "requires": ["admin"]
+  "requires": ["server-core", "admin"]
 }

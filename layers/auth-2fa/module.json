@@ -3,6 +3,6 @@
   "description": "TOTP second factor at sign-in, with setup, verification and disable endpoints.",
   "group": "Authentication",
   "parent": "auth-password",
-  "requires": ["auth-password"],
+  "requires": ["server-core", "auth-password"],
   "dependencies": ["vue-input-otp", "otpauth", "uqr"]
 }
