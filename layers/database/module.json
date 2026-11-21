@@ -3,7 +3,7 @@
   "description": "A Cloudflare D1 (SQLite) database through NuxtHub and Drizzle ORM, with generated migrations.",
   "group": "Foundation",
   "requires": ["server-core"],
-  "dependencies": ["@libsql/client", "better-sqlite3", "drizzle-orm", "drizzle-zod"],
+  "dependencies": ["@libsql/client", "@nuxthub/core", "better-sqlite3", "drizzle-orm", "drizzle-zod"],
   "devDependencies": ["@types/better-sqlite3", "drizzle-kit"],
   "scripts": ["db:generate", "deploy:db"],
   "bindings": ["DB"]

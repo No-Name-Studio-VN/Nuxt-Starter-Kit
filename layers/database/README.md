@@ -1,6 +1,8 @@
 # Database
 
-Adds a Cloudflare D1 (SQLite) database through NuxtHub (`hub.db: 'sqlite'`) and Drizzle ORM.
+Registers NuxtHub and enables `hub.db: 'sqlite'` for Drizzle ORM, with Cloudflare D1 in production.
+To change the driver, override `hub.db` in the root `nuxt.config.ts`. The kit's schemas and queries
+expect Drizzle on SQLite.
 
 - Server utils: `useDB()` and `tables` (`server/utils/db.ts`), plus the `IDatabaseService` base class
   (`types/db/database-service.ts`).
