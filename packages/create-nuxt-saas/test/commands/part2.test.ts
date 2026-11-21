@@ -31,11 +31,18 @@ afterAll(async () => {
   await Promise.all([from.cleanup(), to.cleanup(), rm(fixture.root, { recursive: true, force: true })]);
 });
 beforeEach(async () => {
+  vi.stubEnv('GIT_CONFIG_GLOBAL', '/dev/null');
+  vi.stubEnv('GIT_CONFIG_NOSYSTEM', '1');
+  vi.stubEnv('GIT_AUTHOR_NAME', 'Fixture Author');
+  vi.stubEnv('GIT_AUTHOR_EMAIL', 'fixture@example.invalid');
+  vi.stubEnv('GIT_COMMITTER_NAME', 'Fixture Author');
+  vi.stubEnv('GIT_COMMITTER_EMAIL', 'fixture@example.invalid');
   parent = await makeTempDir('part2');
   projectRoot = join(parent, 'project');
   await runInit({ target: projectRoot, identity, requested: [], kit: from, git: true });
 });
 afterEach(async () => {
+  vi.unstubAllEnvs();
   await rm(parent, { recursive: true, force: true });
 });
 
