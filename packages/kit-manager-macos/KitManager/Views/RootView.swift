@@ -171,8 +171,11 @@ struct RootView: View {
             }
         case .modules:
             if let id = moduleSelection, let row = moduleRows.first(where: { $0.id == id }) {
-                ModuleDetailView(row: row, projects: projects)
-                    .id(id)
+                ModuleDetailView(row: row, projects: projects) { moduleID in
+                    searchText = ""
+                    moduleSelection = moduleID
+                }
+                .id(id)
             } else {
                 ContentUnavailableView("Select a module", systemImage: SidebarItem.modules.symbol)
             }
