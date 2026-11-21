@@ -1,5 +1,6 @@
 import { eq, inArray } from 'drizzle-orm';
 import type { DBLockScreen } from '#layers/auth/types/auth';
+import { databaseValues } from '#layers/database/server/utils/databaseValues';
 import { IDatabaseService } from '#layers/database/types/db/database-service';
 import type {
   UserLockScreenCreateInput,
@@ -80,7 +81,7 @@ class UserLockScreenService extends IDatabaseService<DBLockScreen> {
 
     await this.db
       .delete(tables.userLockScreen)
-      .where(inArray(tables.userLockScreen.userId, userIds));
+      .where(inArray(tables.userLockScreen.userId, databaseValues(userIds)));
   }
 }
 

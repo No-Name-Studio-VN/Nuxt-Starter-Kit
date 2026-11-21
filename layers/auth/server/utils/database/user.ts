@@ -3,6 +3,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { SafeUser, User } from '#layers/auth/types/auth';
 import type { OnboardingPendingInput } from '#layers/auth/types/onboarding';
 import { getSignInMethod } from '#layers/auth/server/utils/signInMethods';
+import { databaseValues } from '#layers/database/server/utils/databaseValues';
 import { IDatabaseService } from '#layers/database/types/db/database-service';
 import type { CreateUserInput, UserUpdateInput } from '#layers/auth/shared/schemas/userSchema';
 
@@ -167,7 +168,7 @@ class UserService extends IDatabaseService<SafeUser> {
 
     const deletedUsers = await this.db
       .delete(tables.users)
-      .where(inArray(tables.users.id, ids))
+      .where(inArray(tables.users.id, databaseValues(ids)))
       .returning({ id: tables.users.id })
       .execute();
 
