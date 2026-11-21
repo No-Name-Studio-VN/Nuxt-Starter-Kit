@@ -5,6 +5,7 @@ import type { ExtensionSlotName } from '~~/types/extensions';
 
 const props = defineProps<{
   name: ExtensionSlotName;
+  entryId?: string;
 }>();
 
 defineOptions({ inheritAttrs: false });
@@ -15,7 +16,9 @@ for (const entry of getExtensions(props.name)) {
 }
 
 const entries = computed(() =>
-  getExtensions(props.name).filter((entry) => availability.get(entry.id)?.value ?? true),
+  getExtensions(props.name).filter((entry) =>
+    (props.entryId === undefined || entry.id === props.entryId) && (availability.get(entry.id)?.value ?? true),
+  ),
 );
 </script>
 

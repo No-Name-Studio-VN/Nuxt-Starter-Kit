@@ -5,6 +5,7 @@ export interface ExtensionSlots {
   'app:root': true;
   'home:hero': true;
   'header:actions': true;
+  'form:challenge': true;
 }
 
 export type ExtensionSlotName = keyof ExtensionSlots;
