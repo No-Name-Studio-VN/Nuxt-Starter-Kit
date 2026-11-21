@@ -3,6 +3,7 @@ import { authRoutes } from '#layers/auth/shared/authRoutes';
 import { MailCheck } from '@lucide/vue';
 import { safeRedirectPath } from '#layers/auth/app/utils/safeRedirect';
 import { emailVerificationRoutes } from '../../../shared/emailVerificationRoutes';
+import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import type { ApiResponse } from '#layers/server-core/types/api';
 
@@ -39,6 +40,8 @@ const loginLink = computed(() => {
   return safeRedirectTo ? { path, query: { redirectTo: safeRedirectTo } } : { path };
 });
 
+const challenge = useFormChallenge();
+const { pending: challengePending } = challenge;
 const isResending = ref(false);
 const resendSuccess = ref(false);
 const resendError = ref('');
@@ -58,7 +61,7 @@ useSeo({
 });
 
 async function resendVerification() {
-  if (!email.value || isResending.value) return;
+  if (!email.value || isResending.value || challengePending.value) return;
 
   isResending.value = true;
   resendSuccess.value = false;
@@ -69,6 +72,7 @@ async function resendVerification() {
       emailVerificationRoutes.AUTH_RESEND_VERIFICATION,
       {
         method: 'POST',
+        headers: challenge.headers(),
         body: { email: email.value },
       },
     );
@@ -77,11 +81,10 @@ async function resendVerification() {
     }
     resendSuccess.value = true;
   } catch (err: unknown) {
-    resendError.value = parseApiError(
-      err,
-      'Failed to resend verification email. Please try again.',
-    ).message;
+    const parsed = parseApiError(err, 'Failed to resend verification email. Please try again.');
+    resendError.value = challenge.errorMessage(parsed) ?? parsed.message;
   } finally {
+    challenge.reset();
     isResending.value = false;
   }
 }
@@ -119,11 +122,13 @@ async function resendVerification() {
       <AlertDescription>{{ resendError }}</AlertDescription>
     </Alert>
 
+    <FormChallenge v-if="email && !resendSuccess" :challenge="challenge.challenge" />
+
     <Button
       type="button"
       variant="outline"
       class="h-10 w-full"
-      :disabled="!email || isResending || resendSuccess"
+      :disabled="!email || isResending || resendSuccess || challengePending"
       :is-loading="isResending"
       @click="resendVerification"
     >
