@@ -30,7 +30,7 @@ if (!carouselContext) {
   throw new Error("Card must be used within a Carousel");
 }
 
-const { onCardClose, currentIndex } = carouselContext;
+const { onCardClose, shortScreen } = carouselContext;
 
 function handleKeyDown(event: KeyboardEvent) {
   if (event.key === "Escape") {
@@ -116,7 +116,8 @@ function handleClose() {
 
   <Motion
     :layout-id="layout ? `card-${card.title}` : undefined"
-    class="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-[40rem] md:w-96 dark:bg-neutral-900"
+    class="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:w-96 dark:bg-neutral-900"
+    :class="shortScreen ? 'md:h-[clamp(18rem,calc(100svh-26rem),40rem)]' : 'md:h-[40rem]'"
     @click="handleOpen"
   >
     <div

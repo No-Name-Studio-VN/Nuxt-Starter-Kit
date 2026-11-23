@@ -1,8 +1,9 @@
-import type { InjectionKey, Ref } from "vue";
+import type { ComputedRef, InjectionKey, Ref } from "vue";
 
 export interface CarouselContextType {
   onCardClose: (index: number) => void;
   currentIndex: Ref<number>;
+  shortScreen: ComputedRef<boolean>;
 }
 
-export const CarouselKey = Symbol() as InjectionKey<CarouselContextType>;
+export const CarouselKey: InjectionKey<CarouselContextType> = Symbol();

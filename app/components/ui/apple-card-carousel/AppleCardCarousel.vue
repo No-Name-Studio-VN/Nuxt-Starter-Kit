@@ -6,10 +6,12 @@ import { Button } from "../button";
 
 interface Props {
   initialScroll?: number;
+  shortScreen?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   initialScroll: 0,
+  shortScreen: false,
 });
 
 const carouselRef = ref<HTMLDivElement | null>(null);
@@ -74,6 +76,7 @@ const isMobile = computed(() => {
 provide(CarouselKey, {
   onCardClose: handleCardClose,
   currentIndex,
+  shortScreen: computed(() => props.shortScreen),
 });
 </script>
 
@@ -81,7 +84,8 @@ provide(CarouselKey, {
   <div class="relative w-full">
     <div
       ref="carouselRef"
-      class="flex w-full overflow-x-scroll overscroll-x-auto scroll-smooth py-10 [scrollbar-width:none] md:py-20"
+      class="flex w-full overflow-x-scroll overscroll-x-auto scroll-smooth [scrollbar-width:none]"
+      :class="props.shortScreen ? 'py-8' : 'py-10 md:py-20'"
       @scroll="checkScrollability"
     >
       <div class="absolute right-0 z-[1000] h-auto w-[5%] overflow-hidden bg-gradient-to-l" />
