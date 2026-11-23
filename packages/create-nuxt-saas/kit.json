@@ -101,6 +101,24 @@
       "title": "Bump kit package version to 4.0.1.",
       "kind": "feature",
       "files": ["package.json"]
+    },
+    {
+      "id": "base.apple-card-carousel-short-screen",
+      "since": "4.1.0",
+      "title": "Opt into shorter Apple card carousel sizing with the shortScreen prop; defaults stay unchanged.",
+      "kind": "feature",
+      "files": [
+        "app/components/ui/apple-card-carousel/AppleCard.vue",
+        "app/components/ui/apple-card-carousel/AppleCardCarousel.vue",
+        "app/components/ui/apple-card-carousel/AppleCarouselContext.ts"
+      ]
+    },
+    {
+      "id": "base.kit-4-1-0",
+      "since": "4.1.0",
+      "title": "Bump kit package version to 4.1.0.",
+      "kind": "feature",
+      "files": ["package.json"]
     }
   ]
 }
