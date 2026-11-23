@@ -2,7 +2,25 @@
   "title": "Passkeys",
   "description": "Passwordless sign-in with WebAuthn passkeys, plus endpoints to register, list and delete them.",
   "group": "Authentication",
-  "parent": "auth-password",
-  "requires": ["server-core", "auth-password", "kv"],
-  "dependencies": ["@simplewebauthn/browser", "@simplewebauthn/server", "reflect-metadata"]
+  "parent": "auth",
+  "requires": ["server-core", "auth", "kv"],
+  "dependencies": ["@simplewebauthn/browser", "@simplewebauthn/server", "reflect-metadata"],
+  "changes": [
+    {
+      "id": "auth-passkeys.decouple-password",
+      "since": "4.0.1",
+      "title": "Allow passkeys without auth-password so OAuth-only projects can use passkeys without installing password sign-in.",
+      "kind": "fix",
+      "files": [
+        "layers/auth/types/authMethods.ts",
+        "layers/auth/types/extensions.ts",
+        "layers/auth-password/types/loginAlternatives.ts",
+        "layers/auth-passkeys/README.md",
+        "layers/auth-passkeys/module.json",
+        "layers/auth-passkeys/app/components/auth/PasskeyLoginAlternative.vue",
+        "layers/auth-passkeys/app/components/auth/PasskeyLoginMethod.vue",
+        "layers/auth-passkeys/app/plugins/login-alternatives.ts"
+      ]
+    }
+  ]
 }

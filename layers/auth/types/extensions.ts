@@ -9,6 +9,8 @@ declare module '~~/types/extensions' {
   interface ExtensionSlots {
     'auth:login:methods': AuthMethodProps;
     'auth:register:methods': AuthMethodProps;
+    /** Other ways to sign in, rendered under the password sign-in button when present. */
+    'auth:login:alternatives': true;
     /** Links under the sign-in methods, e.g. a sign-up link from a method that registers accounts. */
     'auth:login:footer': true;
     /** Login steps; the one whose id matches `?step=` replaces the sign-in methods. */

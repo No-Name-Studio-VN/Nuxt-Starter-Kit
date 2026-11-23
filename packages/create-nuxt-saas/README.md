@@ -79,8 +79,8 @@ npm create nuxt-saas@latest base-app -- --yes
 For example, in a base project:
 
 ```bash
-pnpm dlx create-nuxt-saas@latest add auth-passkeys,pwa --check
-pnpm dlx create-nuxt-saas@latest add auth-passkeys,pwa
+pnpm dlx create-nuxt-saas@latest add auth-oauth,auth-passkeys,pwa --check
+pnpm dlx create-nuxt-saas@latest add auth-oauth,auth-passkeys,pwa
 # Commit the add changes before running remove.
 pnpm dlx create-nuxt-saas@latest remove auth-passkeys
 ```
@@ -326,28 +326,28 @@ Each selected module is copied verbatim as `layers/<id>/`, which Nuxt 4 auto-reg
 are stripped from shared files. The root package, env example and worker config remain the full
 kit's union; the CLI drops claims of unselected modules only when no selected module also claims them.
 
-| Group          | Module                    | Parent          | Requires                                   | Requires one of               | Provides                                                          |
-| -------------- | ------------------------- | --------------- | ------------------------------------------ | ----------------------------- | ----------------------------------------------------------------- |
-| Foundation     | `database`                |                 | `server-core`                              |                               | D1/SQLite through NuxtHub and Drizzle, plus migration scripts     |
-| Foundation     | `bot-protection`          |                 | `server-core`                              |                               | Optional bot verification for public forms and API routes         |
-| Authentication | `auth`                    |                 | `server-core`, `database`                  | `auth-password`, `auth-oauth` | Accounts, sessions, and the sign-in page                          |
-| Authentication | `auth-oauth`              | `auth`          | `server-core`, `auth`                      |                               | OAuth sign-in with providers selected in `site.config.ts`         |
-| Authentication | `auth-password`           | `auth`          | `server-core`, `auth`, `email`             |                               | Password sign-in, registration, and password reset                |
-| Authentication | `auth-2fa`                | `auth-password` | `server-core`, `auth-password`             |                               | TOTP setup and password sign-in challenge                         |
-| Authentication | `auth-email-verification` | `auth-password` | `server-core`, `auth-password`             |                               | Verification email and password sign-in policy                    |
-| Authentication | `auth-passkeys`           | `auth-password` | `server-core`, `auth-password`, `kv`       |                               | WebAuthn sign-in and passkey management                           |
-| App            | `admin`                   |                 | `server-core`, `auth`, `dashboard`         |                               | Admin guards, seed task, and admin landing page                   |
-| App            | `admin-kv`                | `admin`         | `server-core`, `admin`, `kv`, `cache`      |                               | Workers KV browser                                                |
-| App            | `admin-users`             | `admin`         | `server-core`, `admin`                     |                               | User administration                                               |
-| App            | `feature-flags`           | `admin`         | `server-core`, `admin`, `kv`, `cache`      |                               | OpenFeature flags, admin panel, and edge evaluation               |
-| App            | `dashboard`               |                 |                                            |                               | Dashboard layout, sidebar, and quick search                       |
-| App            | `pwa`                     |                 |                                            |                               | Service worker, install prompt, offline page, and assets          |
-| Content        | `content`                 |                 |                                            |                               | Documentation, blog, search, and RSS                              |
-| Content        | `content-studio`          | `content`       | `content`                                  |                               | Nuxt Studio and MDC component metadata                            |
-| Internal       | `email`                   |                 |                                            |                               | Transactional email through Resend                                |
-| Internal       | `server-core`             |                 |                                            |                               | API envelope, error helpers, request utilities, and rate limits   |
-| Internal       | `kv`                      |                 | `server-core`                              |                               | NuxtHub key-value storage and `useKV()`                           |
-| Internal       | `cache`                   |                 | `server-core`                              |                               | NuxtHub-backed Nitro cache storage                                |
+| Group          | Module                    | Parent          | Requires                              | Requires one of               | Provides                                                        |
+| -------------- | ------------------------- | --------------- | ------------------------------------- | ----------------------------- | --------------------------------------------------------------- |
+| Foundation     | `database`                |                 | `server-core`                         |                               | D1/SQLite through NuxtHub and Drizzle, plus migration scripts   |
+| Foundation     | `bot-protection`          |                 | `server-core`                         |                               | Optional bot verification for public forms and API routes       |
+| Authentication | `auth`                    |                 | `server-core`, `database`             | `auth-password`, `auth-oauth` | Accounts, sessions, and the sign-in page                        |
+| Authentication | `auth-oauth`              | `auth`          | `server-core`, `auth`                 |                               | OAuth sign-in with providers selected in `site.config.ts`       |
+| Authentication | `auth-password`           | `auth`          | `server-core`, `auth`, `email`        |                               | Password sign-in, registration, and password reset              |
+| Authentication | `auth-2fa`                | `auth-password` | `server-core`, `auth-password`        |                               | TOTP setup and password sign-in challenge                       |
+| Authentication | `auth-email-verification` | `auth-password` | `server-core`, `auth-password`        |                               | Verification email and password sign-in policy                  |
+| Authentication | `auth-passkeys`           | `auth`          | `server-core`, `auth`, `kv`           |                               | WebAuthn sign-in and passkey management                         |
+| App            | `admin`                   |                 | `server-core`, `auth`, `dashboard`    |                               | Admin guards, seed task, and admin landing page                 |
+| App            | `admin-kv`                | `admin`         | `server-core`, `admin`, `kv`, `cache` |                               | Workers KV browser                                              |
+| App            | `admin-users`             | `admin`         | `server-core`, `admin`                |                               | User administration                                             |
+| App            | `feature-flags`           | `admin`         | `server-core`, `admin`, `kv`, `cache` |                               | OpenFeature flags, admin panel, and edge evaluation             |
+| App            | `dashboard`               |                 |                                       |                               | Dashboard layout, sidebar, and quick search                     |
+| App            | `pwa`                     |                 |                                       |                               | Service worker, install prompt, offline page, and assets        |
+| Content        | `content`                 |                 |                                       |                               | Documentation, blog, search, and RSS                            |
+| Content        | `content-studio`          | `content`       | `content`                             |                               | Nuxt Studio and MDC component metadata                          |
+| Internal       | `email`                   |                 |                                       |                               | Transactional email through Resend                              |
+| Internal       | `server-core`             |                 |                                       |                               | API envelope, error helpers, request utilities, and rate limits |
+| Internal       | `kv`                      |                 | `server-core`                         |                               | NuxtHub key-value storage and `useKV()`                         |
+| Internal       | `cache`                   |                 | `server-core`                         |                               | NuxtHub-backed Nitro cache storage                              |
 
 Internal modules are hidden from the picker, not from `modules`; they arrive through dependencies
 and can also be requested explicitly. See each layer's README for its configuration.
