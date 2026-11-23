@@ -20,6 +20,7 @@
     ".github/workflows/cli-release.yml",
     "pnpm-lock.yaml",
     "server/db/migrations/**",
+    "layers/content/public/_redirects",
     ".husky/_/**",
     ".superpowers/**",
     ".slim/**",
@@ -86,6 +87,13 @@
         "content/docs/1.getting-started/1.introduction.md",
         "content/docs/1.getting-started/2.installation.md"
       ]
+    },
+    {
+      "id": "base.seo-charset",
+      "since": "4.0.1",
+      "title": "Remove redundant charset meta from seo config so nuxt-seo-utils does not warn.",
+      "kind": "fix",
+      "files": ["nuxt.config.ts"]
     }
   ]
 }
