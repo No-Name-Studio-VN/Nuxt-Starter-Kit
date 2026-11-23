@@ -5,7 +5,7 @@ The admin area shell that the admin modules plug into.
 - The `admin` route middleware and the server middleware that limits `/api/admin/**` to admins, except
   the exact `POST /api/admin/seed` endpoint, which authenticates with its seed secret.
 - The `/admin` landing page (the `adminCards` menu), the admin sidebar context (Overview, Users & Sales,
-  System) and the Admin entry in the account menu. `DataTable` for the admin screens.
+  System) and the Admin entry in the account menu.
 - `shouldGrantAdmin()` in `server/utils/adminAccess.ts`, which decides who becomes an admin.
 - The `db:seed` task (`server/tasks/db/seed.ts`) and `POST /api/admin/seed`. Both run `seedDatabase()`
   (`server/utils/database/seed.ts`), which runs every registered seed task. The HTTP endpoint does not

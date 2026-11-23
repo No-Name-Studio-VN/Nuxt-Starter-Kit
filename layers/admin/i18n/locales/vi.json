@@ -1,10 +1,1 @@
-{
-  "data_table": {
-    "columns": "Cột",
-    "next": "Tiếp",
-    "previous": "Trước",
-    "reload": "Tải lại",
-    "rows_selected": "Đã chọn {selected} trên {total} hàng"
-  },
-  "no_results_description": "Hãy thử điều chỉnh tìm kiếm hoặc bộ lọc để tìm nội dung bạn cần."
-}
+{}

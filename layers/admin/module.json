@@ -12,6 +12,19 @@
       "title": "Mark client-rendered /admin/** routes noindex so SEO checks do not flag them.",
       "kind": "fix",
       "files": ["layers/admin/module.json", "layers/admin/nuxt.config.ts"]
+    },
+    {
+      "id": "admin.data-table-moved-to-base",
+      "since": "4.1.1",
+      "title": "Move DataTable to the base app without changing the component API.",
+      "kind": "fix",
+      "files": [
+        "layers/admin/module.json",
+        "layers/admin/README.md",
+        "layers/admin/app/components/DataTable.vue",
+        "layers/admin/i18n/locales/en.json",
+        "layers/admin/i18n/locales/vi.json"
+      ]
     }
   ]
 }

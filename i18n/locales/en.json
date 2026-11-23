@@ -50,5 +50,13 @@
   },
   "errors": {
     "no_result": "No results found."
-  }
+  },
+  "data_table": {
+    "columns": "Columns",
+    "next": "Next",
+    "previous": "Previous",
+    "reload": "Reload",
+    "rows_selected": "{selected} of {total} rows selected"
+  },
+  "no_results_description": "Try adjusting your search or filters to find what you need."
 }
