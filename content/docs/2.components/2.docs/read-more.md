@@ -15,14 +15,14 @@ badges:
 
 ::ct-stack
   ::div{class="p-4"}
-    :ct-read-more{to="/getting-started/writing/markdown"}
+    :ct-read-more{to="/docs/getting-started/writing/markdown"}
     :ct-read-more{title="Nuxt website" to="https://nuxt.com/"}
     :ct-read-more{to="https://nuxt.com/"}
     :ct-read-more{icon="lucide:link" to="https://nuxt.com/"}
   ::
 
   ```mdc
-  :ct-read-more{to="/getting-started/writing/markdown"}
+  :ct-read-more{to="/docs/getting-started/writing/markdown"}
   :ct-read-more{title="Nuxt website" to="https://nuxt.com/"}
   :ct-read-more{to="https://nuxt.com/"}
   :ct-read-more{icon="lucide:link" to="https://nuxt.com/"}

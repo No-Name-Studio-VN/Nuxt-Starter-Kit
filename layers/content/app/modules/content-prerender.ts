@@ -87,8 +87,15 @@ export default defineNuxtModule({
     // Add content routes to prerender list
     nuxt.hook('nitro:config', (nitroConfig) => {
       const markdownFiles = findMarkdownFiles(contentDir);
-      const routes = new Set<string>();
-      const localizedPrefixes = locales.filter((locale) => locale !== defaultLocale);
+      const localizedPrefixes =
+        nuxt.options.i18n?.strategy === 'no_prefix'
+          ? []
+          : locales.filter((locale) => locale !== defaultLocale);
+      const routes = new Set<string>([
+        '/blogs',
+        '/rss.xml',
+        ...localizedPrefixes.map((locale) => `/${locale}/blogs`),
+      ]);
 
       for (const file of markdownFiles) {
         const urlPath = contentFileToUrlPath(file, contentDir);
@@ -106,11 +113,11 @@ export default defineNuxtModule({
 
       // Merge with existing prerender routes
       nitroConfig.prerender ??= {};
-      nitroConfig.prerender.routes = [...new Set([...(nitroConfig.prerender.routes ?? []), ...routes])];
+      nitroConfig.prerender.routes = [
+        ...new Set([...(nitroConfig.prerender.routes ?? []), ...routes]),
+      ];
 
-      console.log(
-        `[content-prerender] Registered ${routes.size} content routes for prerendering`,
-      );
+      console.log(`[content-prerender] Registered ${routes.size} content routes for prerendering`);
       for (const route of routes) {
         console.log(`[content-prerender]   ${route}`);
       }

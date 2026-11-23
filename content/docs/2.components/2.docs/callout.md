@@ -8,6 +8,6 @@ badges:
     target: _blank
 ---
 
-::ct-alert{to="/components/docs/alert"}
+::ct-alert{to="/docs/components/docs/alert"}
 `::ct-callout`{lang="mdc"} is an alias to `::ct-alert`{lang="mdc"}.
 ::

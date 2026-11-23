@@ -12,7 +12,7 @@ badges:
 
 ## Usage
 
-The package managers shown can be configured in [`main.pm`](/api/configuration/shadcn-docs#main).
+The package managers shown can be configured in [`main.pm`](/docs/api/configuration/shadcn-docs#main).
 
 ### Install
 

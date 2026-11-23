@@ -13,7 +13,7 @@ badges:
 
 ::ct-stack
   ::div{class="p-3 flex gap-4"}
-  ::ct-button-link{right-icon="lucide:arrow-up-right" to="/getting-started" target="_blank"}
+  ::ct-button-link{right-icon="lucide:arrow-up-right" to="/docs/getting-started/introduction" target="_blank"}
     Get Started
   ::
   ::ct-button-link{left-icon="lucide:github" variant="outline" to="https://github.com/No-Name-Studio-VN/Homepage" target="_blank"}
@@ -24,7 +24,7 @@ badges:
   ::
   ::
   ```mdc
-  ::ct-button-link{right-icon="lucide:arrow-up-right" to="/getting-started" target="_blank"}
+  ::ct-button-link{right-icon="lucide:arrow-up-right" to="/docs/getting-started/introduction" target="_blank"}
     Get Started
   ::
   ::ct-button-link{left-icon="lucide:github" variant="outline" to="https://github.com/No-Name-Studio-VN/Homepage" target="_blank"}

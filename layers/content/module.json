@@ -5,5 +5,50 @@
   "requires": [],
   "dependencies": ["@nuxtjs/mdc", "shiki", "@nuxt/content", "better-sqlite3", "feed", "minisearch"],
   "devDependencies": ["nuxt-content-git"],
-  "rootFiles": ["content/**"]
+  "rootFiles": ["content/**"],
+  "changes": [
+    {
+      "id": "content.i18n-prerender-and-seo",
+      "since": "4.0.1",
+      "title": "Respect i18n.strategy in content prerendering and redirects, avoid missing-href anchors, and fix starter docs links.",
+      "kind": "fix",
+      "files": [
+        "layers/content/module.json",
+        "layers/content/nuxt.config.ts",
+        "layers/content/app/modules/content-prerender.ts",
+        "layers/content/app/modules/navigation-redirects.ts",
+        "layers/content/app/components/layout/Breadcrumb.vue",
+        "layers/content/app/components/layout/Title.vue",
+        "content/docs/1.getting-started/.navigation.yml",
+        "content/docs/1.getting-started/2.installation.md",
+        "content/docs/1.getting-started/3.writing/.navigation.yml",
+        "content/docs/1.getting-started/3.writing/1.markdown.md",
+        "content/docs/1.getting-started/3.writing/3.folders.md",
+        "content/docs/1.getting-started/3.writing/4.full-page-example.md",
+        "content/docs/1.getting-started/5.upgrade/.navigation.yml",
+        "content/docs/2.components/.navigation.yml",
+        "content/docs/2.components/1.prose/.navigation.yml",
+        "content/docs/2.components/1.prose/1.markdown.md",
+        "content/docs/2.components/2.docs/.navigation.yml",
+        "content/docs/2.components/2.docs/button-link.md",
+        "content/docs/2.components/2.docs/callout.md",
+        "content/docs/2.components/2.docs/code-group.md",
+        "content/docs/2.components/2.docs/field.md",
+        "content/docs/2.components/2.docs/pm.md",
+        "content/docs/2.components/2.docs/read-more.md",
+        "content/docs/2.components/2.docs/stack.md",
+        "content/docs/2.components/2.docs/tabs.md",
+        "content/docs/2.components/3.page/.navigation.yml",
+        "content/docs/2.components/3.page/hero-alt.md",
+        "content/docs/2.components/3.page/hero.md",
+        "content/docs/3.api/.navigation.yml",
+        "content/docs/3.api/1.configuration/.navigation.yml",
+        "content/docs/3.api/1.configuration/1.shadcn-docs.md",
+        "content/docs/3.api/1.configuration/3.og-image.md",
+        "content/docs/3.api/2.integrations/.navigation.yml",
+        "content/docs/3.api/3.advanced/.navigation.yml",
+        "content/docs/3.api/4.themes.md"
+      ]
+    }
+  ]
 }

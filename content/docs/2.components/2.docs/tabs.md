@@ -304,7 +304,7 @@ sitemap:
 0.8.0
 ::
 
-:ct-read-more{to="/components/docs/pm"}
+:ct-read-more{to="/docs/components/docs/pm"}
 
 ::ct-stack
   :::div{.p-4.md:p-8}

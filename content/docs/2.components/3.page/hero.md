@@ -17,10 +17,10 @@ badges:
     announcement:
       title: 'Release v1.0.0'
       icon: 'lucide:party-popper'
-      to: /getting-started
+      to: /docs/getting-started/introduction
     actions:
       - name: Get Started
-        to: /getting-started
+        to: /docs/getting-started/introduction
       - name: GitHub
         variant: outline
         to: https://github.com/No-Name-Studio-VN/Homepage
@@ -40,10 +40,10 @@ badges:
   announcement:
     title: 'Release v1.0.0'
     icon: 'lucide:party-popper'
-    to: /getting-started
+    to: /docs/getting-started/introduction
   actions:
     - name: Get Started
-      to: /getting-started
+      to: /docs/getting-started/introduction
     - name: GitHub
       variant: outline
       to: https://github.com/No-Name-Studio-VN/Homepage

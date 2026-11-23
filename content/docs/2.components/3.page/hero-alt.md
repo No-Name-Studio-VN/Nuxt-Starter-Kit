@@ -19,10 +19,10 @@ toc: false
     announcement:
       title: 'Introducing Charts'
       icon: 'lucide:pie-chart'
-      to: /getting-started
+      to: /docs/getting-started/introduction
     actions:
       - name: Get Started
-        to: /getting-started
+        to: /docs/getting-started/introduction
       - name: GitHub
         variant: ghost
         to: https://github.com/No-Name-Studio-VN/Homepage
@@ -41,10 +41,10 @@ toc: false
 announcement:
   title: 'Introducing Charts'
   icon: 'lucide:pie-chart'
-  to: /getting-started
+  to: /docs/getting-started/introduction
 actions:
   - name: Get Started
-    to: /getting-started
+    to: /docs/getting-started/introduction
   - name: GitHub
     variant: outline
     to: https://github.com/No-Name-Studio-VN/Homepage
@@ -69,10 +69,10 @@ Beautifully designed components that you can copy and paste into your apps.
     announcement:
       title: 'Introducing Charts'
       icon: 'lucide:pie-chart'
-      to: /getting-started
+      to: /docs/getting-started/introduction
     actions:
       - name: Get Started
-        to: /getting-started
+        to: /docs/getting-started/introduction
       - name: GitHub
         variant: ghost
         to: https://github.com/No-Name-Studio-VN/Homepage
@@ -95,10 +95,10 @@ Beautifully designed components that you can copy and paste into your apps.
 announcement:
   title: 'Introducing Charts'
   icon: 'lucide:pie-chart'
-  to: /getting-started
+  to: /docs/getting-started/introduction
 actions:
   - name: Get Started
-    to: /getting-started
+    to: /docs/getting-started/introduction
   - name: GitHub
     variant: ghost
     to: https://github.com/No-Name-Studio-VN/Homepage

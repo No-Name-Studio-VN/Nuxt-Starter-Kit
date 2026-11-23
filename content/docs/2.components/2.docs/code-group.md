@@ -62,7 +62,7 @@ badges:
   ```
 ::
 
-::ct-alert{to="/components/docs/tabs"}
+::ct-alert{to="/docs/components/docs/tabs"}
 `::ct-code-group`{lang="mdc"} is a wrapper around `::ct-tabs{variant="card"}`{lang="mdc"}.
 ::
 

@@ -23,7 +23,7 @@ badges:
   ```
 ::
 
-The text `required` is configurable in [`main.fieldRequiredText`](/api/configuration/shadcn-docs#main).
+The text `required` is configurable in [`main.fieldRequiredText`](/docs/api/configuration/shadcn-docs#main).
 
 ## Props
 

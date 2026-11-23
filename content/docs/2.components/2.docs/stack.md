@@ -30,7 +30,7 @@ badges:
 
       :ct-pm-x{command="nuxi@latest init <project-name> -t github:No-Name-Studio-VN/Nuxt-Starter-Kit"}
 
-      :ct-read-more{title="Installation" to="/getting-started/installation"}
+      :ct-read-more{title="Installation" to="/docs/getting-started/installation"}
 
       ::ct-card
       ---
@@ -60,7 +60,7 @@ badges:
 
     :ct-pm-x{command="nuxi@latest init <project-name> -t github:No-Name-Studio-VN/Nuxt-Starter-Kit"}
 
-    :ct-read-more{title="Installation" to="/getting-started/installation"}
+    :ct-read-more{title="Installation" to="/docs/getting-started/installation"}
 
     ::ct-card
     ---

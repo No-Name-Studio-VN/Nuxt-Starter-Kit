@@ -6,42 +6,63 @@
     <CtMDC v-if="description" :value="description" class="text-muted-foreground pt-1 text-lg" />
 
     <div v-if="badges" class="flex gap-2 pt-4">
-      <NuxtLinkLocale v-for="(badge, i) in badges" :key="i" :to="badge.to" :target="badge.target">
+      <template v-for="(badge, i) in badges" :key="i">
+        <NuxtLinkLocale v-if="badge.to" :to="badge.to" :target="badge.target">
+          <Badge
+            :variant="badgeVariant(badge.variant) ?? 'secondary'"
+            :type="badge.type"
+            class="gap-1 rounded-md"
+          >
+            {{ badge.value }}
+            <CtIcon :size="12" :name="badge.icon || 'lucide:external-link'" />
+          </Badge>
+        </NuxtLinkLocale>
         <Badge
+          v-else
           :variant="badgeVariant(badge.variant) ?? 'secondary'"
           :type="badge.type"
           class="gap-1 rounded-md"
         >
           {{ badge.value }}
-          <CtIcon
-            v-if="badge.to || badge.icon"
-            :size="12"
-            :name="badge.icon || 'lucide:external-link'"
-          />
+          <CtIcon v-if="badge.icon" :size="12" :name="badge.icon" />
         </Badge>
-      </NuxtLinkLocale>
+      </template>
     </div>
 
     <div v-if="authors" class="-mx-4 flex divide-x pt-4">
-      <NuxtLinkLocale
-        v-for="author in authors"
-        :key="author.name"
-        :to="author.to"
-        :target="author.target"
-        class="flex items-center gap-2 px-4"
-      >
-        <Avatar v-if="author.avatar" class="size-8">
-          <AvatarImage :src="author.avatar" :alt="author.name" />
-        </Avatar>
-        <div>
-          <div class="text-sm font-semibold">
-            {{ author.name }}
+      <template v-for="author in authors" :key="author.name">
+        <NuxtLinkLocale
+          v-if="author.to"
+          :to="author.to"
+          :target="author.target"
+          class="flex items-center gap-2 px-4"
+        >
+          <Avatar v-if="author.avatar" class="size-8">
+            <AvatarImage :src="author.avatar" :alt="author.name" />
+          </Avatar>
+          <div>
+            <div class="text-sm font-semibold">
+              {{ author.name }}
+            </div>
+            <div v-if="author.username" class="text-muted-foreground text-xs/4 font-medium">
+              @{{ author.username }}
+            </div>
           </div>
-          <div v-if="author.username" class="text-muted-foreground text-xs/4 font-medium">
-            @{{ author.username }}
+        </NuxtLinkLocale>
+        <div v-else class="flex items-center gap-2 px-4">
+          <Avatar v-if="author.avatar" class="size-8">
+            <AvatarImage :src="author.avatar" :alt="author.name" />
+          </Avatar>
+          <div>
+            <div class="text-sm font-semibold">
+              {{ author.name }}
+            </div>
+            <div v-if="author.username" class="text-muted-foreground text-xs/4 font-medium">
+              @{{ author.username }}
+            </div>
           </div>
         </div>
-      </NuxtLinkLocale>
+      </template>
     </div>
   </div>
 </template>

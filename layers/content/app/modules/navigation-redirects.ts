@@ -120,10 +120,12 @@ function parseNavigationFile(filePath: string, contentDir: string): RedirectEntr
 /**
  * Generate all redirects with validation
  */
-function generateRedirects(contentDir: string): RedirectEntry[] {
+function generateRedirects(
+  contentDir: string,
+  localizedPrefixes: readonly string[],
+): RedirectEntry[] {
   const navigationFiles = findNavigationFiles(contentDir);
   const redirects = new Map<string, string>();
-  const localizedPrefixes = locales.filter((locale) => locale !== defaultLocale);
 
   for (const file of navigationFiles) {
     const redirect = parseNavigationFile(file, contentDir);
@@ -179,14 +181,17 @@ export default defineNuxtModule({
   setup(options, nuxt) {
     if (!options.enabled) return;
 
-    // const resolver = createResolver(import.meta.url)
     const contentDir = join(nuxt.options.rootDir, 'content');
+    const localizedPrefixes =
+      nuxt.options.i18n?.strategy === 'no_prefix'
+        ? []
+        : locales.filter((locale) => locale !== defaultLocale);
 
     // Generate redirects and add to route rules
     nuxt.hook('nitro:config', (nitroConfig) => {
       console.log('[navigation-redirects] Generating redirects from .navigation.yml files...');
 
-      const redirects = generateRedirects(contentDir);
+      const redirects = generateRedirects(contentDir, localizedPrefixes);
       console.log(`[navigation-redirects] Found ${redirects.length} redirects`);
 
       // Add to Nitro route rules
@@ -210,7 +215,7 @@ export default defineNuxtModule({
 
     // Also generate _redirects file in public folder for Netlify
     nuxt.hook('build:before', () => {
-      const redirects = generateRedirects(contentDir);
+      const redirects = generateRedirects(contentDir, localizedPrefixes);
 
       if (redirects.length === 0) return;
 
