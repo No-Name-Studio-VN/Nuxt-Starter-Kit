@@ -114,6 +114,18 @@ describe('CLI routing and commands', () => {
     }
   });
 
+  it.each(['--version', '-v'])(
+    'prints the package version for %s without running init',
+    async (flag) => {
+      const pkg = JSON.parse(
+        await readFile(new URL('../package.json', import.meta.url), 'utf8'),
+      ) as { version: string };
+      expect(await main([flag])).toBe(0);
+      expect(output().trim()).toBe(pkg.version);
+      expect(await readdir(parent)).toEqual([]);
+    },
+  );
+
   it.each(['init', 'add', 'remove', 'modules'])(
     'shows help for %s without running it',
     async (command) => {
@@ -275,12 +287,21 @@ describe('CLI routing and commands', () => {
     await writeTextFile(file, original.replace('Home v2', 'Uncommitted kit home'));
     const before = await run('git', ['-C', fixture.root, 'status', '--porcelain=v1']);
     try {
-      expect(await main(['upgrade', '--dir', project, ...kitArgs(), '--use-uncommitted-kit'])).toBe(0);
-      expect(await readFile(join(project, 'app/pages/index.vue'), 'utf8')).toContain('Uncommitted kit home');
+      expect(await main(['upgrade', '--dir', project, ...kitArgs(), '--use-uncommitted-kit'])).toBe(
+        0,
+      );
+      expect(await readFile(join(project, 'app/pages/index.vue'), 'utf8')).toContain(
+        'Uncommitted kit home',
+      );
       const { commit } = await readState(project);
       const git = (args: string[]) => run('git', ['-C', fixture.root, ...args]);
-      expect((await git(['rev-parse', `refs/nuxt-saas/kit-snapshots/${commit}`])).stdout.trim()).toBe(commit);
-      expect((await git(['rev-parse', `${commit}^`, 'HEAD'])).stdout.trim().split('\n')).toEqual([fixture.v2, fixture.v2]);
+      expect(
+        (await git(['rev-parse', `refs/nuxt-saas/kit-snapshots/${commit}`])).stdout.trim(),
+      ).toBe(commit);
+      expect((await git(['rev-parse', `${commit}^`, 'HEAD'])).stdout.trim().split('\n')).toEqual([
+        fixture.v2,
+        fixture.v2,
+      ]);
       expect((await git(['status', '--porcelain=v1'])).stdout).toBe(before.stdout);
     } finally {
       await writeTextFile(file, original);
@@ -290,7 +311,17 @@ describe('CLI routing and commands', () => {
   it('rejects an uncommitted kit snapshot without --kit or with --to', async () => {
     await initV1();
     expect(await main(['upgrade', '--dir', project, '--use-uncommitted-kit'])).toBe(1);
-    expect(await main(['upgrade', '--dir', project, ...kitArgs(), '--to', 'HEAD', '--use-uncommitted-kit'])).toBe(1);
+    expect(
+      await main([
+        'upgrade',
+        '--dir',
+        project,
+        ...kitArgs(),
+        '--to',
+        'HEAD',
+        '--use-uncommitted-kit',
+      ]),
+    ).toBe(1);
     expect((await readState(project)).commit).toBe(fixture.v1);
   });
 
@@ -307,7 +338,9 @@ describe('CLI routing and commands', () => {
     expect(await main(['add', 'alpha', '--dir', project, ...kitArgs(), '--check'])).toBe(3);
     expect(await main(['add', 'alpha', '--dir', project, ...kitArgs(), '--force'])).toBe(3);
     expect(await main(['undo', '--dir', project, '--yes'])).toBe(0);
-    expect(await readFile(join(project, 'layers/alpha/app/pages/alpha.vue'), 'utf8')).toBe('my alpha\n');
+    expect(await readFile(join(project, 'layers/alpha/app/pages/alpha.vue'), 'utf8')).toBe(
+      'my alpha\n',
+    );
   });
 
   it('reads modules at the recorded commit and marks installed modules', async () => {
@@ -416,7 +449,7 @@ describe('CLI routing and commands', () => {
       await initV1();
       expect(await main(['upgrade', '--dir', project, '--kit', majorKit.root])).toBe(1);
       expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain(
-        'This project was generated before kit 4.0 split auth into sign-in methods. Generate a new project and move your code across.',
+        'This project was generated with kit 3.x and cannot upgrade to kit 4.x. Generate a new project and move your code across.',
       );
       expect((await readState(project)).commit).toBe(fixture.v1);
       expect((await run('git', ['-C', project, 'status', '--porcelain'])).stdout).toBe('');
@@ -429,14 +462,21 @@ describe('CLI routing and commands', () => {
     await initV1();
     const packagePath = join(fixture.root, 'package.json');
     const original = await readFile(packagePath, 'utf8');
-    const refs = () => run('git', ['-C', fixture.root, 'for-each-ref', 'refs/nuxt-saas/kit-snapshots/']);
+    const refs = () =>
+      run('git', ['-C', fixture.root, 'for-each-ref', 'refs/nuxt-saas/kit-snapshots/']);
     const before = (await refs()).stdout;
     try {
       await writeTextFile(packagePath, original.replace('3.1.0', '4.0.0'));
-      expect(await main(['upgrade', '--dir', project, ...kitArgs(), '--use-uncommitted-kit', '--force'])).toBe(1);
-      expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain('before kit 4.0 split auth');
+      expect(
+        await main(['upgrade', '--dir', project, ...kitArgs(), '--use-uncommitted-kit', '--force']),
+      ).toBe(1);
+      expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain(
+        'kit 3.x and cannot upgrade to kit 4.x',
+      );
       expect((await refs()).stdout).toBe(before);
-      expect((await run('git', ['-C', project, 'for-each-ref', 'refs/nuxt-saas/backups/'])).stdout).toBe('');
+      expect(
+        (await run('git', ['-C', project, 'for-each-ref', 'refs/nuxt-saas/backups/'])).stdout,
+      ).toBe('');
       expect((await readState(project)).commit).toBe(fixture.v1);
     } finally {
       await writeTextFile(packagePath, original);

@@ -114,11 +114,9 @@ export async function assertSameKitMajor(
 ): Promise<void> {
   const [fromMajor, toMajor] = await Promise.all([readKitMajor(from), readKitMajor(to)]);
   if (fromMajor === toMajor) return;
-  const reason =
-    fromMajor < 4 && toMajor === 4
-      ? 'This project was generated before kit 4.0 split auth into sign-in methods.'
-      : `This project was generated with kit ${fromMajor}.x and cannot upgrade to kit ${toMajor}.x.`;
-  throw new CliError(`${reason} Generate a new project and move your code across.`);
+  throw new CliError(
+    `This project was generated with kit ${fromMajor}.x and cannot upgrade to kit ${toMajor}.x. Generate a new project and move your code across.`,
+  );
 }
 
 export async function openKit(
@@ -132,7 +130,8 @@ export async function openKit(
       `Kit commit ${commit} from ${label} was never pushed or is unavailable. Use --kit <path> to provide a local checkout. ${errorMessage(error)}`,
     );
   }
-  if (!shaPattern.test(commit)) throw new CliError(`Invalid kit commit ${commit}. Expected a full 40-character SHA.`);
+  if (!shaPattern.test(commit))
+    throw new CliError(`Invalid kit commit ${commit}. Expected a full 40-character SHA.`);
   const dir = await mkdtemp(join(tmpdir(), 'nuxt-saas-kit-'));
   const removeDir = () => rm(dir, { recursive: true, force: true });
   // A killed run (the app's cancel or timeout) never reaches `finally`, so the signal handler removes the copy.

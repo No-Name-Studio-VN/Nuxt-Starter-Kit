@@ -1,5 +1,16 @@
 import { defineCommand, runCommand, showUsage, type ArgsDef, type CommandDef } from 'citty';
-import { declineArgs, initArgs, inspectArgs, listArgs, moduleChangeArgs, notesArgs, resolveArgs, undoArgs, upgradeArgs } from './arguments';
+import pkg from '../package.json' with { type: 'json' };
+import {
+  declineArgs,
+  initArgs,
+  inspectArgs,
+  listArgs,
+  moduleChangeArgs,
+  notesArgs,
+  resolveArgs,
+  undoArgs,
+  upgradeArgs,
+} from './arguments';
 import {
   initCommand,
   inspectCommand,
@@ -56,7 +67,10 @@ export async function main(argv: string[]): Promise<number> {
       },
     }),
     undo: route({
-      meta: { name: 'undo', description: 'Restore a project backup before committing a transition' },
+      meta: {
+        name: 'undo',
+        description: 'Restore a project backup before committing a transition',
+      },
       args: undoArgs,
       async run({ args }) {
         exitCode = await undoCommand(args);
@@ -101,7 +115,7 @@ export async function main(argv: string[]): Promise<number> {
   const root = defineCommand({
     meta: {
       name: 'nuxt-saas',
-      version: '3.2.0',
+      version: pkg.version,
       description: 'Create and manage modular Nuxt SaaS projects',
     },
     subCommands: {
@@ -123,6 +137,10 @@ export async function main(argv: string[]): Promise<number> {
     const selected = Object.entries(commands).find(([name]) => name === argv[index]);
     const command = selected?.[1] ?? commands.init;
     const rawArgs = selected ? argv.slice(index + 1) : argv;
+    if (!selected && (argv.includes('--version') || argv.includes('-v'))) {
+      console.log(pkg.version);
+      return 0;
+    }
     if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
       if (selected) await command.help();
       else await showUsage(root);
