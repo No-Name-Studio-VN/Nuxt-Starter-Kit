@@ -94,6 +94,13 @@
       "title": "Remove redundant charset meta from seo config so nuxt-seo-utils does not warn.",
       "kind": "fix",
       "files": ["nuxt.config.ts"]
+    },
+    {
+      "id": "base.kit-4-0-1",
+      "since": "4.0.1",
+      "title": "Bump kit package version to 4.0.1.",
+      "kind": "feature",
+      "files": ["package.json"]
     }
   ]
 }
