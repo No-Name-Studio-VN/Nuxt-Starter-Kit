@@ -119,6 +119,20 @@
       "title": "Bump kit package version to 4.1.0.",
       "kind": "feature",
       "files": ["package.json"]
+    },
+    {
+      "id": "base.global-data-table",
+      "since": "4.1.1",
+      "title": "Use the shared DataTable without installing the admin layer.",
+      "kind": "feature",
+      "files": ["app/components/DataTable.vue", "i18n/locales/en.json", "i18n/locales/vi.json"]
+    },
+    {
+      "id": "base.kit-4-1-1",
+      "since": "4.1.1",
+      "title": "Bump kit package version to 4.1.1.",
+      "kind": "fix",
+      "files": ["package.json"]
     }
   ]
 }
