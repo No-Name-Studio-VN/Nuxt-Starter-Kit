@@ -31,6 +31,7 @@ export default defineNuxtConfig({
     '/admin/**': {
       ssr: false,
       prerender: false,
+      robots: false,
     },
   },
 

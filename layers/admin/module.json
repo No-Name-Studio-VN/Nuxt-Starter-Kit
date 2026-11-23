@@ -4,5 +4,14 @@
   "group": "App",
   "requires": ["server-core", "auth", "dashboard"],
   "scripts": ["db:seed"],
-  "env": ["NUXT_SEED_SECRET"]
+  "env": ["NUXT_SEED_SECRET"],
+  "changes": [
+    {
+      "id": "admin.noindex-route-rules",
+      "since": "4.0.1",
+      "title": "Mark client-rendered /admin/** routes noindex so SEO checks do not flag them.",
+      "kind": "fix",
+      "files": ["layers/admin/module.json", "layers/admin/nuxt.config.ts"]
+    }
+  ]
 }
