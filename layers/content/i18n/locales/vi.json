@@ -27,7 +27,14 @@
     "no_results_description": "Hãy thử điều chỉnh tìm kiếm hoặc bộ lọc để tìm thấy nội dung bạn cần.",
     "clear_filters": "Xóa bộ lọc",
     "seo_title": "Blog — No Name Studio",
-    "seo_description": "Chia sẻ kiến thức, hướng dẫn, và cập nhật từ No Name Studio."
+    "seo_description": "Chia sẻ kiến thức, hướng dẫn, và cập nhật từ No Name Studio.",
+    "back_to_blog": "Tất cả tin tức",
+    "scroll_to_article": "Cuộn xuống bài viết",
+    "on_this_page": "Trong bài này",
+    "share": "Chia sẻ",
+    "copy_link": "Sao chép liên kết",
+    "more_posts": "Tin tức khác",
+    "view_all": "Xem tất cả"
   },
   "search": {
     "document": "Tìm kiếm tài liệu..."

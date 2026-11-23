@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { isEmpty } from 'es-toolkit/compat';
 import { joinURL, withoutTrailingSlash } from 'ufo';
+import { useBlogListing } from '#layers/content/app/composables/useBlogContent';
 
 definePageMeta({
   layout: 'default',
@@ -14,9 +15,8 @@ const { t, locale } = useI18n();
 const site = useSiteConfig();
 const baseUrl = computed(() => (site.url ? withoutTrailingSlash(site.url) : ''));
 
-const { data: posts, status } = await useAsyncData('blog-posts', () =>
-  queryCollection('content').where('path', 'LIKE', '/blogs/%').order('publishedAt', 'DESC').all(),
-);
+const localePath = useLocalePath();
+const { data: posts, status } = await useBlogListing();
 
 useSeo({
   title: computed(() => t('blog.seo_title')),
@@ -26,7 +26,7 @@ useSeo({
     if (!posts.value || !baseUrl.value) return undefined;
     return posts.value.map((p) => ({
       name: p.title || '',
-      url: joinURL(baseUrl.value, p.path || ''),
+      url: joinURL(baseUrl.value, localePath(p.path)),
     }));
   }),
 });

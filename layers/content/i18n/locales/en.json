@@ -27,7 +27,14 @@
     "no_results_description": "Try adjusting your search or filter to find what you're looking for.",
     "clear_filters": "Clear filters",
     "seo_title": "Blog — No Name Studio",
-    "seo_description": "Insights, tutorials, and updates from No Name Studio."
+    "seo_description": "Insights, tutorials, and updates from No Name Studio.",
+    "back_to_blog": "All news",
+    "scroll_to_article": "Scroll to article",
+    "on_this_page": "On this page",
+    "share": "Share",
+    "copy_link": "Copy link",
+    "more_posts": "More news",
+    "view_all": "View all"
   },
   "search": {
     "document": "Search documentation..."

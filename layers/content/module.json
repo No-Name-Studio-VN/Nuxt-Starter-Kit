@@ -49,6 +49,25 @@
         "content/docs/3.api/3.advanced/.navigation.yml",
         "content/docs/3.api/4.themes.md"
       ]
+    },
+    {
+      "id": "content.blog-article",
+      "since": "4.1.0",
+      "title": "Give blog articles a dedicated layout with localized links and fallback notices, optional covers and facts, and a table of contents on desktop and mobile.",
+      "kind": "feature",
+      "files": [
+        "app/components/ui/animated-toc/AnimatedToc.vue",
+        "layers/content/module.json",
+        "layers/content/app/composables/useBlogContent.ts",
+        "layers/content/app/composables/useBlogPostSnap.ts",
+        "layers/content/app/composables/usePageData.ts",
+        "layers/content/app/pages/blogs.vue",
+        "layers/content/app/pages/blogs/index.vue",
+        "layers/content/app/pages/blogs/[...slug].vue",
+        "layers/content/content.config.ts",
+        "layers/content/i18n/locales/en.json",
+        "layers/content/i18n/locales/vi.json"
+      ]
     }
   ]
 }

@@ -43,7 +43,7 @@ async function queryDocsPage(nuxtApp: NuxtApp, path: string) {
   return page;
 }
 
-async function fetchDocsPage(
+export async function fetchLocalizedContentPage(
   nuxtApp: NuxtApp,
   path: string,
   locale: string,
@@ -67,7 +67,7 @@ export function useDocsPageContent(path: string) {
   const { locale, defaultLocale } = useI18n();
   const requestedLocale = locale.value;
   return useAsyncData(`docs-page:${path}`, (nuxtApp) =>
-    fetchDocsPage(nuxtApp, path, requestedLocale, defaultLocale),
+    fetchLocalizedContentPage(nuxtApp, path, requestedLocale, defaultLocale),
   );
 }
 

@@ -123,6 +123,7 @@ watch(
 function select(index: number, event: MouseEvent) {
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   active.value = index;
+  // Let consumers handle selection before the NuxtLink click listener runs.
   emit('select', index, event);
 }
 const progressOffset = computed(() => Math.max(totalLen.value - dotLen.value, 0));
@@ -174,7 +175,7 @@ const progressOffset = computed(() => Math.max(totalLen.value - dotLen.value, 0)
               i === active ? 'font-semibold text-primary' : 'text-muted-foreground',
             )"
             :style="{ paddingLeft: `${16 + (item.depth ?? 0) * indent}px` }"
-            @click="select(i, $event)"
+            @click.capture="select(i, $event)"
           >
             <span class="min-w-0 truncate">{{ item.label }}</span>
           </NuxtLink>

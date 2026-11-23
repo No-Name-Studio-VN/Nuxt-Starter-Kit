@@ -31,6 +31,16 @@ export default defineContentConfig({
         // Reading time
         readingTime: z.number().optional(),
 
+        // Article cover and key facts
+        image: z
+          .object({
+            src: z.string(),
+            alt: z.string().optional(),
+            caption: z.string().optional(),
+          })
+          .optional(),
+        details: z.array(z.object({ label: z.string(), value: z.string() })).optional(),
+
         // Categorization
         category: z.string().optional(),
         tags: z.array(z.string()).optional(),
