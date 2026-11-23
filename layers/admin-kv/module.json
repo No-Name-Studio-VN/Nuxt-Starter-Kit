@@ -4,5 +4,17 @@
   "group": "App",
   "parent": "admin",
   "requires": ["server-core", "admin", "kv", "cache"],
-  "dependencies": ["pretty-bytes", "@codemirror/lang-json", "codemirror"]
+  "dependencies": ["pretty-bytes", "@codemirror/lang-json", "codemirror"],
+  "changes": [
+    {
+      "id": "admin-kv.shared-data-table-import",
+      "since": "4.1.2",
+      "title": "Import DataTable from the base app instead of the admin layer.",
+      "kind": "fix",
+      "files": [
+        "layers/admin-kv/module.json",
+        "layers/admin-kv/app/components/admin/kv/AdminKvManager.vue"
+      ]
+    }
+  ]
 }

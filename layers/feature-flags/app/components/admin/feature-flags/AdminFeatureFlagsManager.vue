@@ -290,7 +290,7 @@ import type { DBFeatureFlag } from '#layers/feature-flags/types/featureFlags';
 import { featureFlagInsertSchema } from '#layers/feature-flags/shared/schemas/featureFlagSchema';
 import { featureFlagRoutes } from '#layers/feature-flags/shared/featureFlagRoutes';
 import type { ApiResponse } from '#layers/server-core/types/api';
-import DataTable from '#layers/admin/app/components/DataTable.vue';
+import DataTable from '@/components/DataTable.vue';
 import { createColumns } from './columns';
 import type { DateValue } from '@internationalized/date';
 import { fromDate, getLocalTimeZone } from '@internationalized/date';

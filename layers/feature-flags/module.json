@@ -4,5 +4,17 @@
   "group": "App",
   "parent": "admin",
   "requires": ["server-core", "admin", "kv", "cache"],
-  "dependencies": ["@openfeature/server-sdk"]
+  "dependencies": ["@openfeature/server-sdk"],
+  "changes": [
+    {
+      "id": "feature-flags.shared-data-table-import",
+      "since": "4.1.2",
+      "title": "Import DataTable from the base app instead of the admin layer.",
+      "kind": "fix",
+      "files": [
+        "layers/feature-flags/module.json",
+        "layers/feature-flags/app/components/admin/feature-flags/AdminFeatureFlagsManager.vue"
+      ]
+    }
+  ]
 }

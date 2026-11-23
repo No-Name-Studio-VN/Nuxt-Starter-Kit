@@ -3,5 +3,17 @@
   "description": "Admin screens and APIs for listing, editing, locking and deleting users.",
   "group": "App",
   "parent": "admin",
-  "requires": ["server-core", "admin"]
+  "requires": ["server-core", "admin"],
+  "changes": [
+    {
+      "id": "admin-users.shared-data-table-import",
+      "since": "4.1.2",
+      "title": "Import DataTable from the base app instead of the admin layer.",
+      "kind": "fix",
+      "files": [
+        "layers/admin-users/module.json",
+        "layers/admin-users/app/components/admin/users/AdminUsersManager.vue"
+      ]
+    }
+  ]
 }
