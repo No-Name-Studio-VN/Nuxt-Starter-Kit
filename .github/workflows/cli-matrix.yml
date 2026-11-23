@@ -95,8 +95,8 @@ jobs:
             modules: auth-password,auth-oauth
           - name: base + password add-ons
             modules: auth-2fa,auth-email-verification,auth-passkeys
-          - name: base + passkeys
-            modules: auth-passkeys
+          - name: base + oauth and passkeys
+            modules: auth-oauth,auth-passkeys
           - name: base + admin users without password
             modules: admin-users,auth-oauth
           - name: base + admin kv and feature flags
