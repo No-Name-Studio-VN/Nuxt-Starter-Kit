@@ -68,6 +68,48 @@
         "layers/content/i18n/locales/en.json",
         "layers/content/i18n/locales/vi.json"
       ]
+    },
+    {
+      "id": "content.search-highlight-as-text",
+      "since": "4.1.3",
+      "title": "Highlight search matches in breadcrumbs, titles, and previews without interpreting result text as HTML.",
+      "kind": "security",
+      "files": [
+        "layers/content/module.json",
+        "layers/content/app/components/layout/SearchDialog.vue"
+      ]
+    },
+    {
+      "id": "content.optional-docs-component-props",
+      "since": "4.1.3",
+      "title": "Declare defaults for optional documentation and prose props, make image display flags optional, and remove an unused docs config import.",
+      "kind": "fix",
+      "files": [
+        "layers/content/app/components/content/CtAlert.vue",
+        "layers/content/app/components/content/CtBadge.vue",
+        "layers/content/app/components/content/CtCard.vue",
+        "layers/content/app/components/content/CtCodeBlock.vue",
+        "layers/content/app/components/content/CtCodeGroup.vue",
+        "layers/content/app/components/content/CtCodeTree.vue",
+        "layers/content/app/components/content/CtCollapsible.vue",
+        "layers/content/app/components/content/CtColorModeImage.vue",
+        "layers/content/app/components/content/CtFileTree.vue",
+        "layers/content/app/components/content/CtPlayground.vue",
+        "layers/content/app/components/content/CtPmInstall.vue",
+        "layers/content/app/components/content/CtReadMore.vue",
+        "layers/content/app/components/content/CtTabs.vue",
+        "layers/content/app/components/content/CtTeamCard.vue",
+        "layers/content/app/components/content/ProseA.vue",
+        "layers/content/app/components/content/ProseH1.vue",
+        "layers/content/app/components/content/ProseH2.vue",
+        "layers/content/app/components/content/ProseH3.vue",
+        "layers/content/app/components/content/ProseH4.vue",
+        "layers/content/app/components/content/ProseH5.vue",
+        "layers/content/app/components/content/ProseH6.vue",
+        "layers/content/app/components/content/ProseImg.vue",
+        "layers/content/app/components/content/ProsePre.vue",
+        "layers/content/app/composables/useDocsConfig.ts"
+      ]
     }
   ]
 }

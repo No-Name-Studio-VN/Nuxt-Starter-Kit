@@ -5,5 +5,18 @@
   "requires": ["server-core", "database"],
   "requiresOneOf": ["auth-password", "auth-oauth"],
   "dependencies": ["nuxt-auth-utils"],
-  "env": ["NUXT_APP_SECRET"]
+  "env": ["NUXT_APP_SECRET"],
+  "changes": [
+    {
+      "id": "auth.onboarding-and-sign-in-lint",
+      "since": "4.1.3",
+      "title": "Fix directive ordering in onboarding and consolidate sign-in policy type imports.",
+      "kind": "fix",
+      "files": [
+        "layers/auth/module.json",
+        "layers/auth/app/pages/onboarding.vue",
+        "layers/auth/server/utils/completeSignIn.ts"
+      ]
+    }
+  ]
 }

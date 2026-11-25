@@ -3,5 +3,17 @@
   "description": "Verification notice, confirmation link and resend endpoint for new accounts.",
   "group": "Authentication",
   "parent": "auth-password",
-  "requires": ["server-core", "auth-password"]
+  "requires": ["server-core", "auth-password"],
+  "changes": [
+    {
+      "id": "auth-email-verification.token-type-constant",
+      "since": "4.1.3",
+      "title": "Reuse the password layer’s email verification token value through a typed constant instead of a second enum.",
+      "kind": "fix",
+      "files": [
+        "layers/auth-email-verification/module.json",
+        "layers/auth-email-verification/shared/constants/emailVerificationTokens.ts"
+      ]
+    }
+  ]
 }
