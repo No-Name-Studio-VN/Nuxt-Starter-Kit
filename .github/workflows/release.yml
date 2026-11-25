@@ -5,12 +5,33 @@ on:
     tags:
       - 'v*'
 
-permissions:
-  contents: write
-
 jobs:
+  build-dmg:
+    # GitHub's Xcode 27 image; macos-latest still has Xcode 26.
+    runs-on: xcode-27
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build and verify Kit Manager DMG
+        run: packages/kit-manager-macos/scripts/build-dmg.sh "${GITHUB_REF_NAME#v}" "$RUNNER_TEMP/kit-manager"
+
+      - name: Upload Kit Manager DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: kit-manager-dmg
+          path: ${{ runner.temp }}/kit-manager/KitManager.dmg
+          if-no-files-found: error
+          compression-level: 0
+
   release:
+    needs: build-dmg
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,8 +51,23 @@ jobs:
           # Write to file for the release body
           echo "$NOTES" > release_notes.txt
 
+      - name: Download Kit Manager DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: kit-manager-dmg
+          path: release-assets
+
+      - name: Require Kit Manager DMG
+        run: |
+          if [[ ! -f release-assets/KitManager.dmg || ! -s release-assets/KitManager.dmg ]]; then
+            echo '::error::Expected a nonempty KitManager.dmg from the build job.'
+            exit 1
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           body_path: release_notes.txt
+          files: release-assets/KitManager.dmg
+          fail_on_unmatched_files: true
