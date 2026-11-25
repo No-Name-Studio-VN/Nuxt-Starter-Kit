@@ -13,13 +13,11 @@ The app **reads, the CLI acts**. Anything that changes a project (upgrade, migra
 
 ## Install from a release
 
-Each kit release attaches `KitManager.zip`. Unzip it and move `KitManager.app` to `/Applications`. The app is ad-hoc signed, not notarized, so macOS blocks the first launch: open it once from Finder with Control-click, then Open, or clear the quarantine flag:
+1. Download `KitManager.dmg` from the [latest kit release](https://github.com/No-Name-Studio-VN/Nuxt-Starter-Kit/releases/latest).
+2. Open the disk image and drag **KitManager.app** to the **Applications** shortcut. Eject the disk image and open Kit Manager from Applications.
+3. The app is ad-hoc signed and not notarized. If macOS blocks the first launch and you trust the download, open **System Settings → Privacy & Security**, click **Open Anyway**, and confirm.
 
-```sh
-xattr -dr com.apple.quarantine /Applications/KitManager.app
-```
-
-The app still needs a local kit checkout with the CLI built (see Requirements, minus Xcode).
+The disk image contains a universal app for Apple silicon and Intel Macs running macOS 26 or later. It still needs a local kit checkout with the CLI built (see [Requirements](#requirements), minus Xcode). Set the checkout path in Kit Manager’s Settings.
 
 ## Requirements
 
@@ -63,4 +61,10 @@ The app is not sandboxed, but macOS still asks for the Documents folder permissi
 
 ```sh
 swift test --package-path packages/kit-manager-macos/KitManagerCore
+```
+
+With Xcode selected, run the packaging smoke test from the repository root:
+
+```sh
+packages/kit-manager-macos/scripts/test-build-dmg.sh
 ```

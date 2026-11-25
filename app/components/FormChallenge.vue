@@ -4,7 +4,9 @@ import type { FormChallengeState } from '~~/types/botProtection';
 
 const { challenge } = defineProps<{ challenge: FormChallengeState }>();
 const { t } = useI18n();
-const hasWidget = computed(() => getExtensions('form:challenge').some(({ id }) => id === challenge.provider));
+const hasWidget = computed(() =>
+  getExtensions('form:challenge').some(({ id }) => id === challenge.provider),
+);
 </script>
 
 <template>
@@ -13,9 +15,10 @@ const hasWidget = computed(() => getExtensions('form:challenge').some(({ id }) =
     <ExtensionSlot
       v-if="hasWidget"
       :key="challenge.attempt.value"
-      v-model="challenge.token.value"
+      :model-value="challenge.token.value"
       name="form:challenge"
       :entry-id="challenge.provider"
+      @update:model-value="challenge.setToken"
     />
     <Alert v-else variant="destructive" role="alert">
       <AlertDescription>{{ t('bot_protection.unavailable') }}</AlertDescription>

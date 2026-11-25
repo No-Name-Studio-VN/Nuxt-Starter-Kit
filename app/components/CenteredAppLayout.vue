@@ -17,7 +17,7 @@ withDefaults(
     title: string;
     className?: string;
   }>(),
-  {},
+  { className: undefined },
 );
 </script>
 

@@ -104,6 +104,8 @@ withDefaults(
     hideHeader?: boolean;
   }>(),
   {
+    titleControls: undefined,
+    className: undefined,
     hideSidebarTrigger: false,
     hideHeader: false,
   },

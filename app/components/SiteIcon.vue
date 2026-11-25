@@ -49,7 +49,9 @@ const props = withDefaults(
     class?: string;
   }>(),
   {
+    name: undefined,
     size: 16,
+    class: undefined,
   },
 );
 

@@ -1,6 +1,7 @@
 import { createClient } from '@libsql/client';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
+import type * as NuxtServer from 'nuxt/server';
 import type { RequestEvent } from 'nuxt/server';
 import type { OAuthProfile } from '../../../layers/auth-oauth/types/providers';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,8 +22,11 @@ vi.mock('../../../layers/server-core/server/utils/reportServerError', () => ({
 const client = createClient({ url: ':memory:' });
 const db = drizzle(client);
 const profile = {
-  providerAccountId: 'google-id', email: 'member@example.com', name: 'Member',
-  emailVerified: false, emailAuthoritative: false,
+  providerAccountId: 'google-id',
+  email: 'member@example.com',
+  name: 'Member',
+  emailVerified: false,
+  emailAuthoritative: false,
 } satisfies OAuthProfile;
 const setUserSession = vi.fn();
 const cookies = new Map<string, string>();
@@ -31,7 +35,7 @@ const runtimeConfig = vi.hoisted(() => ({
   oauth: { google: { clientId: 'test-client-id', clientSecret: 'test-client-secret' } },
 }));
 vi.mock('nuxt/server', async (importOriginal) => ({
-  ...await importOriginal<typeof import('nuxt/server')>(),
+  ...(await importOriginal<typeof NuxtServer>()),
   useRuntimeConfig: () => runtimeConfig,
 }));
 
@@ -39,13 +43,21 @@ let event: RequestEvent;
 
 function createEvent(path: string): RequestEvent {
   const url = new URL(path, 'https://example.test');
-  const cookie = [...cookies].map(([name, value]) => `${name}=${encodeURIComponent(value)}`).join('; ');
-  return { url, req: new Request(url, { headers: { cookie } }), res: { headers: new Headers() }, context: { params: { provider: 'google' } } };
+  const cookie = [...cookies]
+    .map(([name, value]) => `${name}=${encodeURIComponent(value)}`)
+    .join('; ');
+  return {
+    url,
+    req: new Request(url, { headers: { cookie } }),
+    res: { headers: new Headers() },
+    context: { params: { provider: 'google' } },
+  };
 }
 
 function expectCookiesExpired() {
   expect(event.res.headers.getSetCookie()).toEqual([
-    'oauth_popup=; Max-Age=0; Path=/', 'oauth_redirect_to=; Max-Age=0; Path=/',
+    'oauth_popup=; Max-Age=0; Path=/',
+    'oauth_redirect_to=; Max-Age=0; Path=/',
   ]);
 }
 
@@ -182,13 +194,17 @@ describe('OAuth callback failures', () => {
     'returns a rejected callback to the popup and expires its request cookies',
     async (query) => {
       cookies.set('oauth_popup', '1');
-      const search = new URLSearchParams(Object.entries(query).filter((entry): entry is [string, string] => entry[1] !== undefined));
+      const search = new URLSearchParams(
+        Object.entries(query).filter((entry): entry is [string, string] => entry[1] !== undefined),
+      );
       event = createEvent(`/api/auth/google?${search}`);
       const { default: callback } =
         await import('../../../layers/auth-oauth/server/api/auth/[provider].get');
 
       await callback(event);
-      expect(event.res.headers.get('location')).toBe('/auth/oauth/popup?redirectTo=%2Fauth%2Flogin%3Ferror%3Doauth-error');
+      expect(event.res.headers.get('location')).toBe(
+        '/auth/oauth/popup?redirectTo=%2Fauth%2Flogin%3Ferror%3Doauth-error',
+      );
       expectCookiesExpired();
     },
   );
@@ -203,7 +219,9 @@ describe('OAuth callback failures', () => {
       await import('../../../layers/auth-oauth/server/api/auth/[provider].get');
 
     await callback(event);
-    expect(event.res.headers.get('location')).toBe('/auth/oauth/popup?redirectTo=%2Fauth%2Flogin%3Ferror%3Doauth-error');
+    expect(event.res.headers.get('location')).toBe(
+      '/auth/oauth/popup?redirectTo=%2Fauth%2Flogin%3Ferror%3Doauth-error',
+    );
     expectCookiesExpired();
   });
 });

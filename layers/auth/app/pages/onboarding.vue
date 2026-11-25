@@ -6,7 +6,11 @@ import OnboardingShell from '../components/onboarding/OnboardingShell.vue';
 import WelcomeScreen from '../components/onboarding/WelcomeScreen.vue';
 import { safeRedirectPath } from '../utils/safeRedirect';
 import { authRoutes } from '#layers/auth/shared/authRoutes';
-import type { OnboardingCompleteData, OnboardingStatusData, OnboardingStepsData } from '#layers/auth/types/onboarding';
+import type {
+  OnboardingCompleteData,
+  OnboardingStatusData,
+  OnboardingStepsData,
+} from '#layers/auth/types/onboarding';
 import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import { apiRequest } from '#layers/server-core/app/utils/apiRequest';
 import type { ApiResponse } from '#layers/server-core/types/api';
@@ -15,19 +19,23 @@ definePageMeta({ layout: false, key: 'onboarding' });
 
 const { t } = useI18n();
 const localePath = useAppLocalePath();
-const dashboardAvailable = useRouter().getRoutes().some((record) => record.path === '/dashboard');
+const dashboardAvailable = useRouter()
+  .getRoutes()
+  .some((record) => record.path === '/dashboard');
 const { user, fetch: refreshSession, clear } = useUserSession();
 const reduceMotion = useReducedMotion();
 const stage = useTemplateRef('stage');
 
 useSeoMeta({ title: () => t('onboarding.title'), robots: 'noindex, nofollow' });
 
-const stepEntries = computed(() => new Map(getExtensions('onboarding:steps').map((entry) => [entry.id, entry])));
+const stepEntries = computed(
+  () => new Map(getExtensions('onboarding:steps').map((entry) => [entry.id, entry])),
+);
 const stepIds = ref<string[]>([]);
 const stepIndex = ref(0);
 const visitedCount = ref(0);
 const activeStep = computed(() => stepEntries.value.get(stepIds.value[stepIndex.value] ?? ''));
-const screenKey = computed(() => activeStep.value ? `step:${activeStep.value.id}` : 'welcome');
+const screenKey = computed(() => (activeStep.value ? `step:${activeStep.value.id}` : 'welcome'));
 const direction = ref(1);
 const variants = {
   enter: (dir: number) => (reduceMotion.value ? { opacity: 0 } : { opacity: 0, x: dir * 22 }),
@@ -41,12 +49,15 @@ const finishing = ref(false);
 const signingOut = ref(false);
 const errorKey = ref('');
 const transitioning = ref(false);
-const backDisabled = computed(() => saving.value || finishing.value || signingOut.value || transitioning.value);
+const backDisabled = computed(
+  () => saving.value || finishing.value || signingOut.value || transitioning.value,
+);
 
 function registeredSteps(ids: string[]) {
   return ids.filter((id) => {
     if (stepEntries.value.has(id)) return true;
-    if (import.meta.dev) console.warn(`Onboarding step "${id}" has no registered client component; skipping it.`);
+    if (import.meta.dev)
+      console.warn(`Onboarding step "${id}" has no registered client component; skipping it.`);
     return false;
   });
 }
@@ -56,7 +67,9 @@ async function loadStatus() {
   transitioning.value = false;
   errorKey.value = '';
   try {
-    const response = await apiRequest<ApiResponse<OnboardingStatusData>>(authRoutes.ONBOARDING_STATUS);
+    const response = await apiRequest<ApiResponse<OnboardingStatusData>>(
+      authRoutes.ONBOARDING_STATUS,
+    );
     if (!response.success) throw response.error;
     if (!response.data.pending) {
       await refreshSession();
@@ -106,15 +119,21 @@ async function completeStep(stepId: string | undefined) {
   saving.value = true;
   errorKey.value = '';
   try {
-    const response = await apiRequest<ApiResponse<OnboardingStepsData>>(authRoutes.onboardingStep(stepId), {
-      method: 'POST',
-    });
+    const response = await apiRequest<ApiResponse<OnboardingStepsData>>(
+      authRoutes.onboardingStep(stepId),
+      {
+        method: 'POST',
+      },
+    );
     if (!response.success) throw response.error;
 
     // Completed steps disappear from the API, but remain available to Back in this visit.
     visitedCount.value = Math.max(visitedCount.value, stepIndex.value + 1);
     const visited = stepIds.value.slice(0, visitedCount.value);
-    stepIds.value = [...visited, ...registeredSteps(response.data.steps).filter((id) => !visited.includes(id))];
+    stepIds.value = [
+      ...visited,
+      ...registeredSteps(response.data.steps).filter((id) => !visited.includes(id)),
+    ];
     transitioning.value = true;
     direction.value = 1;
     stepIndex.value++;
@@ -134,9 +153,12 @@ async function complete(destination = dashboardAvailable ? '/dashboard' : '/') {
   finishing.value = true;
   errorKey.value = '';
   try {
-    const response = await apiRequest<ApiResponse<OnboardingCompleteData>>(authRoutes.ONBOARDING_COMPLETE, {
-      method: 'POST',
-    });
+    const response = await apiRequest<ApiResponse<OnboardingCompleteData>>(
+      authRoutes.ONBOARDING_COMPLETE,
+      {
+        method: 'POST',
+      },
+    );
     if (!response.success) throw response.error;
 
     await refreshSession();
@@ -164,7 +186,11 @@ async function signOut() {
 </script>
 
 <template>
-  <OnboardingShell :signing-out="signingOut" :disabled="status === 'loading' || saving || finishing" @sign-out="signOut">
+  <OnboardingShell
+    :signing-out="signingOut"
+    :disabled="status === 'loading' || saving || finishing"
+    @sign-out="signOut"
+  >
     <div v-if="status === 'loading'" class="flex flex-col gap-8" role="status">
       <span class="sr-only">{{ t('onboarding.loading') }}</span>
       <div class="flex flex-col gap-2.5" aria-hidden="true">
@@ -203,7 +229,12 @@ async function signOut() {
         </Button>
       </OnboardingProgress>
 
-      <div ref="stage" class="min-w-0" :inert="transitioning" :aria-busy="saving || finishing || transitioning">
+      <div
+        ref="stage"
+        class="min-w-0"
+        :inert="transitioning"
+        :aria-busy="saving || finishing || transitioning"
+      >
         <AnimatePresence mode="wait" :custom="direction">
           <motion.div
             :key="screenKey"
@@ -226,11 +257,16 @@ async function signOut() {
                 @back="goBack"
               />
             </div>
-            <WelcomeScreen :dashboard-available="dashboardAvailable" v-else :user="user" :busy="finishing || signingOut" @complete="complete" />
+            <WelcomeScreen
+              v-else
+              :dashboard-available="dashboardAvailable"
+              :user="user"
+              :busy="finishing || signingOut"
+              @complete="complete"
+            />
           </motion.div>
         </AnimatePresence>
       </div>
-
     </div>
 
     <Alert v-if="errorKey" variant="destructive" class="mt-4" role="alert">

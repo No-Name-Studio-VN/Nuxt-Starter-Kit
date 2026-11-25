@@ -1,5 +1,5 @@
 import { createDefu } from 'defu';
-import type { DocsConfig, NavigationItem } from '#layers/content/types';
+import type { DocsConfig } from '#layers/content/types';
 import { navPageOverrides } from './useContentHelpers';
 import { usePageData } from './usePageData';
 import { useI18nDocs } from './useI18nDocs';
@@ -37,7 +37,14 @@ function toRecord(value: unknown): Record<string, unknown> {
 }
 
 /** Config sections that support per-page overrides via navigation and frontmatter. */
-const OVERRIDE_SECTIONS = ['header', 'banner', 'main', 'aside', 'toc', 'footer'] satisfies readonly (keyof DocsConfig)[];
+const OVERRIDE_SECTIONS = [
+  'header',
+  'banner',
+  'main',
+  'aside',
+  'toc',
+  'footer',
+] satisfies readonly (keyof DocsConfig)[];
 
 const defaultConfig: DocsConfig = {
   site: {

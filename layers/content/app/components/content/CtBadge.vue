@@ -27,29 +27,31 @@
 </template>
 
 <script setup lang="ts">
-import type { Target } from "#layers/content/types";
+import type { Target } from '#layers/content/types';
 
 const props = withDefaults(
   defineProps<{
-    type?: "default" | "info" | "warning" | "success" | "danger" | "lime";
+    type?: 'default' | 'info' | 'warning' | 'success' | 'danger' | 'lime';
     to?: string;
     target?: Target;
-    variant?: "default" | "secondary" | "destructive" | "outline";
-    size?: "md" | "sm";
+    variant?: 'default' | 'secondary' | 'destructive' | 'outline';
+    size?: 'md' | 'sm';
   }>(),
   {
-    type: "default",
-    variant: "default",
-    size: "md",
+    type: 'default',
+    to: undefined,
+    target: undefined,
+    variant: 'default',
+    size: 'md',
   },
 );
 
 const typeTwClass = {
-  default: "",
-  info: `${props.variant !== "outline" && "bg-sky-500 hover:bg-sky-400"} ${props.variant === "outline" && "border-sky-500 text-sky-500"}`,
-  warning: `${props.variant !== "outline" && "bg-amber-500 hover:bg-amber-400"} ${props.variant === "outline" && "border-amber-500 text-amber-500"}`,
-  success: `${props.variant !== "outline" && "bg-green-500 hover:bg-green-400"} ${props.variant === "outline" && "border-green-500 text-green-500"}`,
-  danger: `${props.variant !== "outline" && "bg-red-500 hover:bg-red-400"} ${props.variant === "outline" && "border-red-500 text-red-500"}`,
-  lime: `${props.variant !== "outline" && "bg-[#adfa1d] hover:bg-[#adfa1d] text-black"} ${props.variant === "outline" && "border-[#adfa1d] text-black"}`,
+  default: '',
+  info: `${props.variant !== 'outline' && 'bg-sky-500 hover:bg-sky-400'} ${props.variant === 'outline' && 'border-sky-500 text-sky-500'}`,
+  warning: `${props.variant !== 'outline' && 'bg-amber-500 hover:bg-amber-400'} ${props.variant === 'outline' && 'border-amber-500 text-amber-500'}`,
+  success: `${props.variant !== 'outline' && 'bg-green-500 hover:bg-green-400'} ${props.variant === 'outline' && 'border-green-500 text-green-500'}`,
+  danger: `${props.variant !== 'outline' && 'bg-red-500 hover:bg-red-400'} ${props.variant === 'outline' && 'border-red-500 text-red-500'}`,
+  lime: `${props.variant !== 'outline' && 'bg-[#adfa1d] hover:bg-[#adfa1d] text-black'} ${props.variant === 'outline' && 'border-[#adfa1d] text-black'}`,
 };
 </script>

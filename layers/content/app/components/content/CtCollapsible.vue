@@ -45,16 +45,17 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDownIcon, ChevronsUpDownIcon } from "@lucide/vue";
+import { ChevronDownIcon, ChevronsUpDownIcon } from '@lucide/vue';
 
 const props = withDefaults(
   defineProps<{
-    variant?: "simple" | "card";
+    variant?: 'simple' | 'card';
     title?: string;
     defaultOpen?: boolean;
   }>(),
   {
-    variant: "simple",
+    variant: 'simple',
+    title: undefined,
     defaultOpen: false,
   },
 );

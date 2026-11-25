@@ -14,8 +14,8 @@
 </template>
 
 <script setup lang="ts">
-import type { FileTreeItem, FileTreeItemDiff, InputTreeItem } from "#layers/content/types";
-import CtIcon from "./CtIcon.vue";
+import type { FileTreeItem, FileTreeItemDiff, InputTreeItem } from '#layers/content/types';
+import CtIcon from './CtIcon.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -28,35 +28,41 @@ const props = withDefaults(
   }>(),
   {
     tree: () => [],
+    title: undefined,
+    icon: undefined,
     autoSlash: true,
     showArrow: false,
     showIcon: true,
   },
 );
 
-function getItem(key: string, type: "folder" | "file", children?: InputTreeItem[] | null): FileTreeItem {
+function getItem(
+  key: string,
+  type: 'folder' | 'file',
+  children?: InputTreeItem[] | null,
+): FileTreeItem {
   let title = key;
   let highlighted = false;
-  if (title.startsWith("^") && title.endsWith("^")) {
+  if (title.startsWith('^') && title.endsWith('^')) {
     title = title.substring(1, title.length - 1);
     highlighted = true;
   }
 
-  let diff: FileTreeItemDiff = "none";
-  if (title.startsWith("+")) diff = "addition";
-  else if (title.startsWith("-")) diff = "deletion";
+  let diff: FileTreeItemDiff = 'none';
+  if (title.startsWith('+')) diff = 'addition';
+  else if (title.startsWith('-')) diff = 'deletion';
 
-  if (type === "file") {
+  if (type === 'file') {
     return {
       title,
-      icon: useFileIcon(title, "file"),
+      icon: useFileIcon(title, 'file'),
       highlighted,
       diff,
     };
   } else {
     return {
-      title: `${title}${props.autoSlash ? "/" : ""}`,
-      icon: useFileIcon(title, "folder"),
+      title: `${title}${props.autoSlash ? '/' : ''}`,
+      icon: useFileIcon(title, 'folder'),
       children: getTree(children),
       highlighted,
       diff,
@@ -69,10 +75,10 @@ function getTree(tree: InputTreeItem[] | null | undefined): FileTreeItem[] {
   if (!Array.isArray(tree)) return res;
 
   for (const item of tree) {
-    if (typeof item === "string") {
-      res.push(getItem(item, "file"));
-    } else if (item !== null && typeof item === "object" && !Array.isArray(item)) {
-      for (const key of Object.keys(item)) res.push(getItem(key, "folder", item[key]));
+    if (typeof item === 'string') {
+      res.push(getItem(item, 'file'));
+    } else if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+      for (const key of Object.keys(item)) res.push(getItem(key, 'folder', item[key]));
     }
   }
 

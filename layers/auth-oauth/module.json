@@ -14,5 +14,17 @@
     "NUXT_OAUTH_OIDC_CLIENT_ID",
     "NUXT_OAUTH_OIDC_CLIENT_SECRET",
     "NUXT_OAUTH_OIDC_OPENID_CONFIG"
+  ],
+  "changes": [
+    {
+      "id": "auth-oauth.connected-account-lookups",
+      "since": "4.1.3",
+      "title": "Reuse a set of ready provider IDs and simplify callback route checks without changing account unlink rules.",
+      "kind": "fix",
+      "files": [
+        "layers/auth-oauth/module.json",
+        "layers/auth-oauth/app/components/settings/ConnectedAccountsCard.vue"
+      ]
+    }
   ]
 }

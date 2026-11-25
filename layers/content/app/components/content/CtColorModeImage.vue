@@ -35,11 +35,13 @@ const props = withDefaults(
     alt?: string;
     width?: string | number;
     height?: string | number;
-    lifted: boolean;
-    noZoom: boolean;
+    lifted?: boolean;
+    noZoom?: boolean;
   }>(),
   {
-    alt: "",
+    alt: '',
+    width: undefined,
+    height: undefined,
     lifted: false,
     noZoom: false,
   },

@@ -6,7 +6,14 @@ export function useFormChallenge() {
   const { t, te } = useI18n();
   const token = ref('');
   const attempt = ref(0);
-  const challenge: FormChallengeState = { provider, token, attempt };
+  const challenge: FormChallengeState = {
+    provider,
+    token,
+    attempt,
+    setToken(value) {
+      token.value = value;
+    },
+  };
   const pending = computed(() => !!provider && !token.value);
 
   function headers(): Record<string, string> {
@@ -23,9 +30,14 @@ export function useFormChallenge() {
   function errorMessage(error: FormChallengeError): string | undefined {
     if (error.code !== 'BOT_PROTECTION_FAILED') return;
     const { reason } = error.details;
-    const key = reason === 'missing-token' ? 'bot_protection.required'
-      : reason === 'invalid-token' ? 'bot_protection.failed'
-        : reason === 'unavailable' ? 'bot_protection.unavailable' : undefined;
+    const key =
+      reason === 'missing-token'
+        ? 'bot_protection.required'
+        : reason === 'invalid-token'
+          ? 'bot_protection.failed'
+          : reason === 'unavailable'
+            ? 'bot_protection.unavailable'
+            : undefined;
     if (key && te(key)) return t(key);
   }
 

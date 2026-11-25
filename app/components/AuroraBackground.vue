@@ -35,6 +35,7 @@ interface AuroraBackgroundProps {
 }
 
 const props = withDefaults(defineProps<AuroraBackgroundProps>(), {
+  class: undefined,
   radialGradient: true,
 });
 

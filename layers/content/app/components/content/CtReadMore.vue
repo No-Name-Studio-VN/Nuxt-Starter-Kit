@@ -10,18 +10,19 @@
     :target
     :icon
   >
-    {{ $t("cta.read_more") }} <span class="font-semibold">{{ displayTitle }}</span>
+    {{ $t('cta.read_more') }} <span class="font-semibold">{{ displayTitle }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { cn } from "@/lib/utils";
-import type { Target } from "#layers/content/types";
+import { cn } from '@/lib/utils';
+import type { Target } from '#layers/content/types';
 
 const {
-  title,
+  title = undefined,
   to,
-  icon = "lucide:bookmark",
+  target = undefined,
+  icon = 'lucide:bookmark',
 } = defineProps<{
   title?: string;
   to: string;
@@ -35,12 +36,12 @@ const { locale, defaultLocale } = useI18n();
 const displayTitle = computed(() => {
   if (title) return title;
 
-  if (to.startsWith("http")) return to;
+  if (to.startsWith('http')) return to;
 
   try {
     return useBreadcrumb(normalizeContentPath(to, locale.value, defaultLocale), navigation.value)
       .map((x) => x.title)
-      .join(" > ");
+      .join(' > ');
   } catch {
     return to;
   }

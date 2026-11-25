@@ -43,10 +43,10 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowUpRightIcon } from "@lucide/vue";
-import type { Target } from "#layers/content/types";
-import CtIcon from "./CtIcon.vue";
-import { cn } from "~/lib/utils";
+import { ArrowUpRightIcon } from '@lucide/vue';
+import type { Target } from '#layers/content/types';
+import CtIcon from './CtIcon.vue';
+import { cn } from '~/lib/utils';
 
 withDefaults(
   defineProps<{
@@ -64,6 +64,14 @@ withDefaults(
     horizontal?: boolean;
   }>(),
   {
+    title: undefined,
+    description: undefined,
+    footer: undefined,
+    content: undefined,
+    to: undefined,
+    target: undefined,
+    icon: undefined,
+    img: undefined,
     showLinkIcon: true,
     horizontal: false,
     iconSize: 24,
