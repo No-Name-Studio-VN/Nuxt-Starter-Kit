@@ -111,10 +111,7 @@ export async function createFixtureKit({ nextMajor = false, notes = false } = {}
     await writeTextFile(join(root, 'obsolete.txt'), 'Removed in v2\n');
     await writeTextFile(join(root, 'docs/x.md'), '# Excluded documentation\n');
     await mkdir(join(root, 'public'), { recursive: true });
-    await writeFile(
-      join(root, 'public/logo.png'),
-      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0x0d, 0x0a]),
-    );
+    await writeFile(join(root, 'public/logo.png'), Buffer.from('89504e47000d0a', 'hex'));
     await writeJsonAtomically(join(root, 'packages/create-nuxt-saas/kit.json'), kitConfig);
     await writeTextFile(
       join(root, 'packages/create-nuxt-saas/templates/README.md'),
@@ -258,7 +255,7 @@ export async function createFixtureKit({ nextMajor = false, notes = false } = {}
       join(root, 'wrangler.jsonc'),
       wrangler.replace('  ]\n}', '  ],\n  "compatibility_flags": ["nodejs_compat"]\n}'),
     );
-    await writeFile(join(root, 'public/logo.png'), Buffer.from([0x89, 0x50, 0, 0xff, 0x0d, 0x0a]));
+    await writeFile(join(root, 'public/logo.png'), Buffer.from('895000ff0d0a', 'hex'));
     await git('add', '-A');
     await git('commit', '-m', 'fixture: v2');
     const v2 = await git('rev-parse', 'HEAD');

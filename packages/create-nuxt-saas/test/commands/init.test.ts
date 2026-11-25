@@ -93,7 +93,7 @@ describe('runInit', () => {
     ).toContain('version: 1');
     expect(await pathExists(join(target, 'layers/docs'))).toBe(false);
     expect(await readFile(join(target, 'public/logo.png'))).toEqual(
-      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0x0d, 0x0a]),
+      Buffer.from('89504e47000d0a', 'hex'),
     );
     expect(await readState(target)).toEqual({
       version: 3,

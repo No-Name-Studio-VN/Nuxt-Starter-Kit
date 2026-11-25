@@ -88,7 +88,7 @@ describe('render fixture v1', () => {
     expect(text(tree, 'README.md')).toContain('My project');
     expect(text(tree, 'README.md')).toContain('- None (base only)');
     expect(tree.get('public/logo.png')).toEqual({
-      content: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0x0d, 0x0a]),
+      content: Buffer.from('89504e47000d0a', 'hex'),
       binary: true,
     });
     expect(tree.get('app/pages/index.vue')?.binary).toBe(false);
