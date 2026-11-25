@@ -53,6 +53,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  class: undefined,
   max: 100,
   min: 0,
   value: 0,

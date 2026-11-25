@@ -26,6 +26,7 @@ const props = withDefaults(
   }>(),
   {
     size: 'md',
+    text: undefined,
     fullHeight: false,
   },
 );

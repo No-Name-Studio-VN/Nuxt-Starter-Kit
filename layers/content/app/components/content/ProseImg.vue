@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import type { HTMLAttributes } from "vue";
+import type { HTMLAttributes } from 'vue';
 import {
   DialogClose,
   DialogContent,
@@ -49,17 +49,17 @@ import {
   DialogPortal,
   DialogRoot,
   DialogTrigger,
-} from "reka-ui";
-import { joinURL, withLeadingSlash, withTrailingSlash } from "ufo";
+} from 'reka-ui';
+import { joinURL, withLeadingSlash, withTrailingSlash } from 'ufo';
 
 const {
-  src = "",
-  alt = "",
-  width,
-  height,
+  src = '',
+  alt = '',
+  width = undefined,
+  height = undefined,
   lifted = false,
   zoom = undefined,
-  class: className = "",
+  class: className = '',
 } = defineProps<{
   src?: string;
   alt?: string;
@@ -67,7 +67,7 @@ const {
   height?: string | number;
   lifted?: boolean;
   zoom?: boolean;
-  class?: HTMLAttributes["class"];
+  class?: HTMLAttributes['class'];
 }>();
 
 const config = useDocsConfig();
@@ -75,9 +75,9 @@ const config = useDocsConfig();
 const [DefineTemplate, ReuseTemplate] = createReusableTemplate();
 
 const refinedSrc = computed(() => {
-  if (src?.startsWith("/") && !src.startsWith("//")) {
+  if (src?.startsWith('/') && !src.startsWith('//')) {
     const _base = withLeadingSlash(withTrailingSlash(useRuntimeConfig().app.baseURL));
-    if (_base !== "/" && !src.startsWith(_base)) return joinURL(_base, src);
+    if (_base !== '/' && !src.startsWith(_base)) return joinURL(_base, src);
   }
   return src;
 });

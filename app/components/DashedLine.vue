@@ -8,6 +8,7 @@ const props = withDefaults(
   }>(),
   {
     orientation: 'horizontal',
+    class: undefined,
   },
 );
 

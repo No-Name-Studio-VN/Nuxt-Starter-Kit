@@ -14,7 +14,7 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    provider: "stackblitz" | "codesandbox";
+    provider: 'stackblitz' | 'codesandbox';
     id?: string;
     repo?: string;
     branch?: string;
@@ -23,22 +23,24 @@ const props = withDefaults(
     title?: string;
   }>(),
   {
-    branch: "main",
-    dir: "",
-    title: "Playground",
+    id: undefined,
+    repo: undefined,
+    branch: 'main',
+    dir: '',
+    title: 'Playground',
   },
 );
 
-const url = ref("");
+const url = ref('');
 const colorMode = useColorMode();
 
 onMounted(() => {
-  if (props.provider === "stackblitz") {
+  if (props.provider === 'stackblitz') {
     if (props.repo)
       url.value = `https://stackblitz.com/github/${props.repo}/tree/${props.branch}/${props.dir}?embed=1&file=${props.file}&theme=${colorMode.value}`;
     else if (props.id)
       url.value = `https://stackblitz.com/edit/${props.id}?embed=1&file=${props.file}&theme=${colorMode.value}`;
-  } else if (props.provider === "codesandbox") {
+  } else if (props.provider === 'codesandbox') {
     if (props.repo)
       url.value = `https://codesandbox.io/p/sandbox/github/${props.repo}/tree/${props.branch}/${props.dir}?embed=1&file=${props.file}`;
     else if (props.id)

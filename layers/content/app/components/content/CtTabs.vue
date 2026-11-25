@@ -3,19 +3,19 @@
 </template>
 
 <script setup lang="ts">
-import type { SetupContext } from "vue";
-import TabsInner from "./CtTabsInner.vue";
+import type { SetupContext } from 'vue';
+import TabsInner from './CtTabsInner.vue';
 
 const {
-  variant = "separate",
+  variant = 'separate',
   padded = true,
   inStack = false,
   disableSearch = false,
-  searchPlaceholder = "Search Tab...",
-  searchEmpty = "No tab found.",
-  sync,
+  searchPlaceholder = 'Search Tab...',
+  searchEmpty = 'No tab found.',
+  sync = undefined,
 } = defineProps<{
-  variant?: "separate" | "card" | "line" | "combobox";
+  variant?: 'separate' | 'card' | 'line' | 'combobox';
   padded?: boolean;
   inStack?: boolean;
   disableSearch?: boolean;
@@ -24,12 +24,12 @@ const {
   sync?: string;
 }>();
 
-const _slots: SetupContext["slots"] = useSlots();
+const _slots: SetupContext['slots'] = useSlots();
 function render() {
   const slots = _slots?.default?.() || [];
 
   const slotsData = slots.map((slot, index) => ({
-    label: slot.props?.label || slot.props?.filename || "",
+    label: slot.props?.label || slot.props?.filename || '',
     index,
   }));
 

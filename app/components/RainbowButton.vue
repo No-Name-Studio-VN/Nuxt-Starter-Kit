@@ -27,6 +27,7 @@ const props = withDefaults(
     speed?: number;
   }>(),
   {
+    class: undefined,
     speed: 2,
     is: 'button',
   },

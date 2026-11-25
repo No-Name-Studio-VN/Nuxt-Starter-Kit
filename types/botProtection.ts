@@ -2,8 +2,9 @@ import type { Ref } from 'vue';
 
 export interface FormChallengeState {
   provider: string | undefined;
-  token: Ref<string>;
+  token: Readonly<Ref<string>>;
   attempt: Readonly<Ref<number>>;
+  setToken: (value: string) => void;
 }
 
 export interface FormChallengeError {

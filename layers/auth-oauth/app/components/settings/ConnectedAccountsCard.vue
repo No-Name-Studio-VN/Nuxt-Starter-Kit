@@ -28,16 +28,25 @@ const router = useRouter();
 const reducedMotion = useReducedMotion();
 const localePath = useAppLocalePath();
 const { providers, status, refresh: refreshProviders } = useReadyOAuthProviderList();
-const { data: accounts, status: accountsStatus, refresh: refreshAccounts } = useLazyAsyncData(
+const readyProviderIds = computed(() => new Set<string>(providers.value));
+const {
+  data: accounts,
+  status: accountsStatus,
+  refresh: refreshAccounts,
+} = useLazyAsyncData(
   () => `auth:oauth:accounts:${props.profile.id}`,
   async (_app, { signal }) => {
-    const response = await apiRequest<ApiResponse<LinkedAccount[]>>(oauthRoutes.ACCOUNTS, { signal });
+    const response = await apiRequest<ApiResponse<LinkedAccount[]>>(oauthRoutes.ACCOUNTS, {
+      signal,
+    });
     if (!response.success) throw response;
     return response.data;
   },
   { server: false, default: () => [] },
 );
-const isLoading = computed(() => [status.value, accountsStatus.value].some((state) => state === 'pending' || state === 'idle'));
+const isLoading = computed(() =>
+  [status.value, accountsStatus.value].some((state) => state === 'pending' || state === 'idle'),
+);
 const loadFailed = computed(() => status.value === 'error' || accountsStatus.value === 'error');
 
 async function refreshSettings() {
@@ -50,10 +59,14 @@ async function retryLoad() {
 const notice = ref<SettingsOAuthNotice | null>(null);
 const unlinking = ref(false);
 const providerToUnlink = ref<string>();
-const methodCount = computed(() => Object.values(props.profile.signInMethods).reduce((sum, count) => sum + count, 0));
+const methodCount = computed(() =>
+  Object.values(props.profile.signInMethods).reduce((sum, count) => sum + count, 0),
+);
 
 function canUnlink(provider: string) {
-  return status.value === 'success' && (!providers.value.some((id) => id === provider) || methodCount.value > 1);
+  return (
+    status.value === 'success' && (!readyProviderIds.value.has(provider) || methodCount.value > 1)
+  );
 }
 
 const rows = computed(() => [
@@ -64,7 +77,7 @@ const rows = computed(() => [
     account: accounts.value.find((account) => account.provider === id),
   })),
   ...accounts.value.flatMap((account) => {
-    if (providers.value.some((id) => id === account.provider)) return [];
+    if (readyProviderIds.value.has(account.provider)) return [];
     const display = Object.entries(OAUTH_PROVIDERS).find(([id]) => id === account.provider)?.[1];
     const icon = display?.icon ?? 'key-round';
     return [{ id: account.provider, name: display?.label ?? account.provider, icon, account }];
@@ -76,7 +89,8 @@ function accountDescription(account: LinkedAccount | undefined) {
   const parts = [account.email || account.name || t('settings.connected.linked')];
   const date = mounted.value ? formatDate(account.linkedAt, locale.value) : '';
   if (date) parts.push(t('settings.connected.linked_on', { date }));
-  if (!canUnlink(account.provider) && status.value === 'success') parts.push(t('settings.connected.only_sign_in_note'));
+  if (!canUnlink(account.provider) && status.value === 'success')
+    parts.push(t('settings.connected.only_sign_in_note'));
   return parts.join(' · ');
 }
 
@@ -93,9 +107,10 @@ function showResult(error: string, success: string, provider: string) {
     notice.value = {
       variant: 'success',
       title: t(`settings.connected.callback.${success}`),
-      message: name && success === 'oauth-linked'
-        ? t('settings.connected.linked_description', { provider: name })
-        : t('settings.connected.updated_description'),
+      message:
+        name && success === 'oauth-linked'
+          ? t('settings.connected.linked_description', { provider: name })
+          : t('settings.connected.updated_description'),
     };
     void refreshSettings();
   }
@@ -105,16 +120,30 @@ function onPopupComplete(target: URL, expectedProvider: string) {
   const provider = target.searchParams.get('provider');
   const error = target.searchParams.get('error') ?? '';
   const success = target.searchParams.get('success') ?? '';
-  const matchesSettings = [authRoutes.SETTINGS_SECURITY, localePath(authRoutes.SETTINGS_SECURITY)].includes(target.pathname);
+  const matchesSettings = [
+    authRoutes.SETTINGS_SECURITY,
+    localePath(authRoutes.SETTINGS_SECURITY),
+  ].includes(target.pathname);
   // The provider handler returns generic OAuth failures to login, even from link mode.
-  const linkFailure = [authRoutes.AUTH_LOGIN, localePath(authRoutes.AUTH_LOGIN)].some((path) => path === target.pathname) && error === 'oauth-error';
-  if ((!matchesSettings && !linkFailure) || (provider && provider !== expectedProvider) || (!error && !success)) return false;
+  const linkFailure =
+    [authRoutes.AUTH_LOGIN, localePath(authRoutes.AUTH_LOGIN)].includes(target.pathname) &&
+    error === 'oauth-error';
+  if (
+    (!matchesSettings && !linkFailure) ||
+    (provider && provider !== expectedProvider) ||
+    (!error && !success)
+  )
+    return false;
 
   showResult(error, success, provider ?? expectedProvider);
   return true;
 }
 
-const { activeProvider: linking, open: openLinkPopup, cancel: cancelLinkPopup } = useOAuthPopup({
+const {
+  activeProvider: linking,
+  open: openLinkPopup,
+  cancel: cancelLinkPopup,
+} = useOAuthPopup({
   action: 'link',
   onComplete: onPopupComplete,
   onBlocked: () => toast.error(t('auth_oauth.popup_blocked')),
@@ -126,15 +155,19 @@ const { activeProvider: linking, open: openLinkPopup, cancel: cancelLinkPopup } 
 });
 
 onMounted(() => {
-  watch([() => route.query.error, () => route.query.success, () => route.query.provider], ([error, success, provider]) => {
-    if (!error && !success) return;
-    showResult(getQueryString(error), getQueryString(success), getQueryString(provider));
-    const query = { ...route.query };
-    delete query.error;
-    delete query.success;
-    delete query.provider;
-    void router.replace({ query, hash: route.hash });
-  }, { immediate: true });
+  watch(
+    [() => route.query.error, () => route.query.success, () => route.query.provider],
+    ([error, success, provider]) => {
+      if (!error && !success) return;
+      showResult(getQueryString(error), getQueryString(success), getQueryString(provider));
+      const query = { ...route.query };
+      delete query.error;
+      delete query.success;
+      delete query.provider;
+      void router.replace({ query, hash: route.hash });
+    },
+    { immediate: true },
+  );
 });
 
 function linkProvider(provider: string) {
@@ -161,7 +194,10 @@ async function unlinkProvider() {
     await refreshSettings();
   } catch (error) {
     const parsed = parseApiError(error);
-    const key = parsed.code === 'ONLY_SIGNIN_METHOD' ? 'settings.connected.only_sign_in' : 'settings.connected.unlink_failed';
+    const key =
+      parsed.code === 'ONLY_SIGNIN_METHOD'
+        ? 'settings.connected.only_sign_in'
+        : 'settings.connected.unlink_failed';
     toast.error(t(key));
     if (parsed.code === 'ONLY_SIGNIN_METHOD' || parsed.code === 'OAUTH_PROVIDER_NOT_LINKED') {
       providerToUnlink.value = undefined;
@@ -220,7 +256,9 @@ async function unlinkProvider() {
         <span class="sr-only">{{ t('settings.connected.loading') }}</span>
         <Skeleton class="h-8 w-full motion-reduce:animate-none" />
       </div>
-      <p v-else-if="!rows.length" class="px-5 py-3.5 text-sm text-muted-foreground">{{ t('settings.connected.empty') }}</p>
+      <p v-else-if="!rows.length" class="px-5 py-3.5 text-sm text-muted-foreground">
+        {{ t('settings.connected.empty') }}
+      </p>
     </template>
     <SecurityRow
       v-for="row in rows"
@@ -235,7 +273,11 @@ async function unlinkProvider() {
         <AlertDialog
           v-if="row.account"
           :open="providerToUnlink === row.id"
-          @update:open="(open) => { if (!unlinking) providerToUnlink = open ? row.id : undefined; }"
+          @update:open="
+            (open) => {
+              if (!unlinking) providerToUnlink = open ? row.id : undefined;
+            }
+          "
         >
           <AlertDialogTrigger as-child>
             <Button
@@ -256,8 +298,15 @@ async function unlinkProvider() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel :disabled="unlinking">{{ t('settings.cancel') }}</AlertDialogCancel>
-              <Button type="button" variant="destructive" :disabled="unlinking || !canUnlink(row.id)" @click="unlinkProvider">
+              <AlertDialogCancel :disabled="unlinking">{{
+                t('settings.cancel')
+              }}</AlertDialogCancel>
+              <Button
+                type="button"
+                variant="destructive"
+                :disabled="unlinking || !canUnlink(row.id)"
+                @click="unlinkProvider"
+              >
                 <Spinner v-if="unlinking" aria-hidden="true" />
                 {{ t('settings.connected.unlink') }}
               </Button>
@@ -276,7 +325,13 @@ async function unlinkProvider() {
             <Link2 v-else aria-hidden="true" />
             {{ t(linking === row.id ? 'settings.connected.linking' : 'settings.connected.link') }}
           </Button>
-          <Button v-if="linking === row.id" type="button" variant="ghost" size="sm" @click="cancelLinkPopup()">
+          <Button
+            v-if="linking === row.id"
+            type="button"
+            variant="ghost"
+            size="sm"
+            @click="cancelLinkPopup()"
+          >
             {{ t('settings.cancel') }}
           </Button>
         </template>

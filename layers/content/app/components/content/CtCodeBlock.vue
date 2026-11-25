@@ -65,7 +65,7 @@
       >
         <Button size="sm" variant="outline" class="h-9" @click="expanded = !expanded">
           <component :is="expanded ? ChevronUpIcon : ChevronDownIcon" :size="18" />
-          {{ expanded ? $t("common.collapse") : $t("common.expand") }}
+          {{ expanded ? $t('common.collapse') : $t('common.expand') }}
         </Button>
       </div>
     </Card>
@@ -73,9 +73,9 @@
 </template>
 
 <script setup lang="ts">
-import type { BuiltinLanguage } from "shiki";
-import { ChevronUpIcon, ChevronDownIcon } from "@lucide/vue";
-import CtIcon from "./CtIcon.vue";
+import type { BuiltinLanguage } from 'shiki';
+import { ChevronUpIcon, ChevronDownIcon } from '@lucide/vue';
+import CtIcon from './CtIcon.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -90,19 +90,24 @@ const props = withDefaults(
     height?: number;
   }>(),
   {
-    code: "",
+    code: '',
+    language: undefined,
+    filename: undefined,
     inGroup: false,
     inTree: false,
     inStack: false,
+    highlights: undefined,
+    meta: undefined,
+    height: undefined,
   },
 );
 
 const parsedMeta = computed(() => {
-  const split = props.meta?.split(" ") ?? [];
+  const split = props.meta?.split(' ') ?? [];
   const params = new Map<string, string | undefined>();
 
   for (const param of split) {
-    const [key, val] = param.split("=");
+    const [key, val] = param.split('=');
     if (key === undefined) continue;
     params.set(key, val);
   }
@@ -112,7 +117,7 @@ const parsedMeta = computed(() => {
 
 const expanded = ref(false);
 const icon = computed(() => {
-  return parsedMeta.value.get("icon") || props.language || props.filename?.toLowerCase();
+  return parsedMeta.value.get('icon') || props.language || props.filename?.toLowerCase();
 });
 </script>
 
@@ -158,7 +163,7 @@ const icon = computed(() => {
 
 .has-diff:not(.show-line-number > .has-diff) .line:not(.diff)::before {
   font-size: var(--text-sm);
-  content: "";
+  content: '';
 }
 
 .diff.add {
@@ -172,13 +177,13 @@ const icon = computed(() => {
 .diff.add.line::before {
   font-size: var(--text-sm);
   color: var(--color-green-600);
-  content: "+";
+  content: '+';
 }
 
 .diff.remove.line::before {
   font-size: var(--text-sm);
   color: var(--color-red-600);
-  content: "-";
+  content: '-';
 }
 
 .highlighted.warning {

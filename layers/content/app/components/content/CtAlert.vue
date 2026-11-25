@@ -30,14 +30,14 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowUpRightIcon, AlertTriangleIcon } from "@lucide/vue";
-import type { Target } from "#layers/content/types";
+import { ArrowUpRightIcon, AlertTriangleIcon } from '@lucide/vue';
+import type { Target } from '#layers/content/types';
 
 const props = withDefaults(
   defineProps<{
     title?: string;
     icon?: string;
-    type?: "default" | "info" | "warning" | "success" | "danger" | "secondary";
+    type?: 'default' | 'info' | 'warning' | 'success' | 'danger' | 'secondary';
     to?: string;
     target?: Target;
     external?: boolean;
@@ -45,7 +45,11 @@ const props = withDefaults(
     showLinkIcon?: boolean;
   }>(),
   {
-    type: "default",
+    title: undefined,
+    icon: undefined,
+    type: 'default',
+    to: undefined,
+    target: undefined,
     external: false,
     inStack: false,
     showLinkIcon: true,
@@ -53,18 +57,18 @@ const props = withDefaults(
 );
 
 const typeTwClass = {
-  default: "",
-  info: "border-blue-500 bg-blue-50 [&_.inline-code]:bg-blue-100 dark:border-blue-900 dark:bg-blue-950 dark:[&_.inline-code]:bg-blue-900 text-blue-600",
-  note: "border-sky-500 bg-sky-50 [&_.inline-code]:bg-sky-100 dark:border-sky-900 dark:bg-sky-950 dark:[&_.inline-code]:bg-sky-900 text-sky-600",
+  default: '',
+  info: 'border-blue-500 bg-blue-50 [&_.inline-code]:bg-blue-100 dark:border-blue-900 dark:bg-blue-950 dark:[&_.inline-code]:bg-blue-900 text-blue-600',
+  note: 'border-sky-500 bg-sky-50 [&_.inline-code]:bg-sky-100 dark:border-sky-900 dark:bg-sky-950 dark:[&_.inline-code]:bg-sky-900 text-sky-600',
   example:
-    "border-violet-500 bg-violet-50 [&_.inline-code]:bg-violet-100 dark:border-violet-900 dark:bg-violet-950 dark:[&_.inline-code]:bg-violet-900 text-violet-600",
+    'border-violet-500 bg-violet-50 [&_.inline-code]:bg-violet-100 dark:border-violet-900 dark:bg-violet-950 dark:[&_.inline-code]:bg-violet-900 text-violet-600',
   warning:
-    "border-amber-500 bg-amber-50 [&_.inline-code]:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:[&_.inline-code]:bg-amber-900 text-amber-600",
+    'border-amber-500 bg-amber-50 [&_.inline-code]:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:[&_.inline-code]:bg-amber-900 text-amber-600',
   success:
-    "border-green-500 bg-green-50 [&_.inline-code]:bg-green-100 dark:border-green-900 dark:bg-green-950 dark:[&_.inline-code]:bg-green-900 text-green-600",
+    'border-green-500 bg-green-50 [&_.inline-code]:bg-green-100 dark:border-green-900 dark:bg-green-950 dark:[&_.inline-code]:bg-green-900 text-green-600',
   danger:
-    "border-red-500 bg-red-50 [&_.inline-code]:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:[&_.inline-code]:bg-red-900 text-red-600",
-  secondary: "bg-muted/50",
+    'border-red-500 bg-red-50 [&_.inline-code]:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:[&_.inline-code]:bg-red-900 text-red-600',
+  secondary: 'bg-muted/50',
 };
 
 async function alertClick() {
@@ -74,12 +78,12 @@ async function alertClick() {
     const localeTo = localePath(props.to);
     if (props.target) {
       await navigateTo(localeTo, {
-        external: props.external ?? props.to.startsWith("http"),
+        external: props.external ?? props.to.startsWith('http'),
         open: { target: props.target },
       });
     } else {
       await navigateTo(localeTo, {
-        external: props.external ?? props.to.startsWith("http"),
+        external: props.external ?? props.to.startsWith('http'),
       });
     }
   }

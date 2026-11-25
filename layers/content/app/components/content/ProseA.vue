@@ -10,9 +10,13 @@
 </template>
 
 <script setup lang="ts">
-import type { Target } from "#layers/content/types";
+import type { Target } from '#layers/content/types';
 
-const { href = "", external = false } = defineProps<{
+const {
+  href = '',
+  target = undefined,
+  external = false,
+} = defineProps<{
   href?: string;
   target?: Target;
   external?: boolean;

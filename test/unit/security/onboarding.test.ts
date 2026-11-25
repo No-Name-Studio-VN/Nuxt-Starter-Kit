@@ -15,12 +15,25 @@ vi.mock('../../../layers/server-core/server/utils/reportServerError', () => ({
 const client = createClient({ url: ':memory:' });
 const db = drizzle(client);
 const defineHandler = (handler: (event: RequestEvent) => Promise<unknown>) => handler;
-const member = { id: 1, username: 'generated_name', name: 'Member', isAdmin: false, avatarUrl: 'https://example.test/avatar.png' };
+const member = {
+  id: 1,
+  username: 'generated_name',
+  name: 'Member',
+  isAdmin: false,
+  avatarUrl: 'https://example.test/avatar.png',
+};
 let session: Omit<UserSession, 'user'> & {
-  user?: Omit<NonNullable<UserSession['user']>, 'onboardingPending'> & { onboardingPending?: boolean };
+  user?: Omit<NonNullable<UserSession['user']>, 'onboardingPending'> & {
+    onboardingPending?: boolean;
+  };
 };
 
-function createEvent(path: string, method = 'GET', params: Record<string, string> = {}, body?: object): RequestEvent {
+function createEvent(
+  path: string,
+  method = 'GET',
+  params: Record<string, string> = {},
+  body?: object,
+): RequestEvent {
   const url = new URL(path, 'https://example.test');
   return {
     url,
@@ -39,12 +52,14 @@ async function getOnboarding() {
 }
 
 async function postStep(id: string) {
-  const { default: handler } = await import('../../../layers/auth/server/api/onboarding/steps/[id].post');
+  const { default: handler } =
+    await import('../../../layers/auth/server/api/onboarding/steps/[id].post');
   return handler(createEvent(`/api/onboarding/steps/${id}`, 'POST', { id }));
 }
 
 async function postComplete() {
-  const { default: handler } = await import('../../../layers/auth/server/api/onboarding/complete.post');
+  const { default: handler } =
+    await import('../../../layers/auth/server/api/onboarding/complete.post');
   return handler(createEvent('/api/onboarding/complete', 'POST'));
 }
 
@@ -70,8 +85,20 @@ beforeEach(async () => {
     );
   `);
   await db.insert(users).values([
-    { id: member.id, username: member.username, name: member.name, email: 'member@example.test', onboardingPending: true },
-    { id: 2, username: 'other', name: 'Other', email: 'other@example.test', onboardingPending: true },
+    {
+      id: member.id,
+      username: member.username,
+      name: member.name,
+      email: 'member@example.test',
+      onboardingPending: true,
+    },
+    {
+      id: 2,
+      username: 'other',
+      name: 'Other',
+      email: 'other@example.test',
+      onboardingPending: true,
+    },
   ]);
   session = {
     id: 'session-id',
@@ -110,28 +137,40 @@ afterEach(() => {
 afterAll(() => client.close());
 
 describe('onboarding status', () => {
-  it.each([false, true])('returns username and preferences without a password row (module installed: %s)', async (installed) => {
-    await loadRegistry();
-    if (installed) await import('../../../layers/auth-password/server/plugins/password-sign-in');
+  it.each([false, true])(
+    'returns username and preferences without a password row (module installed: %s)',
+    async (installed) => {
+      await loadRegistry();
+      if (installed) await import('../../../layers/auth-password/server/plugins/password-sign-in');
 
-    const response = await getOnboarding();
-    expect(response.success).toBe(true);
-    expect(response.data).toEqual({ pending: true, steps: ['username', 'preferences'] });
-  });
+      const response = await getOnboarding();
+      expect(response.success).toBe(true);
+      expect(response.data).toEqual({ pending: true, steps: ['username', 'preferences'] });
+    },
+  );
 
   it('returns only preferences for a password account', async () => {
     await loadRegistry();
     await import('../../../layers/auth-password/server/plugins/password-sign-in');
     await db.insert(userPasswords).values({ userId: 1, passwordHash: 'hash' });
 
-    expect(await getOnboarding()).toMatchObject({ success: true, data: { pending: true, steps: ['preferences'] } });
+    expect(await getOnboarding()).toMatchObject({
+      success: true,
+      data: { pending: true, steps: ['preferences'] },
+    });
   });
 
   it('sorts extension steps, rejects duplicate IDs and awaits applicability', async () => {
     const { registerOnboardingStep } = await loadRegistry();
-    registerOnboardingStep({ id: 'profile', order: 200, isApplicable: async (user) => user.id === 1 });
+    registerOnboardingStep({
+      id: 'profile',
+      order: 200,
+      isApplicable: async (user) => user.id === 1,
+    });
     registerOnboardingStep({ id: 'hidden', order: 50, isApplicable: async () => false });
-    expect(() => registerOnboardingStep({ id: 'profile', order: 1, isApplicable: () => true })).toThrow();
+    expect(() =>
+      registerOnboardingStep({ id: 'profile', order: 1, isApplicable: () => true }),
+    ).toThrow();
 
     expect(await getOnboarding()).toMatchObject({
       data: { steps: ['username', 'profile', 'preferences'] },
@@ -142,30 +181,46 @@ describe('onboarding status', () => {
     await loadRegistry();
     await db.update(users).set({ onboardingCompletedSteps: ['username'] });
 
-    expect(await getOnboarding()).toMatchObject({ data: { pending: true, steps: ['preferences'] } });
+    expect(await getOnboarding()).toMatchObject({
+      data: { pending: true, steps: ['preferences'] },
+    });
   });
 
-  it.each([true, undefined])('refreshes a stale session whose pending flag is %j', async (onboardingPending) => {
-    await loadRegistry();
-    await db.update(users).set({ onboardingPending: false });
-    session.user = { ...member, skipLockOnInit: true, ...(onboardingPending === undefined ? {} : { onboardingPending }) };
-    const before = session;
+  it.each([true, undefined])(
+    'refreshes a stale session whose pending flag is %j',
+    async (onboardingPending) => {
+      await loadRegistry();
+      await db.update(users).set({ onboardingPending: false });
+      session.user = {
+        ...member,
+        skipLockOnInit: true,
+        ...(onboardingPending === undefined ? {} : { onboardingPending }),
+      };
+      const before = session;
 
-    expect(await getOnboarding()).toMatchObject({ data: { pending: false } });
-    expect(session).toStrictEqual({ ...before, user: { ...member, onboardingPending: false, skipLockOnInit: true } });
-  });
+      expect(await getOnboarding()).toMatchObject({ data: { pending: false } });
+      expect(session).toStrictEqual({
+        ...before,
+        user: { ...member, onboardingPending: false, skipLockOnInit: true },
+      });
+    },
+  );
 });
 
 describe('onboarding mutations', () => {
-  it.each(['unknown', 'welcome', 'username'])('rejects the unknown or inapplicable step %s', async (id) => {
-    await loadRegistry();
-    await import('../../../layers/auth-password/server/plugins/password-sign-in');
-    await db.insert(userPasswords).values({ userId: 1, passwordHash: 'hash' });
-    await expect(postStep(id)).rejects.toMatchObject({
-      statusCode: 400, data: { error: { code: 'ONBOARDING_STEP_INVALID' } },
-    });
-    expect(await userService.getById(1)).toMatchObject({ onboardingCompletedSteps: [] });
-  });
+  it.each(['unknown', 'welcome', 'username'])(
+    'rejects the unknown or inapplicable step %s',
+    async (id) => {
+      await loadRegistry();
+      await import('../../../layers/auth-password/server/plugins/password-sign-in');
+      await db.insert(userPasswords).values({ userId: 1, passwordHash: 'hash' });
+      await expect(postStep(id)).rejects.toMatchObject({
+        statusCode: 400,
+        data: { error: { code: 'ONBOARDING_STEP_INVALID' } },
+      });
+      expect(await userService.getById(1)).toMatchObject({ onboardingCompletedSteps: [] });
+    },
+  );
 
   it('records an applicable step only once and only for the session user', async () => {
     await loadRegistry();
@@ -173,16 +228,19 @@ describe('onboarding mutations', () => {
 
     expect(await postStep('username')).toMatchObject(expected);
     expect(await postStep('username')).toMatchObject(expected);
-    expect(await userService.getById(1)).toMatchObject({ onboardingCompletedSteps: ['username'], onboardingPending: true });
+    expect(await userService.getById(1)).toMatchObject({
+      onboardingCompletedSteps: ['username'],
+      onboardingPending: true,
+    });
     expect(await userService.getById(2)).toMatchObject({ onboardingCompletedSteps: [] });
   });
 
   it('does not lose or duplicate steps submitted concurrently', async () => {
     const { registerOnboardingStep } = await loadRegistry();
     let arrivals = 0;
-    const { promise, resolve } = Promise.withResolvers<void>();
+    const { promise, resolve } = Promise.withResolvers<undefined>();
     const isApplicable = async () => {
-      if (++arrivals === 3) resolve();
+      if (++arrivals === 3) resolve(undefined);
       await promise;
       return true;
     };
@@ -203,7 +261,10 @@ describe('onboarding mutations', () => {
     expect(await postComplete()).toMatchObject(expected);
     expect(await userService.getById(1)).toMatchObject({ onboardingPending: false });
     expect(await userService.getById(2)).toMatchObject({ onboardingPending: true });
-    expect(session).toStrictEqual({ ...before, user: { ...member, onboardingPending: false, skipLockOnInit: true } });
+    expect(session).toStrictEqual({
+      ...before,
+      user: { ...member, onboardingPending: false, skipLockOnInit: true },
+    });
     expect(await postComplete()).toMatchObject(expected);
   });
 
@@ -219,40 +280,79 @@ describe('onboarding mutations', () => {
 
 describe('onboarding at account creation', () => {
   it('marks a self-registered password account as pending', async () => {
-    const { default: handler } = await import('../../../layers/auth-password/server/api/auth/register-password.post');
+    const { default: handler } =
+      await import('../../../layers/auth-password/server/api/auth/register-password.post');
     const password = 'ValidPassword1!';
-    const result = await handler(createEvent('/api/auth/register-password', 'POST', {}, {
-      username: 'self_signup', name: 'New Member', email: 'signup@example.test', password,
-      'confirm-password': password,
-    }));
+    const result = await handler(
+      createEvent(
+        '/api/auth/register-password',
+        'POST',
+        {},
+        {
+          username: 'self_signup',
+          name: 'New Member',
+          email: 'signup@example.test',
+          password,
+          'confirm-password': password,
+        },
+      ),
+    );
 
     expect(result).toBe('/auth/login?redirectTo=%2F');
-    expect(await userService.getByUsername('self_signup')).toMatchObject({ onboardingPending: true });
+    expect(await userService.getByUsername('self_signup')).toMatchObject({
+      onboardingPending: true,
+    });
   });
 
   it.each([{}, { onboardingPending: true, onboardingCompletedSteps: ['preferences'] }])(
-    'does not put admin-created users in onboarding with extra input %j', async (extra) => {
+    'does not put admin-created users in onboarding with extra input %j',
+    async (extra) => {
       await import('../../../layers/auth-password/server/plugins/password-sign-in');
-      const { default: handler } = await import('../../../layers/admin-users/server/api/admin/users/index.post');
-      await handler(createEvent('/api/admin/users', 'POST', {}, {
-        username: 'admin_created', name: 'Managed User', email: 'managed@example.test',
-        password: 'ValidPassword1!', ...extra,
-      }));
+      const { default: handler } =
+        await import('../../../layers/admin-users/server/api/admin/users/index.post');
+      await handler(
+        createEvent(
+          '/api/admin/users',
+          'POST',
+          {},
+          {
+            username: 'admin_created',
+            name: 'Managed User',
+            email: 'managed@example.test',
+            password: 'ValidPassword1!',
+            ...extra,
+          },
+        ),
+      );
 
       expect(await userService.getByUsername('admin_created')).toMatchObject({
-        onboardingPending: false, onboardingCompletedSteps: [],
+        onboardingPending: false,
+        onboardingCompletedSteps: [],
       });
     },
   );
 
   it('does not let general admin user updates overwrite onboarding progress', async () => {
-    const { default: handler } = await import('../../../layers/admin-users/server/api/admin/users/[id]/index.put');
-    await handler(createEvent('/api/admin/users/1', 'PUT', { id: '1' }, {
-      id: 1, name: 'Renamed Member', onboardingPending: false, onboardingCompletedSteps: ['preferences'],
-    }));
+    const { default: handler } =
+      await import('../../../layers/admin-users/server/api/admin/users/[id]/index.put');
+    await handler(
+      createEvent(
+        '/api/admin/users/1',
+        'PUT',
+        { id: '1' },
+        {
+          id: 1,
+          name: 'Renamed Member',
+          onboardingPending: false,
+          onboardingCompletedSteps: ['preferences'],
+        },
+      ),
+    );
 
     expect(await userService.getById(1)).toMatchObject({
-      name: 'Renamed Member', onboardingPending: true, onboardingCompletedSteps: [],
+      name: 'Renamed Member',
+      onboardingPending: true,
+      onboardingCompletedSteps: [],
     });
   });
 

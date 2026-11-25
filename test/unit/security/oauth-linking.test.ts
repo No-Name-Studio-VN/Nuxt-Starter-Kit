@@ -7,13 +7,19 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 import { userTwoFactor } from '../../../layers/auth-2fa/server/db/schema.sqlite';
 import { users } from '../../../layers/auth/server/db/schema.sqlite';
 import { oauthAccounts } from '../../../layers/auth-oauth/server/db/schema.sqlite';
-import type { OAuthHandlerCallbacks, OAuthProfile } from '../../../layers/auth-oauth/types/providers';
+import type {
+  OAuthHandlerCallbacks,
+  OAuthProfile,
+} from '../../../layers/auth-oauth/types/providers';
 import type { LoginPolicyOutcome } from '../../../layers/auth/types/loginPolicies';
+import type userServiceModule from '../../../layers/auth/server/utils/database/user';
+import type oauthAccountServiceModule from '../../../layers/auth-oauth/server/utils/database/oauthAccount';
+import type * as OAuthModule from '../../../layers/auth-oauth/server/utils/oauth';
 
-let userService: typeof import('../../../layers/auth/server/utils/database/user').default;
-let oauthAccountService: typeof import('../../../layers/auth-oauth/server/utils/database/oauthAccount').default;
-let completeOAuthLogin: typeof import('../../../layers/auth-oauth/server/utils/oauth').completeOAuthLogin;
-let handleOAuthSuccess: typeof import('../../../layers/auth-oauth/server/utils/oauth').handleOAuthSuccess;
+let userService: typeof userServiceModule;
+let oauthAccountService: typeof oauthAccountServiceModule;
+let completeOAuthLogin: typeof OAuthModule.completeOAuthLogin;
+let handleOAuthSuccess: typeof OAuthModule.handleOAuthSuccess;
 
 vi.mock('../../../layers/server-core/server/utils/reportServerError', () => ({
   reportServerError: vi.fn(),
@@ -50,16 +56,20 @@ function eventFor(path = '/api/auth/google', init?: RequestInit): RequestEvent {
 }
 
 async function seedUser(overrides: Partial<typeof users.$inferInsert> = {}) {
-  const user = await db.insert(users).values({
-    id: 1,
-    username: 'john',
-    name: 'John',
-    email: 'john@gmail.com',
-    emailVerified: true,
-    onboardingPending: false,
-    onboardingCompletedSteps: [],
-    ...overrides,
-  }).returning().get();
+  const user = await db
+    .insert(users)
+    .values({
+      id: 1,
+      username: 'john',
+      name: 'John',
+      email: 'john@gmail.com',
+      emailVerified: true,
+      onboardingPending: false,
+      onboardingCompletedSteps: [],
+      ...overrides,
+    })
+    .returning()
+    .get();
   if (!user) throw new Error('Could not seed user');
   return user;
 }
@@ -130,8 +140,10 @@ beforeEach(async () => {
   vi.stubGlobal('useRuntimeConfig', () => ({ public: { googleOneTapClientId: 'test-client' } }));
   await import('../../../layers/auth-oauth/server/plugins/oauth-sign-in');
   ({ default: userService } = await import('../../../layers/auth/server/utils/database/user'));
-  ({ default: oauthAccountService } = await import('../../../layers/auth-oauth/server/utils/database/oauthAccount'));
-  ({ completeOAuthLogin, handleOAuthSuccess } = await import('../../../layers/auth-oauth/server/utils/oauth'));
+  ({ default: oauthAccountService } =
+    await import('../../../layers/auth-oauth/server/utils/database/oauthAccount'));
+  ({ completeOAuthLogin, handleOAuthSuccess } =
+    await import('../../../layers/auth-oauth/server/utils/oauth'));
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -148,21 +160,32 @@ describe('OAuth sign-in and linking', () => {
     await seedLink();
 
     expect(await complete({ email: 'new@example.com', emailVerified: false })).toEqual({
-      status: 'signed-in', userId: 1, outcome: { kind: 'continue' },
-    });
-    expect(await db.select().from(oauthAccounts)).toMatchObject([{
+      status: 'signed-in',
       userId: 1,
-      email: 'new@example.com',
-      name: profile.name,
-      avatarUrl: profile.avatarUrl,
-    }]);
+      outcome: { kind: 'continue' },
+    });
+    expect(await db.select().from(oauthAccounts)).toMatchObject([
+      {
+        userId: 1,
+        email: 'new@example.com',
+        name: profile.name,
+        avatarUrl: profile.avatarUrl,
+      },
+    ]);
     expect(await userService.getById(1)).toMatchObject({
-      email: 'john@gmail.com', emailVerified: true, lastLoginAt: expect.any(Date),
+      email: 'john@gmail.com',
+      emailVerified: true,
+      lastLoginAt: expect.any(Date),
     });
     expect(setSession).toHaveBeenCalledWith(expect.anything(), {
       user: {
-        id: 1, username: 'john', name: 'John', isAdmin: false, onboardingPending: true,
-        avatarUrl: profile.avatarUrl, skipLockOnInit: true,
+        id: 1,
+        username: 'john',
+        name: 'John',
+        isAdmin: false,
+        onboardingPending: true,
+        avatarUrl: profile.avatarUrl,
+        skipLockOnInit: true,
       },
       loginMethod: 'oauth',
       loginProvider: 'google',
@@ -175,7 +198,9 @@ describe('OAuth sign-in and linking', () => {
     await seedUser();
     await seedLink();
     expect(await complete({ email: '', avatarUrl: undefined })).toEqual({
-      status: 'signed-in', userId: 1, outcome: { kind: 'continue' },
+      status: 'signed-in',
+      userId: 1,
+      outcome: { kind: 'continue' },
     });
     expect(await db.select().from(oauthAccounts)).toMatchObject([{ email: null, avatarUrl: null }]);
     expect(setSession).toHaveBeenCalledOnce();
@@ -183,17 +208,35 @@ describe('OAuth sign-in and linking', () => {
 
   it('links a verified and authoritative case-insensitive, trimmed email match', async () => {
     await seedUser();
-    expect(await complete({ email: ' John@Gmail.com ' })).toEqual({ status: 'linked', userId: 1, outcome: { kind: 'continue' } });
-    expect(await db.select().from(oauthAccounts)).toMatchObject([{
-      provider: 'google', providerAccountId: profile.providerAccountId, userId: 1,
-    }]);
-    expect(await db.select().from(users)).toMatchObject([{
-      id: 1, email: 'john@gmail.com', onboardingPending: false, lastLoginAt: expect.any(Date),
-    }]);
+    expect(await complete({ email: ' John@Gmail.com ' })).toEqual({
+      status: 'linked',
+      userId: 1,
+      outcome: { kind: 'continue' },
+    });
+    expect(await db.select().from(oauthAccounts)).toMatchObject([
+      {
+        provider: 'google',
+        providerAccountId: profile.providerAccountId,
+        userId: 1,
+      },
+    ]);
+    expect(await db.select().from(users)).toMatchObject([
+      {
+        id: 1,
+        email: 'john@gmail.com',
+        onboardingPending: false,
+        lastLoginAt: expect.any(Date),
+      },
+    ]);
     expect(setSession).toHaveBeenCalledWith(expect.anything(), {
       user: {
-        id: 1, username: 'john', name: 'John', isAdmin: false, onboardingPending: false,
-        avatarUrl: profile.avatarUrl, skipLockOnInit: true,
+        id: 1,
+        username: 'john',
+        name: 'John',
+        isAdmin: false,
+        onboardingPending: false,
+        avatarUrl: profile.avatarUrl,
+        skipLockOnInit: true,
       },
       loginMethod: 'oauth',
       loginProvider: 'google',
@@ -205,29 +248,47 @@ describe('OAuth sign-in and linking', () => {
   it('refuses an OIDC verified email match that Google can auto-link', async () => {
     const user = await seedUser();
     const identity = {
-      user: { sub: profile.providerAccountId, email: user.email, email_verified: true, name: profile.name },
+      user: {
+        sub: profile.providerAccountId,
+        email: user.email,
+        email_verified: true,
+        name: profile.name,
+      },
     };
-    const providerHandler = ({ onSuccess }: OAuthHandlerCallbacks<typeof identity>) =>
-      (event: RequestEvent) => onSuccess(event, identity);
+    const providerHandler =
+      ({ onSuccess }: OAuthHandlerCallbacks<typeof identity>) =>
+      (event: RequestEvent) =>
+        onSuccess(event, identity);
     vi.stubGlobal('defineOAuthOidcEventHandler', providerHandler);
     vi.stubGlobal('defineOAuthGoogleEventHandler', providerHandler);
 
-    const { default: oidc } = await import('../../../layers/auth-oauth/server/oauth/providers/oidc');
-    const { default: google } = await import('../../../layers/auth-oauth/server/oauth/providers/google');
-    const signIn = (provider: typeof oidc | typeof google) => provider.createHandler({
-      onSuccess: (event, account) => completeOAuthLogin(event, provider.id, account),
-      onError: vi.fn(),
-    })(eventFor(`/api/auth/${provider.id}`));
+    const { default: oidc } =
+      await import('../../../layers/auth-oauth/server/oauth/providers/oidc');
+    const { default: google } =
+      await import('../../../layers/auth-oauth/server/oauth/providers/google');
+    const signIn = (provider: typeof oidc | typeof google) =>
+      provider.createHandler({
+        onSuccess: (event, account) => completeOAuthLogin(event, provider.id, account),
+        onError: vi.fn(),
+      })(eventFor(`/api/auth/${provider.id}`));
 
     expect(await signIn(oidc)).toEqual({ status: 'refused', code: 'oauth-email-in-use' });
     expect(await db.select().from(oauthAccounts)).toEqual([]);
     expect(await db.select().from(users)).toEqual([user]);
     expect(setSession).not.toHaveBeenCalled();
 
-    expect(await signIn(google)).toEqual({ status: 'linked', userId: user.id, outcome: { kind: 'continue' } });
-    expect(await db.select().from(oauthAccounts)).toMatchObject([{
-      userId: user.id, provider: 'google', providerAccountId: identity.user.sub,
-    }]);
+    expect(await signIn(google)).toEqual({
+      status: 'linked',
+      userId: user.id,
+      outcome: { kind: 'continue' },
+    });
+    expect(await db.select().from(oauthAccounts)).toMatchObject([
+      {
+        userId: user.id,
+        provider: 'google',
+        providerAccountId: identity.user.sub,
+      },
+    ]);
     expect(setSession).toHaveBeenCalledOnce();
   });
 
@@ -268,22 +329,41 @@ describe('OAuth sign-in and linking', () => {
     { verified: true, authoritative: false, localVerified: false },
     { verified: false, authoritative: true, localVerified: false },
     { verified: false, authoritative: false, localVerified: false },
-  ])('creates a pending user with email verification $localVerified for flags $verified/$authoritative',
+  ])(
+    'creates a pending user with email verification $localVerified for flags $verified/$authoritative',
     async ({ verified, authoritative, localVerified }) => {
-      expect(await complete({
-        email: ' New@Gmail.com ', emailVerified: verified, emailAuthoritative: authoritative,
-      })).toEqual({ status: 'created', userId: 1, outcome: { kind: 'continue' } });
-      expect(await db.select().from(users)).toMatchObject([{
-        username: 'new', email: 'new@gmail.com', emailVerified: localVerified,
-        onboardingPending: true, onboardingCompletedSteps: [],
-      }]);
-      expect(await db.select().from(oauthAccounts)).toMatchObject([{
-        userId: 1, provider: 'google', providerAccountId: profile.providerAccountId,
-      }]);
+      expect(
+        await complete({
+          email: ' New@Gmail.com ',
+          emailVerified: verified,
+          emailAuthoritative: authoritative,
+        }),
+      ).toEqual({ status: 'created', userId: 1, outcome: { kind: 'continue' } });
+      expect(await db.select().from(users)).toMatchObject([
+        {
+          username: 'new',
+          email: 'new@gmail.com',
+          emailVerified: localVerified,
+          onboardingPending: true,
+          onboardingCompletedSteps: [],
+        },
+      ]);
+      expect(await db.select().from(oauthAccounts)).toMatchObject([
+        {
+          userId: 1,
+          provider: 'google',
+          providerAccountId: profile.providerAccountId,
+        },
+      ]);
       expect(setSession).toHaveBeenCalledWith(expect.anything(), {
         user: {
-          id: 1, username: 'new', name: profile.name, isAdmin: false, onboardingPending: true,
-          avatarUrl: profile.avatarUrl, skipLockOnInit: true,
+          id: 1,
+          username: 'new',
+          name: profile.name,
+          isAdmin: false,
+          onboardingPending: true,
+          avatarUrl: profile.avatarUrl,
+          skipLockOnInit: true,
         },
         loginMethod: 'oauth',
         loginProvider: 'google',
@@ -312,9 +392,14 @@ describe('OAuth sign-in and linking', () => {
   it('retries when another user wins the generated username', async () => {
     await seedUser({ email: 'other@example.com' });
     vi.spyOn(userService, 'getByUsername').mockResolvedValueOnce(undefined);
-    expect(await complete()).toEqual({ status: 'created', userId: 2, outcome: { kind: 'continue' } });
+    expect(await complete()).toEqual({
+      status: 'created',
+      userId: 2,
+      outcome: { kind: 'continue' },
+    });
     expect(await userService.getById(2)).toMatchObject({
-      username: expect.stringMatching(/^john-/), email: 'john@gmail.com',
+      username: expect.stringMatching(/^john-/),
+      email: 'john@gmail.com',
     });
     expect(await db.select().from(oauthAccounts)).toMatchObject([{ userId: 2 }]);
   });
@@ -330,28 +415,43 @@ describe('OAuth sign-in and linking', () => {
 describe('OAuth login policy denial', () => {
   it('keeps a new user and link created before policy denial without completing sign-in', async () => {
     const { registerLoginPolicy } = await import('../../../layers/auth/server/utils/loginPolicies');
-    const completedSignIn = vi.spyOn(await import('../../../layers/auth/server/utils/sessionUser'), 'setCompletedSignIn');
+    const completedSignIn = vi.spyOn(
+      await import('../../../layers/auth/server/utils/sessionUser'),
+      'setCompletedSignIn',
+    );
     registerLoginPolicy({
       id: 'deny-oauth',
       order: 100,
       methods: ['oauth'],
       async run({ user }) {
         expect(await userService.getById(user.id)).toMatchObject({
-          email: profile.email, onboardingPending: true, lastLoginAt: null,
+          email: profile.email,
+          onboardingPending: true,
+          lastLoginAt: null,
         });
-        expect(await oauthAccountService.getByProviderAccount('google', profile.providerAccountId))
-          .toMatchObject({ userId: user.id });
+        expect(
+          await oauthAccountService.getByProviderAccount('google', profile.providerAccountId),
+        ).toMatchObject({ userId: user.id });
         return loginDenial;
       },
     });
 
     expect(await complete()).toEqual({ status: 'created', userId: 1, outcome: loginDenial });
-    expect(await db.select().from(users)).toMatchObject([{
-      id: 1, email: profile.email, onboardingPending: true, lastLoginAt: null,
-    }]);
-    expect(await db.select().from(oauthAccounts)).toMatchObject([{
-      userId: 1, provider: 'google', providerAccountId: profile.providerAccountId,
-    }]);
+    expect(await db.select().from(users)).toMatchObject([
+      {
+        id: 1,
+        email: profile.email,
+        onboardingPending: true,
+        lastLoginAt: null,
+      },
+    ]);
+    expect(await db.select().from(oauthAccounts)).toMatchObject([
+      {
+        userId: 1,
+        provider: 'google',
+        providerAccountId: profile.providerAccountId,
+      },
+    ]);
     expect(callHook).not.toHaveBeenCalled();
     expect(completedSignIn).not.toHaveBeenCalled();
     expect(setSession).not.toHaveBeenCalled();
@@ -360,7 +460,10 @@ describe('OAuth login policy denial', () => {
   it('does not persist an existing user’s email auto-link when login policy denies', async () => {
     const user = await seedUser({ lastLoginAt: new Date('2026-11-20T12:00:00Z') });
     const { registerLoginPolicy } = await import('../../../layers/auth/server/utils/loginPolicies');
-    const completedSignIn = vi.spyOn(await import('../../../layers/auth/server/utils/sessionUser'), 'setCompletedSignIn');
+    const completedSignIn = vi.spyOn(
+      await import('../../../layers/auth/server/utils/sessionUser'),
+      'setCompletedSignIn',
+    );
     registerLoginPolicy({
       id: 'deny-oauth',
       order: 100,
@@ -391,13 +494,31 @@ describe('OAuth link policies', () => {
     const user = await seedUser();
     const { registerOAuthLinkPolicy, completeOAuthLogin } = await loadPolicyFlow();
     const calls: string[] = [];
-    const deny = vi.fn(async () => { calls.push('deny'); return { allow: false }; });
-    registerOAuthLinkPolicy({ id: 'after', order: 30, async run() { calls.push('after'); return { allow: true }; } });
+    const deny = vi.fn(async () => {
+      calls.push('deny');
+      return { allow: false };
+    });
+    registerOAuthLinkPolicy({
+      id: 'after',
+      order: 30,
+      async run() {
+        calls.push('after');
+        return { allow: true };
+      },
+    });
     registerOAuthLinkPolicy({ id: 'deny', order: 20, run: deny });
-    registerOAuthLinkPolicy({ id: 'before', order: 10, async run() { calls.push('before'); return { allow: true }; } });
+    registerOAuthLinkPolicy({
+      id: 'before',
+      order: 10,
+      async run() {
+        calls.push('before');
+        return { allow: true };
+      },
+    });
 
     expect(await completeOAuthLogin(eventFor(), 'google', profile)).toEqual({
-      status: 'refused', code: 'oauth-email-in-use',
+      status: 'refused',
+      code: 'oauth-email-in-use',
     });
     expect(calls).toEqual(['before', 'deny']);
     expect(deny).toHaveBeenCalledWith({ user, provider: 'google' });
@@ -413,13 +534,16 @@ describe('OAuth link policies', () => {
 
     expect(await runOAuthLinkPolicies({ user, provider: 'google' })).toBe(false);
     expect(await completeOAuthLogin(eventFor(), 'google', profile)).toEqual({
-      status: 'refused', code: 'oauth-email-in-use',
+      status: 'refused',
+      code: 'oauth-email-in-use',
     });
     expect(setSession).not.toHaveBeenCalled();
 
     await seedLink();
     expect(await completeOAuthLogin(eventFor(), 'google', profile)).toEqual({
-      status: 'signed-in', userId: 1, outcome: { kind: 'continue' },
+      status: 'signed-in',
+      userId: 1,
+      outcome: { kind: 'continue' },
     });
     expect(setSession).toHaveBeenCalledOnce();
   });
@@ -431,19 +555,26 @@ describe('OAuth link policies', () => {
 
     expect(await runOAuthLinkPolicies({ user, provider: 'google' })).toBe(false);
     expect(await completeOAuthLogin(eventFor(), 'google', profile)).toEqual({
-      status: 'refused', code: 'oauth-email-in-use',
+      status: 'refused',
+      code: 'oauth-email-in-use',
     });
     expect(await db.select().from(oauthAccounts)).toEqual([]);
     expect(setSession).not.toHaveBeenCalled();
 
     vi.stubGlobal('getUserSession', async () => ({ user: { id: 1, isAdmin: true } }));
-    const event = eventFor('/api/auth/google', { headers: { cookie: 'oauth_popup=1; oauth_redirect_to=%2Fsettings%2Fsecurity' } });
+    const event = eventFor('/api/auth/google', {
+      headers: { cookie: 'oauth_popup=1; oauth_redirect_to=%2Fsettings%2Fsecurity' },
+    });
     await handleOAuthSuccess(event, 'google', { ...profile, email: undefined });
     const target = '/settings/security?success=oauth-linked&provider=google';
-    expect(event.res.headers.get('location')).toBe(`/auth/oauth/popup?redirectTo=${encodeURIComponent(target)}`);
+    expect(event.res.headers.get('location')).toBe(
+      `/auth/oauth/popup?redirectTo=${encodeURIComponent(target)}`,
+    );
     expect(await db.select().from(oauthAccounts)).toMatchObject([{ userId: 1 }]);
     expect(await completeOAuthLogin(eventFor(), 'google', profile)).toEqual({
-      status: 'signed-in', userId: 1, outcome: { kind: 'continue' },
+      status: 'signed-in',
+      userId: 1,
+      outcome: { kind: 'continue' },
     });
   });
 
@@ -461,7 +592,8 @@ describe('OAuth link policies', () => {
     });
 
     expect(await completeOAuthLogin(eventFor(), 'google', profile)).toEqual({
-      status: 'refused', code: 'oauth-email-in-use',
+      status: 'refused',
+      code: 'oauth-email-in-use',
     });
     expect(await db.select().from(oauthAccounts)).toEqual([]);
     expect(setSession).not.toHaveBeenCalled();
@@ -474,14 +606,17 @@ describe('OAuth link policies', () => {
       id: 'change-email-during-check',
       order: 10,
       async run() {
-        await db.update(users).set({ email: 'new@example.com', emailVerified: false })
+        await db
+          .update(users)
+          .set({ email: 'new@example.com', emailVerified: false })
           .where(eq(users.id, user.id));
         return { allow: true };
       },
     });
 
     expect(await completeOAuthLogin(eventFor(), 'google', profile)).toEqual({
-      status: 'refused', code: 'oauth-email-in-use',
+      status: 'refused',
+      code: 'oauth-email-in-use',
     });
     expect(await db.select().from(oauthAccounts)).toEqual([]);
     expect(setSession).not.toHaveBeenCalled();
@@ -493,16 +628,23 @@ describe('OAuth link policies', () => {
     const { completeOAuthLogin } = await loadPolicyFlow();
     await import('../../../layers/auth-2fa/server/plugins/oauth-link-policy');
     expect(await completeOAuthLogin(eventFor(), 'google', profile)).toEqual({
-      status: 'linked', userId: 1, outcome: { kind: 'continue' },
+      status: 'linked',
+      userId: 1,
+      outcome: { kind: 'continue' },
     });
   });
 });
 
 describe('OAuth callback outcomes', () => {
   it.each([false, true])('routes a created user to onboarding (popup: %s)', async (popup) => {
-    const event = eventFor('/api/auth/google', popup ? {
-      headers: { cookie: 'oauth_popup=1; oauth_redirect_to=%2Fdashboard' },
-    } : undefined);
+    const event = eventFor(
+      '/api/auth/google',
+      popup
+        ? {
+            headers: { cookie: 'oauth_popup=1; oauth_redirect_to=%2Fdashboard' },
+          }
+        : undefined,
+    );
     await handleOAuthSuccess(event, 'google', profile);
     expect(event.res.headers.get('location')).toBe(
       popup ? '/auth/oauth/popup?redirectTo=%2Fonboarding' : '/onboarding',
@@ -519,22 +661,36 @@ describe('OAuth callback outcomes', () => {
     );
   });
 
-  it.each([false, true])('preserves the popup destination or defaults to home (popup: %s)', async (popup) => {
-    await seedUser();
-    const init = popup ? { headers: { cookie: 'oauth_popup=1; oauth_redirect_to=%2Fdashboard' } } : undefined;
-    for (const event of [eventFor('/api/auth/google', init), eventFor('/api/auth/google', init)]) {
-      await handleOAuthSuccess(event, 'google', profile);
-      expect(event.res.headers.get('location')).toBe(popup ? '/auth/oauth/popup?redirectTo=%2Fdashboard' : '/');
-    }
-  });
+  it.each([false, true])(
+    'preserves the popup destination or defaults to home (popup: %s)',
+    async (popup) => {
+      await seedUser();
+      const init = popup
+        ? { headers: { cookie: 'oauth_popup=1; oauth_redirect_to=%2Fdashboard' } }
+        : undefined;
+      for (const event of [
+        eventFor('/api/auth/google', init),
+        eventFor('/api/auth/google', init),
+      ]) {
+        await handleOAuthSuccess(event, 'google', profile);
+        expect(event.res.headers.get('location')).toBe(
+          popup ? '/auth/oauth/popup?redirectTo=%2Fdashboard' : '/',
+        );
+      }
+    },
+  );
 
   it('preserves explicit signed-in connecting without a provider email', async () => {
     await seedUser();
     vi.stubGlobal('getUserSession', async () => ({ user: { id: 1 } }));
-    const event = eventFor('/api/auth/google', { headers: { cookie: 'oauth_popup=1; oauth_redirect_to=%2Fsettings%2Fsecurity' } });
+    const event = eventFor('/api/auth/google', {
+      headers: { cookie: 'oauth_popup=1; oauth_redirect_to=%2Fsettings%2Fsecurity' },
+    });
     await handleOAuthSuccess(event, 'google', { ...profile, email: undefined });
     const target = '/settings/security?success=oauth-linked&provider=google';
-    expect(event.res.headers.get('location')).toBe(`/auth/oauth/popup?redirectTo=${encodeURIComponent(target)}`);
+    expect(event.res.headers.get('location')).toBe(
+      `/auth/oauth/popup?redirectTo=${encodeURIComponent(target)}`,
+    );
     expect(await db.select().from(oauthAccounts)).toMatchObject([{ userId: 1, email: null }]);
     expect(setSession).not.toHaveBeenCalled();
   });
@@ -543,34 +699,47 @@ describe('OAuth callback outcomes', () => {
     { ownerId: 1, accountId: 'other-provider-account', error: 'oauth-already-connected' },
     { ownerId: 2, accountId: profile.providerAccountId, error: 'oauth-already-linked' },
     { ownerId: 1, accountId: profile.providerAccountId, error: 'oauth-already-connected' },
-  ])('returns a competing popup link to settings with $error for owner $ownerId', async ({ ownerId, accountId, error }) => {
-    await seedUser();
-    await seedUser({ id: 2, email: 'other@example.com', username: 'other' });
-    vi.stubGlobal('getUserSession', async () => ({ user: { id: 1 } }));
-    vi.spyOn(oauthAccountService, 'getByUserAndProvider').mockImplementationOnce(async () => {
-      await db.insert(oauthAccounts).values({ userId: ownerId, provider: 'google', providerAccountId: accountId });
-      return undefined;
-    });
+  ])(
+    'returns a competing popup link to settings with $error for owner $ownerId',
+    async ({ ownerId, accountId, error }) => {
+      await seedUser();
+      await seedUser({ id: 2, email: 'other@example.com', username: 'other' });
+      vi.stubGlobal('getUserSession', async () => ({ user: { id: 1 } }));
+      vi.spyOn(oauthAccountService, 'getByUserAndProvider').mockImplementationOnce(async () => {
+        await db
+          .insert(oauthAccounts)
+          .values({ userId: ownerId, provider: 'google', providerAccountId: accountId });
+        return undefined;
+      });
 
-    const event = eventFor('/api/auth/google', { headers: { cookie: 'oauth_popup=1; oauth_redirect_to=%2Fsettings%2Fsecurity' } });
-    await handleOAuthSuccess(event, 'google', profile);
+      const event = eventFor('/api/auth/google', {
+        headers: { cookie: 'oauth_popup=1; oauth_redirect_to=%2Fsettings%2Fsecurity' },
+      });
+      await handleOAuthSuccess(event, 'google', profile);
 
-    const target = `/settings/security?error=${error}&provider=google`;
-    expect(event.res.headers.get('location')).toBe(`/auth/oauth/popup?redirectTo=${encodeURIComponent(target)}`);
-    expect(await db.select().from(oauthAccounts)).toMatchObject([{ userId: ownerId, providerAccountId: accountId }]);
-  });
+      const target = `/settings/security?error=${error}&provider=google`;
+      expect(event.res.headers.get('location')).toBe(
+        `/auth/oauth/popup?redirectTo=${encodeURIComponent(target)}`,
+      );
+      expect(await db.select().from(oauthAccounts)).toMatchObject([
+        { userId: ownerId, providerAccountId: accountId },
+      ]);
+    },
+  );
 
   it('includes the same refusal code in the Google One Tap API error', async () => {
     await seedUser({ emailVerified: false });
     vi.resetModules();
-    const { default: oneTap } = await import('../../../layers/auth-oauth/server/api/auth/google-one-tap.post');
+    const { default: oneTap } =
+      await import('../../../layers/auth-oauth/server/api/auth/google-one-tap.post');
     const event = eventFor('/api/auth/google-one-tap', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ credential: 'test credential' }),
     });
     await expect(oneTap(event)).rejects.toMatchObject({
-      status: 409, data: { error: { code: 'OAUTH_EMAIL_IN_USE' } },
+      status: 409,
+      data: { error: { code: 'OAUTH_EMAIL_IN_USE' } },
     });
   });
 });

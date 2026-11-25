@@ -11,17 +11,28 @@
 </template>
 
 <script setup lang="ts">
-import type { BuiltinLanguage } from "shiki";
+import type { BuiltinLanguage } from 'shiki';
 
-withDefaults(defineProps<{
-  code?: string;
-  language?: BuiltinLanguage;
-  filename?: string;
-  highlights?: number[];
-  meta?: string;
-  class?: string;
-  style?: string | Record<string, string | number>;
-}>(), { code: '', highlights: () => [] });
+withDefaults(
+  defineProps<{
+    code?: string;
+    language?: BuiltinLanguage;
+    filename?: string;
+    highlights?: number[];
+    meta?: string;
+    class?: string;
+    style?: string | Record<string, string | number>;
+  }>(),
+  {
+    code: '',
+    language: undefined,
+    filename: undefined,
+    highlights: () => [],
+    meta: undefined,
+    class: undefined,
+    style: undefined,
+  },
+);
 </script>
 
 <style>

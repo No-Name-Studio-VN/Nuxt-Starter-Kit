@@ -24,10 +24,14 @@
 </template>
 
 <script setup lang="ts">
-import CtIcon from "#layers/content/app/components/content/CtIcon.vue";
-import type { Target } from "#layers/content/types";
+import CtIcon from '#layers/content/app/components/content/CtIcon.vue';
+import type { Target } from '#layers/content/types';
 
-const { center = true } = defineProps<{
+const {
+  title = undefined,
+  links = undefined,
+  center = true,
+} = defineProps<{
   avatar: string;
   name: string;
   title?: string;

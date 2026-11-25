@@ -8,13 +8,13 @@
 </template>
 
 <script setup lang="ts">
-const { id } = defineProps<{ id?: string }>();
+const { id = undefined } = defineProps<{ id?: string }>();
 
 const { headings } = useRuntimeConfig().public.mdc;
 const generate = computed(
   () =>
     id &&
-    ((typeof headings?.anchorLinks === "boolean" && headings?.anchorLinks === true) ||
-      (typeof headings?.anchorLinks === "object" && headings?.anchorLinks?.h4)),
+    ((typeof headings?.anchorLinks === 'boolean' && headings?.anchorLinks === true) ||
+      (typeof headings?.anchorLinks === 'object' && headings?.anchorLinks?.h4)),
 );
 </script>

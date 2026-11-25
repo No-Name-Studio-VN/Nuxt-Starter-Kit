@@ -171,20 +171,45 @@ export async function createFixtureKit({ nextMajor = false, notes = false } = {}
     await writeJsonAtomically(join(root, 'packages/create-nuxt-saas/kit.json'), {
       ...kitConfig,
       groups: ['Foundation', 'App', 'Content'],
-      ...(notes ? { changes: [
-        { id: 'base.home', since: '3.1.0', title: 'Safer home', kind: 'security', files: ['app/pages/index.vue'] },
-        { id: 'base.logo', since: '3.1.0', title: 'New logo', files: ['public/logo.png'] },
-        { id: 'base.new', since: '3.1.0', title: 'New page', files: ['app/pages/new.vue'] },
-        { id: 'base.old', since: '3.0.0', title: 'Old note', files: ['public/logo.png'] },
-        { id: 'base.future', since: '3.2.0', title: 'Future note', files: ['public/logo.png'] },
-      ] } : {}),
+      ...(notes
+        ? {
+            changes: [
+              {
+                id: 'base.home',
+                since: '3.1.0',
+                title: 'Safer home',
+                kind: 'security',
+                files: ['app/pages/index.vue'],
+              },
+              { id: 'base.logo', since: '3.1.0', title: 'New logo', files: ['public/logo.png'] },
+              { id: 'base.new', since: '3.1.0', title: 'New page', files: ['app/pages/new.vue'] },
+              { id: 'base.old', since: '3.0.0', title: 'Old note', files: ['public/logo.png'] },
+              {
+                id: 'base.future',
+                since: '3.2.0',
+                title: 'Future note',
+                files: ['public/logo.png'],
+              },
+            ],
+          }
+        : {}),
     });
     await writeJsonAtomically(join(root, 'layers/alpha/module.json'), {
       ...alpha,
       group: 'App',
-      ...(notes ? { changes: [
-        { id: 'alpha.page', since: '3.1.0', title: 'Alpha page', kind: 'fix', files: ['layers/alpha/app/pages/alpha.vue'] },
-      ] } : {}),
+      ...(notes
+        ? {
+            changes: [
+              {
+                id: 'alpha.page',
+                since: '3.1.0',
+                title: 'Alpha page',
+                kind: 'fix',
+                files: ['layers/alpha/app/pages/alpha.vue'],
+              },
+            ],
+          }
+        : {}),
       env: ['ALPHA_KEY', 'ALPHA_SECOND'],
     });
     await writeJsonAtomically(join(root, 'layers/beta/module.json'), {

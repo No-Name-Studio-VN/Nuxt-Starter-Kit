@@ -66,7 +66,14 @@
               class="size-3.5 shrink-0"
             />
             <template v-for="(subtitle, j) in item.titles" :key="`${subtitle}${j}`">
-              <span class="truncate max-w-35" v-html="highlightMatches(subtitle)" />
+              <span class="truncate max-w-35">
+                <template v-for="(part, index) in highlightParts(subtitle)" :key="index">
+                  <mark v-if="index % 2" class="bg-primary/20 text-primary rounded px-0.5">{{
+                    part
+                  }}</mark>
+                  <template v-else>{{ part }}</template>
+                </template>
+              </span>
               <ChevronRightIcon
                 v-if="item.titles.length > 1 && j !== item.titles.length - 1"
                 class="size-3 shrink-0 text-muted-foreground/50"
@@ -75,17 +82,24 @@
           </div>
 
           <!-- Row 2: Section title with highlighting -->
-          <div
-            class="font-medium text-foreground leading-tight mb-1"
-            v-html="highlightMatches(item.title)"
-          />
+          <div class="font-medium text-foreground leading-tight mb-1">
+            <template v-for="(part, index) in highlightParts(item.title)" :key="index">
+              <mark v-if="index % 2" class="bg-primary/20 text-primary rounded px-0.5">{{
+                part
+              }}</mark>
+              <template v-else>{{ part }}</template>
+            </template>
+          </div>
 
           <!-- Row 3: Content preview with highlighting -->
-          <div
-            v-if="item.content"
-            class="text-xs/relaxed text-muted-foreground line-clamp-2"
-            v-html="highlightMatches(item.content)"
-          />
+          <div v-if="item.content" class="text-xs/relaxed text-muted-foreground line-clamp-2">
+            <template v-for="(part, index) in highlightParts(item.content)" :key="index">
+              <mark v-if="index % 2" class="bg-primary/20 text-primary rounded px-0.5">{{
+                part
+              }}</mark>
+              <template v-else>{{ part }}</template>
+            </template>
+          </div>
         </NuxtLinkLocale>
       </div>
 
@@ -190,21 +204,18 @@ watch([input, locale, searchSections], () => {
   debouncedSearch();
 });
 
-// Highlight search terms in text - used for breadcrumb, title, and content
-function highlightMatches(text: string) {
-  if (!text || !input.value) return text;
-  // Escape special regex chars and split search into words for multi-word highlighting
-  const searchTerms = input.value
-    .trim()
-    .split(/\s+/)
-    .filter((t) => t.length > 0);
-  if (searchTerms.length === 0) return text;
+const highlightPattern = computed(() => {
+  const searchTerms = input.value.trim().split(/\s+/).filter(Boolean);
+  if (searchTerms.length === 0) return;
 
-  // Create regex that matches any of the search terms
-  const escapedTerms = searchTerms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+  const escapedTerms = searchTerms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  return new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+});
 
-  return text.replace(regex, '<mark class="bg-primary/20 text-primary rounded px-0.5">$1</mark>');
+function highlightParts(text: string) {
+  // A capturing group keeps matches at odd indices without interpreting the text as HTML.
+  const pattern = highlightPattern.value;
+  return pattern ? text.split(pattern) : [text];
 }
 
 const { navKeyFromPath } = useContentHelpers();

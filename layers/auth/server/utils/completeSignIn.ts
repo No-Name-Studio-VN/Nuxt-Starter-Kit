@@ -1,7 +1,6 @@
 import { setCompletedSignIn } from '#layers/auth/server/utils/sessionUser';
-import type { SignInRequestEvent } from '#layers/auth/types/loginPolicies';
+import type { LoginPolicyOutcome, SignInRequestEvent } from '#layers/auth/types/loginPolicies';
 import type { User } from '#layers/auth/types/auth';
-import type { LoginPolicyOutcome } from '#layers/auth/types/loginPolicies';
 import type { CompleteSignInOptions, SignInEvidence } from '#layers/auth/types/signInMethods';
 import userService from '#layers/auth/server/utils/database/user';
 import { runLoginPolicies } from '#layers/auth/server/utils/loginPolicies';
@@ -43,7 +42,10 @@ export async function completeSignIn(
  * held by a policy step (a second factor) finishes here once the step passes,
  * so the hook and `lastLoginAt` run once per sign-in.
  */
-export async function finishSignIn(event: SignInRequestEvent, evidence: SignInEvidence): Promise<void> {
+export async function finishSignIn(
+  event: SignInRequestEvent,
+  evidence: SignInEvidence,
+): Promise<void> {
   await useNitroApp().hooks.callHook('auth:signed-in', evidence);
 
   // The returned row includes what the hook changed, e.g. a newly granted isAdmin.
