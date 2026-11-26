@@ -163,7 +163,12 @@ jobs:
           if node "$CLI" remove auth-password --kit "$GITHUB_WORKSPACE"; then exit 1; fi
           node "$CLI" remove auth-2fa,auth-password --kit "$GITHUB_WORKSPACE"
           commit "remove password"
+          test ! -d layers/auth-2fa
           test ! -d layers/auth-password
+          # Email transport is selectable and remains installed until explicitly removed.
+          test -d layers/email
+          node "$CLI" remove email --kit "$GITHUB_WORKSPACE"
+          commit "remove email"
           test ! -d layers/email
 
       - name: Remove Web Security while keeping server modules
