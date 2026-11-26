@@ -64,7 +64,7 @@
                   <MoonIcon
                     class="absolute size-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
                   />
-                  <span class="sr-only">Toggle theme</span>
+                  <span class="sr-only">{{ $t('common.toggle_theme') }}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -79,10 +79,7 @@
               :animate="{ opacity: 1, scale: 1 }"
               :transition="{ duration: 0.5, delay: 0.3 }"
             >
-              <Button
-                size="sm"
-                @click="navigateTo(localeSectionLink('contact'))"
-              >
+              <Button size="sm" @click="navigateTo(localeSectionLink('contact'))">
                 {{ $t('cta.primary') }}
                 <ArrowRight
                   class="ml-1.5 size-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
@@ -107,7 +104,7 @@
                   <MoonIcon
                     class="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
                   />
-                  <span class="sr-only">Toggle theme</span>
+                  <span class="sr-only">{{ $t('common.toggle_theme') }}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -119,7 +116,7 @@
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Toggle menu"
+              :aria-label="$t('common.toggle_menu')"
               @click="isMobileMenuOpen = !isMobileMenuOpen"
             >
               <X v-if="isMobileMenuOpen" class="size-5" />
@@ -383,7 +380,7 @@
                     class="text-[13px] text-muted-foreground transition-colors duration-200 hover:text-foreground"
                   >
                     <MailIcon class="mr-2 inline-block size-4" />
-                    Email
+                    {{ $t('common.email') }}
                   </a>
                 </li>
                 <li>

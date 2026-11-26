@@ -57,7 +57,7 @@ function handleDismiss() {
         )"
         @click="handleDismiss"
       >
-        <span class="sr-only">Dismiss</span>
+        <span class="sr-only">{{ $t('common.dismiss') }}</span>
         <X class="h-4 w-4" />
       </button>
     </div>

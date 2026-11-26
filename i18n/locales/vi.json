@@ -19,12 +19,52 @@
     "copy": {
       "success": "Đã sao chép vào bảng nhớ tạm"
     },
-    "back": "Quay lại"
+    "back": "Quay lại",
+    "home": "Trang chủ",
+    "close": "Đóng",
+    "cancel": "Hủy",
+    "dismiss": "Bỏ qua",
+    "delete": "Xóa",
+    "loading": "Đang tải",
+    "loading_ellipsis": "Đang tải...",
+    "toggle_theme": "Đổi giao diện",
+    "toggle_menu": "Đóng/mở menu",
+    "toggle_sidebar": "Đóng/mở thanh bên",
+    "toggle": "Đóng/mở",
+    "sidebar": "Thanh bên",
+    "mobile_sidebar_description": "Hiển thị thanh bên trên thiết bị di động.",
+    "breadcrumb": "Đường dẫn điều hướng",
+    "more": "Thêm",
+    "next_slide": "Trang chiếu tiếp theo",
+    "previous_slide": "Trang chiếu trước",
+    "more_pages": "Thêm trang",
+    "first_page": "Đầu",
+    "last_page": "Cuối",
+    "step_in_progress": "Đang thực hiện bước này",
+    "command_palette": "Bảng lệnh",
+    "command_palette_description": "Tìm lệnh để chạy...",
+    "on_this_page": "Trên trang này",
+    "notifications": "Thông báo",
+    "email": "Email"
   },
   "customizer": {
     "radius": "Bán kính",
     "title": "Tùy chỉnh",
-    "prompt": "Chọn phong cách và màu sắc cho trang web."
+    "prompt": "Chọn phong cách và màu sắc cho trang web.",
+    "colors": {
+      "zinc": "Xám kẽm",
+      "slate": "Xám đá phiến",
+      "stone": "Xám đá",
+      "gray": "Xám",
+      "neutral": "Trung tính",
+      "red": "Đỏ",
+      "rose": "Hồng",
+      "orange": "Cam",
+      "green": "Xanh lá",
+      "blue": "Xanh dương",
+      "yellow": "Vàng",
+      "violet": "Tím"
+    }
   },
   "cta": {
     "primary": "Bắt đầu ngay"
@@ -49,14 +89,53 @@
     "title": "Tìm kiếm..."
   },
   "errors": {
-    "no_result": "Không tìm thấy kết quả."
+    "no_result": "Không tìm thấy kết quả.",
+    "page_not_found": "Không tìm thấy trang",
+    "page_not_found_description": "Trang bạn đang tìm không tồn tại.",
+    "unexpected": "Đã xảy ra lỗi",
+    "unexpected_description": "Vui lòng thử lại hoặc quay về trang chủ.",
+    "invalid_field": "Vui lòng kiểm tra trường này.",
+    "invalid_form": "Vui lòng sửa các lỗi trong biểu mẫu."
   },
   "data_table": {
     "columns": "Cột",
     "next": "Tiếp",
     "previous": "Trước",
     "reload": "Tải lại",
-    "rows_selected": "Đã chọn {selected} trên {total} hàng"
+    "rows_selected": "Đã chọn {selected} trên {total} hàng",
+    "actions": "Thao tác",
+    "open_menu": "Mở menu",
+    "select_all": "Chọn tất cả",
+    "select_row": "Chọn hàng",
+    "edit": "Sửa"
   },
-  "no_results_description": "Hãy thử điều chỉnh tìm kiếm hoặc bộ lọc để tìm nội dung bạn cần."
+  "no_results_description": "Hãy thử điều chỉnh tìm kiếm hoặc bộ lọc để tìm nội dung bạn cần.",
+  "connection": {
+    "offline": "Bạn đang ngoại tuyến",
+    "offline_description": "Một số tính năng có thể không hoạt động.",
+    "online": "Bạn đã kết nối lại",
+    "online_description": "Tất cả tính năng hiện đã sẵn sàng."
+  },
+  "home": {
+    "description": "Mẫu khởi tạo Nuxt 4"
+  },
+  "carousel": {
+    "label": "Băng chuyền",
+    "slide": "Trang chiếu"
+  },
+  "calendar": {
+    "label": "Lịch",
+    "month": "Tháng",
+    "year": "Năm",
+    "next_month": "Tháng tiếp theo",
+    "previous_month": "Tháng trước"
+  },
+  "pagination": {
+    "label": "Phân trang",
+    "page": "Trang {page}",
+    "first": "Trang đầu",
+    "last": "Trang cuối",
+    "next": "Trang tiếp theo",
+    "previous": "Trang trước"
+  }
 }

@@ -19,12 +19,52 @@
     "copy": {
       "success": "Copied to clipboard"
     },
-    "back": "Back"
+    "back": "Back",
+    "home": "Home",
+    "close": "Close",
+    "cancel": "Cancel",
+    "dismiss": "Dismiss",
+    "delete": "Delete",
+    "loading": "Loading",
+    "loading_ellipsis": "Loading...",
+    "toggle_theme": "Toggle theme",
+    "toggle_menu": "Toggle menu",
+    "toggle_sidebar": "Toggle Sidebar",
+    "toggle": "Toggle",
+    "sidebar": "Sidebar",
+    "mobile_sidebar_description": "Displays the mobile sidebar.",
+    "breadcrumb": "Breadcrumb",
+    "more": "More",
+    "next_slide": "Next Slide",
+    "previous_slide": "Previous Slide",
+    "more_pages": "More pages",
+    "first_page": "First",
+    "last_page": "Last",
+    "step_in_progress": "Step in progress",
+    "command_palette": "Command Palette",
+    "command_palette_description": "Search for a command to run...",
+    "on_this_page": "On this page",
+    "notifications": "Notifications",
+    "email": "Email"
   },
   "customizer": {
     "radius": "Radius",
     "title": "Customize",
-    "prompt": "Pick a style and color for the site."
+    "prompt": "Pick a style and color for the site.",
+    "colors": {
+      "zinc": "Zinc",
+      "slate": "Slate",
+      "stone": "Stone",
+      "gray": "Gray",
+      "neutral": "Neutral",
+      "red": "Red",
+      "rose": "Rose",
+      "orange": "Orange",
+      "green": "Green",
+      "blue": "Blue",
+      "yellow": "Yellow",
+      "violet": "Violet"
+    }
   },
   "cta": {
     "primary": "Get Started"
@@ -49,14 +89,53 @@
     "title": "Search..."
   },
   "errors": {
-    "no_result": "No results found."
+    "no_result": "No results found.",
+    "page_not_found": "Page not found",
+    "page_not_found_description": "Whoops, you've ventured off the map. The page you're looking for doesn't exist.",
+    "unexpected": "Something went wrong",
+    "unexpected_description": "Please try again or return to the home page.",
+    "invalid_field": "Please check this field.",
+    "invalid_form": "Please fix the form errors."
   },
   "data_table": {
     "columns": "Columns",
     "next": "Next",
     "previous": "Previous",
     "reload": "Reload",
-    "rows_selected": "{selected} of {total} rows selected"
+    "rows_selected": "{selected} of {total} rows selected",
+    "actions": "Actions",
+    "open_menu": "Open menu",
+    "select_all": "Select all",
+    "select_row": "Select row",
+    "edit": "Edit"
   },
-  "no_results_description": "Try adjusting your search or filters to find what you need."
+  "no_results_description": "Try adjusting your search or filters to find what you need.",
+  "connection": {
+    "offline": "You're offline",
+    "offline_description": "Some features may be unavailable.",
+    "online": "You're back online",
+    "online_description": "All features are now available."
+  },
+  "home": {
+    "description": "A Nuxt 4 starter template"
+  },
+  "carousel": {
+    "label": "Carousel",
+    "slide": "Slide"
+  },
+  "calendar": {
+    "label": "Calendar",
+    "month": "Month",
+    "year": "Year",
+    "next_month": "Next month",
+    "previous_month": "Previous month"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "page": "Page {page}",
+    "first": "First page",
+    "last": "Last page",
+    "next": "Next page",
+    "previous": "Previous page"
+  }
 }

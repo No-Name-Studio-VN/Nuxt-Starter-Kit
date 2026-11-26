@@ -24,7 +24,7 @@
             >
               <CheckIcon v-if="theme === color" :size="16" class="text-white" />
             </span>
-            <span class="text-xs capitalize">{{ color }}</span>
+            <span class="text-xs capitalize">{{ $t(`customizer.colors.${color}`) }}</span>
           </Button>
         </template>
       </div>

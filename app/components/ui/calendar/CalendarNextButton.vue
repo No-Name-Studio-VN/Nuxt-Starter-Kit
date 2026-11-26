@@ -17,6 +17,7 @@ const forwardedProps = useForwardProps(delegatedProps)
 <template>
   <CalendarNext
     data-slot="calendar-next-button"
+    :aria-label="$t('calendar.next_month')"
     :class="cn(
       buttonVariants({ variant: 'outline' }),
       'size-7 bg-transparent p-0 opacity-50 hover:opacity-100',

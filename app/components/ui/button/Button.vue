@@ -19,7 +19,6 @@ interface Props extends PrimitiveProps {
 const props = withDefaults(defineProps<Props>(), {
   as: 'button',
   isLoading: false,
-  loadingLabel: 'Loading',
   disabled: false,
 })
 

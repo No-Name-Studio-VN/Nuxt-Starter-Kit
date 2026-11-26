@@ -17,9 +17,9 @@
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 
-withDefaults(defineProps<{ message?: string }>(), {
-  message: 'Loading...',
-});
+const props = defineProps<{ message?: string }>();
+const { t } = useI18n();
+const message = computed(() => props.message ?? t('common.loading_ellipsis'));
 
 defineOptions({
   inheritAttrs: false,

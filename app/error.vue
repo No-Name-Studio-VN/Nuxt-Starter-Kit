@@ -3,10 +3,12 @@ import { motion } from 'motion-v';
 import { ArrowLeft } from '@lucide/vue';
 
 const error = useError();
+const isNotFound = computed(() => error.value?.statusCode === 404);
+const localePath = useAppLocalePath();
 
 const handleError = () => {
   clearError({
-    redirect: '/',
+    redirect: localePath('/') || '/',
   });
 };
 </script>
@@ -38,15 +40,17 @@ const handleError = () => {
           v-if="error"
           class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl text-center"
         >
-          {{ error.message }}
+          {{ $t(isNotFound ? 'errors.page_not_found' : 'errors.unexpected') }}
         </h2>
         <p class="text-lg text-muted-foreground text-center">
-          Whoops, you've ventured off the map. The page you're looking for doesn't exist.
+          {{
+            $t(isNotFound ? 'errors.page_not_found_description' : 'errors.unexpected_description')
+          }}
         </p>
         <div class="mt-4 flex items-center justify-center gap-4">
           <Button @click="handleError">
             <ArrowLeft class="size-4" />
-            Go Back Home
+            {{ $t('common.go_home') }}
           </Button>
         </div>
       </MaxWidthWrapper>

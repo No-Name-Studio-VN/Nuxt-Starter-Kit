@@ -16,17 +16,20 @@ import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'vue-sonner';
 
 const isOnline = useOnline();
+const { t, locale } = useI18n();
+const offlineToastId = 'connection-offline';
 
-watch(isOnline, (online, wasOnline) => {
+watch([isOnline, locale], ([online], [wasOnline]) => {
   if (!online) {
-    toast.warning("You're offline", {
-      description: 'Some features may be unavailable.',
+    toast.warning(t('connection.offline'), {
+      id: offlineToastId,
+      description: t('connection.offline_description'),
       duration: Infinity,
     });
-  } else if (online && !wasOnline) {
-    toast.dismiss();
-    toast.success("You're back online", {
-      description: 'All features are now available.',
+  } else if (!wasOnline) {
+    toast.dismiss(offlineToastId);
+    toast.success(t('connection.online'), {
+      description: t('connection.online_description'),
       duration: 3000,
     });
   }

@@ -21,6 +21,7 @@ const delegatedProps = reactiveOmit(props, 'class', 'size', 'isActive')
 <template>
   <PaginationListItem
     data-slot="pagination-item"
+    :aria-label="$t('pagination.page', { page: value })"
     v-bind="delegatedProps"
     :class="cn(
       buttonVariants({

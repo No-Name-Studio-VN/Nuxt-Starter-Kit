@@ -12,7 +12,7 @@ const { orientation } = useCarousel()
   <div
     data-slot="carousel-item"
     role="group"
-    aria-roledescription="slide"
+    :aria-roledescription="$t('carousel.slide')"
     :class="cn(
       'min-w-0 shrink-0 grow-0 basis-full',
       orientation === 'horizontal' ? 'pl-4' : 'pt-4',

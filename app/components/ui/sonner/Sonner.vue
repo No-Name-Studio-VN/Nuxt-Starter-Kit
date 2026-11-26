@@ -8,6 +8,8 @@ const props = defineProps<ToasterProps>()
   <Sonner
     class="toaster group"
     v-bind="props"
+    :container-aria-label="props.containerAriaLabel ?? $t('common.notifications')"
+    :toast-options="{ closeButtonAriaLabel: $t('common.close'), ...props.toastOptions }"
     :style="{
       '--normal-bg': 'var(--popover)',
       '--normal-text': 'var(--popover-foreground)',
