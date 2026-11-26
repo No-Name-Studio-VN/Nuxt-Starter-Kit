@@ -31,6 +31,11 @@ import { pathExists } from '../util/fs';
 import { runInit } from './init';
 import { runInspect } from './inspect';
 import { runModuleChange } from './modules';
+import {
+  MAX_PROJECT_PATCH_BYTES,
+  prepareProjectComparison,
+  projectFilePatch,
+} from './projectComparison';
 import { runResolve } from './resolve';
 import { runUpgrade } from './upgrade';
 
@@ -168,11 +173,32 @@ export async function modulesCommand(args: ParsedArgs<typeof listArgs>): Promise
 
 export async function inspectCommand(args: ParsedArgs<typeof inspectArgs>): Promise<number> {
   const projectRoot = resolve(args.dir);
+  const { file, 'baseline-dir': baseline, 'max-bytes': limit } = args;
+  if ((file !== undefined || limit !== undefined) && !baseline)
+    throw new CliError('A file comparison requires --baseline-dir.');
+  if (baseline && (!args.json || args.added))
+    throw new CliError('A baseline requires --json without --added.');
+  if (baseline && file !== undefined) {
+    const maxBytes = limit === undefined ? MAX_PROJECT_PATCH_BYTES : Number(limit);
+    if (!Number.isInteger(maxBytes) || maxBytes < 0 || maxBytes > MAX_PROJECT_PATCH_BYTES) {
+      throw new CliError(
+        `--max-bytes must be an integer between 0 and ${MAX_PROJECT_PATCH_BYTES}.`,
+      );
+    }
+    printJson(await projectFilePatch(projectRoot, resolve(baseline), file, maxBytes));
+    return 0;
+  }
+  if (baseline && !args.kit)
+    throw new CliError('Preparing a baseline requires a local --kit checkout.');
   const state = await readState(projectRoot);
   const source = kitSource(args, state.kit);
-  if (source.kind === 'local') await resolveCommit(source);
+  if (!baseline && source.kind === 'local') await resolveCommit(source);
   const kit = await openKit(source, state.commit, state.kit);
   try {
+    if (baseline) {
+      printJson(await prepareProjectComparison(projectRoot, resolve(baseline), kit, state));
+      return 0;
+    }
     const report = await runInspect({ projectRoot, kit, added: args.added });
     if (args.json) printInspectJson(report);
     else printInspect(report);

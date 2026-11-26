@@ -84,6 +84,18 @@ export const listArgs = {
 
 export const inspectArgs = {
   ...projectArgs,
+  'baseline-dir': {
+    type: 'string',
+    description: 'Use a private scratch directory outside the project (requires JSON)',
+  },
+  file: {
+    type: 'string',
+    description: 'Compare one project-relative file using a prepared baseline',
+  },
+  'max-bytes': {
+    type: 'string',
+    description: 'Maximum patch bytes (default and upper limit: 1500000)',
+  },
   added: {
     type: 'boolean',
     description: 'Include files added outside the kit render (requires git)',

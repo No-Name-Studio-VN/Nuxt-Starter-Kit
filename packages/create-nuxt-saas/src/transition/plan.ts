@@ -1,10 +1,10 @@
-import { lstat, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { CliError } from '../errors';
 import { mergeFiles } from '../git/mergeFile';
 import type { Tree, TreeFile } from '../render/render';
-import { hasSymbolicLink } from '../util/fs';
+import { readRegularFile } from '../util/fs';
 import { resolveInside } from '../util/paths';
 import { isProtected } from './protected';
 
@@ -36,18 +36,8 @@ export function equal(left: TreeFile, right: TreeFile): boolean {
 }
 
 export async function readUserFile(root: string, path: string): Promise<TreeFile | null | 'owned'> {
-  if (await hasSymbolicLink(root, path)) return 'owned';
-  try {
-    if (!(await lstat(path)).isFile()) return 'owned';
-    const content = await readFile(path);
-    return { content, binary: content.includes(0) };
-  } catch (error) {
-    if (error instanceof Error && 'code' in error) {
-      if (error.code === 'ENOENT') return null;
-      if (error.code === 'ENOTDIR') return 'owned';
-    }
-    throw error;
-  }
+  const content = await readRegularFile(root, path);
+  return Buffer.isBuffer(content) ? { content, binary: content.includes(0) } : content;
 }
 
 async function merge(

@@ -5,7 +5,7 @@ export function toPosixPath(value: string): string {
   return value.split(sep).join('/');
 }
 
-function isInside(parent: string, candidate: string): boolean {
+export function isInside(parent: string, candidate: string): boolean {
   const path = relative(parent, candidate);
   return path === '' || (!path.startsWith(`..${sep}`) && path !== '..' && !isAbsolute(path));
 }

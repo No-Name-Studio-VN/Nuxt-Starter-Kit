@@ -1,6 +1,7 @@
-import { readFile, rm, stat, symlink, unlink } from 'node:fs/promises';
+import { mkdir, readFile, rm, stat, symlink, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { main } from '../../src/cli';
 import { runInit } from '../../src/commands/init';
 import { runInspect, type InspectReport } from '../../src/commands/inspect';
 import { DEFAULT_USER_OWNED, readKitConfig } from '../../src/kit/config';
@@ -54,6 +55,166 @@ function inspect() {
 function statusOf(report: InspectReport, path: string) {
   return report.files.find((file) => file.path === path);
 }
+
+async function invokeComparison(baseline: string, args: string[]) {
+  const output = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+  try {
+    const code = await main([
+      'inspect',
+      '--json',
+      '--dir',
+      projectRoot,
+      '--baseline-dir',
+      baseline,
+      ...args,
+    ]);
+    const text = output.mock.calls.map(([line]) => String(line)).join('');
+    const report: unknown = text ? JSON.parse(text) : null;
+    return { code, report };
+  } finally {
+    output.mockRestore();
+  }
+}
+
+async function comparison(...args: string[]): Promise<unknown> {
+  const { code, report } = await invokeComparison(join(parent, 'baseline'), args);
+  expect(code, JSON.stringify(report)).toBe(0);
+  return report;
+}
+
+async function prepareComparison(): Promise<void> {
+  await mkdir(join(parent, 'baseline'), { mode: 0o700 });
+  expect(await comparison('--kit', fixture.root)).toEqual({
+    schema: 1,
+    commit: fixture.v1,
+    projectComparison: true,
+  });
+}
+
+function patch(path: string, ...args: string[]) {
+  return comparison(`--file=${path}`, ...args);
+}
+
+describe('project comparison', () => {
+  it('uses the installed render and reads the selected uncommitted file on each request', async () => {
+    await init();
+    await prepareComparison();
+    await writeTextFile(join(projectRoot, homePath), '<template>uncommitted</template>\n');
+    expect(await patch(homePath)).toMatchObject({
+      schema: 1,
+      path: homePath,
+      status: 'text',
+      patch: expect.stringContaining('+<template>uncommitted</template>'),
+    });
+    await writeTextFile(join(projectRoot, homePath), '<template>newest</template>\n');
+    const updated = await patch(homePath);
+    expect(updated).toMatchObject({
+      status: 'text',
+      patch: expect.stringContaining('-  <h1>Home v1</h1>'),
+    });
+    expect(updated).toMatchObject({
+      patch: expect.stringContaining('+<template>newest</template>'),
+    });
+    expect(updated).not.toMatchObject({ patch: expect.stringContaining('Home v2') });
+  });
+
+  it('shows the rendered identity and modules for a deleted generated README', async () => {
+    await init();
+    await prepareComparison();
+    await unlink(join(projectRoot, 'README.md'));
+    const result = await patch('README.md');
+    expect(result).toMatchObject({
+      path: 'README.md',
+      status: 'text',
+      patch: expect.stringContaining('+++ /dev/null'),
+    });
+    expect(result).toMatchObject({ patch: expect.stringContaining('-# my-project') });
+    expect(result).toMatchObject({ patch: expect.stringContaining('-A user-owned project') });
+    expect(result).toMatchObject({ patch: expect.stringContaining('**Beta**') });
+    expect(result).not.toMatchObject({ patch: expect.stringContaining('{{modules}}') });
+  });
+
+  it('does not create baseline files inside the project', async () => {
+    await init();
+    const result = await invokeComparison(projectRoot, ['--kit', fixture.root]);
+    expect(result).toMatchObject({ code: 1, report: { error: { kind: 'expected' } } });
+    await expect(stat(join(projectRoot, 'entries'))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('compares substituted package metadata, not the raw kit package', async () => {
+    await init();
+    await prepareComparison();
+    const path = join(projectRoot, 'package.json');
+    const installed = await readFile(path, 'utf8');
+    await writeTextFile(
+      path,
+      installed.replace('"name": "my-project"', '"name": "renamed-project"'),
+    );
+    const result = await patch('package.json');
+    expect(result).toMatchObject({
+      path: 'package.json',
+      status: 'text',
+      patch: expect.stringContaining('-  "name": "my-project",'),
+    });
+    expect(result).toMatchObject({
+      patch: expect.stringContaining('+  "name": "renamed-project",'),
+    });
+  });
+
+  it('does not substitute an adjacent file or diff a path outside the baseline', async () => {
+    await init(['beta', 'docs']);
+    await prepareComparison();
+    await writeTextFile(join(projectRoot, 'untracked.txt'), 'not a baseline file\n');
+    expect(await patch('untracked.txt')).toEqual({
+      schema: 1,
+      path: 'untracked.txt',
+      status: 'missing',
+    });
+    expect(await patch(homePath)).toEqual({ schema: 1, path: homePath, status: 'unchanged' });
+    expect(await patch('content/hello.md')).toMatchObject({ status: 'unavailable' });
+    expect(await patch('../outside.txt')).toMatchObject({ status: 'unavailable' });
+    expect(await patch('/etc/hosts')).toMatchObject({ status: 'unavailable' });
+    expect(await patch('app/pages/../pages/index.vue')).toMatchObject({ status: 'unavailable' });
+  });
+
+  it('refuses both leaf and ancestor symlinks, including dangling links', async () => {
+    await init();
+    await prepareComparison();
+    await unlink(join(projectRoot, homePath));
+    await symlink(join(parent, 'missing'), join(projectRoot, homePath));
+    expect(await patch(homePath)).toMatchObject({ status: 'unavailable' });
+    await rm(join(projectRoot, 'app/pages'), { recursive: true });
+    await symlink(parent, join(projectRoot, 'app/pages'));
+    await writeTextFile(join(parent, 'index.vue'), 'outside the project');
+    expect(await patch(homePath)).toMatchObject({ status: 'unavailable' });
+  });
+
+  it('summarizes binary files and refuses oversized input and patch output', async () => {
+    await init();
+    await prepareComparison();
+    expect(await patch('public/logo.png')).toEqual({
+      schema: 1,
+      path: 'public/logo.png',
+      status: 'binary',
+    });
+    await writeTextFile(join(projectRoot, homePath), 'x'.repeat(1_500_001));
+    expect(await patch(homePath)).toEqual({ schema: 1, path: homePath, status: 'tooLarge' });
+    await writeTextFile(
+      join(projectRoot, homePath),
+      'small enough to read but the patch cannot fit\n',
+    );
+    expect(await patch(homePath, '--max-bytes', '32')).toEqual({
+      schema: 1,
+      path: homePath,
+      status: 'tooLarge',
+    });
+    expect(await patch(homePath, '--max-bytes', '0')).toEqual({
+      schema: 1,
+      path: homePath,
+      status: 'tooLarge',
+    });
+  });
+});
 
 describe('readKitConfig', () => {
   it('defaults userOwned when kit.json has none', async () => {
