@@ -1,3 +1,4 @@
+import type { InitReport } from '../commands/init';
 import type { InspectReport } from '../commands/inspect';
 import type { KitModule } from './modules';
 import type { ChangeKind } from '../transition/plan';
@@ -147,7 +148,10 @@ export interface JsonModulesReport {
 
 export type JsonInspectReport = { schema: typeof JSON_SCHEMA } & InspectReport;
 
+export type JsonInitReport = { schema: typeof JSON_SCHEMA } & InitReport;
+
 export type JsonDocument =
+  | JsonInitReport
   | JsonTransitionReport
   | JsonUndoReport
   | JsonBackupList

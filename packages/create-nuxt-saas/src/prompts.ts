@@ -18,7 +18,7 @@ export function parseModules(value: string): string[] {
 export async function promptInit(args: InitOptions, kit: Pick<KitSnapshot, 'modules' | 'groups'>) {
   let dir = args.dir;
   if (!dir) {
-    if (args.yes) dir = DEFAULT_PROJECT_NAME;
+    if (args.yes || args.json) dir = DEFAULT_PROJECT_NAME;
     else {
       const name = await text({
         message: 'Project name?',
@@ -30,7 +30,7 @@ export async function promptInit(args: InitOptions, kit: Pick<KitSnapshot, 'modu
     }
   }
   if (args.modules !== undefined) return { dir, requested: parseModules(args.modules) };
-  if (args.yes || !process.stdin.isTTY) return { dir, requested: [] };
+  if (args.yes || args.json || !process.stdin.isTTY) return { dir, requested: [] };
 
   const sections = groupModules(kit.modules, kit.groups);
   if (sections.length === 0) return { dir, requested: [] };
