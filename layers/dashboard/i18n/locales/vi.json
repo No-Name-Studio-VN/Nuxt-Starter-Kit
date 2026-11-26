@@ -1,10 +1,20 @@
 {
-  "common": {
-    "home": "Trang chủ",
-    "toggle_sidebar": "Ẩn hoặc hiện thanh bên"
-  },
   "nav": {
     "open_breadcrumb": "Hiện đường dẫn điều hướng",
-    "quick_search": "Tìm kiếm nhanh"
+    "quick_search": "Tìm kiếm nhanh",
+    "discover": "Khám phá",
+    "search": "Tìm kiếm",
+    "support": "Hỗ trợ",
+    "help_support": "Trợ giúp và hỗ trợ",
+    "platform": "Nền tảng",
+    "quick_search_placeholder": "Tìm tính năng...",
+    "search_features": "Tính năng",
+    "search_for": "Tìm \"{query}\"",
+    "search_no_results": "Không có tính năng phù hợp",
+    "search_hint": "Thử từ khóa khác hoặc tìm trực tiếp trong thư viện."
+  },
+  "dashboard": {
+    "title": "Bảng điều khiển",
+    "description": "Đây là trang bảng điều khiển mẫu. Bạn có thể tùy chỉnh để hiển thị thông tin, số liệu hoặc liên kết nhanh cho quản trị viên. Hãy cân nhắc thêm tiện ích, biểu đồ hoặc bản tóm tắt về dữ liệu và hiệu suất của ứng dụng."
   }
 }

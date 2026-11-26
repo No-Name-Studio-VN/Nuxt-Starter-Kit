@@ -32,9 +32,14 @@ const handleNavigationClick = () => {
       <SidebarMenu>
         <SidebarMenuItem v-for="item in items" :key="item.title">
           <SidebarMenuButton as-child size="sm">
-            <nuxt-link :to="item.url ? localePath(item.url) || item.url : undefined" @click="handleNavigationClick">
+            <nuxt-link
+              :to="item.url ? localePath(item.url) || item.url : undefined"
+              @click="handleNavigationClick"
+            >
               <component :is="item.icon" />
-              <span>{{ item.titleKey ? $t(item.titleKey) : item.title }}</span>
+              <span>{{
+                item.titleKey ? $t(item.titleKey) : $te(item.title) ? $t(item.title) : item.title
+              }}</span>
             </nuxt-link>
           </SidebarMenuButton>
         </SidebarMenuItem>

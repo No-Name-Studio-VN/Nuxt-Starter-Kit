@@ -7,6 +7,12 @@ import { useHotSearch } from '#layers/dashboard/app/composables/useHotSearch';
 
 const { isOpen: hotSearchOpen, toggleIsOpen, setIsOpen } = useHotSearch();
 const searchQuery = ref('');
+const { t, te, locale } = useI18n();
+
+function getFeatureTitle(feature: (typeof features.value)[number]) {
+  const key = feature.titleKey ?? feature.title;
+  return te(key) ? t(key) : feature.title;
+}
 
 const guardContext = useNavGuardContext();
 const features = computed(() =>
@@ -18,7 +24,7 @@ const features = computed(() =>
 const filteredFeatures = computed(() => {
   if (!searchQuery.value) return features.value;
   const query = searchQuery.value.toLowerCase();
-  return features.value.filter((feature) => feature.title.toLowerCase().includes(query));
+  return features.value.filter((feature) => getFeatureTitle(feature).toLowerCase().includes(query));
 });
 
 const handleSelectFeature = (feature: (typeof features.value)[number]) => {
@@ -50,25 +56,25 @@ watch([Meta_K, Ctrl_K], (v) => {
 <template>
   <Command>
     <CommandDialog v-model:open="hotSearchOpen">
-      <CommandInput v-model="searchQuery" placeholder="Search features..." />
+      <CommandInput v-model="searchQuery" :placeholder="$t('nav.quick_search_placeholder')" />
       <CommandList>
         <template v-if="filteredFeatures.length > 0">
-          <CommandGroup heading="Features">
+          <CommandGroup :heading="t('nav.search_features')">
             <CommandItem
               v-for="(feature, i) in filteredFeatures"
-              :key="i"
+              :key="`${locale}-${i}`"
               :value="feature.url ?? feature.title"
               @select="() => handleSelectFeature(feature)"
             >
               <component :is="feature.icon" class="mr-2 size-4" />
-              <span>{{ feature.title }}</span>
+              <span>{{ getFeatureTitle(feature) }}</span>
             </CommandItem>
           </CommandGroup>
 
-          <CommandGroup v-if="searchQuery" heading="Search">
-            <CommandItem :value="'Search for ' + searchQuery" @select="handleSearchFallback">
+          <CommandGroup v-if="searchQuery" :heading="t('nav.search')">
+            <CommandItem :value="'search:' + searchQuery" @select="handleSearchFallback">
               <Search class="mr-2 size-4" />
-              <span>Search for "{{ searchQuery }}"</span>
+              <span>{{ t('nav.search_for', { query: searchQuery }) }}</span>
             </CommandItem>
           </CommandGroup>
         </template>
@@ -78,9 +84,9 @@ watch([Meta_K, Ctrl_K], (v) => {
             <EmptyMedia variant="icon">
               <Search class="size-5" />
             </EmptyMedia>
-            <EmptyTitle>No matching features</EmptyTitle>
+            <EmptyTitle>{{ $t('nav.search_no_results') }}</EmptyTitle>
             <EmptyDescription>
-              Try another keyword, or search the library directly.
+              {{ $t('nav.search_hint') }}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

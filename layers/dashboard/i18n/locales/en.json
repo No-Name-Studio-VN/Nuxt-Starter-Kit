@@ -1,10 +1,20 @@
 {
-  "common": {
-    "home": "Home",
-    "toggle_sidebar": "Toggle sidebar"
-  },
   "nav": {
     "open_breadcrumb": "Show breadcrumb navigation",
-    "quick_search": "Quick search"
+    "quick_search": "Quick search",
+    "discover": "Discover",
+    "search": "Search",
+    "support": "Support",
+    "help_support": "Help & Support",
+    "platform": "Platform",
+    "quick_search_placeholder": "Search features...",
+    "search_features": "Features",
+    "search_for": "Search for \"{query}\"",
+    "search_no_results": "No matching features",
+    "search_hint": "Try another keyword, or search the library directly."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "This is a placeholder dashboard page. You can customize this page to display relevant information, statistics, or quick links for your admin users. Consider adding widgets, charts, or summaries that provide insights into your application's data and performance."
   }
 }
