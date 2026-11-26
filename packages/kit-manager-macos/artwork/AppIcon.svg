@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img">
+  <title>Kit Manager</title>
+  <defs>
+    <linearGradient id="tile" x2="0.75" y2="1">
+      <stop stop-color="#223f47"/>
+      <stop offset="1" stop-color="#102729"/>
+    </linearGradient>
+    <linearGradient id="lid" x2="0.5" y2="1">
+      <stop stop-color="#c7ffe6"/>
+      <stop offset="1" stop-color="#62e7ad"/>
+    </linearGradient>
+    <path id="layer" d="M57 92 Q53 90 57 87 L121 54 Q128 50 135 54 L199 87 Q203 90 199 92 L135 126 Q128 130 121 126 Z"/>
+  </defs>
+  <rect x="20" y="23" width="216" height="216" rx="49" fill="#081c20" opacity=".16"/>
+  <rect x="20" y="20" width="216" height="216" rx="49" fill="url(#tile)"/>
+  <use href="#layer" transform="translate(0 72)" fill="#2ba582"/>
+  <use href="#layer" transform="translate(0 39)" fill="#4ad49f"/>
+  <use href="#layer" transform="translate(0 6)" fill="url(#lid)"/>
+</svg>
