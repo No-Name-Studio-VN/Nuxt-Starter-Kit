@@ -65,6 +65,18 @@ function templateKeys(node: unknown): string[] {
   if (node.type === 4 && typeof node.content === 'string') {
     keys.push(...expressionKeys(node.content));
   }
+  if (node.type === 1 && node.tag === 'i18n-t' && Array.isArray(node.props)) {
+    for (const prop of node.props) {
+      if (
+        isRecord(prop) &&
+        prop.name === 'keypath' &&
+        isRecord(prop.value) &&
+        typeof prop.value.content === 'string'
+      ) {
+        keys.push(prop.value.content);
+      }
+    }
+  }
   for (const field of ['children', 'props']) {
     const children = node[field];
     if (Array.isArray(children)) {
@@ -75,6 +87,46 @@ function templateKeys(node: unknown): string[] {
     keys.push(...templateKeys(node[field]));
   }
   return keys;
+}
+
+// Product names, keyboard keys, and a sample KV key are not interface prose.
+const nonProse = new Set(['GitHub', 'X (Twitter)', 'Ctrl', 'K', 'feature_flags:config']);
+const copyAttributes = new Set([
+  'alt',
+  'aria-label',
+  'aria-description',
+  'aria-roledescription',
+  'description',
+  'empty-description',
+  'empty-title',
+  'heading',
+  'label',
+  'placeholder',
+  'search-placeholder',
+  'title',
+  'tooltip',
+]);
+
+function templateLiterals(node: unknown): string[] {
+  if (!isRecord(node)) return [];
+  const candidates: string[] = [];
+  if (node.type === 2 && typeof node.content === 'string') candidates.push(node.content);
+  if (
+    node.type === 6 &&
+    typeof node.name === 'string' &&
+    copyAttributes.has(node.name) &&
+    isRecord(node.value) &&
+    typeof node.value.content === 'string'
+  ) {
+    candidates.push(node.value.content);
+  }
+  const own = candidates
+    .map((text) => text.trim())
+    .filter((text) => /\p{L}/u.test(text) && !nonProse.has(text));
+  const descendants = [node.children, node.props].flatMap((children) =>
+    Array.isArray(children) ? children.flatMap(templateLiterals) : [],
+  );
+  return [...own, ...descendants];
 }
 
 function sourceKeys(source: string, filename: string): string[] {
@@ -130,6 +182,7 @@ function localeFile(entry: unknown): string {
 
 async function registeredMessages() {
   const config = await loadNuxtConfig({ cwd: root });
+  expect(config.modules).toContain('@nuxtjs/i18n');
   const layerDirectories = (await readdir(join(root, 'layers'), { withFileTypes: true }))
     .filter((entry) => entry.isDirectory())
     .map((entry) => join(root, 'layers', entry.name));
@@ -171,7 +224,74 @@ async function registeredMessages() {
   return { messages, files };
 }
 
+function catalogPlaceholders(
+  messages: Record<string, unknown>,
+  prefix = '',
+): Record<string, string[]> {
+  const entries: Record<string, string[]> = {};
+  for (const [key, value] of Object.entries(messages)) {
+    const path = `${prefix}${key}`;
+    if (isRecord(value)) {
+      Object.assign(entries, catalogPlaceholders(value, `${path}.`));
+    } else if (typeof value === 'string' && value.trim()) {
+      entries[path] = [
+        ...new Set(Array.from(value.matchAll(/\{([\w-]+)\}/g), (match) => match[1])),
+      ].sort();
+    } else {
+      throw new Error(`Empty or unsupported translation: ${path}`);
+    }
+  }
+  return entries;
+}
+
 describe('translation coverage', () => {
+  it('keeps i18n in the base dependencies rather than assigning it to an optional layer', async () => {
+    const pkg: unknown = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+    if (!isRecord(pkg) || !isRecord(pkg.dependencies)) throw new Error('Missing base dependencies');
+    expect(typeof pkg.dependencies['@nuxtjs/i18n']).toBe('string');
+
+    const layers = (await readdir(join(root, 'layers'), { withFileTypes: true })).filter((entry) =>
+      entry.isDirectory(),
+    );
+    for (const layer of layers) {
+      const path = join(root, 'layers', layer.name, 'module.json');
+      const manifest: unknown = JSON.parse(await readFile(path, 'utf8'));
+      if (!isRecord(manifest)) throw new Error(`Invalid layer manifest: ${path}`);
+      const claims: unknown[] = Array.isArray(manifest.dependencies) ? manifest.dependencies : [];
+      expect(claims, layer.name).not.toContain('@nuxtjs/i18n');
+    }
+  });
+
+  it('ships matching keys and interpolation arguments in each pair of locale catalogs', async () => {
+    const { files } = await registeredMessages();
+    const directories = new Set([...files].map((path) => dirname(path)));
+    for (const directory of directories) {
+      const catalogs = await Promise.all(
+        locales.map(async (locale) => {
+          const path = join(directory, `${locale}.json`);
+          expect(files.has(path), `Unregistered locale: ${relative(root, path)}`).toBe(true);
+          const messages: unknown = JSON.parse(await readFile(path, 'utf8'));
+          if (!isRecord(messages)) throw new Error(`Invalid locale catalog: ${path}`);
+          return catalogPlaceholders(messages);
+        }),
+      );
+      for (const catalog of catalogs.slice(1)) {
+        expect(catalog, relative(root, directory)).toEqual(catalogs[0]);
+      }
+    }
+  });
+
+  it('sources built-in Vue template copy from the locale catalogs', async () => {
+    const paths = await Promise.all(['app', 'layers'].map((dir) => sourceFiles(join(root, dir))));
+    const findings: string[] = [];
+    for (const file of paths.flat().filter((path) => path.endsWith('.vue'))) {
+      const { descriptor } = parse(await readFile(file, 'utf8'), { filename: file });
+      for (const literal of templateLiterals(descriptor.template?.ast)) {
+        findings.push(relative(root, file) + ': ' + literal);
+      }
+    }
+    expect(findings).toEqual([]);
+  });
   it('discovers both literal branches of conditional translation keys', () => {
     expect(expressionKeys("t(backup ? 'auth.backup' : 'auth.totp')").sort()).toEqual([
       'auth.backup',
