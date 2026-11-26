@@ -33,7 +33,7 @@ The app is ad-hoc signed and not notarized. If macOS blocks the first launch and
 
 ## Run your app
 
-Use Node.js 26+, Git, and pnpm 12.14.0 to follow along. After running the create command above, enter your project and install its dependencies:
+Use Node.js 26+, Git, and pnpm 12.23.0 to follow along. After running the create command above, enter your project and install its dependencies:
 
 ```bash
 cd my-app
