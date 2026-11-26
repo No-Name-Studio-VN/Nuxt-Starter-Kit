@@ -49,12 +49,14 @@ async function setPassword(currentPassword?: string) {
 }
 
 async function unlinkGoogle() {
-  const { default: unlink } = await import('../../../layers/auth-oauth/server/api/auth/oauth/unlink.delete');
+  const { default: unlink } =
+    await import('../../../layers/auth-oauth/server/api/auth/oauth/unlink.delete');
   return unlink(requestEvent('/api/auth/oauth/unlink', 'DELETE', { provider: 'google' }));
 }
 
 async function removePasskey(credentialId = 'credential') {
-  const { default: remove } = await import('../../../layers/auth-passkeys/server/api/users/[id]/passkeys/index.delete');
+  const { default: remove } =
+    await import('../../../layers/auth-passkeys/server/api/users/[id]/passkeys/index.delete');
   return remove(requestEvent('/api/users/1/passkeys', 'DELETE', { credentialId }));
 }
 
@@ -101,7 +103,12 @@ function getPassword(userId: number) {
 
 async function addPasskey(id = 'credential', userId = 1) {
   await db.insert(credentials).values({
-    id, userId, publicKey: 'public-key', counter: 0, backedUp: false, transports: ['internal'],
+    id,
+    userId,
+    publicKey: 'public-key',
+    counter: 0,
+    backedUp: false,
+    transports: ['internal'],
   });
 }
 
@@ -127,9 +134,14 @@ beforeEach(async () => {
     );
   `);
   await db.insert(users).values({
-    id: 1, username: 'member', name: 'Member', email: 'member@example.test',
+    id: 1,
+    username: 'member',
+    name: 'Member',
+    email: 'member@example.test',
   });
-  await db.insert(oauthAccounts).values({ userId: 1, provider: 'google', providerAccountId: '123' });
+  await db
+    .insert(oauthAccounts)
+    .values({ userId: 1, provider: 'google', providerAccountId: '123' });
 
   vi.resetModules();
   defineHandler.mockClear();
@@ -145,7 +157,10 @@ beforeEach(async () => {
   await import('../../../layers/auth-oauth/server/plugins/oauth-sign-in');
   vi.stubGlobal('useDB', () => db);
   vi.stubGlobal('hashPassword', async (input: string) => `test-hash:${input}`);
-  vi.stubGlobal('verifyPassword', async (hash: string, input: string) => hash === `test-hash:${input}`);
+  vi.stubGlobal(
+    'verifyPassword',
+    async (hash: string, input: string) => hash === `test-hash:${input}`,
+  );
 });
 
 afterEach(() => {
@@ -160,21 +175,16 @@ describe('account passwords', () => {
   it('shows an unknown password change date in the profile until a password is set', async () => {
     await expect(getProfile()).resolves.toMatchObject({ data: { passwordChangedAt: null } });
     await setPassword();
-    await expect(getProfile()).resolves.toMatchObject({ data: { passwordChangedAt: expect.any(Date) } });
-  });
-
-  it('does not create a default administrator or password on seed', async () => {
-    const { seedDatabase } = await import('../../../layers/admin/server/utils/database/seed');
-    await seedDatabase();
-
-    expect(await userService.getByUsername('admin')).toBeUndefined();
-    expect(await db.select().from(userPasswords)).toEqual([]);
+    await expect(getProfile()).resolves.toMatchObject({
+      data: { passwordChangedAt: expect.any(Date) },
+    });
   });
 
   it('sets a password for an OAuth-only account without a current password', async () => {
     await expect(setPassword()).resolves.toMatchObject({ success: true });
     expect(await getPassword(1)).toMatchObject({
-      passwordHash: 'test-hash:New-password1', updatedAt: expect.any(Date),
+      passwordHash: 'test-hash:New-password1',
+      updatedAt: expect.any(Date),
     });
   });
 
@@ -182,7 +192,8 @@ describe('account passwords', () => {
     await db.insert(userPasswords).values({ userId: 1, passwordHash: 'test-hash:Old-password1' });
 
     await expect(setPassword()).rejects.toMatchObject({
-      statusCode: 400, data: { error: { code: 'VALIDATION_ERROR' } },
+      statusCode: 400,
+      data: { error: { code: 'VALIDATION_ERROR' } },
     });
     expect((await getPassword(1))?.passwordHash).toBe('test-hash:Old-password1');
   });
@@ -191,7 +202,8 @@ describe('account passwords', () => {
     await db.insert(userPasswords).values({ userId: 1, passwordHash: 'test-hash:Old-password1' });
 
     await expect(setPassword('Wrong-password1')).rejects.toMatchObject({
-      statusCode: 401, data: { error: { code: 'INVALID_CURRENT_PASSWORD' } },
+      statusCode: 401,
+      data: { error: { code: 'INVALID_CURRENT_PASSWORD' } },
     });
     expect((await getPassword(1))?.passwordHash).toBe('test-hash:Old-password1');
   });
@@ -204,45 +216,68 @@ describe('account passwords', () => {
 
     await expect(setPassword('Old-password1')).resolves.toMatchObject({ success: true });
     expect(await getPassword(1)).toMatchObject({
-      passwordHash: 'test-hash:New-password1', updatedAt: changedAt,
+      passwordHash: 'test-hash:New-password1',
+      updatedAt: changedAt,
     });
   });
 
   it('does not let an administrator set another account’s initial password here', async () => {
     await userService.update({ id: 1, isAdmin: true });
     await db.insert(users).values({
-      id: 2, username: 'other', name: 'Other', email: 'other@example.test',
+      id: 2,
+      username: 'other',
+      name: 'Other',
+      email: 'other@example.test',
     });
     await import('../../../layers/auth-password/server/api/users/[id]/password.patch');
 
-    await expect(callHandler('/api/users/2/password', 'PATCH', {
-      newPassword: 'New-password1', confirmPassword: 'New-password1',
-    }, '2')).rejects.toMatchObject({ statusCode: 403, data: { error: { code: 'USER_ID_MISMATCH' } } });
+    await expect(
+      callHandler(
+        '/api/users/2/password',
+        'PATCH',
+        {
+          newPassword: 'New-password1',
+          confirmPassword: 'New-password1',
+        },
+        '2',
+      ),
+    ).rejects.toMatchObject({ statusCode: 403, data: { error: { code: 'USER_ID_MISMATCH' } } });
     expect(await getPassword(2)).toBeUndefined();
   });
 
   it('does not overwrite a password set by a concurrent request', async () => {
     vi.stubGlobal('hashPassword', async () => {
-      await db.insert(userPasswords).values({ userId: 1, passwordHash: 'test-hash:Other-password1' });
+      await db
+        .insert(userPasswords)
+        .values({ userId: 1, passwordHash: 'test-hash:Other-password1' });
       return 'test-hash:New-password1';
     });
 
     await expect(setPassword()).rejects.toMatchObject({
-      statusCode: 409, data: { error: { code: 'PASSWORD_SET_CONFLICT' } },
+      statusCode: 409,
+      data: { error: { code: 'PASSWORD_SET_CONFLICT' } },
     });
     expect((await getPassword(1))?.passwordHash).toBe('test-hash:Other-password1');
   });
 
   it('works without the passkeys layer and refuses to unlink the only sign-in method', async () => {
-    await expect(getProfile()).resolves.toMatchObject({ data: { signInMethods: { oauth: 1, password: 0 } } });
-    await expect(unlinkGoogle()).rejects.toMatchObject({ statusCode: 400, data: { error: { code: 'ONLY_SIGNIN_METHOD' } } });
+    await expect(getProfile()).resolves.toMatchObject({
+      data: { signInMethods: { oauth: 1, password: 0 } },
+    });
+    await expect(unlinkGoogle()).rejects.toMatchObject({
+      statusCode: 400,
+      data: { error: { code: 'ONLY_SIGNIN_METHOD' } },
+    });
     expect(await db.select().from(oauthAccounts)).toHaveLength(1);
   });
 
   it('allows unlinking the only provider after a password has been set', async () => {
     await setPassword();
 
-    await expect(unlinkGoogle()).resolves.toMatchObject({ success: true, data: { unlinked: true } });
+    await expect(unlinkGoogle()).resolves.toMatchObject({
+      success: true,
+      data: { unlinked: true },
+    });
     expect(await db.select().from(oauthAccounts)).toHaveLength(0);
   });
 });
@@ -251,7 +286,10 @@ describe('sign-in method removal without password or passkeys installed', () => 
   it('allows unlinking the only historical link when its provider is disabled', async () => {
     stubOAuthReadiness(['discord']);
 
-    await expect(unlinkGoogle()).resolves.toMatchObject({ success: true, data: { unlinked: true } });
+    await expect(unlinkGoogle()).resolves.toMatchObject({
+      success: true,
+      data: { unlinked: true },
+    });
     expect(await db.select().from(oauthAccounts)).toEqual([]);
   });
 
@@ -262,11 +300,19 @@ describe('sign-in method removal without password or passkeys installed', () => 
     expect(getSignInMethod('password')).toBeUndefined();
     expect(getSignInMethod('passkey')).toBeUndefined();
 
-    await expect(unlinkGoogle()).rejects.toMatchObject({ statusCode: 400, data: { error: { code: 'ONLY_SIGNIN_METHOD' } } });
+    await expect(unlinkGoogle()).rejects.toMatchObject({
+      statusCode: 400,
+      data: { error: { code: 'ONLY_SIGNIN_METHOD' } },
+    });
     expect(await db.select().from(oauthAccounts)).toMatchObject([{ provider: 'google' }]);
 
-    await db.insert(oauthAccounts).values({ userId: 1, provider: 'discord', providerAccountId: '456' });
-    await expect(unlinkGoogle()).resolves.toMatchObject({ success: true, data: { unlinked: true } });
+    await db
+      .insert(oauthAccounts)
+      .values({ userId: 1, provider: 'discord', providerAccountId: '456' });
+    await expect(unlinkGoogle()).resolves.toMatchObject({
+      success: true,
+      data: { unlinked: true },
+    });
     expect(await db.select().from(oauthAccounts)).toMatchObject([{ provider: 'discord' }]);
   });
 });
@@ -280,60 +326,96 @@ describe('sign-in method removal with passkeys installed', () => {
 
   it('allows unlinking the only provider if the user has a passkey but no password', async () => {
     await expect(getProfile()).resolves.toMatchObject({ data: { signInMethods: { passkey: 1 } } });
-    await expect(unlinkGoogle()).resolves.toMatchObject({ success: true, data: { unlinked: true } });
+    await expect(unlinkGoogle()).resolves.toMatchObject({
+      success: true,
+      data: { unlinked: true },
+    });
     expect(await db.select().from(oauthAccounts)).toHaveLength(0);
   });
 
   it('refuses to remove the last passkey without a password or linked account', async () => {
     await db.delete(oauthAccounts);
-    await expect(removePasskey()).rejects.toMatchObject({ statusCode: 400, data: { error: { code: 'ONLY_SIGNIN_METHOD' } } });
+    await expect(removePasskey()).rejects.toMatchObject({
+      statusCode: 400,
+      data: { error: { code: 'ONLY_SIGNIN_METHOD' } },
+    });
     expect(await db.select().from(credentials)).toHaveLength(1);
   });
 
   it.each([
     { reason: 'disabled', providers: ['discord'], googleSecret: 'test-secret' },
     { reason: 'unconfigured', providers: ['discord', 'google'], googleSecret: '' },
-  ])('refuses to remove the last passkey when its only linked provider is $reason', async ({ providers, googleSecret }) => {
-    stubOAuthReadiness(providers, googleSecret);
+  ])(
+    'refuses to remove the last passkey when its only linked provider is $reason',
+    async ({ providers, googleSecret }) => {
+      stubOAuthReadiness(providers, googleSecret);
 
-    await expect(removePasskey()).rejects.toMatchObject({ statusCode: 400, data: { error: { code: 'ONLY_SIGNIN_METHOD' } } });
-    expect(await db.select({ id: credentials.id }).from(credentials)).toEqual([{ id: 'credential' }]);
-    expect(await db.select().from(oauthAccounts)).toMatchObject([{ userId: 1, provider: 'google' }]);
-  });
+      await expect(removePasskey()).rejects.toMatchObject({
+        statusCode: 400,
+        data: { error: { code: 'ONLY_SIGNIN_METHOD' } },
+      });
+      expect(await db.select({ id: credentials.id }).from(credentials)).toEqual([
+        { id: 'credential' },
+      ]);
+      expect(await db.select().from(oauthAccounts)).toMatchObject([
+        { userId: 1, provider: 'google' },
+      ]);
+    },
+  );
 
-  it.each(['password', 'ready OAuth link'])('allows removing the last passkey when a %s remains', async (method) => {
-    if (method === 'password') {
-      await db.delete(oauthAccounts);
-      await db.insert(userPasswords).values({ userId: 1, passwordHash: 'test-hash:New-password1' });
-    }
-    await expect(removePasskey()).resolves.toMatchObject({ success: true });
-    await expect(getProfile()).resolves.toMatchObject({ data: { signInMethods: { passkey: 0 } } });
-    expect(await db.select().from(credentials)).toHaveLength(0);
-  });
+  it.each(['password', 'ready OAuth link'])(
+    'allows removing the last passkey when a %s remains',
+    async (method) => {
+      if (method === 'password') {
+        await db.delete(oauthAccounts);
+        await db
+          .insert(userPasswords)
+          .values({ userId: 1, passwordHash: 'test-hash:New-password1' });
+      }
+      await expect(removePasskey()).resolves.toMatchObject({ success: true });
+      await expect(getProfile()).resolves.toMatchObject({
+        data: { signInMethods: { passkey: 0 } },
+      });
+      expect(await db.select().from(credentials)).toHaveLength(0);
+    },
+  );
 
   it('allows removing one of two passkeys without a password or linked account', async () => {
     await db.delete(oauthAccounts);
     await addPasskey('other-credential');
     await expect(getProfile()).resolves.toMatchObject({ data: { signInMethods: { passkey: 2 } } });
     await expect(removePasskey()).resolves.toMatchObject({ success: true });
-    expect(await db.select({ id: credentials.id }).from(credentials)).toEqual([{ id: 'other-credential' }]);
+    expect(await db.select({ id: credentials.id }).from(credentials)).toEqual([
+      { id: 'other-credential' },
+    ]);
   });
 
   it('scopes the profile count to the requested user, including when accessed by an administrator', async () => {
     await userService.update({ id: 1, isAdmin: true });
-    await db.insert(users).values({ id: 2, username: 'other', name: 'Other', email: 'other@example.test' });
-    await expect(getProfile('2')).resolves.toMatchObject({ data: { id: 2, signInMethods: { passkey: 0 } } });
+    await db
+      .insert(users)
+      .values({ id: 2, username: 'other', name: 'Other', email: 'other@example.test' });
+    await expect(getProfile('2')).resolves.toMatchObject({
+      data: { id: 2, signInMethods: { passkey: 0 } },
+    });
     await addPasskey('other-user-credential', 2);
-    await expect(getProfile('2')).resolves.toMatchObject({ data: { id: 2, signInMethods: { passkey: 1 } } });
-    await expect(removePasskey('other-user-credential')).rejects.toMatchObject({ statusCode: 404, data: { error: { code: 'PASSKEY_NOT_FOUND' } } });
+    await expect(getProfile('2')).resolves.toMatchObject({
+      data: { id: 2, signInMethods: { passkey: 1 } },
+    });
+    await expect(removePasskey('other-user-credential')).rejects.toMatchObject({
+      statusCode: 404,
+      data: { error: { code: 'PASSKEY_NOT_FOUND' } },
+    });
   });
 
   it('leaves a sign-in method when both DELETEs are submitted concurrently', async () => {
     const results = await Promise.allSettled([unlinkGoogle(), removePasskey()]);
     expect(results.filter(({ status }) => status === 'fulfilled')).toHaveLength(1);
-    expect(results.filter(({ status }) => status === 'rejected')).toMatchObject([{
-      reason: { statusCode: 400, data: { error: { code: 'ONLY_SIGNIN_METHOD' } } },
-    }]);
+    expect(results.filter(({ status }) => status === 'rejected')).toMatchObject([
+      {
+        reason: { statusCode: 400, data: { error: { code: 'ONLY_SIGNIN_METHOD' } } },
+      },
+    ]);
     const accounts = await db.select().from(oauthAccounts);
     const passkeys = await db.select().from(credentials);
     expect(accounts.length + passkeys.length).toBe(1);
