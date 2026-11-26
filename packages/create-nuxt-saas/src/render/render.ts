@@ -37,7 +37,7 @@ export async function render(
   const drop: Claims = {
     dependencies: unselectedClaims('dependencies'),
     devDependencies: unselectedClaims('devDependencies'),
-    scripts: unselectedClaims('scripts'),
+    scripts: new Set([...config.excludeScripts, ...unselectedClaims('scripts')]),
   };
   const dropEnv = unselectedClaims('env');
   const dropBindings = unselectedClaims('bindings');

@@ -83,4 +83,27 @@ cp .env.example .env
 
 Fill in the required environment values, then run `pnpm db:generate` and `pnpm dev`. Issues and pull requests are welcome.
 
+### Tests
+
+`pnpm test` runs the kit’s Vitest and standalone Node checks without a browser or a fixture server. CLI tests run separately with `pnpm --filter create-nuxt-saas test`.
+
+The blog SSR checks need a local dev server with the test posts. In a disposable checkout, copy the fixtures into `content/` without overwriting existing posts, then start the dev server:
+
+```bash
+cp -Rn test/fixtures/blog-routes/content/. content/
+pnpm dev
+```
+
+From the kit checkout, point the opt-in suite at that server:
+
+```bash
+BLOG_TEST_ORIGIN=http://localhost:3000 pnpm test:ssr
+```
+
+For the keyboard navigation regression, install Playwright with Chromium separately; the test can find Playwright in the checkout or via `NODE_PATH`. This test only needs the built-in sample blog post, so a regular local dev server also works:
+
+```bash
+BLOG_BROWSER_TEST_ORIGIN=http://localhost:3000 pnpm test:browser
+```
+
 [Nuxt SaaS Starter Kit](https://nnsvn.me/products/nuxt-starter-kit) by No Name Studio · MIT License

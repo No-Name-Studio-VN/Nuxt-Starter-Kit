@@ -13,13 +13,16 @@ import {
 
 export const kitRoot = fileURLToPath(new URL('../../../../', import.meta.url));
 
+// The index may still list paths removed in the working tree.
 export const kitFiles = execFileSync('git', ['ls-files', '-z'], {
   cwd: kitRoot,
   encoding: 'utf8',
   maxBuffer: 32 * 1024 * 1024,
 })
   .split('\0')
-  .filter((path) => path && !/^(?:packages|docs|tests?)\//.test(path))
+  .filter(
+    (path) => path && !/^(?:packages|docs|test)\//.test(path) && existsSync(join(kitRoot, path)),
+  )
   .sort();
 
 const fileSet = new Set(kitFiles);

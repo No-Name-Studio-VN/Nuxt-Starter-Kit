@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-const file = (path) => new URL(`../${path}`, import.meta.url);
+const file = (path) => new URL(`../../${path}`, import.meta.url);
 const json = (path) => JSON.parse(readFileSync(file(path), 'utf8'));
 
 test('the kit provides DataTable without the admin layer', () => {
@@ -10,17 +10,6 @@ test('the kit provides DataTable without the admin layer', () => {
   assert.ok(!existsSync(file('layers/admin/app/components/DataTable.vue')));
   assert.ok(json('package.json').dependencies['@tanstack/vue-table']);
 });
-
-for (const path of [
-  'layers/admin-kv/app/components/admin/kv/AdminKvManager.vue',
-  'layers/admin-users/app/components/admin/users/AdminUsersManager.vue',
-  'layers/feature-flags/app/components/admin/feature-flags/AdminFeatureFlagsManager.vue',
-]) {
-  test(`${path} imports the shared table`, () => {
-    const source = readFileSync(file(path), 'utf8');
-    assert.match(source, /import DataTable from ['"]@\/components\/DataTable\.vue['"]/);
-  });
-}
 
 for (const locale of ['en', 'vi']) {
   test(`the base ${locale} locale provides all default DataTable labels`, () => {

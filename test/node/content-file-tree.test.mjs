@@ -7,7 +7,7 @@ import { computed, defineComponent, reactive } from 'vue';
 import { compileScript, parse } from 'vue/compiler-sfc';
 
 const source = readFileSync(
-  new URL('../layers/content/app/components/content/CtFileTree.vue', import.meta.url),
+  new URL('../../layers/content/app/components/content/CtFileTree.vue', import.meta.url),
   'utf8',
 );
 const { descriptor } = parse(source);
@@ -97,7 +97,7 @@ for (const [path, count] of [
   ['3.api/3.advanced/1.override.md', 1],
 ]) {
   test(`MDC renders valid file-tree props in ${path}`, async () => {
-    const markdown = readFileSync(new URL(`../content/docs/${path}`, import.meta.url), 'utf8');
+    const markdown = readFileSync(new URL(`../../content/docs/${path}`, import.meta.url), 'utf8');
     const { body } = await parseMarkdown(markdown, { highlight: false });
     const trees = fileTrees(body);
     assert.equal(trees.length, count);
@@ -111,7 +111,7 @@ test('docs navigation and GitHub CTA translation keys exist in both locales', ()
   for (const locale of ['en', 'vi']) {
     const messages = JSON.parse(
       readFileSync(
-        new URL(`../layers/content/i18n/locales/${locale}.json`, import.meta.url),
+        new URL(`../../layers/content/i18n/locales/${locale}.json`, import.meta.url),
         'utf8',
       ),
     );

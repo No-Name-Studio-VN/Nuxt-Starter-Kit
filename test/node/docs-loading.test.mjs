@@ -14,10 +14,10 @@ import {
 } from 'vue';
 import { compileScript, parse } from 'vue/compiler-sfc';
 import { Window } from 'happy-dom';
-import * as contentPaths from '../layers/content/app/utils/contentPaths.ts';
+import * as contentPaths from '../../layers/content/app/utils/contentPaths.ts';
 
 const source = readFileSync(
-  new URL('../layers/content/app/composables/useDocsToc.ts', import.meta.url),
+  new URL('../../layers/content/app/composables/useDocsToc.ts', import.meta.url),
   'utf8',
 );
 const compiled = stripTypeScriptTypes(source)
@@ -173,7 +173,7 @@ test('component-generated headings still work when the parsed Markdown TOC is em
 
 test('sidebar renders prefetched navigation and distinguishes loading from empty results', () => {
   const source = readFileSync(
-    new URL('../layers/content/app/components/layout/Aside.vue', import.meta.url),
+    new URL('../../layers/content/app/components/layout/Aside.vue', import.meta.url),
     'utf8',
   );
   const { descriptor } = parse(source);
@@ -210,14 +210,15 @@ test('sidebar renders prefetched navigation and distinguishes loading from empty
 
 function loadContentFunctions(file, names, globals = {}) {
   globals = { ...contentPaths, ...globals };
-  const source = readFileSync(new URL(`../layers/content/app/${file}`, import.meta.url), 'utf8');
+  const source = readFileSync(new URL(`../../layers/content/app/${file}`, import.meta.url), 'utf8');
   const compiled = stripTypeScriptTypes(source)
     .replace(/^import [\s\S]*? from [^\n]+;$/gm, '')
     .replace(/^export (?=(?:async )?function )/gm, '');
-  return new Function(...Object.keys(globals), `${compiled}
-return { ${names.join(', ')} };`)(
-    ...Object.values(globals),
-  );
+  return new Function(
+    ...Object.keys(globals),
+    `${compiled}
+return { ${names.join(', ')} };`,
+  )(...Object.values(globals));
 }
 
 function mockLocale() {
@@ -226,19 +227,23 @@ function mockLocale() {
 
 function setupPageContent(pages) {
   const queries = [];
-  const { useDocsPageContent } = loadContentFunctions('composables/usePageData.ts', ['useDocsPageContent'], {
-    useI18n: mockLocale,
-    useAsyncData: async (key, load) => ({
-      key,
-      data: await load({ runWithContext: (callback) => callback() }),
-    }),
-    queryCollection: () => ({
-      path(path) {
-        queries.push(path);
-        return { first: async () => pages[path] ?? null };
-      },
-    }),
-  });
+  const { useDocsPageContent } = loadContentFunctions(
+    'composables/usePageData.ts',
+    ['useDocsPageContent'],
+    {
+      useI18n: mockLocale,
+      useAsyncData: async (key, load) => ({
+        key,
+        data: await load({ runWithContext: (callback) => callback() }),
+      }),
+      queryCollection: () => ({
+        path(path) {
+          queries.push(path);
+          return { first: async () => pages[path] ?? null };
+        },
+      }),
+    },
+  );
   return { useDocsPageContent, queries };
 }
 
@@ -293,7 +298,11 @@ test('a partial docs translation overlays default navigation without losing sibl
     title: 'Docs',
     redirect: docsPath,
     children: [
-      { path: '/docs/getting-started', title: 'Getting started', children: [englishPage, defaultSetup] },
+      {
+        path: '/docs/getting-started',
+        title: 'Getting started',
+        children: [englishPage, defaultSetup],
+      },
     ],
   };
   const localizedTree = {
@@ -330,7 +339,11 @@ test('a partial docs translation overlays default navigation without losing sibl
   assert.deepEqual(result.value, [defaultTree]);
   i18n.locale.value = 'vi';
   navigation.value = [defaultTree];
-  assert.deepEqual(result.value, [defaultTree], 'without translations the full default tree is visible');
+  assert.deepEqual(
+    result.value,
+    [defaultTree],
+    'without translations the full default tree is visible',
+  );
 });
 
 test('the locale root is not treated as a missing Markdown page translation', async () => {
@@ -340,7 +353,9 @@ test('the locale root is not treated as a missing Markdown page translation', as
 });
 
 test('search indexes translated sections instead of stale default anchors for the same page', () => {
-  const { localizeSearchSections } = loadContentFunctions('utils/contentSearch.ts', ['localizeSearchSections']);
+  const { localizeSearchSections } = loadContentFunctions('utils/contentSearch.ts', [
+    'localizeSearchSections',
+  ]);
   const sections = [
     { id: docsPath, title: 'Introduction' },
     { id: `${docsPath}#english`, title: 'English heading' },
@@ -353,22 +368,31 @@ test('search indexes translated sections instead of stale default anchors for th
     { id: docsPath, title: 'Giới thiệu' },
     { id: `${docsPath}#tieng-viet`, title: 'Tiếng Việt' },
   ]);
-  assert.deepEqual(localizeSearchSections(sections, 'en', 'en', ['en', 'vi']), sections.slice(0, 3));
+  assert.deepEqual(
+    localizeSearchSections(sections, 'en', 'en', ['en', 'vi']),
+    sections.slice(0, 3),
+  );
 });
 
 test('navigation links for structural folders point to a real descendant page', () => {
-  const { navTargetFromPath } = loadContentFunctions('composables/useContentHelpers.ts', ['navTargetFromPath']);
-  const tree = [{
-    path: '/docs',
-    title: 'Docs',
-    page: false,
-    children: [{
-      path: '/docs/getting-started',
-      title: 'Getting started',
+  const { navTargetFromPath } = loadContentFunctions('composables/useContentHelpers.ts', [
+    'navTargetFromPath',
+  ]);
+  const tree = [
+    {
+      path: '/docs',
+      title: 'Docs',
       page: false,
-      children: [englishPage],
-    }],
-  }];
+      children: [
+        {
+          path: '/docs/getting-started',
+          title: 'Getting started',
+          page: false,
+          children: [englishPage],
+        },
+      ],
+    },
+  ];
   assert.equal(navTargetFromPath('/docs', tree), docsPath);
   assert.equal(navTargetFromPath('/docs/getting-started', tree), docsPath);
   assert.equal(navTargetFromPath(docsPath, tree), docsPath);

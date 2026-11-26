@@ -3,7 +3,9 @@
   "exclude": [
     "packages/**",
     "docs/**",
-    "tests/**",
+    "test/browser/**",
+    "test/fixtures/**",
+    "test/node/**",
     "test/**/*.test.ts",
     "test/**/*.spec.ts",
     "test/**/*.test.mjs",
@@ -26,6 +28,7 @@
     ".slim/**",
     ".ignore"
   ],
+  "excludeScripts": ["test:browser", "test:node", "test:ssr"],
   "userOwned": [
     "package.json",
     "wrangler.jsonc",
