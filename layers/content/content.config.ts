@@ -60,10 +60,16 @@ export default defineContentConfig({
           .optional(),
 
         navigation: z
-          .object({
-            redirect: z.string().optional(),
-            target: z.enum(['_blank', '_self', '_parent', '_top']).optional(),
-          })
+          .union([
+            z.boolean(),
+            z.looseObject({
+              title: z.string().optional(),
+              description: z.string().optional(),
+              icon: z.string().optional(),
+              redirect: z.string().optional(),
+              target: z.enum(['_blank', '_self', '_parent', '_top']).optional(),
+            }),
+          ])
           .optional(),
 
         icon: property(z.string().optional()).editor({ input: 'icon' }),

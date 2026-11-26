@@ -1,13 +1,20 @@
 import { Feed } from 'feed';
 import { queryCollection } from '@nuxt/content/server';
 import { hasProtocol, withoutTrailingSlash } from 'ufo';
-import { defaultLocale } from '~~/i18n-constants';
 import { APP_MANIFEST } from '#shared/constants/manifest';
+import {
+  BLOG_CONTENT_PATH,
+  blogLocaleCodes,
+  blogPublicPath,
+  parseBlogContentPath,
+} from '../../app/utils/blogPaths';
 
 // Prerendered at build time (nitro.prerender.routes), so this only runs during the build.
 export default defineEventHandler(async (event) => {
-  const runtimeConfig = useRuntimeConfig();
-  const siteUrl = withoutTrailingSlash(runtimeConfig.public.url as string);
+  const { blogBasePath, blogStrategy, i18n, url: configuredUrl } = useRuntimeConfig(event).public;
+  const basePath =
+    blogStrategy === 'prefix' ? `/${i18n.defaultLocale}${blogBasePath}` : blogBasePath;
+  const siteUrl = withoutTrailingSlash(configuredUrl);
   // NUXT_PUBLIC_SITE_URL is configured without a scheme ("nnsvn.me"), which Feed rejects.
   const url = hasProtocol(siteUrl) ? siteUrl : `https://${siteUrl}`;
 
@@ -18,7 +25,7 @@ export default defineEventHandler(async (event) => {
     description: APP_MANIFEST.description,
     id: url,
     link: url,
-    language: defaultLocale,
+    language: i18n.defaultLocale,
     favicon: `${url}/favicon.ico`,
     copyright: `All rights reserved ${now.getFullYear()}, ${APP_MANIFEST.short_name}`,
   });
@@ -27,18 +34,21 @@ export default defineEventHandler(async (event) => {
   // privacy and terms carry a publishedAt too.
   const posts = await queryCollection(event, 'content')
     .select('title', 'path', 'description', 'publishedAt', 'category')
-    .where('path', 'LIKE', '/blogs/%')
+    .where('path', 'LIKE', `${BLOG_CONTENT_PATH}/%`)
     .where('publishedAt', 'IS NOT NULL')
     .order('publishedAt', 'DESC')
     .all();
 
+  const otherLocales = blogLocaleCodes(i18n.locales).filter((code) => code !== i18n.defaultLocale);
   for (const post of posts) {
-    if (!post.publishedAt) continue;
+    const location = parseBlogContentPath(post.path, otherLocales, blogStrategy === 'no_prefix');
+    if (!post.publishedAt || !location || location.locale) continue;
+    const link = withoutTrailingSlash(url + blogPublicPath(basePath, location.suffix));
 
     feed.addItem({
       title: post.title ?? '-',
-      id: withoutTrailingSlash(url + post.path),
-      link: withoutTrailingSlash(url + post.path),
+      id: link,
+      link,
       description: post.description,
       date: new Date(post.publishedAt),
       category: post.category ? [{ name: post.category }] : undefined,

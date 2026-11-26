@@ -122,6 +122,7 @@ import { nextTick } from 'vue';
 import MiniSearch, { type SearchResult } from 'minisearch';
 import { useContentHelpers } from '#layers/content/app/composables/useContentHelpers';
 import { localizeSearchSections } from '#layers/content/app/utils/contentSearch';
+import { remapBlogContentLink } from '#layers/content/app/utils/blogPaths';
 import { ChevronRightIcon, FileIcon, SearchXIcon } from '@lucide/vue';
 import CtIcon from '#layers/content/app/components/content/CtIcon.vue';
 
@@ -132,7 +133,9 @@ const open = computed({
 });
 const { setOpen } = store;
 const colorMode = useColorMode();
-const { locale, defaultLocale, availableLocales } = useI18n();
+const { locale, defaultLocale, availableLocales, strategy } = useI18n();
+const { blogBasePath } = useRuntimeConfig().public;
+const otherLocales = availableLocales.filter((code) => code !== defaultLocale);
 const localePath = useLocalePath();
 const { placeholderDetailed } = useDocsConfig().value.search;
 
@@ -174,8 +177,19 @@ const miniSearch = computed(() => {
       fuzzy: 0.2,
     },
   });
+  const publicSections = new Map(
+    (searchSections.value ?? []).map((section) => {
+      const id = remapBlogContentLink(
+        section.id,
+        blogBasePath,
+        otherLocales,
+        strategy === 'no_prefix',
+      );
+      return [id, id === section.id ? section : { ...section, id }];
+    }),
+  );
   const sections = localizeSearchSections(
-    searchSections.value ?? [],
+    [...publicSections.values()],
     locale.value,
     defaultLocale,
     availableLocales,

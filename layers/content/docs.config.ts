@@ -1,3 +1,5 @@
+import { BLOG_CONTENT_PATH } from './app/utils/blogPaths';
+
 export const DOCS_CONFIG = {
   headerNav: [
     {
@@ -8,7 +10,7 @@ export const DOCS_CONFIG = {
     },
     {
       title: 'nav.blog',
-      to: '/blogs',
+      to: BLOG_CONTENT_PATH,
       target: '_self',
       showLinkIcon: false,
     },

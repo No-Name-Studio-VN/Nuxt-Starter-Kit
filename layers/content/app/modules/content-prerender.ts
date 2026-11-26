@@ -12,6 +12,12 @@ import { readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { defaultLocale, locales } from '../../../../i18n-constants';
 import { isContentPathWithin } from '../utils/contentPaths';
+import {
+  BLOG_CONTENT_PATH,
+  blogLocaleCodes,
+  blogPublicPath,
+  parseBlogContentPath,
+} from '../utils/blogPaths';
 
 /**
  * Recursively find all .md files in a directory
@@ -87,15 +93,25 @@ export default defineNuxtModule({
     // Add content routes to prerender list
     nuxt.hook('nitro:config', (nitroConfig) => {
       const markdownFiles = findMarkdownFiles(contentDir);
-      const localizedPrefixes =
-        nuxt.options.i18n?.strategy === 'no_prefix'
-          ? []
-          : locales.filter((locale) => locale !== defaultLocale);
+      const i18n = nuxt.options.i18n;
+      const strategy = i18n?.strategy;
+      const primaryLocale = i18n?.defaultLocale || defaultLocale;
+      const localeCodes = blogLocaleCodes(i18n?.locales ?? locales);
+      const otherLocales = localeCodes.filter((code) => code !== primaryLocale);
+      const localizedPrefixes = strategy === 'no_prefix' ? [] : otherLocales;
+      const blogPrefixes =
+        strategy === 'prefix' || strategy === 'prefix_and_default'
+          ? localeCodes
+          : localizedPrefixes;
+      const basePath =
+        typeof nuxt.options.runtimeConfig.public.blogBasePath === 'string'
+          ? nuxt.options.runtimeConfig.public.blogBasePath
+          : BLOG_CONTENT_PATH;
       const routes = new Set<string>([
-        '/blogs',
         '/rss.xml',
-        ...localizedPrefixes.map((locale) => `/${locale}/blogs`),
+        ...blogPrefixes.map((locale) => `/${locale}${basePath}`),
       ]);
+      if (strategy !== 'prefix') routes.add(basePath);
 
       for (const file of markdownFiles) {
         const urlPath = contentFileToUrlPath(file, contentDir);
@@ -103,8 +119,22 @@ export default defineNuxtModule({
         // Skip empty paths
         if (!urlPath || urlPath === '/') continue;
 
+        const blog = parseBlogContentPath(urlPath, localeCodes, strategy === 'no_prefix');
+        if (blog) {
+          const locale = blog.locale === primaryLocale ? undefined : blog.locale;
+          if (strategy === 'no_prefix') {
+            routes.add(blogPublicPath(basePath, blog.suffix, locale));
+          } else if (locale) {
+            routes.add(`/${locale}${basePath}${blog.suffix}`);
+          } else {
+            if (strategy !== 'prefix') routes.add(basePath + blog.suffix);
+            for (const code of blogPrefixes) routes.add(`/${code}${basePath}${blog.suffix}`);
+          }
+          continue;
+        }
+
         routes.add(urlPath);
-        if (isContentPathWithin(urlPath, '/docs') || isContentPathWithin(urlPath, '/blogs')) {
+        if (isContentPathWithin(urlPath, '/docs')) {
           for (const locale of localizedPrefixes) {
             routes.add(`/${locale}${urlPath}`);
           }

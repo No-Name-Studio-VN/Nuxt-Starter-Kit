@@ -2,6 +2,7 @@
 title: Nested route fixture
 description: This is the default-language route fixture.
 publishedAt: '2026-01-15'
+navigation: true
 image:
   src: /social-preview.png
   alt: Fixture cover

@@ -68,7 +68,7 @@ Keep `.nuxt-saas.json` in version control so the CLI knows which kit version and
 
 ## Deployment
 
-Cloudflare is the recommended target. For hosting options and provider-specific setup, see the [NuxtHub deployment guide](https://hub.nuxt.com/docs/getting-started/deploy).
+Cloudflare is the recommended target. The starter's `wrangler.jsonc` serves prerendered HTML at slashless URLs (`assets.html_handling: 'drop-trailing-slash'`). For hosting options and provider-specific setup, see the [NuxtHub deployment guide](https://hub.nuxt.com/docs/getting-started/deploy).
 
 ## Working on the kit itself
 
@@ -91,6 +91,7 @@ The blog SSR checks need a local dev server with the test posts. In a disposable
 
 ```bash
 cp -Rn test/fixtures/blog-routes/content/. content/
+cp -Rn test/fixtures/blog-routes/server/. server/
 pnpm dev
 ```
 
@@ -99,6 +100,8 @@ From the kit checkout, point the opt-in suite at that server:
 ```bash
 BLOG_TEST_ORIGIN=http://localhost:3000 pnpm test:ssr
 ```
+
+For a custom base, set `blog.basePath` on the fixture server and pass the same path as `BLOG_TEST_BASE_PATH`. To exercise `no_prefix`, set that strategy on the fixture server, move its `content/vi/blogs/route-tests` fixture to `content/blogs/vi/route-tests`, and pass `BLOG_TEST_NO_PREFIX=1`.
 
 For the keyboard navigation regression, install Playwright with Chromium separately; the test can find Playwright in the checkout or via `NODE_PATH`. This test only needs the built-in sample blog post, so a regular local dev server also works:
 

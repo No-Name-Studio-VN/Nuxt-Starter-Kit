@@ -99,6 +99,7 @@
 import { CircleXIcon, SearchIcon } from '@lucide/vue';
 import { useDocsPageContent, usePageData } from '#layers/content/app/composables/usePageData';
 import { normalizeContentPath } from '#layers/content/app/utils/contentPaths';
+import { BLOG_CONTENT_PATH, parseBlogContentPath } from '#layers/content/app/utils/blogPaths';
 
 const route = useRoute();
 // <NuxtPage> is keyed by path, so each instance renders exactly one path.
@@ -106,7 +107,13 @@ const routePath = route.path;
 
 const { page: sharedPage, surroundings } = usePageData();
 const { navigation } = useI18nDocs();
-const { locale, defaultLocale } = useI18n();
+const { locale, defaultLocale, availableLocales } = useI18n();
+if (
+  useRuntimeConfig().public.blogBasePath !== BLOG_CONTENT_PATH &&
+  parseBlogContentPath(routePath, availableLocales, false)
+) {
+  throw createError({ statusCode: 404, statusMessage: 'Page Not Found' });
+}
 const localePath = useLocalePath();
 const normalizedRoutePath = normalizeContentPath(routePath, locale.value, defaultLocale);
 

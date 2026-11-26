@@ -1,12 +1,16 @@
 import type { ContentNavigationItem } from '@nuxt/content';
 import { usePageData } from '#layers/content/app/composables/usePageData';
+import { BLOG_CONTENT_PATH, remapBlogContentLink } from '../utils/blogPaths';
 import {
   hasContentLocalePrefix,
   normalizeContentPath,
   stripContentLocalePrefix,
 } from '../utils/contentPaths';
 
-function normalizeNavigationItem(item: ContentNavigationItem, locale: string): ContentNavigationItem {
+function normalizeNavigationItem(
+  item: ContentNavigationItem,
+  locale: string,
+): ContentNavigationItem {
   return {
     ...item,
     path: stripContentLocalePrefix(item.path, locale),
@@ -41,7 +45,24 @@ function mergeNavigation(
 }
 
 export function useI18nDocs() {
-  const { locale, defaultLocale, availableLocales } = useI18n();
+  const { locale, defaultLocale, availableLocales, strategy } = useI18n();
+  const { blogBasePath } = useRuntimeConfig().public;
+  const noPrefix = strategy === 'no_prefix';
+  const blogLink = (path: string) =>
+    remapBlogContentLink(
+      path,
+      blogBasePath,
+      availableLocales.filter((code) => code !== defaultLocale),
+      noPrefix,
+    );
+  function remapBlogLinks(item: ContentNavigationItem): ContentNavigationItem {
+    return {
+      ...item,
+      path: blogLink(item.path),
+      ...(typeof item.redirect === 'string' ? { redirect: blogLink(item.redirect) } : {}),
+      ...(item.children ? { children: item.children.map(remapBlogLinks) } : {}),
+    };
+  }
   const otherLocales = availableLocales.filter((code) => code !== defaultLocale);
   const route = useRoute();
   const path = computed(() => normalizeContentPath(route.path, locale.value, defaultLocale));
@@ -49,14 +70,18 @@ export function useI18nDocs() {
 
   const localizedNavigation = computed(() => {
     if (!navigation.value) return null;
-    if (!otherLocales.length) return navigation.value;
+    const tree =
+      blogBasePath === BLOG_CONTENT_PATH && !noPrefix
+        ? navigation.value
+        : navigation.value.map(remapBlogLinks);
+    if (!otherLocales.length) return tree;
 
-    const base = navigation.value.filter(
+    const base = tree.filter(
       (item) => !otherLocales.some((code) => hasContentLocalePrefix(item.path, code)),
     );
     if (locale.value === defaultLocale) return base;
 
-    const translated = navigation.value
+    const translated = tree
       .filter((item) => item.path === `/${locale.value}`)
       .flatMap((item) => item.children ?? [])
       .map((item) => normalizeNavigationItem(item, locale.value));

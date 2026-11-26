@@ -3,6 +3,7 @@ import { computed, nextTick, shallowRef, useTemplateRef } from 'vue';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AnimatedToc } from '@/components/ui/animated-toc';
 import { useBlogArticle } from '#layers/content/app/composables/useBlogContent';
+import { blogPublicPath } from '#layers/content/app/utils/blogPaths';
 import { useBlogPostSnap } from '#layers/content/app/composables/useBlogPostSnap';
 import { useContentToc } from '#layers/content/app/composables/useContentToc';
 import { useClipboard, useMediaQuery, usePreferredReducedMotion } from '@vueuse/core';
@@ -29,16 +30,56 @@ definePageMeta({
 
 const route = useRoute();
 const router = useRouter();
-const { t, locale } = useI18n();
+const { t, locale, locales, defaultLocale, availableLocales, strategy, setLocale } = useI18n();
+const { blogBasePath } = useRuntimeConfig().public;
 const site = useSiteConfig();
 const requestUrl = useRequestURL();
 const localePath = useLocalePath();
 const routePath = withoutTrailingSlash(route.path);
-const { data, error } = await useBlogArticle(routePath);
+const segments = Array.isArray(route.params.slug)
+  ? route.params.slug
+  : [route.params.slug].filter(Boolean);
+const noPrefix = strategy === 'no_prefix';
+const setI18nParams = noPrefix ? useSetI18nParams() : undefined;
+const explicitLocale =
+  noPrefix && availableLocales.find((code) => code !== defaultLocale && code === segments[0]);
+const slugSegments = explicitLocale ? segments.slice(1) : segments;
+const slug = `/${slugSegments.join('/')}`;
+const routeLocale = noPrefix ? explicitLocale || defaultLocale : undefined;
+if (routeLocale) {
+  // Match the global SEO defaults' priority so the article's URL locale wins.
+  const language = locales.value.find(({ code }) => code === routeLocale)?.language ?? routeLocale;
+  useHead({ htmlAttrs: { lang: language } }, { tagPriority: 'low' });
+  if (locale.value !== routeLocale) await setLocale(routeLocale);
+}
+const { data, error } = await useBlogArticle(slug, routeLocale);
 if (error.value) throw error.value;
 const post = computed(() => data.value?.post);
 const contentLocale = computed(() => data.value?.contentLocale ?? locale.value);
 const showsFallback = computed(() => Boolean(post.value) && contentLocale.value !== locale.value);
+
+if (noPrefix && post.value) {
+  const alternates = data.value?.alternateLocales ?? [];
+  setI18nParams?.(
+    Object.fromEntries(
+      alternates.map((code) => [
+        code,
+        { slug: code === defaultLocale ? slugSegments : [code, ...slugSegments] },
+      ]),
+    ),
+  );
+  if (import.meta.client) {
+    // With no_prefix, i18n changes the UI language but does not navigate.
+    watch(locale, (next) => {
+      const current = router.currentRoute.value;
+      if (withoutTrailingSlash(current.path) !== routePath || next === routeLocale) return;
+      const path = alternates.includes(next)
+        ? blogPublicPath(blogBasePath, slug, next === defaultLocale ? undefined : next)
+        : blogBasePath;
+      void router.replace({ path, query: current.query, hash: current.hash });
+    });
+  }
+}
 
 const requestEvent = useRequestEvent();
 if (requestEvent && !post.value) {
@@ -146,7 +187,7 @@ useSeo({
       <h1 class="mb-2 text-xl font-bold text-foreground">{{ $t('errors.not_found.title') }}</h1>
       <p class="mb-6 text-muted-foreground">{{ $t('errors.not_found.description') }}</p>
       <Button as-child variant="outline" class="rounded-full px-6">
-        <NuxtLink :to="localePath('/blogs')">
+        <NuxtLink :to="localePath(blogBasePath)">
           <ArrowLeft />
           {{ $t('blog.back_to_blog') }}
         </NuxtLink>
@@ -192,7 +233,7 @@ useSeo({
 
         <header class="mx-auto max-w-3xl px-4 py-28 text-center sm:px-6">
           <NuxtLink
-            :to="localePath('/blogs')"
+            :to="localePath(blogBasePath)"
             class="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft class="size-4" />
@@ -397,7 +438,7 @@ useSeo({
               {{ $t('blog.more_posts') }}
             </h2>
             <NuxtLink
-              :to="localePath('/blogs')"
+              :to="localePath(blogBasePath)"
               class="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {{ $t('blog.view_all') }}

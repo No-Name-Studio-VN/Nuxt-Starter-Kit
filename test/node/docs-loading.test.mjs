@@ -289,6 +289,8 @@ test('a partial docs translation overlays default navigation without losing sibl
     useI18n: () => i18n,
     useRoute: () => ({ path: `/vi${docsPath}/` }),
     usePageData: () => ({ navigation }),
+    useRuntimeConfig: () => ({ public: { blogBasePath: '/blogs' } }),
+    BLOG_CONTENT_PATH: '/blogs',
   });
   const setupPath = '/docs/getting-started/setup';
   const defaultSetup = { path: setupPath, title: 'Setup' };

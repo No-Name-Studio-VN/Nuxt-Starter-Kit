@@ -1,5 +1,6 @@
 import { createResolver } from '@nuxt/kit';
 import { DOCS_CONFIG } from './docs.config';
+import { BLOG_CONTENT_PATH } from './app/utils/blogPaths';
 
 const { resolve } = createResolver(import.meta.url);
 
@@ -8,9 +9,12 @@ export default defineNuxtConfig({
     '@nuxt/content',
     'nuxt-content-git',
     resolve('./app/modules/navigation-redirects'),
+    resolve('./app/modules/blog-routes'),
     resolve('./app/modules/content-prerender'),
   ],
-  runtimeConfig: { public: { docs: DOCS_CONFIG } },
+  runtimeConfig: {
+    public: { docs: DOCS_CONFIG, blogBasePath: BLOG_CONTENT_PATH, blogStrategy: '' },
+  },
   i18n: {
     locales: [
       { code: 'en', file: 'en.json' },

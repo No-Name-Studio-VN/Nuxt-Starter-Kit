@@ -167,8 +167,8 @@ function clearFilters() {
         >
           <div class="relative w-full aspect-4/3 rounded-3xl overflow-hidden mb-6 bg-muted">
             <img
-              v-if="!isEmpty(post.ogImage?.url)"
-              :src="post.ogImage?.url"
+              v-if="post.image?.src || post.ogImage?.url"
+              :src="post.image?.src || post.ogImage?.url"
               :alt="post.title"
               loading="lazy"
               class="size-full object-cover transition-transform duration-300 group-hover:scale-105"
