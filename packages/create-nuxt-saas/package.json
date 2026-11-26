@@ -1,6 +1,6 @@
 {
   "name": "create-nuxt-saas",
-  "version": "4.1.3",
+  "version": "4.2.0",
   "description": "Create and upgrade modular Nuxt SaaS projects: auth, admin, PWA, docs, feature flags.",
   "keywords": [
     "cloudflare",
