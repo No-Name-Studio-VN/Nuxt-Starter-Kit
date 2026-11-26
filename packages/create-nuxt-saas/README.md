@@ -10,9 +10,14 @@ pnpm install
 pnpm dev
 ```
 
-Without a directory, interactive init asks for a project name. On a terminal it also offers a module
-picker. Follow the printed next steps to configure `.env` and, if you selected a database module,
-run `pnpm db:generate` before starting the app. Dependencies are not installed by the CLI.
+Without a directory, interactive init asks for a project name. In the terminal module picker, use
+Space to select modules directly and Enter to review what will be installed. The review lists
+locked defaults, required dependencies, and any missing alternatives. Go back to edit your direct
+picks, or choose **Create project** to write the project. Older kits can list internal modules
+under **Ungrouped**; a later module removal can still prune those modules if nothing requires them.
+
+Follow the printed next steps to configure `.env` and, if your project includes a database module,
+run `pnpm db:generate` before starting the app. The CLI does not install npm dependencies.
 
 ## Commands
 
@@ -65,7 +70,8 @@ npm create nuxt-saas@latest base-app -- --yes
 - `--modules` takes comma-separated IDs, trims whitespace and ignores empty entries. Required modules
   are added automatically. For example, `auth-password` brings in `auth`, `database`, `server-core`,
   and `email`. Selecting `auth` without a sign-in method is refused. Base is always included and has
-  no module ID. `--yes` without `--modules`, or `--modules ''`, means **base only**.
+  no module ID. Web Security is included by default whether or not you select server modules.
+  `--yes` without `--modules`, or `--modules ''`, installs base with Web Security.
 - `--template` defaults to `github:No-Name-Studio-VN/Nuxt-Starter-Kit` (ref `main`). Refs resolve to
   full commit SHAs before rendering. `GITHUB_TOKEN` can authenticate GitHub requests.
 - Init renders in a temporary sibling directory, then publishes the result into the target.
@@ -91,6 +97,10 @@ remaining selection breaks a `requiresOneOf` rule. Remove public dependencies ex
 longer need them. The CLI removes internal dependencies that no remaining module needs. You can
 remove every layer and keep only base.
 
+`pnpm dlx create-nuxt-saas@latest remove web-security` leaves server features installed but removes
+the kit's Nuxt Security policy and API rate limits. Keep Web Security or provide equivalent
+protections if your project needs them.
+
 `--dir` selects the project (default `.`). `--check` previews the plan and assesses unsaved work
 without changing the project. A dirty tree does **not** need `--force` if its unsaved changes will
 be merged cleanly or left alone. If the transition would produce conflicts or keep edited files,
@@ -112,6 +122,11 @@ pnpm dlx create-nuxt-saas@latest upgrade --template github:owner/repo#release
 Upgrade resolves the recorded template's ref (normally `main`), or `--to`, to a commit. `--template`
 changes the target template; the old render still comes from the recorded source. Installed module
 IDs must exist in the target kit. Newly required dependencies are included automatically.
+
+**Web Security migration:** Use the CLI shipped with this kit (in Kit Manager, rebuild the CLI in the configured checkout). It adds `web-security` the first time a project upgrades from a kit with the old built-in policy. Later upgrades keep the layer if installed and do not reinstall it after removal. Older CLIs do not recognize default modules: if an older CLI missed the migration, run `nuxt-saas add web-security --check`, review the changes, then rerun without `--check` to restore the kit policy.
+
+**Localized UI:** If you choose **Keep project** for a customized locale catalog while accepting the updated UI, merge the new message keys and interpolation placeholders into every language you ship. Keeping an old catalog unchanged can make the new interface display message keys instead of text.
+
 The CLI refuses upgrades between different major kit versions. See
 [Moving a 3.x project to 4.0](#moving-a-3x-project-to-40). `add` and `remove` continue to work at the
 project's recorded commit.
@@ -320,37 +335,40 @@ There is no migration command. `status`, `diff`, `--registry` and `--base-kit` a
 
 ## Modules are Nuxt layers
 
-Base is the shared root app, including UI, theming, i18n, SEO, security and deployment infrastructure.
-It has no auth or database feature code. It is always copied and has no `module.json`.
+Base is the shared root app, including UI, theming, English and Vietnamese locale catalogs, SEO, and deployment infrastructure. The CLI also installs the Web Security layer by default.
+Base has no auth or database feature code. It is always copied and has no `module.json`.
 Each selected module is copied verbatim as `layers/<id>/`, which Nuxt 4 auto-registers. No fragments
 are stripped from shared files. The root package, env example and worker config remain the full
 kit's union; the CLI drops claims of unselected modules only when no selected module also claims them.
 
-| Group          | Module                    | Parent          | Requires                              | Requires one of               | Provides                                                        |
-| -------------- | ------------------------- | --------------- | ------------------------------------- | ----------------------------- | --------------------------------------------------------------- |
-| Foundation     | `database`                |                 | `server-core`                         |                               | D1/SQLite through NuxtHub and Drizzle, plus migration scripts   |
-| Foundation     | `bot-protection`          |                 | `server-core`                         |                               | Optional bot verification for public forms and API routes       |
-| Authentication | `auth`                    |                 | `server-core`, `database`             | `auth-password`, `auth-oauth` | Accounts, sessions, and the sign-in page                        |
-| Authentication | `auth-oauth`              | `auth`          | `server-core`, `auth`                 |                               | OAuth sign-in with providers selected in `site.config.ts`       |
-| Authentication | `auth-password`           | `auth`          | `server-core`, `auth`, `email`        |                               | Password sign-in, registration, and password reset              |
-| Authentication | `auth-2fa`                | `auth-password` | `server-core`, `auth-password`        |                               | TOTP setup and password sign-in challenge                       |
-| Authentication | `auth-email-verification` | `auth-password` | `server-core`, `auth-password`        |                               | Verification email and password sign-in policy                  |
-| Authentication | `auth-passkeys`           | `auth`          | `server-core`, `auth`, `kv`           |                               | WebAuthn sign-in and passkey management                         |
-| App            | `admin`                   |                 | `server-core`, `auth`, `dashboard`    |                               | Admin guards, seed task, and admin landing page                 |
-| App            | `admin-kv`                | `admin`         | `server-core`, `admin`, `kv`, `cache` |                               | Workers KV browser                                              |
-| App            | `admin-users`             | `admin`         | `server-core`, `admin`                |                               | User administration                                             |
-| App            | `feature-flags`           | `admin`         | `server-core`, `admin`, `kv`, `cache` |                               | OpenFeature flags, admin panel, and edge evaluation             |
-| App            | `dashboard`               |                 |                                       |                               | Dashboard layout, sidebar, and quick search                     |
-| App            | `pwa`                     |                 |                                       |                               | Service worker, install prompt, offline page, and assets        |
-| Content        | `content`                 |                 |                                       |                               | Documentation, blog, search, and RSS                            |
-| Content        | `content-studio`          | `content`       | `content`                             |                               | Nuxt Studio and MDC component metadata                          |
-| Internal       | `email`                   |                 |                                       |                               | Transactional email through Resend                              |
-| Internal       | `server-core`             |                 |                                       |                               | API envelope, error helpers, request utilities, and rate limits |
-| Internal       | `kv`                      |                 | `server-core`                         |                               | NuxtHub key-value storage and `useKV()`                         |
-| Internal       | `cache`                   |                 | `server-core`                         |                               | NuxtHub-backed Nitro cache storage                              |
+| Group          | Module                    | Parent          | Requires                              | Requires one of               | Provides                                                       |
+| -------------- | ------------------------- | --------------- | ------------------------------------- | ----------------------------- | -------------------------------------------------------------- |
+| Essentials     | `server-core`             |                 |                                       |                               | API envelope, error helpers, and request utilities             |
+| Essentials     | `database`                |                 | `server-core`                         |                               | D1/SQLite through NuxtHub and Drizzle, plus migration scripts  |
+| Foundation     | `web-security`            |                 |                                       |                               | Default Nuxt Security policy and Cloudflare-compatible headers |
+| Foundation     | `bot-protection`          |                 | `server-core`                         |                               | Optional bot verification for public forms and API routes      |
+| Authentication | `auth`                    |                 | `server-core`, `database`             | `auth-password`, `auth-oauth` | Accounts, sessions, and the sign-in page                       |
+| Authentication | `auth-oauth`              | `auth`          | `server-core`, `auth`                 |                               | OAuth sign-in with providers selected in `site.config.ts`      |
+| Authentication | `auth-password`           | `auth`          | `server-core`, `auth`, `email`        |                               | Password sign-in, registration, and password reset             |
+| Authentication | `auth-2fa`                | `auth-password` | `server-core`, `auth-password`        |                               | TOTP setup and password sign-in challenge                      |
+| Authentication | `auth-email-verification` | `auth-password` | `server-core`, `auth-password`        |                               | Verification email and password sign-in policy                 |
+| Authentication | `auth-passkeys`           | `auth`          | `server-core`, `auth`, `kv`           |                               | WebAuthn sign-in and passkey management                        |
+| App            | `admin`                   |                 | `server-core`, `auth`, `dashboard`    |                               | Admin guards, seed task, and admin landing page                |
+| App            | `admin-kv`                | `admin`         | `server-core`, `admin`, `kv`, `cache` |                               | Workers KV browser                                             |
+| App            | `admin-users`             | `admin`         | `server-core`, `admin`                |                               | User administration                                            |
+| App            | `feature-flags`           | `admin`         | `server-core`, `admin`, `kv`, `cache` |                               | OpenFeature flags, admin panel, and edge evaluation            |
+| App            | `dashboard`               |                 |                                       |                               | Dashboard layout, sidebar, and quick search                    |
+| App            | `pwa`                     |                 |                                       |                               | Service worker, install prompt, offline page, and assets       |
+| Content        | `content`                 |                 |                                       |                               | Documentation, blog, search, and RSS                           |
+| Content        | `content-studio`          | `content`       | `content`                             |                               | Nuxt Studio and MDC component metadata                         |
+| Miscellaneous  | `cache`                   |                 | `server-core`                         |                               | NuxtHub-backed Nitro cache storage                             |
+| Miscellaneous  | `kv`                      |                 | `server-core`                         |                               | NuxtHub key-value storage and `useKV()`                        |
+| Miscellaneous  | `email`                   |                 |                                       |                               | Transactional email through Resend                             |
 
-Internal modules are hidden from the picker, not from `modules`; they arrive through dependencies
-and can also be requested explicitly. See each layer's README for its configuration.
+You can select any non-default module in this catalog directly in the picker. The CLI includes
+defaults and required modules automatically. Email transport is required for password sign-in, but
+Email verification is optional and must be selected separately. See each layer's README for its
+configuration.
 
 ## Authoring a module
 
@@ -386,6 +404,8 @@ defaults to `false`. The CLI uses these fields to display modules and check sele
   Older kit snapshots without `groups` display a flat list.
 - `parent` is optional. The CLI displays the module under its parent. The parent must exist in
   the same group and appear in the module's `requires` list.
+- `installByDefault: true` installs a module on every new project and on upgrade from a kit that
+  did not offer it. Later upgrades don't restore a default module explicitly removed by the project.
 - `requires` names modules the CLI installs automatically, not base. Unknown module IDs and
   dependency cycles are errors.
 - `requiresOneOf` names alternative modules. If you select a module with a nonempty
@@ -412,9 +432,9 @@ between modules; a name is kept while any selected module claims it. `rootFiles`
 uniquely owned. Unclaimed root entries belong to base and ship everywhere. `kit.json` in this package controls copy exclusions,
 including kit-only migrations, tests and release tooling. Its optional `userOwned` globs list the
 files projects are expected to customise (`package.json`, `wrangler.jsonc`, `.env.example`,
-`README.md`, `site.config.ts`, `i18n/**`, `public/**`). `inspect` flags them as `expected` and keeps
-them out of the customisation score. When absent, for example in older kit commits, the same default
-list applies.
+`README.md`, `site.config.ts`, the base and PWA branding manifests, `i18n/**`, `public/**`).
+`inspect` flags them as `expected` and keeps them out of the customisation score. Older kit commits
+without `userOwned` use the CLI's fallback list.
 
 ### Imports and configuration
 
