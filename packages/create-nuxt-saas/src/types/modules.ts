@@ -9,6 +9,7 @@ export interface KitModule {
   requiresOneOf: string[];
   requires: string[];
   internal: boolean;
+  installByDefault?: boolean | undefined;
   dependencies: string[];
   devDependencies: string[];
   scripts: string[];

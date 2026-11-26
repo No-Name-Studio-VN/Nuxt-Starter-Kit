@@ -36,7 +36,6 @@ export default defineNuxtConfig({
   },
 
   modules: [
-    'nuxt-security',
     'shadcn-nuxt',
     '@vueuse/nuxt',
     '@nuxtjs/seo',
@@ -247,34 +246,6 @@ export default defineNuxtConfig({
 
   schemaOrg: {
     identity: 'Organization',
-  },
-
-  security: {
-    // we have to disable some of the security features in order to allow prerender work. If enabled, headers file will contain a lot of nonce and when deploy will cause Cloudflare to reject the worker due to header line limit exceeded
-    strict: true,
-    rateLimiter: false,
-    nonce: false,
-    ssg: false,
-    sri: false,
-    headers: {
-      crossOriginEmbedderPolicy: 'unsafe-none',
-      contentSecurityPolicy: {
-        'script-src': ["'self'", 'https:', "'unsafe-inline'", "'wasm-unsafe-eval'"],
-        'style-src': ["'self'", 'https:', "'unsafe-inline'"],
-        'img-src': ["'self'", 'data:', 'https:'],
-        'media-src': ["'self'", 'blob:', 'https:'],
-        'connect-src': ["'self'", 'https:'],
-        'font-src': ["'self'", 'https://*.gstatic.com'],
-        'worker-src': ["'self'", 'blob:'],
-        'frame-src': ["'self'", 'https:'],
-      },
-      permissionsPolicy: {
-        fullscreen: ['self'],
-        'picture-in-picture': ['self'],
-        'web-share': ['self'],
-        autoplay: ['self'],
-      },
-    },
   },
 
   sentry: {

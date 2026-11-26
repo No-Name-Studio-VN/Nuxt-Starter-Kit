@@ -13,7 +13,13 @@ import { createFixtureKit, makeTempDir } from './support/fixtureKit';
 
 vi.mock('@clack/prompts', async (importOriginal) => {
   const actual = await importOriginal<typeof prompts>();
-  return { ...actual, text: vi.fn(), multiselect: vi.fn(), groupMultiselect: vi.fn() };
+  return {
+    ...actual,
+    text: vi.fn(),
+    multiselect: vi.fn(),
+    groupMultiselect: vi.fn(),
+    select: vi.fn(),
+  };
 });
 
 const run = promisify(execFile);
@@ -52,6 +58,7 @@ afterEach(async () => {
   vi.mocked(prompts.text).mockReset();
   vi.mocked(prompts.multiselect).mockReset();
   vi.mocked(prompts.groupMultiselect).mockReset();
+  vi.mocked(prompts.select).mockReset();
   await rm(parent, { recursive: true, force: true });
 });
 
@@ -516,20 +523,72 @@ describe('interactive prompts and snapshot cleanup', () => {
     vi.spyOn(process.stdin, 'isTTY', 'get').mockReturnValue(true);
     vi.mocked(prompts.text).mockResolvedValue('prompted-app');
     vi.mocked(prompts.groupMultiselect).mockResolvedValue(['beta']);
+    vi.mocked(prompts.select).mockResolvedValue('create');
     expect(await main(kitArgs())).toBe(0);
     expect((await readState(join(parent, 'prompted-app'))).modules).toEqual(['alpha', 'beta']);
+    expect(output()).toMatch(/alpha.*required by beta/i);
   });
 
   it('shows an invalid selection and lets the user choose again before creating the project', async () => {
     vi.spyOn(process.stdin, 'isTTY', 'get').mockReturnValue(true);
     vi.mocked(prompts.groupMultiselect)
       .mockResolvedValueOnce(['access'])
-      .mockResolvedValueOnce(['access-link']);
+      .mockImplementationOnce(async ({ initialValues }) => {
+        expect(initialValues).toEqual(['access']);
+        return ['access', 'access-link'];
+      });
+    vi.mocked(prompts.select)
+      .mockImplementationOnce(async ({ options }) => {
+        expect(await pathExists(project)).toBe(false);
+        expect(options.map(({ value }) => value)).not.toContain('create');
+        return 'back';
+      })
+      .mockResolvedValueOnce('create');
     expect(await main(['init', project, ...kitArgs()])).toBe(0);
-    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain(
-      'access needs at least one of access-key, access-link.',
-    );
+    expect(output()).toContain('access needs at least one of access-key, access-link.');
     expect((await readState(project)).modules).toEqual(['access', 'access-link']);
+  });
+
+  it('returns only explicit choices to the picker when going back from a valid review', async () => {
+    vi.spyOn(process.stdin, 'isTTY', 'get').mockReturnValue(true);
+    vi.mocked(prompts.groupMultiselect)
+      .mockResolvedValueOnce(['beta'])
+      .mockImplementationOnce(async ({ initialValues }) => {
+        expect(initialValues).toEqual(['beta']);
+        return [];
+      });
+    vi.mocked(prompts.select)
+      .mockImplementationOnce(async () => {
+        expect(await pathExists(project)).toBe(false);
+        return 'back';
+      })
+      .mockResolvedValueOnce('create');
+    expect(await main(['init', project, ...kitArgs()])).toBe(0);
+    expect((await readState(project)).modules).toEqual([]);
+  });
+
+  it('offers legacy ungrouped internals in the grouped picker', async () => {
+    vi.spyOn(process.stdin, 'isTTY', 'get').mockReturnValue(true);
+    vi.mocked(prompts.groupMultiselect).mockImplementation(async ({ options }) => {
+      expect(Object.keys(options)).toEqual([' Foundation', ' App', ' Content', ' Ungrouped']);
+      expect(options[' App']).toContainEqual(
+        expect.objectContaining({ value: 'beta', label: '  Beta' }),
+      );
+      return options[' Ungrouped']?.map(({ value }) => value) ?? [];
+    });
+    vi.mocked(prompts.select).mockResolvedValue('create');
+    expect(await main(['init', project, ...kitArgs()])).toBe(0);
+    expect((await readState(project)).modules).toEqual(['server-core']);
+    expect(output()).toMatch(/server-core.*legacy internal/i);
+  });
+
+  it('cancels from review without writing a project', async () => {
+    vi.spyOn(process.stdin, 'isTTY', 'get').mockReturnValue(true);
+    vi.mocked(prompts.groupMultiselect).mockResolvedValue(['beta']);
+    vi.mocked(prompts.select).mockResolvedValue(prompts.CANCEL_SYMBOL);
+    expect(await main(['init', project, ...kitArgs()])).toBe(0);
+    expect(output()).toContain('Cancelled.');
+    expect(await pathExists(project)).toBe(false);
   });
 
   it('cleans the old snapshot if opening the target kit fails', async () => {

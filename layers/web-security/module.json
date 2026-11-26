@@ -1,0 +1,7 @@
+{
+  "title": "Web Security",
+  "description": "HTTP security headers, Content Security Policy and request protection through Nuxt Security. Installed by default.",
+  "group": "Foundation",
+  "installByDefault": true,
+  "dependencies": ["nuxt-security"]
+}

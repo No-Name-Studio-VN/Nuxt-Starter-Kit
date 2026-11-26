@@ -1,14 +1,3 @@
-import type { NuxtSecurityRouteRules } from 'nuxt-security';
-
-const seedRules: NuxtSecurityRouteRules = {
-  rateLimiter: {
-    tokensPerInterval: 5,
-    interval: 3 * 60 * 60 * 24 * 1000, // 3 days
-    headers: true,
-    throwError: true,
-  },
-};
-
 export default defineNuxtConfig({
   i18n: {
     locales: [
@@ -25,9 +14,6 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    '/api/admin/seed': {
-      security: seedRules,
-    },
     '/admin/**': {
       ssr: false,
       prerender: false,

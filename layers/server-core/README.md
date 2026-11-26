@@ -6,6 +6,6 @@ Select Server core on its own for the API helpers below, or get it automatically
   (`server/utils/apiResponse.ts`), `reportServerError()`.
 - Client helpers: `apiRequest`, `useAPI`, `parseApiError`, `useRequestState`.
 - Shared pagination helpers and the API envelope types (`types/api.ts`).
-- Rate-limits every `/api/**` route (150 requests per minute) and serves the `/api` health check.
+- Serves the `/api` health check. The optional Web Security layer adds the default limit of 150 requests per minute to `/api/**`.
 
 Other layers import these as `#layers/server-core/...`. This module needs no bindings or env keys.

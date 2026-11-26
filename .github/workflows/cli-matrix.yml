@@ -99,6 +99,9 @@ jobs:
             modules: auth-oauth,auth-passkeys
           - name: base + admin users without password
             modules: admin-users,auth-oauth
+          - name: admin, OAuth and passkeys without Web Security
+            modules: admin,auth-oauth,auth-passkeys
+            remove-web-security: true
           - name: base + admin kv and feature flags
             modules: admin-kv,feature-flags,auth-password
           - name: all modules
@@ -162,6 +165,19 @@ jobs:
           commit "remove password"
           test ! -d layers/auth-password
           test ! -d layers/email
+
+      - name: Remove Web Security while keeping server modules
+        if: matrix.remove-web-security == true
+        working-directory: ${{ runner.temp }}/generated
+        run: |
+          CLI="$GITHUB_WORKSPACE/packages/create-nuxt-saas/bin/nuxt-saas.mjs"
+          node "$CLI" remove web-security --kit "$GITHUB_WORKSPACE" --force --no-backup
+          test -d layers/server-core
+          test -d layers/admin
+          test -d layers/auth-oauth
+          test -d layers/auth-passkeys
+          test ! -d layers/web-security
+          node -e 'if (require("./package.json").dependencies["nuxt-security"]) process.exit(1)'
 
       - name: Check for module leaks
         working-directory: ${{ runner.temp }}/generated
