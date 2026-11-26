@@ -23,7 +23,7 @@ export type AdminBulkUserDeleteInput = z.input<typeof adminBulkUserDeleteSchema>
  * sign-in is installed; without it an account would have no way in.
  */
 export const adminUserCreateSchema = createUserSchema.extend({
-  password: requiredStringSchema('validation.password_required'),
+  password: requiredStringSchema('admin.users.password_required'),
 });
 
 /** A blank or missing password keeps the current one. */

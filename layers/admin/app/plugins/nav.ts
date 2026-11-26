@@ -20,13 +20,13 @@ const sidebarRecords: SidebarNavRecord[] = [
     showBack: true,
     guard: isAdmin,
   },
-  { kind: 'section', id: 'admin.overview', order: 100, context: 'admin', title: 'Overview' },
+  { kind: 'section', id: 'admin.overview', order: 100, context: 'admin', title: 'admin.overview' },
   {
     kind: 'item',
     id: 'admin.overview.dashboard',
     order: 100,
     section: 'admin.overview',
-    title: 'Dashboard',
+    title: 'admin.dashboard',
     url: '/admin',
     icon: LayoutDashboardIcon,
   },
@@ -35,15 +35,15 @@ const sidebarRecords: SidebarNavRecord[] = [
     id: 'admin.users-sales',
     order: 200,
     context: 'admin',
-    title: 'Users & Sales',
+    title: 'admin.users_sales',
   },
-  { kind: 'section', id: 'admin.system', order: 300, context: 'admin', title: 'System' },
+  { kind: 'section', id: 'admin.system', order: 300, context: 'admin', title: 'admin.system' },
   {
     kind: 'section',
     id: 'main.admin',
     order: 300,
     context: 'main',
-    title: 'Admin',
+    title: 'admin.label',
     guard: isAdmin,
   },
   {
@@ -51,14 +51,14 @@ const sidebarRecords: SidebarNavRecord[] = [
     id: 'main.admin.dashboard',
     order: 100,
     section: 'main.admin',
-    title: 'Admin Dashboard',
+    title: 'admin.title',
     url: '/admin',
     icon: LayoutDashboardIcon,
   },
 ];
 
 const userMenuRecords: UserMenuRecord[] = [
-  { id: 'admin', order: 100, title: 'Admin', to: '/admin', icon: UsersIcon, guard: isAdmin },
+  { id: 'admin', order: 100, title: 'admin.label', to: '/admin', icon: UsersIcon, guard: isAdmin },
 ];
 
 /** Admin's sidebar context and account-menu entry. */

@@ -2,9 +2,9 @@
   <div class="space-y-8">
     <!-- Header Section -->
     <div class="space-y-2">
-      <h1 class="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+      <h1 class="text-3xl font-bold tracking-tight">{{ $t('admin.title') }}</h1>
       <p class="text-muted-foreground">
-        Manage your application's content, users, and system settings
+        {{ $t('admin.description') }}
       </p>
     </div>
 
@@ -27,10 +27,10 @@
         </div>
         <div class="flex-1 min-w-0">
           <h3 class="font-medium text-base truncate">
-            {{ card.title }}
+            {{ $te(card.title) ? $t(card.title) : card.title }}
           </h3>
           <p class="text-sm text-muted-foreground truncate">
-            {{ card.description }}
+            {{ $te(card.description) ? $t(card.description) : card.description }}
           </p>
         </div>
         <ChevronRightIcon
@@ -45,10 +45,13 @@
 import { ChevronRightIcon } from '@lucide/vue';
 
 definePageMeta({
-  title: 'Admin Dashboard',
-  breadcrumb: 'Admin',
+  title: 'admin.title',
+  breadcrumb: 'admin.label',
   middleware: ['auth', 'admin'],
 });
+
+const { t } = useI18n();
+useSeoMeta({ title: () => t('admin.title'), description: () => t('admin.description') });
 
 const managementCards = computed(() => getNavItems('adminCards'));
 </script>

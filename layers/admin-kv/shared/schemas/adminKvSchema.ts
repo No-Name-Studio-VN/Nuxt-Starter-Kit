@@ -11,20 +11,14 @@ function getUtf8ByteLength(value: string): number {
 
 export const adminKvKeySchema = z
   .string()
-  .refine((value) => value.trim().length > 0, 'KV key is required')
-  .refine(
-    (value) => getUtf8ByteLength(value) <= ADMIN_KV_MAX_KEY_BYTES,
-    'KV key must be 512 bytes or less',
-  );
+  .refine((value) => value.trim().length > 0, 'admin.kv.key_required')
+  .refine((value) => getUtf8ByteLength(value) <= ADMIN_KV_MAX_KEY_BYTES, 'admin.kv.key_size');
 
 export const adminKvValueModeSchema = z.enum(['raw', 'json']);
 
 export const adminKvValueTextSchema = z
   .string()
-  .refine(
-    (value) => getUtf8ByteLength(value) <= ADMIN_KV_MAX_VALUE_BYTES,
-    'KV value must be 25 MiB or less',
-  );
+  .refine((value) => getUtf8ByteLength(value) <= ADMIN_KV_MAX_VALUE_BYTES, 'admin.kv.value_size');
 
 export const adminKvMutationSchema = z.object({
   key: adminKvKeySchema,

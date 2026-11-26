@@ -2,10 +2,9 @@
   <div class="flex flex-col gap-6">
     <section class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex flex-col gap-1">
-        <h2 class="text-2xl font-semibold text-foreground">KV Store</h2>
+        <h2 class="text-2xl font-semibold text-foreground">{{ $t('admin.kv.title') }}</h2>
         <p class="text-sm text-muted-foreground">
-          Browse all KV keys, lazily load visible values, and manage entries with admin-only
-          safeguards.
+          {{ $t('admin.kv.description') }}
         </p>
       </div>
 
@@ -14,25 +13,24 @@
           <AlertDialogTrigger as-child>
             <Button variant="outline">
               <Trash2Icon data-icon="inline-start" />
-              Clear all KV/cache
+              {{ $t('admin.kv.clear') }}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Clear the entire KV namespace and server cache?</AlertDialogTitle>
+              <AlertDialogTitle>{{ $t('admin.kv.clear_title') }}</AlertDialogTitle>
               <AlertDialogDescription>
-                This deletes every KV key and clears the server cache storage. It can remove feature
-                flag cache data, auth challenges, decrypt tokens, and premium media cache entries.
+                {{ $t('admin.kv.clear_description') }}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{{ $t('common.cancel') }}</AlertDialogCancel>
               <AlertDialogAction
                 variant="destructive"
                 :disabled="clearing"
                 @click="clearKvAndCache"
               >
-                Clear all KV/cache
+                {{ $t('admin.kv.clear') }}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -40,7 +38,7 @@
 
         <Button @click="openCreateDialog">
           <PlusIcon data-icon="inline-start" />
-          Add key
+          {{ $t('admin.kv.add') }}
         </Button>
       </div>
     </section>
@@ -48,11 +46,9 @@
     <AlertBox variant="warning">
       <AlertTriangleIcon class="size-4 shrink-0" />
       <AlertBoxContent>
-        <AlertBoxTitle>Full KV namespace access</AlertBoxTitle>
+        <AlertBoxTitle>{{ $t('admin.kv.access_title') }}</AlertBoxTitle>
         <AlertBoxDescription>
-          Values are loaded only for the current table page and cached in this browser session until
-          reload. Temporary keys are flagged, but all keys remain editable. Saving a TTL-backed key
-          may remove its expiration because TTL metadata is not exposed.
+          {{ $t('admin.kv.access_description') }}
         </AlertBoxDescription>
       </AlertBoxContent>
     </AlertBox>
@@ -62,18 +58,18 @@
       :columns="columns"
       :data="tableRows"
       :loading="loading || valuesLoading"
-      search-placeholder="Search KV keys or prefixes"
-      empty-title="No KV keys found."
-      empty-description="Create a key or reload the namespace."
+      :search-placeholder="$t('admin.kv.search')"
+      :empty-title="$t('admin.kv.empty_title')"
+      :empty-description="$t('admin.kv.empty_description')"
       :column-labels="columnLabels"
       @update:data="reloadKv"
       @update:visible-data="handleVisibleRows"
     >
       <template #toolbar-actions>
-        <Badge variant="secondary"> {{ keys.length }} key(s) </Badge>
+        <Badge variant="secondary"> {{ t('admin.kv.count', keys.length) }} </Badge>
       </template>
       <template #footer-leading>
-        <span v-if="valuesLoading">Loading visible values… </span>
+        <span v-if="valuesLoading">{{ $t('admin.kv.loading') }} </span>
       </template>
     </DataTable>
 
@@ -83,34 +79,29 @@
     >
       <div class="flex flex-1 items-center gap-2 text-sm text-muted-foreground">
         <InfoIcon class="size-4" />
-        <span>{{ selectedKeys.length }} key(s) selected</span>
+        <span>{{ t('admin.kv.selected', selectedKeys.length) }}</span>
       </div>
       <Button variant="destructive" :disabled="deleting" @click="openBulkDeleteDialog">
         <Trash2Icon data-icon="inline-start" />
-        Delete selected
+        {{ $t('admin.kv.delete_selected') }}
       </Button>
     </div>
 
     <Dialog v-model:open="dialogOpen">
       <DialogScrollContent class="max-w-5xl">
         <DialogHeader>
-          <DialogTitle>{{ isEditing ? 'Edit KV value' : 'Create KV key' }}</DialogTitle>
+          <DialogTitle>{{ t(isEditing ? 'admin.kv.edit' : 'admin.kv.create') }}</DialogTitle>
           <DialogDescription>
-            {{
-              isEditing
-                ? 'Update the selected KV value. Use raw mode for plain text and JSON mode for structured values.'
-                : 'Create a new KV key with either raw text or a JSON value.'
-            }}
+            {{ t(isEditing ? 'admin.kv.edit_description' : 'admin.kv.create_description') }}
           </DialogDescription>
         </DialogHeader>
 
         <AlertBox v-if="editingTemporaryReason" variant="warning">
           <AlertTriangleIcon class="size-4 shrink-0" />
           <AlertBoxContent>
-            <AlertBoxTitle>Temporary or cache-sensitive key</AlertBoxTitle>
+            <AlertBoxTitle>{{ $t('admin.kv.temporary_title') }}</AlertBoxTitle>
             <AlertBoxDescription>
-              {{ editingTemporaryReason }} Saving this key may remove its expiration because TTL
-              metadata is not exposed.
+              {{ t(editingTemporaryReason) }} {{ t('admin.kv.temporary_expiration') }}
             </AlertBoxDescription>
           </AlertBoxContent>
         </AlertBox>
@@ -119,7 +110,7 @@
           <FieldGroup>
             <VeeField v-slot="{ field, errors }" name="key">
               <Field :data-invalid="!!errors.length">
-                <FieldLabel for="admin-kv-key"> Key </FieldLabel>
+                <FieldLabel for="admin-kv-key"> {{ $t('admin.kv.key') }} </FieldLabel>
                 <Input
                   id="admin-kv-key"
                   :model-value="field.value"
@@ -130,15 +121,18 @@
                   @update:model-value="field.onChange"
                 />
                 <FieldDescription>
-                  Keys can use any non-empty string up to Cloudflare KV's 512-byte key limit.
+                  {{ $t('admin.kv.key_hint') }}
                 </FieldDescription>
-                <FieldError v-if="errors.length" :errors="errors" />
+                <FieldError
+                  v-if="errors.length"
+                  :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                />
               </Field>
             </VeeField>
 
             <VeeField v-slot="{ field, errors }" name="mode">
               <Field :data-invalid="!!errors.length">
-                <FieldLabel for="admin-kv-mode"> Value mode </FieldLabel>
+                <FieldLabel for="admin-kv-mode"> {{ $t('admin.kv.mode') }} </FieldLabel>
                 <Select
                   :model-value="String(field.value ?? 'raw')"
                   :disabled="saving"
@@ -149,26 +143,28 @@
                     class="w-full sm:w-56"
                     :aria-invalid="!!errors.length"
                   >
-                    <SelectValue placeholder="Select mode" />
+                    <SelectValue :placeholder="$t('admin.kv.mode_select')" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="raw"> Raw text </SelectItem>
-                      <SelectItem value="json"> JSON </SelectItem>
+                      <SelectItem value="raw"> {{ $t('admin.kv.mode_raw') }} </SelectItem>
+                      <SelectItem value="json"> {{ $t('admin.kv.mode_json') }} </SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
                 <FieldDescription>
-                  Raw text saves exactly as typed. JSON mode parses the editor content before
-                  saving.
+                  {{ $t('admin.kv.mode_hint') }}
                 </FieldDescription>
-                <FieldError v-if="errors.length" :errors="errors" />
+                <FieldError
+                  v-if="errors.length"
+                  :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                />
               </Field>
             </VeeField>
 
             <VeeField v-slot="{ field, errors }" name="value">
               <Field :data-invalid="!!errors.length">
-                <FieldLabel for="admin-kv-value"> Value </FieldLabel>
+                <FieldLabel for="admin-kv-value"> {{ $t('admin.kv.value') }} </FieldLabel>
                 <AdminKvValueEditor
                   id="admin-kv-value"
                   :model-value="String(field.value ?? '')"
@@ -177,20 +173,22 @@
                   @update:model-value="field.onChange"
                 />
                 <FieldDescription>
-                  Existing non-string KV values are shown as formatted JSON. Existing raw strings
-                  that parse as JSON open in JSON mode.
+                  {{ $t('admin.kv.value_hint') }}
                 </FieldDescription>
-                <FieldError v-if="errors.length" :errors="errors" />
+                <FieldError
+                  v-if="errors.length"
+                  :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                />
               </Field>
             </VeeField>
           </FieldGroup>
 
           <DialogFooter>
             <Button type="button" variant="outline" :disabled="saving" @click="closeDialog">
-              Cancel
+              {{ $t('common.cancel') }}
             </Button>
             <Button type="submit" :is-loading="saving">
-              {{ isEditing ? 'Save value' : 'Create key' }}
+              {{ t(isEditing ? 'admin.kv.save_value' : 'admin.kv.create_key') }}
             </Button>
           </DialogFooter>
         </form>
@@ -200,20 +198,18 @@
     <AlertDialog v-model:open="deleteDialogOpen">
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete KV key(s)?</AlertDialogTitle>
+          <AlertDialogTitle>{{ t('admin.kv.delete_title', keysToDelete.length) }}</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently delete {{ keysToDelete.length }} KV key(s). This action cannot be
-            undone.
+            {{ t('admin.kv.delete_description', keysToDelete.length) }}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <AlertBox v-if="keysToDeleteIncludeTemporary" variant="warning">
           <AlertTriangleIcon class="size-4 shrink-0" />
           <AlertBoxContent>
-            <AlertBoxTitle>Selection includes temporary or cache-sensitive keys</AlertBoxTitle>
+            <AlertBoxTitle>{{ $t('admin.kv.temporary_selection') }}</AlertBoxTitle>
             <AlertBoxDescription>
-              Deleting these keys can interrupt active auth, decrypt, media, or cache flows. Editing
-              TTL-backed keys can also make them permanent.
+              {{ $t('admin.kv.temporary_delete_hint') }}
             </AlertBoxDescription>
           </AlertBoxContent>
         </AlertBox>
@@ -227,13 +223,13 @@
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel :disabled="deleting"> Cancel </AlertDialogCancel>
+          <AlertDialogCancel :disabled="deleting"> {{ $t('common.cancel') }} </AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             :disabled="deleting || keysToDelete.length === 0"
             @click="confirmDelete"
           >
-            Delete key(s)
+            {{ t('admin.kv.delete_action', keysToDelete.length) }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -277,12 +273,13 @@ interface DataTableSelectionRef {
   };
 }
 
-const columnLabels = {
-  key: 'Key',
-  prefix: 'Prefix',
-  value: 'Value preview',
-  temporary: 'Warning',
-};
+const { t, te, locale } = useI18n();
+const columnLabels = computed(() => ({
+  key: t('admin.kv.key'),
+  prefix: t('admin.kv.prefix'),
+  value: t('admin.kv.preview'),
+  temporary: t('admin.kv.warning'),
+}));
 
 const defaultFormValues: AdminKvMutationInput = {
   key: '',
@@ -340,7 +337,9 @@ const keysToDeleteIncludeTemporary = computed(() =>
   }),
 );
 
-const columns = computed(() => createColumns(handleEdit, (row) => openDeleteDialog([row.key])));
+const columns = computed(() =>
+  createColumns(t, locale.value, handleEdit, (row) => openDeleteDialog([row.key])),
+);
 
 const onSubmit = handleSubmit(
   async (formValues) => {
@@ -370,21 +369,21 @@ const onSubmit = handleSubmit(
         [response.data.key]: response.data,
       };
 
-      toast.success(wasEditing ? 'KV value updated successfully' : 'KV key created successfully');
+      toast.success(t(wasEditing ? 'admin.kv.updated' : 'admin.kv.created'));
       closeDialog();
 
       if (!wasEditing) {
         await fetchKeys();
       }
     } catch (error) {
-      setApiFormErrors(parseApiError(error, 'Failed to save the KV item'));
+      setApiFormErrors(parseApiError(error));
     } finally {
       saving.value = false;
     }
   },
   ({ errors }) => {
     const firstError = Object.values(errors).flat().filter(Boolean)[0];
-    toast.error(firstError ?? 'Please fix the form errors');
+    toast.error(t(firstError && te(firstError) ? firstError : 'errors.invalid_form'));
   },
 );
 
@@ -400,8 +399,8 @@ async function fetchKeys() {
     keys.value = response.data.keys;
     valueCache.value = {};
     dataTableRef.value?.table?.resetRowSelection();
-  } catch (error) {
-    toast.error(parseApiError(error, 'Failed to load KV keys').message);
+  } catch {
+    toast.error(t('admin.kv.load_failed'));
   } finally {
     loading.value = false;
   }
@@ -435,8 +434,8 @@ async function fetchValuesForKeys(candidateKeys: string[]): Promise<AdminKvValue
     valueCache.value = nextCache;
 
     return response.data.values;
-  } catch (error) {
-    toast.error(parseApiError(error, 'Failed to load visible KV values').message);
+  } catch {
+    toast.error(t('admin.kv.load_values_failed'));
     return [];
   } finally {
     valuesLoading.value = false;
@@ -460,7 +459,7 @@ async function handleEdit(row: AdminKvTableRow) {
   const value = await getValueForKey(row.key);
 
   if (!value) {
-    toast.error('Failed to load the selected KV value');
+    toast.error(t('admin.kv.load_selected_failed'));
     return;
   }
 
@@ -485,7 +484,7 @@ function openBulkDeleteDialog() {
   if (selectedKeys.value.length === 0) return;
 
   if (selectedKeys.value.length > 1000) {
-    toast.error('Select 1000 or fewer KV keys before bulk deleting');
+    toast.error(t('admin.kv.delete_limit'));
     return;
   }
 
@@ -514,12 +513,12 @@ async function confirmDelete() {
       throw response;
     }
 
-    toast.success(`Deleted ${response.data.deleted} KV key(s)`);
+    toast.success(t('admin.kv.deleted', response.data.deleted));
     keysToDelete.value = [];
     deleteDialogOpen.value = false;
     await fetchKeys();
-  } catch (error) {
-    toast.error(parseApiError(error, 'Failed to delete KV key(s)').message);
+  } catch {
+    toast.error(t('admin.kv.delete_failed'));
   } finally {
     deleting.value = false;
   }
@@ -536,11 +535,11 @@ async function clearKvAndCache() {
       throw response;
     }
 
-    toast.success('KV namespace and server cache cleared successfully');
+    toast.success(t('admin.kv.cleared'));
     clearDialogOpen.value = false;
     await fetchKeys();
-  } catch (error) {
-    toast.error(parseApiError(error, 'Failed to clear KV and server cache').message);
+  } catch {
+    toast.error(t('admin.kv.clear_failed'));
   } finally {
     clearing.value = false;
   }
@@ -559,27 +558,34 @@ async function getValueForKey(key: string): Promise<AdminKvValuePayload | null> 
 }
 
 function setApiFormErrors(error: ParsedApiError) {
+  const errorKey = {
+    KV_KEY_ALREADY_EXISTS: 'admin.kv.key_exists',
+    KV_KEY_NOT_FOUND: 'admin.kv.key_missing',
+    INVALID_JSON_VALUE: 'admin.kv.invalid_json',
+  };
+  const messageKey =
+    Object.entries(errorKey).find(([code]) => code === error.code)?.[1] ?? 'admin.kv.save_failed';
   const keyErrors = error.fieldErrors.key;
   const valueErrors = error.fieldErrors.value;
   const modeErrors = error.fieldErrors.mode;
 
   if (keyErrors && keyErrors.length > 0) {
-    setFieldError('key', keyErrors[0] ?? error.message);
+    setFieldError('key', keyErrors[0] ?? messageKey);
   }
 
   if (valueErrors && valueErrors.length > 0) {
-    setFieldError('value', valueErrors[0] ?? error.message);
+    setFieldError('value', valueErrors[0] ?? messageKey);
   }
 
   if (modeErrors && modeErrors.length > 0) {
-    setFieldError('mode', modeErrors[0] ?? error.message);
+    setFieldError('mode', modeErrors[0] ?? messageKey);
   }
 
   if (!keyErrors && !valueErrors && !modeErrors) {
-    setFieldError('value', error.message);
+    setFieldError('value', messageKey);
   }
 
-  toast.error(error.message);
+  toast.error(t(messageKey));
 }
 
 function isKvValuePayload(value: AdminKvValuePayload | undefined): value is AdminKvValuePayload {

@@ -8,8 +8,11 @@
 import AdminKvManager from '#layers/admin-kv/app/components/admin/kv/AdminKvManager.vue';
 
 definePageMeta({
-  title: 'KV Store',
-  breadcrumb: 'KV Store',
+  title: 'admin.kv.title',
+  breadcrumb: 'admin.kv.title',
   middleware: ['auth', 'admin'],
 });
+
+const { t } = useI18n();
+useSeoMeta({ title: () => t('admin.kv.title'), description: () => t('admin.kv.description') });
 </script>

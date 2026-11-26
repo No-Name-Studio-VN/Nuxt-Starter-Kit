@@ -9,7 +9,7 @@ import AdminUsersManager from '#layers/admin-users/app/components/admin/users/Ad
 
 definePageMeta({
   title: 'admin.users.title',
-  breadcrumb: 'admin.users_breadcrumb',
+  breadcrumb: 'admin.users.heading',
   middleware: ['auth', 'admin'],
 });
 

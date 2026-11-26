@@ -6,8 +6,8 @@ const adminCardRecords: AdminCardRecord[] = [
   {
     id: 'kv',
     order: 300,
-    title: 'KV Store',
-    description: 'Browse and manage KV keys, values, and cache clearing controls',
+    title: 'admin.kv.title',
+    description: 'admin.kv.card_description',
     to: '/admin/kv',
     icon: DatabaseIcon,
     bgColor: 'bg-slate-500/10',
