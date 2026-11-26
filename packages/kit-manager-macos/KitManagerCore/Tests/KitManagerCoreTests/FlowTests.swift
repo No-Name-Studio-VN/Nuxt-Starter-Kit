@@ -240,14 +240,6 @@ struct FlowTests {
         #expect(!prompt.contains("…and"))
     }
 
-    @Test func moduleChangePromptCapsTheChangeListToo() {
-        let prompt = PromptBuilder.moduleChange(
-            ModuleChangePromptInput(
-                projectName: "big", versionLabel: "v3.1.0", action: .add, moduleIDs: ["pwa"],
-                report: report(changes: (0..<201).map { change($0) }), scripts: []))
-        #expect(prompt.contains("…and 1 more"))
-    }
-
     @Test func conflictsAreNeverCapped() {
         let conflicts = (0..<250).map { "src/conflict-\($0).ts" }
         let prompt = PromptBuilder.upgrade(

@@ -68,11 +68,24 @@ struct ProcessTests {
         }
     }
 
-    @Test func resolvesLoginPath() async {
-        let environment = await ShellEnvironment.resolve(shell: "/bin/zsh")
-        #expect(!environment.path.isEmpty)
-        #expect(environment.path.contains("/usr/bin"))
-        #expect(environment.variables["PATH"] == environment.path)
+    @Test func resolvesLoginPath() async throws {
+        let temp = try TempDirectory()
+        defer { temp.remove() }
+        let path = "/kit-manager/login-shell/bin:/kit-manager/login-shell/sbin"
+        let shell = temp.url.appending(path: "login-shell")
+        try temp.write("login-shell", """
+            #!/bin/sh
+            [ "$#" -eq 4 ] && [ "$1" = '-i' ] && [ "$2" = '-l' ] && [ "$3" = '-c' ] || exit 2
+            export PATH='\(path)'
+            echo 'login banner'
+            eval "$4" || exit
+            echo 'login footer'
+            """)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: shell.path)
+
+        let environment = await ShellEnvironment.resolve(shell: shell.path)
+        #expect(environment.path == path)
+        #expect(environment.variables["PATH"] == path)
     }
 
     @Test func neverPromptsForGitCredentials() {
