@@ -12,7 +12,13 @@
       </span>
       <Kbd class="ml-auto hidden md:block"> <span class="text-xs">⌘</span>K </Kbd>
     </Button>
-    <Button v-else variant="ghost" size="icon" @click="openSearchDialog">
+    <Button
+      v-else
+      variant="ghost"
+      size="icon"
+      :aria-label="$t('search.title')"
+      @click="openSearchDialog"
+    >
       <SearchIcon :size="18" />
     </Button>
   </template>

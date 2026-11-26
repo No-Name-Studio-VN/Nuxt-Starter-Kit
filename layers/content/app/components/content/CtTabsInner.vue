@@ -108,8 +108,12 @@
       </PopoverTrigger>
       <PopoverContent class="w-50 p-0">
         <Command>
-          <CommandInput v-if="!disableSearch" class="h-9" :placeholder="searchPlaceholder" />
-          <CommandEmpty>{{ searchEmpty }}</CommandEmpty>
+          <CommandInput
+            v-if="!disableSearch"
+            class="h-9"
+            :placeholder="searchPlaceholder ?? $t('docs.search_tabs')"
+          />
+          <CommandEmpty>{{ searchEmpty ?? $t('docs.no_tab') }}</CommandEmpty>
           <CommandList>
             <CommandGroup>
               <CommandItem
@@ -148,10 +152,10 @@
 </template>
 
 <script setup lang="ts">
-import CtIcon from "#layers/content/app/components/content/CtIcon.vue";
-import { cn } from "@/lib/utils";
-import { ScrollBar } from "~/components/ui/scroll-area";
-import { ChevronsUpDownIcon, CheckIcon } from "@lucide/vue";
+import CtIcon from '#layers/content/app/components/content/CtIcon.vue';
+import { cn } from '@/lib/utils';
+import { ScrollBar } from '~/components/ui/scroll-area';
+import { ChevronsUpDownIcon, CheckIcon } from '@lucide/vue';
 
 const slots = useSlots();
 
@@ -160,7 +164,7 @@ const tabNodes = computed(() => slots.default?.() ?? []);
 
 const props = defineProps<{
   slotsData: { label: string; index: number }[];
-  variant?: "separate" | "card" | "line" | "combobox";
+  variant?: 'separate' | 'card' | 'line' | 'combobox';
   padded?: boolean;
   inStack?: boolean;
   disableSearch?: boolean;
@@ -170,7 +174,7 @@ const props = defineProps<{
 }>();
 defineSlots();
 
-const syncState = useCookie<{ scope: string; value?: string }[]>("tabs-sync-state", {
+const syncState = useCookie<{ scope: string; value?: string }[]>('tabs-sync-state', {
   default: () => [],
 });
 

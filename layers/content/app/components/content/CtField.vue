@@ -6,7 +6,7 @@
           {{ name }}
         </span>
         <span v-if="required" class="text-muted-foreground font-mono text-sm">
-          {{ $t(fieldRequiredText) }}
+          {{ $te(fieldRequiredText) ? $t(fieldRequiredText) : fieldRequiredText }}
         </span>
         <span class="text-muted-foreground ml-auto font-mono text-sm">
           {{ type }}

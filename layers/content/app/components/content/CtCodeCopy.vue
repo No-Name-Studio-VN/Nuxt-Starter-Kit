@@ -1,5 +1,11 @@
 <template>
-  <Button ref="checkIconRef" variant="outline" class="size-7 p-1" @click="handleClick">
+  <Button
+    ref="checkIconRef"
+    variant="outline"
+    class="size-7 p-1"
+    :aria-label="t(copied ? 'common.copy.success' : 'docs.copy_code')"
+    @click="handleClick"
+  >
     <Transition name="fade" mode="out-in">
       <ClipboardCopyIcon v-if="copied === false" class="text-muted-foreground cursor-pointer" />
       <CheckIcon v-else class="text-muted-foreground cursor-pointer self-center" />
@@ -8,30 +14,31 @@
 </template>
 
 <script setup lang="ts">
-import { toast } from "vue-sonner";
-import { ClipboardCopyIcon, CheckIcon } from "@lucide/vue";
+import { toast } from 'vue-sonner';
+import { ClipboardCopyIcon, CheckIcon } from '@lucide/vue';
 
 const { code } = defineProps<{
   code: string;
 }>();
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 
 const { copy } = useClipboard({ source: code, legacy: true });
 const copied = ref(false);
 
 async function handleClick() {
-  await copy(code.replaceAll(/\s*\/\/\s*\[!code (focus|\+\+|--|error|warning)\]/g, ""));
+  await copy(code.replaceAll(/\s*\/\/\s*\[!code (focus|\+\+|--|error|warning)\]/g, ''));
   copied.value = true;
 
   if (useDocsConfig().value.main.codeCopyToast) {
+    const message = useDocsConfig().value.main.codeCopyToastText;
     toast({
-      description: t(useDocsConfig().value.main.codeCopyToastText),
+      description: te(message) ? t(message) : message,
     });
   }
 }
 
-const checkIconRef = useTemplateRef("checkIconRef");
+const checkIconRef = useTemplateRef('checkIconRef');
 onClickOutside(checkIconRef, () => {
   copied.value = false;
 });

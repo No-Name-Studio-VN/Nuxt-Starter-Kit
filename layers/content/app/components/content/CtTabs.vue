@@ -11,8 +11,8 @@ const {
   padded = true,
   inStack = false,
   disableSearch = false,
-  searchPlaceholder = 'Search Tab...',
-  searchEmpty = 'No tab found.',
+  searchPlaceholder,
+  searchEmpty,
   sync = undefined,
 } = defineProps<{
   variant?: 'separate' | 'card' | 'line' | 'combobox';

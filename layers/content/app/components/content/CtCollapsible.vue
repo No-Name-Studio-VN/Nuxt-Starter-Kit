@@ -8,7 +8,7 @@
       <CollapsibleTrigger as-child>
         <Button variant="ghost" size="sm" class="size-9 p-0">
           <ChevronsUpDownIcon />
-          <span class="sr-only">Toggle</span>
+          <span class="sr-only">{{ $t('common.toggle') }}</span>
         </Button>
       </CollapsibleTrigger>
     </div>

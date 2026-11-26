@@ -1,5 +1,3 @@
-import { APP_MANIFEST } from '../../shared/constants/manifest';
-
 export const DOCS_CONFIG = {
   headerNav: [
     {
@@ -18,7 +16,7 @@ export const DOCS_CONFIG = {
   banner: {
     enable: false,
     showClose: true,
-    content: `Welcome to **${APP_MANIFEST.name}**`,
+    content: 'docs.banner_welcome',
     to: 'https://github.com/No-Name-Studio-VN/Homepage',
     target: '_blank',
     border: true,
@@ -53,7 +51,7 @@ export const DOCS_CONFIG = {
   },
   footer: {
     border: true,
-    credits: 'FOOTER_CREDIT',
+    credits: 'copyright',
     links: [
       {
         icon: 'lucide:twitter',

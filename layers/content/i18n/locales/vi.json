@@ -11,7 +11,13 @@
     },
     "issuelink": {
       "title": "Phản ánh vấn đề"
-    }
+    },
+    "page_navigation": "Điều hướng trang",
+    "search_tabs": "Tìm thẻ...",
+    "no_tab": "Không tìm thấy thẻ.",
+    "copy_code": "Sao chép mã",
+    "banner_welcome": "Chào mừng đến với **{site}**",
+    "playground": "Môi trường thử nghiệm"
   },
   "blog": {
     "badge": "Blog",

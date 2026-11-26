@@ -40,7 +40,7 @@
                 <MoonIcon
                   class="absolute size-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
                 />
-                <span class="sr-only">Toggle theme</span>
+                <span class="sr-only">{{ $t('common.toggle_theme') }}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
