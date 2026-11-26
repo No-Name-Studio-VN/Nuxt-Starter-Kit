@@ -32,6 +32,8 @@
     ".env.example",
     "README.md",
     "site.config.ts",
+    "shared/constants/manifest.ts",
+    "layers/pwa/shared/constants/manifest.ts",
     "i18n/**",
     "public/**"
   ],

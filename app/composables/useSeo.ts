@@ -38,6 +38,8 @@ export function useSeo(options: UseSeoOptions) {
     description,
     ogTitle: title,
     ogDescription: description,
+    twitterTitle: title,
+    twitterDescription: description,
     ogType: type,
     ogUrl: canonicalUrl,
     ogLocale: locale.value,

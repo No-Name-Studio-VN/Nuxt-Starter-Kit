@@ -1,3 +1,4 @@
+import { hasProtocol, withHttps, withoutTrailingSlash } from 'ufo';
 import { APP_MANIFEST, SEO_CONFIG } from './shared/constants/manifest';
 import { routeRules } from './shared/apiRoutes';
 import type { NuxtPage } from 'nuxt/schema';
@@ -9,6 +10,11 @@ import {
   locales,
 } from './i18n-constants';
 import { SITE_CONFIG } from './site.config';
+
+const configuredSiteUrl = process.env.NUXT_PUBLIC_SITE_URL?.trim() || 'https://nnsvn.me';
+const siteUrl = withoutTrailingSlash(
+  hasProtocol(configuredSiteUrl) ? configuredSiteUrl : withHttps(configuredSiteUrl),
+);
 
 function markUnprefixedPages(pages: NuxtPage[]) {
   for (const page of pages) {
@@ -81,6 +87,7 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
         { rel: 'icon', href: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       ],
       meta: [{ name: 'keywords', content: SEO_CONFIG.keywords }],
     },
@@ -89,8 +96,9 @@ export default defineNuxtConfig({
   css: ['~/assets/css/tailwind.css'],
 
   site: {
-    url: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+    url: siteUrl,
     name: APP_MANIFEST.name,
+    description: APP_MANIFEST.description,
   },
 
   colorMode: {
@@ -107,7 +115,7 @@ export default defineNuxtConfig({
       sentry: {
         dsn: '',
       },
-      url: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+      url: siteUrl,
       site: SITE_CONFIG,
       umami: {
         src: '',

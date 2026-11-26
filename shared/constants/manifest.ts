@@ -1,7 +1,9 @@
+import en from '../../i18n/locales/en.json';
+
 export const APP_MANIFEST = {
   name: 'Nuxt Starter Kit',
   short_name: 'Nuxt Template',
-  description: 'A Nuxt 4 starter template',
+  description: en.home.description,
 };
 
 // SEO-related constants
