@@ -110,6 +110,43 @@
         "layers/content/app/components/content/ProsePre.vue",
         "layers/content/app/composables/useDocsConfig.ts"
       ]
+    },
+    {
+      "id": "content.localized-docs-controls",
+      "since": "4.2.0",
+      "title": "Localize documentation search, navigation, banner, footer, and code controls. Keep custom docs.config.ts copy when merging the new translation keys.",
+      "kind": "feature",
+      "files": [
+        "layers/content/app/components/LandingHero.vue",
+        "layers/content/app/components/content/CtCodeCopy.vue",
+        "layers/content/app/components/content/CtCollapsible.vue",
+        "layers/content/app/components/content/CtField.vue",
+        "layers/content/app/components/content/CtPlayground.vue",
+        "layers/content/app/components/content/CtTabs.vue",
+        "layers/content/app/components/content/CtTabsInner.vue",
+        "layers/content/app/components/layout/Banner.vue",
+        "layers/content/app/components/layout/DocsFooter.vue",
+        "layers/content/app/components/layout/Footer.vue",
+        "layers/content/app/components/layout/Header.vue",
+        "layers/content/app/components/layout/PrevNext.vue",
+        "layers/content/app/components/layout/SearchButton.vue",
+        "layers/content/app/components/layout/SearchDialog.vue",
+        "layers/content/app/composables/useDocsConfig.ts",
+        "layers/content/docs.config.ts",
+        "layers/content/i18n/locales/en.json",
+        "layers/content/i18n/locales/vi.json",
+        "layers/content/module.json"
+      ]
+    },
+    {
+      "id": "content.scaffolding-requirements",
+      "since": "4.2.0",
+      "title": "Document the current pnpm and Node.js requirements and Web Security’s default installation and opt-out behavior.",
+      "kind": "feature",
+      "files": [
+        "content/docs/1.getting-started/1.introduction.md",
+        "content/docs/1.getting-started/2.installation.md"
+      ]
     }
   ]
 }

@@ -3,5 +3,14 @@
   "description": "Transactional email delivery through Resend.",
   "group": "Miscellaneous",
   "requires": [],
-  "env": ["NUXT_RESEND_API_KEY", "NUXT_RESEND_FROM_EMAIL"]
+  "env": ["NUXT_RESEND_API_KEY", "NUXT_RESEND_FROM_EMAIL"],
+  "changes": [
+    {
+      "id": "email.catalog-selection",
+      "since": "4.2.0",
+      "title": "Select the Resend Email transport directly from the module catalog.",
+      "kind": "feature",
+      "files": ["layers/email/module.json"]
+    }
+  ]
 }

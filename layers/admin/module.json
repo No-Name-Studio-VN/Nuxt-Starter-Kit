@@ -25,6 +25,26 @@
         "layers/admin/i18n/locales/en.json",
         "layers/admin/i18n/locales/vi.json"
       ]
+    },
+    {
+      "id": "admin.localized-admin-navigation",
+      "since": "4.2.0",
+      "title": "Localize the admin landing page and navigation labels.",
+      "kind": "feature",
+      "files": [
+        "layers/admin/app/pages/admin/index.vue",
+        "layers/admin/app/plugins/nav.ts",
+        "layers/admin/i18n/locales/en.json",
+        "layers/admin/i18n/locales/vi.json",
+        "layers/admin/module.json"
+      ]
+    },
+    {
+      "id": "admin.seed-policy-and-prerender",
+      "since": "4.2.0",
+      "title": "Web Security now supplies the admin seed rate limit. Keep custom rate-limit overrides and retain the new prerender exclusion for admin routes.",
+      "kind": "security",
+      "files": ["layers/admin/nuxt.config.ts"]
     }
   ]
 }

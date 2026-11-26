@@ -13,5 +13,29 @@
     "workbox-expiration",
     "workbox-broadcast-update"
   ],
-  "devDependencies": ["@vite-pwa/assets-generator"]
+  "devDependencies": ["@vite-pwa/assets-generator"],
+  "changes": [
+    {
+      "id": "pwa.localized-install-and-update-prompts",
+      "since": "4.2.0",
+      "title": "Localize install prompts, update notifications, and default-locale manifest shortcuts. Merge descriptions and shortcut labels into your manifest without replacing your branding.",
+      "kind": "feature",
+      "files": [
+        "layers/pwa/app/components/InstallPrompter.vue",
+        "layers/pwa/app/constants/homedata.ts",
+        "layers/pwa/app/plugins/notifications.client.ts",
+        "layers/pwa/i18n/locales/en.json",
+        "layers/pwa/i18n/locales/vi.json",
+        "layers/pwa/module.json",
+        "layers/pwa/shared/constants/manifest.ts"
+      ]
+    },
+    {
+      "id": "pwa.pwa-prerender-exclusion",
+      "since": "4.2.0",
+      "title": "Use Nuxt’s prerender config to exclude the app entry and its static OG image route.",
+      "kind": "fix",
+      "files": ["layers/pwa/nuxt.config.ts"]
+    }
+  ]
 }

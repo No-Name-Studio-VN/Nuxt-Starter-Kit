@@ -12,5 +12,14 @@
   ],
   "devDependencies": ["@types/better-sqlite3", "drizzle-kit"],
   "scripts": ["db:generate", "deploy:db"],
-  "bindings": ["DB"]
+  "bindings": ["DB"],
+  "changes": [
+    {
+      "id": "database.essentials-catalog-group",
+      "since": "4.2.0",
+      "title": "Find Database in the Essentials group; the storage and migration setup is unchanged.",
+      "kind": "feature",
+      "files": ["layers/database/module.json"]
+    }
+  ]
 }

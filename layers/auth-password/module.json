@@ -3,11 +3,7 @@
   "description": "Username and password sign-in, registration and password reset.",
   "group": "Authentication",
   "parent": "auth",
-  "requires": [
-    "server-core",
-    "auth",
-    "email"
-  ],
+  "requires": ["server-core", "auth", "email"],
   "changes": [
     {
       "id": "auth-password.optional-bot-protection",
@@ -27,6 +23,27 @@
         "layers/auth-password/server/api/auth/register-password.post.ts",
         "layers/auth-password/shared/constants/passwordMessages.ts",
         "layers/auth-password/shared/schemas/passwordSchema.ts"
+      ]
+    },
+    {
+      "id": "auth-password.localized-password-forms",
+      "since": "4.2.0",
+      "title": "Localize password sign-in, registration, reset, and strength feedback. Custom forms should translate validation keys before display.",
+      "kind": "feature",
+      "files": [
+        "layers/auth-password/app/components/PasswordStrengthIndicator.vue",
+        "layers/auth-password/app/components/auth/PasswordLoginForm.vue",
+        "layers/auth-password/app/components/auth/SignUpLink.vue",
+        "layers/auth-password/app/pages/auth/forgot-password.vue",
+        "layers/auth-password/app/pages/auth/register.vue",
+        "layers/auth-password/app/pages/auth/reset-password.vue",
+        "layers/auth-password/app/utils/passwordValidation.ts",
+        "layers/auth-password/i18n/locales/en.json",
+        "layers/auth-password/i18n/locales/vi.json",
+        "layers/auth-password/module.json",
+        "layers/auth-password/shared/constants/passwordMessages.ts",
+        "layers/auth-password/shared/schemas/passwordSchema.ts",
+        "layers/auth-password/types/password.ts"
       ]
     }
   ]

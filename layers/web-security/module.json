@@ -3,5 +3,25 @@
   "description": "HTTP security headers, Content Security Policy and request protection through Nuxt Security. Installed by default.",
   "group": "Foundation",
   "installByDefault": true,
-  "dependencies": ["nuxt-security"]
+  "dependencies": ["nuxt-security"],
+  "changes": [
+    {
+      "id": "web-security.default-policy-layer",
+      "since": "4.2.0",
+      "title": "Keep the default Web Security layer for security headers and API rate limits, or configure replacements before removing it.",
+      "kind": "security",
+      "files": [
+        "layers/web-security/module.json",
+        "layers/web-security/module.ts",
+        "layers/web-security/nuxt.config.ts"
+      ]
+    },
+    {
+      "id": "web-security.cloudflare-header-guidance",
+      "since": "4.2.0",
+      "title": "Document how to verify security headers separately on Cloudflare static assets and Worker responses.",
+      "kind": "feature",
+      "files": ["layers/web-security/README.md"]
+    }
+  ]
 }

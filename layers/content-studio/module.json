@@ -5,5 +5,14 @@
   "parent": "content",
   "requires": ["content"],
   "dependencies": ["nuxt-studio", "nuxt-component-meta"],
-  "env": ["STUDIO_GITHUB_CLIENT_ID", "STUDIO_GITHUB_CLIENT_SECRET"]
+  "env": ["STUDIO_GITHUB_CLIENT_ID", "STUDIO_GITHUB_CLIENT_SECRET"],
+  "changes": [
+    {
+      "id": "content-studio.studio-prerender-exclusions",
+      "since": "4.2.0",
+      "title": "Exclude Nuxt Studio editor and internal routes from static prerendering.",
+      "kind": "fix",
+      "files": ["layers/content-studio/module.json", "layers/content-studio/nuxt.config.ts"]
+    }
+  ]
 }

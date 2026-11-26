@@ -14,6 +14,22 @@
         "layers/admin-users/module.json",
         "layers/admin-users/app/components/admin/users/AdminUsersManager.vue"
       ]
+    },
+    {
+      "id": "admin-users.localized-user-management",
+      "since": "4.2.0",
+      "title": "Localize user management forms, table actions, validation, and relative timestamps.",
+      "kind": "feature",
+      "files": [
+        "layers/admin-users/app/components/admin/users/AdminUsersManager.vue",
+        "layers/admin-users/app/components/admin/users/columns.ts",
+        "layers/admin-users/app/pages/admin/users.vue",
+        "layers/admin-users/app/plugins/nav.ts",
+        "layers/admin-users/i18n/locales/en.json",
+        "layers/admin-users/i18n/locales/vi.json",
+        "layers/admin-users/module.json",
+        "layers/admin-users/shared/schemas/adminUserSchema.ts"
+      ]
     }
   ]
 }

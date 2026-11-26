@@ -10,6 +10,24 @@
       "title": "Declare defaults for optional dashboard title controls and layout classes.",
       "kind": "fix",
       "files": ["layers/dashboard/module.json", "layers/dashboard/app/components/AppLayout.vue"]
+    },
+    {
+      "id": "dashboard.localized-dashboard-navigation",
+      "since": "4.2.0",
+      "title": "Localize dashboard navigation and quick search, including labels from registered navigation entries.",
+      "kind": "feature",
+      "files": [
+        "layers/dashboard/app/components/AppLayout.vue",
+        "layers/dashboard/app/components/AppSidebar.vue",
+        "layers/dashboard/app/components/HotSearch.vue",
+        "layers/dashboard/app/components/nav/NavMain.vue",
+        "layers/dashboard/app/components/nav/NavSecondary.vue",
+        "layers/dashboard/app/pages/dashboard.vue",
+        "layers/dashboard/app/plugins/nav.ts",
+        "layers/dashboard/i18n/locales/en.json",
+        "layers/dashboard/i18n/locales/vi.json",
+        "layers/dashboard/module.json"
+      ]
     }
   ]
 }

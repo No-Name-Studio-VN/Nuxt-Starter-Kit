@@ -25,6 +25,27 @@
         "layers/auth-oauth/module.json",
         "layers/auth-oauth/app/components/settings/ConnectedAccountsCard.vue"
       ]
+    },
+    {
+      "id": "auth-oauth.localized-oauth-feedback",
+      "since": "4.2.0",
+      "title": "Localize OAuth popup and account-linking feedback, with English fallbacks for provider errors.",
+      "kind": "feature",
+      "files": [
+        "layers/auth-oauth/app/composables/useOAuthSignInPopup.ts",
+        "layers/auth-oauth/app/pages/auth/oauth/popup.vue",
+        "layers/auth-oauth/i18n/locales/en.json",
+        "layers/auth-oauth/i18n/locales/vi.json",
+        "layers/auth-oauth/module.json",
+        "layers/auth-oauth/shared/constants/oauthMessages.ts"
+      ]
+    },
+    {
+      "id": "auth-oauth.popup-opener-policy",
+      "since": "4.2.0",
+      "title": "Web Security now provides the opener policy that allows OAuth popups. Check custom opener-policy overrides before upgrading.",
+      "kind": "security",
+      "files": ["layers/auth-oauth/nuxt.config.ts"]
     }
   ]
 }

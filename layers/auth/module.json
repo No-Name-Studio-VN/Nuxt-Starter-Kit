@@ -17,6 +17,32 @@
         "layers/auth/app/pages/onboarding.vue",
         "layers/auth/server/utils/completeSignIn.ts"
       ]
+    },
+    {
+      "id": "auth.localized-sign-in-feedback",
+      "since": "4.2.0",
+      "title": "Localize sign-in, account navigation, and onboarding. Review customized login copy and let sign-in feedback resolve translation keys at render time.",
+      "kind": "feature",
+      "files": [
+        "layers/auth/app/components/auth/AuthPageLayout.vue",
+        "layers/auth/app/components/nav/DashboardSignIn.vue",
+        "layers/auth/app/components/nav/NavUser.vue",
+        "layers/auth/app/components/onboarding/UsernameStep.vue",
+        "layers/auth/app/pages/auth/index.vue",
+        "layers/auth/app/pages/auth/login.vue",
+        "layers/auth/app/plugins/nav.ts",
+        "layers/auth/i18n/locales/en.json",
+        "layers/auth/i18n/locales/vi.json",
+        "layers/auth/module.json",
+        "layers/auth/shared/constants/authMessages.ts"
+      ]
+    },
+    {
+      "id": "auth.account-prerender-exclusions",
+      "since": "4.2.0",
+      "title": "Exclude sign-in, settings, and onboarding—including localized sign-in routes—from static prerendering.",
+      "kind": "fix",
+      "files": ["layers/auth/nuxt.config.ts"]
     }
   ]
 }
