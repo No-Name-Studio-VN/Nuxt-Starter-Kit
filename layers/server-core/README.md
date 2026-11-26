@@ -1,6 +1,6 @@
 # Server core
 
-Internal module pulled in by every server module; it is never picked on its own.
+Select Server core on its own for the API helpers below, or get it automatically when another module requires it.
 
 - Server utils: `success()`, `successPaginated()`, `apiError()` and `zodErrorToFieldErrors()`
   (`server/utils/apiResponse.ts`), `reportServerError()`.

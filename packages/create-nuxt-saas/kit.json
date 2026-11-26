@@ -1,5 +1,5 @@
 {
-  "groups": ["Foundation", "Authentication", "App", "Content"],
+  "groups": ["Essentials", "Foundation", "Authentication", "App", "Content", "Miscellaneous"],
   "exclude": [
     "packages/**",
     "docs/**",

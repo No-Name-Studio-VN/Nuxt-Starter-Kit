@@ -1,8 +1,8 @@
 {
   "title": "Server core",
   "description": "The API response envelope, error helpers and request utilities shared by server modules.",
+  "group": "Essentials",
   "requires": [],
-  "internal": true,
   "changes": [
     {
       "id": "server-core.storage-split",

@@ -1,6 +1,6 @@
 # Cache storage
 
-Internal module that backs Nitro's `cache` storage with NuxtHub. This is the storage used by
+Backs Nitro's `cache` storage with NuxtHub. This is the storage used by
 `defineCachedFunction()` and `useStorage('cache')`. Without this module, production cache entries
 fall back to per-isolate memory.
 
