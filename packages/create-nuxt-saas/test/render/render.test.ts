@@ -259,6 +259,9 @@ describe('render real kit', () => {
             leaks.push(`${label}: layer ${module.id}`);
         }
         for (const path of markerLeaks(tree)) leaks.push(`${label}: nsk in ${path}`);
+        expect(text(tree, 'README.md')).toContain(
+          'This project was created and is maintained using [Nuxt-Starter-Kit](https://nnsvn.me/products/nuxt-starter-kit).',
+        );
         expect(tree.has('app/app.vue')).toBe(true);
         expect(tree.has('layers/auth/module.json')).toBe(selected.length > 0);
         expect(tree.has('content/blogs/sample.md')).toBe(selected.length > 0);
