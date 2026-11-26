@@ -15,15 +15,28 @@ const props = withDefaults(
   },
 );
 
+const { t } = useI18n();
 const progressValue = computed(() => props.strength.score);
 
 // Short labels keep the checklist to one or two lines so auth forms fit without scrolling.
 const checkItems = computed(() => [
-  { id: 'length', label: '8+ chars', passed: props.strength.checks.length },
-  { id: 'uppercase', label: 'Uppercase', passed: props.strength.checks.uppercase },
-  { id: 'lowercase', label: 'Lowercase', passed: props.strength.checks.lowercase },
-  { id: 'number', label: 'Number', passed: props.strength.checks.number },
-  { id: 'special', label: 'Symbol', passed: props.strength.checks.special },
+  { id: 'length', label: t('auth_password.strength.length'), passed: props.strength.checks.length },
+  {
+    id: 'uppercase',
+    label: t('auth_password.strength.uppercase'),
+    passed: props.strength.checks.uppercase,
+  },
+  {
+    id: 'lowercase',
+    label: t('auth_password.strength.lowercase'),
+    passed: props.strength.checks.lowercase,
+  },
+  { id: 'number', label: t('auth_password.strength.number'), passed: props.strength.checks.number },
+  {
+    id: 'special',
+    label: t('auth_password.strength.special'),
+    passed: props.strength.checks.special,
+  },
 ]);
 </script>
 
@@ -34,21 +47,21 @@ const checkItems = computed(() => [
         :model-value="progressValue"
         class="h-1 flex-1 transition-all duration-300"
         :style="{ '--progress-color': strength.color }"
-        :aria-label="`Password strength ${strength.score}%`"
+        :aria-label="t('auth_password.strength.label', { score: strength.score })"
       />
       <span
         class="shrink-0 text-xs font-medium transition-colors duration-300"
         :style="{ color: strength.color }"
         aria-live="polite"
       >
-        {{ strength.feedback }}
+        {{ t(`auth_password.strength.${strength.level}`) }}
       </span>
     </div>
 
     <ul
       v-if="showDetails"
       class="flex flex-wrap gap-x-3 gap-y-1 text-xs"
-      aria-label="Password requirements"
+      :aria-label="$t('settings.password.requirements')"
     >
       <li
         v-for="item in checkItems"
@@ -59,7 +72,9 @@ const checkItems = computed(() => [
         <Check v-if="item.passed" aria-hidden="true" class="size-3 shrink-0" />
         <span v-else aria-hidden="true" class="size-1 shrink-0 rounded-full bg-current mx-1" />
         <span>{{ item.label }}</span>
-        <span class="sr-only">{{ item.passed ? '(met)' : '(not met)' }}</span>
+        <span class="sr-only">{{
+          t(item.passed ? 'auth_password.strength.met' : 'auth_password.strength.not_met')
+        }}</span>
       </li>
     </ul>
   </div>

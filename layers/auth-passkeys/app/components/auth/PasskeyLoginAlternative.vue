@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Fingerprint } from '@lucide/vue';
-import { parseApiError } from '#layers/server-core/app/utils/apiError';
 import type {
   LoginAlternativeEmits,
   LoginAlternativeProps,
@@ -18,7 +17,7 @@ const { authenticate } = useWebAuthn();
 
 async function signInWithPasskey() {
   if (!props.username.trim()) {
-    emit('error', t('auth.passkey.username_required'));
+    emit('error', 'auth.passkey.username_required');
     return;
   }
 
@@ -27,13 +26,13 @@ async function signInWithPasskey() {
 
   try {
     if (!(await authenticatePasskey(props.username, authenticate))) {
-      emit('error', t('auth.passkey.sign_in_failed'));
+      emit('error', 'auth.passkey.sign_in_failed');
       emit('pending', false);
       return;
     }
     emit('done', props.redirectTo);
-  } catch (err) {
-    emit('error', parseApiError(err, t('auth.passkey.sign_in_failed')).message);
+  } catch {
+    emit('error', 'auth.passkey.sign_in_failed');
     emit('pending', false);
   }
 }

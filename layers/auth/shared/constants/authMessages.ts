@@ -1,22 +1,34 @@
+import en from '../../i18n/locales/en.json';
 import type { AuthErrorCode, AuthErrorMessage, AuthMessages } from '../../types/auth';
 
 /**
  * Authentication error messages for user-facing display
  */
 export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthErrorMessage> = {
-  validation: 'Please check your input and try again. All fields are required.',
-  unknown: 'An unexpected error occurred. Please try again later.',
+  validation: { key: 'auth.validation_failed', fallback: en.auth.validation_failed },
+  unknown: { key: 'auth.unknown_error', fallback: en.auth.unknown_error },
   'account-locked': {
     key: 'auth.account_locked',
-    fallback: 'This account is locked. Contact support for help.',
+    fallback: en.auth.account_locked,
   },
   'sign-in-step-required': {
     key: 'auth.sign_in_step_required',
-    fallback: 'This account needs another step to sign in. Try a different sign-in method.',
+    fallback: en.auth.sign_in_step_required,
   },
 };
 
 export type { AuthErrorCode } from '../../types/auth';
+
+const defaultError: AuthErrorMessage = {
+  key: 'auth.request_failed',
+  fallback: en.auth.request_failed,
+};
+
+function findAuthError(errorCode: string) {
+  return isAuthErrorCode(errorCode)
+    ? AUTH_ERROR_MESSAGES[errorCode]
+    : (extraErrorMessages.get(errorCode) ?? defaultError);
+}
 
 const extraErrorMessages = new Map<string, AuthErrorMessage>();
 const extraSuccessMessages = new Map<string, string>();
@@ -47,8 +59,6 @@ export function getAuthErrorMessage(
   translate?: (key: string) => string,
 ): string | null {
   if (!errorCode) return null;
-  const message = isAuthErrorCode(errorCode)
-    ? AUTH_ERROR_MESSAGES[errorCode]
-    : (extraErrorMessages.get(errorCode) ?? 'An error occurred. Please try again.');
+  const message = findAuthError(errorCode);
   return typeof message === 'string' ? message : (translate?.(message.key) ?? message.fallback);
 }

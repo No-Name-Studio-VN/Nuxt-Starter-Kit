@@ -70,7 +70,10 @@ function navigateFromSidebar(path: string) {
           <AuthState>
             <template v-if="user">
               <Avatar class="size-8 rounded-lg">
-                <AvatarImage :src="user.avatarUrl || '/images/avatar/default.png'" :alt="user.name" />
+                <AvatarImage
+                  :src="user.avatarUrl || '/images/avatar/default.png'"
+                  :alt="user.name"
+                />
                 <AvatarFallback class="rounded-lg">
                   {{ getInitials(user.name) }}
                 </AvatarFallback>
@@ -82,7 +85,7 @@ function navigateFromSidebar(path: string) {
               <ChevronsUpDown class="ml-auto size-4" />
             </template>
             <template v-else>
-              <span class="font-medium">Sign In</span>
+              <span class="font-medium">{{ $t('common.sign_in') }}</span>
               <ChevronsUpDown class="ml-auto size-4" />
             </template>
 
@@ -110,7 +113,7 @@ function navigateFromSidebar(path: string) {
             @click="navigateFromSidebar(item.to)"
           >
             <component :is="item.icon" />
-            {{ item.titleKey ? $t(item.titleKey) : item.title }}
+            {{ item.titleKey ? $t(item.titleKey) : $te(item.title) ? $t(item.title) : item.title }}
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
@@ -119,7 +122,7 @@ function navigateFromSidebar(path: string) {
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <SunMoon />
-              Appearance
+              {{ $t('settings.appearance') }}
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
@@ -135,7 +138,7 @@ function navigateFromSidebar(path: string) {
           @click="logout"
         >
           <LogOut />
-          Log out
+          {{ $t('common.log_out') }}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,6 +1,20 @@
 {
   "auth": {
     "verify_email_title": "Xác minh email",
-    "verify_email_description": "Xác minh địa chỉ email để hoàn tất thiết lập tài khoản của bạn."
+    "verify_email_description": "Xác minh địa chỉ email để hoàn tất thiết lập tài khoản của bạn.",
+    "verify_email_breadcrumb": "Xác minh email",
+    "verify_email_heading": "Kiểm tra email của bạn",
+    "verify_email_instructions": "Chúng tôi đã gửi liên kết xác minh đến {email}. Hãy nhấp vào liên kết để xác minh tài khoản. Nếu không thấy email, hãy kiểm tra thư rác.",
+    "verify_email_address": "địa chỉ email của bạn",
+    "verify_email_resent": "Đã gửi email xác minh! Vui lòng kiểm tra hộp thư đến.",
+    "verify_email_sent_button": "Đã gửi email",
+    "verify_email_resend": "Gửi lại email xác minh",
+    "verify_email_resend_failed": "Không thể gửi lại email xác minh. Vui lòng thử lại.",
+    "verify_email_required": "Địa chỉ email của bạn chưa được xác minh. Hãy kiểm tra hộp thư đến để tìm liên kết xác minh.",
+    "verify_email_invalid_token": "Liên kết xác minh không hợp lệ hoặc đã được sử dụng.",
+    "verify_email_expired_token": "Liên kết này đã hết hạn. Vui lòng yêu cầu liên kết mới.",
+    "verify_email_resend_wait": "Email xác minh đã được gửi gần đây. Hãy kiểm tra hộp thư đến hoặc chờ một lát trước khi gửi lại.",
+    "email_verified": "Email của bạn đã được xác minh! Bạn có thể đăng nhập ngay bây giờ.",
+    "verification_sent": "Đã gửi email xác minh. Vui lòng kiểm tra hộp thư đến."
   }
 }

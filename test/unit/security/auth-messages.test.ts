@@ -23,7 +23,7 @@ describe('sign-in feedback', () => {
   it('tells an OAuth user with a taken email to use their existing sign-in method', () => {
     authMessages.registerAuthMessages({ errors: OAUTH_ERROR_MESSAGES, success: {} });
     expect(authMessages.getAuthErrorMessage('oauth-email-in-use')).toMatch(
-      /existing sign-in method/i,
+      /sign in with your existing method/i,
     );
   });
 
@@ -39,10 +39,12 @@ describe('sign-in feedback', () => {
     expect(authMessages.getAuthErrorMessage(code)).toMatch(/\.$/);
   });
 
-  it('preserves display strings for OAuth errors without an i18n key', () => {
+  it('resolves an OAuth failure to the locale key used for the sign-in alert', () => {
     authMessages.registerAuthMessages({ errors: OAUTH_ERROR_MESSAGES, success: {} });
-    expect(authMessages.getAuthErrorMessage('oauth-error', () => 'Localized OAuth error')).toBe(
-      'Authentication failed. Please try again.',
+    const translate = vi.fn(() => 'Localized OAuth error');
+    expect(authMessages.getAuthErrorMessage('oauth-error', translate)).toBe(
+      'Localized OAuth error',
     );
+    expect(translate).toHaveBeenCalledWith('auth_oauth.authentication_failed');
   });
 });

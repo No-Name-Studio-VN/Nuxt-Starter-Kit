@@ -12,7 +12,12 @@
     "last_sign_in_provider": "Đã đăng nhập bằng {provider}",
     "email_missing": "Nhà cung cấp này không chia sẻ địa chỉ email. Hãy thử phương thức đăng nhập khác. Nếu đã có tài khoản, hãy đăng nhập và kết nối nhà cung cấp này trong Cài đặt → Bảo mật.",
     "provider_conflict": "Tài khoản của bạn đã kết nối với một tài khoản khác từ nhà cung cấp này. Hãy đăng nhập bằng phương thức hiện tại, nhập mã xác thực nếu được yêu cầu, rồi quản lý các tài khoản đã kết nối trong Cài đặt → Bảo mật.",
-    "unavailable": "Không thể tải danh sách nhà cung cấp đăng nhập. Vui lòng thử lại sau."
+    "unavailable": "Không thể tải danh sách nhà cung cấp đăng nhập. Vui lòng thử lại sau.",
+    "popup_close_hint": "Bạn có thể đóng cửa sổ này nếu cửa sổ không tự đóng.",
+    "already_linked": "Tài khoản này đã được liên kết với người dùng khác.",
+    "already_connected": "Bạn đã liên kết tài khoản của nhà cung cấp này.",
+    "authentication_failed": "Xác thực thất bại. Vui lòng thử lại.",
+    "link_requires_sign_in": "Bạn cần đăng nhập để liên kết tài khoản."
   },
   "settings": {
     "connected": {
@@ -46,7 +51,8 @@
         "oauth-already-connected": "Bạn đã kết nối một tài khoản của nhà cung cấp này.",
         "oauth-error": "Không thể kết nối tài khoản. Vui lòng thử lại.",
         "not-authenticated": "Hãy đăng nhập lại trước khi kết nối tài khoản."
-      }
+      },
+      "unlink_last_method": "Bạn không thể hủy liên kết phương thức đăng nhập duy nhất. Hãy thêm phương thức đăng nhập khác trước."
     }
   }
 }

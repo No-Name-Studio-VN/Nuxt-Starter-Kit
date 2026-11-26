@@ -39,8 +39,8 @@ const onSubmit = handleSubmit(async (values) => {
     }
     isSubmitted.value = true;
   } catch (err: unknown) {
-    const parsed = parseApiError(err, 'Something went wrong. Please try again.');
-    error.value = challenge.errorMessage(parsed) ?? parsed.message;
+    const parsed = parseApiError(err);
+    error.value = challenge.errorKey(parsed) ?? 'auth_password.forgot_password_failed';
   } finally {
     challenge.reset();
     isSubmitting.value = false;
@@ -68,25 +68,28 @@ useSeo({
         <KeyRound aria-hidden="true" class="size-5" />
       </div>
       <div class="space-y-1.5">
-        <h1 class="text-2xl font-semibold tracking-tight">Forgot your password?</h1>
+        <h1 class="text-2xl font-semibold tracking-tight">
+          {{ $t('auth_password.forgot_password_title') }}
+        </h1>
         <p class="text-sm text-muted-foreground">
           {{
-            isSubmitted
-              ? 'Check your email for a reset link.'
-              : "Enter your email and we'll send you a reset link."
+            t(
+              isSubmitted
+                ? 'auth_password.forgot_password_check_inbox'
+                : 'auth_password.forgot_password_description',
+            )
           }}
         </p>
       </div>
     </div>
 
     <Alert v-if="error" variant="destructive" role="alert">
-      <AlertDescription>{{ error }}</AlertDescription>
+      <AlertDescription>{{ t(error) }}</AlertDescription>
     </Alert>
 
     <div v-if="isSubmitted" aria-live="polite" class="flex flex-col gap-4">
       <p class="text-sm text-muted-foreground">
-        If an account exists with that email, we've sent a password reset link. Check your inbox and
-        spam folder. The link expires in 1 hour.
+        {{ $t('auth_password.forgot_password_sent') }}
       </p>
       <Button
         type="button"
@@ -94,27 +97,30 @@ useSeo({
         class="h-10 w-full"
         @click="navigateTo(authRoutes.AUTH_LOGIN)"
       >
-        Back to sign in
+        {{ $t('auth.back_to_sign_in') }}
       </Button>
     </div>
 
     <form v-else class="flex flex-col gap-4" @submit.prevent="onSubmit">
       <VeeField v-slot="{ field, errors }" name="email">
         <Field :data-invalid="!!errors.length">
-          <FieldLabel for="forgot-email">Email</FieldLabel>
+          <FieldLabel for="forgot-email">{{ $t('common.email') }}</FieldLabel>
           <Input
             id="forgot-email"
             name="email"
             :model-value="field.value"
             type="email"
             autocomplete="email"
-            placeholder="Enter your email address"
+            :placeholder="$t('auth_password.email_placeholder')"
             class="h-10"
             :disabled="isSubmitting"
             :aria-invalid="!!errors.length"
             @update:model-value="field.onChange"
           />
-          <FieldError v-if="errors.length" :errors="errors" />
+          <FieldError
+            v-if="errors.length"
+            :errors="errors.map((key) => $t($te(key) ? key : 'errors.invalid_field'))"
+          />
         </Field>
       </VeeField>
 
@@ -126,7 +132,7 @@ useSeo({
         :is-loading="isSubmitting"
         :disabled="challengePending"
       >
-        Send reset link
+        {{ $t('auth_password.forgot_password_send') }}
       </Button>
     </form>
 
@@ -135,7 +141,7 @@ useSeo({
         :to="authRoutes.AUTH_LOGIN"
         class="font-medium text-foreground underline-offset-4 hover:underline"
       >
-        Back to sign in
+        {{ $t('auth.back_to_sign_in') }}
       </NuxtLink>
     </p>
   </AuthPageLayout>

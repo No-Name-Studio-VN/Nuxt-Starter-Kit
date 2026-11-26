@@ -30,7 +30,9 @@ function selectUsername(event: FocusEvent) {
   if (event.target instanceof HTMLInputElement) event.target.select();
 }
 
-watch(candidate, () => { saveError.value = false; });
+watch(candidate, () => {
+  saveError.value = false;
+});
 
 function retryAvailability() {
   saveError.value = false;
@@ -43,10 +45,13 @@ const submit = handleSubmit(async ({ username }) => {
 
   try {
     if (username !== savedUsername.value) {
-      const response = await apiRequest<ApiResponse<ProfileUpdateData>>(authRoutes.userUsername('me'), {
-        method: 'PATCH',
-        body: { username },
-      });
+      const response = await apiRequest<ApiResponse<ProfileUpdateData>>(
+        authRoutes.userUsername('me'),
+        {
+          method: 'PATCH',
+          body: { username },
+        },
+      );
       if (!response.success) throw response.error;
       savedUsername.value = response.data.username;
       await refreshSession();
@@ -57,9 +62,9 @@ const submit = handleSubmit(async ({ username }) => {
     const fieldMessage = parsed.fieldErrors.username?.[0];
     if (parsed.code === 'USERNAME_TAKEN' || fieldMessage === 'auth.username_taken') {
       availability.value = 'taken';
-      setFieldError('username', t('auth.username_taken'));
+      setFieldError('username', 'auth.username_taken');
     } else if (fieldMessage && te(fieldMessage)) {
-      setFieldError('username', t(fieldMessage));
+      setFieldError('username', fieldMessage);
     } else {
       saveError.value = true;
     }
@@ -70,7 +75,10 @@ const submit = handleSubmit(async ({ username }) => {
 <template>
   <div class="flex flex-col gap-7">
     <header class="flex flex-col gap-2">
-      <div class="mb-2 grid size-10 place-items-center rounded-md border bg-muted/50" aria-hidden="true">
+      <div
+        class="mb-2 grid size-10 place-items-center rounded-md border bg-muted/50"
+        aria-hidden="true"
+      >
         <AtSignIcon class="size-5" />
       </div>
       <h1 class="text-3xl font-semibold tracking-tight outline-none sm:text-4xl" tabindex="-1">
@@ -84,7 +92,11 @@ const submit = handleSubmit(async ({ username }) => {
     <form @submit="submit">
       <FieldGroup class="gap-5">
         <VeeField v-slot="{ field, errors }" name="username">
-          <Field :data-invalid="availability === 'taken' || availability === 'invalid' || !!errors.length">
+          <Field
+            :data-invalid="
+              availability === 'taken' || availability === 'invalid' || !!errors.length
+            "
+          >
             <FieldLabel for="onboarding-username">{{ t('onboarding.username.label') }}</FieldLabel>
             <Input
               id="onboarding-username"
@@ -94,19 +106,37 @@ const submit = handleSubmit(async ({ username }) => {
               autocapitalize="none"
               :spellcheck="false"
               :disabled="isSubmitting"
-              :aria-invalid="availability === 'taken' || availability === 'invalid' || !!errors.length"
+              :aria-invalid="
+                availability === 'taken' || availability === 'invalid' || !!errors.length
+              "
               aria-describedby="onboarding-username-status"
               class="h-12 text-base md:text-base"
               @focus.once="selectUsername"
               @update:model-value="field.onChange"
             />
-            <div id="onboarding-username-status" class="flex min-h-6 items-center gap-2" aria-live="polite" aria-atomic="true">
-              <FieldError v-if="availability === 'taken'">{{ t('auth.username_taken') }}</FieldError>
-              <FieldError v-else-if="availability === 'invalid'">{{ t('onboarding.username.invalid') }}</FieldError>
-              <FieldError v-else-if="errors.length" :errors="errors" />
+            <div
+              id="onboarding-username-status"
+              class="flex min-h-6 items-center gap-2"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <FieldError v-if="availability === 'taken'">{{
+                t('auth.username_taken')
+              }}</FieldError>
+              <FieldError v-else-if="availability === 'invalid'">{{
+                t('onboarding.username.invalid')
+              }}</FieldError>
+              <FieldError
+                v-else-if="errors.length"
+                :errors="errors.map((key) => t(te(key) ? key : 'onboarding.username.invalid'))"
+              />
               <FieldDescription v-else class="flex items-center gap-2">
                 <Spinner v-if="availability === 'checking'" aria-hidden="true" />
-                <CheckIcon v-else-if="availability === 'available'" class="size-4" aria-hidden="true" />
+                <CheckIcon
+                  v-else-if="availability === 'available'"
+                  class="size-4"
+                  aria-hidden="true"
+                />
                 {{ t(`onboarding.username.${availability}`) }}
               </FieldDescription>
               <Button
@@ -122,8 +152,14 @@ const submit = handleSubmit(async ({ username }) => {
             </div>
           </Field>
         </VeeField>
-        <FieldError v-if="saveError" role="alert">{{ t('onboarding.username.save_failed') }}</FieldError>
-        <Button type="submit" class="h-11 w-full" :disabled="availability !== 'available' || isSubmitting">
+        <FieldError v-if="saveError" role="alert">{{
+          t('onboarding.username.save_failed')
+        }}</FieldError>
+        <Button
+          type="submit"
+          class="h-11 w-full"
+          :disabled="availability !== 'available' || isSubmitting"
+        >
           <Spinner v-if="isSubmitting" data-icon="inline-start" aria-hidden="true" />
           {{ t('onboarding.continue') }}
           <ArrowRightIcon v-if="!isSubmitting" data-icon="inline-end" aria-hidden="true" />

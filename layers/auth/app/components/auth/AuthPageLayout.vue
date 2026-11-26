@@ -24,8 +24,8 @@ const quote = computed(() => {
 });
 
 // Keep three.js in its own chunk. Worker SSR does not tag the import as an ES module.
-const HeroGeometric = defineAsyncComponent(
-  () => import('@/components/ui/hero-geometric/HeroGeometric.vue').then((module) => module.default),
+const HeroGeometric = defineAsyncComponent(() =>
+  import('@/components/ui/hero-geometric/HeroGeometric.vue').then((module) => module.default),
 );
 
 const colorMode = useColorMode();
@@ -109,7 +109,7 @@ const enterMotion = computed(() =>
           >
             <NuxtLink to="/">
               <ChevronLeftIcon aria-hidden="true" class="size-4" />
-              Home
+              {{ $t('common.home') }}
             </NuxtLink>
           </Button>
           <DarkModeToggle

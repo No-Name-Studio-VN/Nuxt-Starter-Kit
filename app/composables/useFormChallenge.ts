@@ -27,7 +27,7 @@ export function useFormChallenge() {
     attempt.value += 1;
   }
 
-  function errorMessage(error: FormChallengeError): string | undefined {
+  function errorKey(error: FormChallengeError): string | undefined {
     if (error.code !== 'BOT_PROTECTION_FAILED') return;
     const { reason } = error.details;
     const key =
@@ -38,8 +38,13 @@ export function useFormChallenge() {
           : reason === 'unavailable'
             ? 'bot_protection.unavailable'
             : undefined;
-    if (key && te(key)) return t(key);
+    return key && te(key) ? key : undefined;
   }
 
-  return { challenge, pending, headers, reset, errorMessage };
+  function errorMessage(error: FormChallengeError): string | undefined {
+    const key = errorKey(error);
+    return key ? t(key) : undefined;
+  }
+
+  return { challenge, pending, headers, reset, errorKey, errorMessage };
 }

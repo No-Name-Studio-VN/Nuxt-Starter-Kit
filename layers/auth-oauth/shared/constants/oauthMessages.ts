@@ -1,5 +1,6 @@
-export const OAUTH_EMAIL_IN_USE =
-  'This email is already in use. Sign in with your existing sign-in method.';
+import en from '../../i18n/locales/en.json';
+
+export const OAUTH_EMAIL_IN_USE = en.auth_oauth.email_in_use;
 
 export const OAUTH_ERROR_MESSAGES = {
   'oauth-email-in-use': {
@@ -8,21 +9,35 @@ export const OAUTH_ERROR_MESSAGES = {
   },
   'oauth-provider-conflict': {
     key: 'auth_oauth.provider_conflict',
-    fallback: 'You already have an account from this provider linked. Sign in with your existing method.',
+    fallback: en.auth_oauth.provider_conflict,
   },
   'oauth-email-missing': {
     key: 'auth_oauth.email_missing',
-    fallback: 'The provider did not share an email address.',
+    fallback: en.auth_oauth.email_missing,
   },
-  'oauth-already-linked': 'This account is already linked to another user.',
-  'oauth-already-connected': 'You already have an account from this provider linked.',
-  'oauth-error': 'Authentication failed. Please try again.',
-  'not-authenticated': 'You need to be logged in to link an account.',
-  'unlink-last-method':
-    "You can't unlink your only sign-in method. Add another way to sign in first.",
+  'oauth-already-linked': {
+    key: 'auth_oauth.already_linked',
+    fallback: en.auth_oauth.already_linked,
+  },
+  'oauth-already-connected': {
+    key: 'auth_oauth.already_connected',
+    fallback: en.auth_oauth.already_connected,
+  },
+  'oauth-error': {
+    key: 'auth_oauth.authentication_failed',
+    fallback: en.auth_oauth.authentication_failed,
+  },
+  'not-authenticated': {
+    key: 'auth_oauth.link_requires_sign_in',
+    fallback: en.auth_oauth.link_requires_sign_in,
+  },
+  'unlink-last-method': {
+    key: 'settings.connected.unlink_last_method',
+    fallback: en.settings.connected.unlink_last_method,
+  },
 };
 
 export const OAUTH_SUCCESS_MESSAGES = {
-  'oauth-linked': 'Account linked successfully!',
-  'oauth-unlinked': 'Account unlinked successfully.',
+  'oauth-linked': 'settings.connected.callback.oauth-linked',
+  'oauth-unlinked': 'settings.connected.callback.oauth-unlinked',
 };

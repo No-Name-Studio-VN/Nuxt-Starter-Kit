@@ -19,5 +19,5 @@ definePageMeta({
 </script>
 
 <template>
-  <div>Navigating...</div>
+  <div>{{ $t('auth.navigating') }}</div>
 </template>

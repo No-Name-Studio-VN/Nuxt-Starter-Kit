@@ -4,7 +4,14 @@
       "use_backup_code": "Sử dụng mã dự phòng",
       "use_authenticator": "Sử dụng ứng dụng xác thực",
       "backup_code": "Mã dự phòng",
-      "backup_code_description": "Nhập một trong các mã dự phòng gồm 8 ký tự của bạn. Mỗi mã chỉ có thể sử dụng một lần."
+      "backup_code_description": "Nhập một trong các mã dự phòng gồm 8 ký tự của bạn. Mỗi mã chỉ có thể sử dụng một lần.",
+      "title": "Xác thực hai yếu tố",
+      "authenticator_description": "Nhập mã từ ứng dụng xác thực của bạn.",
+      "verify": "Xác minh mã",
+      "sign_in_failed": "Không thể xác minh mã. Hãy kiểm tra mã và thử lại.",
+      "session_expired": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "attempt_limit": "Bạn đã thử quá nhiều lần. Vui lòng đăng nhập lại sau.",
+      "not_enabled": "Tài khoản này chưa bật xác thực hai yếu tố."
     }
   },
   "settings": {

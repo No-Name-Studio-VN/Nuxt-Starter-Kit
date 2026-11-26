@@ -84,9 +84,9 @@ onMounted(() => {
 <template>
   <div class="flex min-h-svh items-center justify-center bg-background px-6 text-center">
     <div class="space-y-2">
-      <h1 class="text-lg font-semibold">Completing sign in…</h1>
+      <h1 class="text-lg font-semibold">{{ $t('auth_oauth.popup_title') }}</h1>
       <p class="text-sm text-muted-foreground">
-        You can close this window if it does not close automatically.
+        {{ $t('auth_oauth.popup_close_hint') }}
       </p>
     </div>
   </div>
