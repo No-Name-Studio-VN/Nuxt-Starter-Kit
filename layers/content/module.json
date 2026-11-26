@@ -147,6 +147,37 @@
         "content/docs/1.getting-started/1.introduction.md",
         "content/docs/1.getting-started/2.installation.md"
       ]
+    },
+    {
+      "id": "content.blog-public-routes",
+      "since": "4.2.1",
+      "title": "Configure public blog URLs with blog.basePath (default /blogs) without moving Markdown. Translations use a locale segment under no_prefix; if you change the base, update custom links and add redirects from the old URLs.",
+      "kind": "feature",
+      "files": [
+        "layers/content/README.md",
+        "layers/content/app/components/layout/SearchDialog.vue",
+        "layers/content/app/composables/useBlogContent.ts",
+        "layers/content/app/composables/useI18nDocs.ts",
+        "layers/content/app/modules/blog-routes.ts",
+        "layers/content/app/modules/content-prerender.ts",
+        "layers/content/app/pages/[...slug].vue",
+        "layers/content/app/pages/blogs/[...slug].vue",
+        "layers/content/app/pages/blogs/index.vue",
+        "layers/content/app/plugins/content.ts",
+        "layers/content/app/utils/blogPaths.ts",
+        "layers/content/docs.config.ts",
+        "layers/content/module.json",
+        "layers/content/nuxt.config.ts",
+        "layers/content/server/plugins/blog-sitemap.ts",
+        "layers/content/server/routes/rss.xml.ts"
+      ]
+    },
+    {
+      "id": "content.navigation-frontmatter",
+      "since": "4.2.1",
+      "title": "Accept boolean navigation frontmatter again, and retain custom navigation fields alongside title, redirect, and target.",
+      "kind": "fix",
+      "files": ["layers/content/content.config.ts", "layers/content/README.md"]
     }
   ]
 }

@@ -294,6 +294,20 @@
         "tests/fixtures/blog-routes/content/vi/blogs/route-tests/nested.md",
         "tests/fixtures/blog-routes/content/vi/blogs/route-tests/related.md"
       ]
+    },
+    {
+      "id": "base.cloudflare-slashless-html",
+      "since": "4.2.1",
+      "title": "Serve prerendered Cloudflare pages at slashless URLs. Merge assets.html_handling: 'drop-trailing-slash' into wrangler.jsonc while keeping your own bindings.",
+      "kind": "fix",
+      "files": ["README.md", "wrangler.jsonc"]
+    },
+    {
+      "id": "base.kit-version-4-2-1",
+      "since": "4.2.1",
+      "title": "Bump the kit version to 4.2.1 without changing the root package dependencies.",
+      "kind": "feature",
+      "files": ["package.json"]
     }
   ]
 }
