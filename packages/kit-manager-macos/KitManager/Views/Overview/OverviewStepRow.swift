@@ -82,7 +82,7 @@ struct OverviewStepRow: View {
             .buttonStyle(.glassProminent)
         case .update:
             let canUpgrade = model.canUpgrade(row.project)
-            Button("Update") { model.flow = .upgrade(row.project) }
+            Button("Review upgrade") { model.flow = .upgrade(row.project) }
                 .buttonStyle(.glass)
                 .disabled(!canUpgrade)
                 .help(canUpgrade ? "Review the update" : model.upgradePrecondition(row.project).reason ?? "Build the nuxt-saas CLI first")

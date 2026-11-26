@@ -103,6 +103,38 @@ struct FlowTests {
         #expect(UpgradePrecondition(snapshot: snapshot, latestMain: latest) == .unresolvedConflicts)
     }
 
+    @Test func reviewCanOnlyBeAppliedToTheSameProjectRevision() throws {
+        let state = kitState()
+        let id = UUID()
+        let url = URL(filePath: "/projects/acme")
+        func revision(id: UUID = id, url: URL = url, branch: String = "main", fingerprint: String = "original") -> UpgradeReview.Context {
+            UpgradeReview.Context(
+                id: id, url: url, state: state, branch: branch, fingerprint: fingerprint, kitPath: "/kit")
+        }
+        let target = UpgradeTarget.main(commit: latest, label: "v4.1.3 +2")
+        let preview = TransitionReport(
+            schema: 1, from: sha, to: latest, changes: [], conflicts: [], followUps: [],
+            addedModules: [], removedModules: [], applied: false, upToDate: nil)
+        let reviewed = try #require(UpgradeReview(context: revision(), target: target, report: preview))
+
+        #expect(reviewed.matches(context: revision(), report: preview))
+        #expect(!reviewed.matches(context: revision(id: UUID()), report: preview))
+        #expect(!reviewed.matches(context: revision(url: URL(filePath: "/projects/moved")), report: preview))
+        #expect(!reviewed.matches(context: revision(branch: "another"), report: preview))
+        #expect(!reviewed.matches(context: revision(fingerprint: "edited"), report: preview))
+    }
+
+    @Test func reviewedReportCannotBeReusedAfterSwitchingTargets() {
+        let context = UpgradeReview.Context(
+            id: UUID(), url: URL(filePath: "/projects/acme"), state: kitState(), branch: "main",
+            fingerprint: "original", kitPath: "/kit")
+        let tag = UpgradeTarget.release(commit: "feed000000000000000000000000000000000000", tag: "v4.1.2")
+        let preview = TransitionReport(
+            schema: 1, from: sha, to: latest, changes: [], conflicts: [], followUps: [],
+            addedModules: [], removedModules: [], applied: false, upToDate: nil)
+        #expect(UpgradeReview(context: context, target: tag, report: preview) == nil)
+    }
+
     // MARK: Discarding an upgrade
 
     @Test func discardChangesRemovesEditsStagedAndUntrackedButKeepsIgnored() async throws {
@@ -206,14 +238,6 @@ struct FlowTests {
                 scripts: []))
         #expect(prompt.contains("app/file-199.vue"))
         #expect(!prompt.contains("…and"))
-    }
-
-    @Test func moduleChangePromptCapsTheChangeListToo() {
-        let prompt = PromptBuilder.moduleChange(
-            ModuleChangePromptInput(
-                projectName: "big", versionLabel: "v3.1.0", action: .add, moduleIDs: ["pwa"],
-                report: report(changes: (0..<201).map { change($0) }), scripts: []))
-        #expect(prompt.contains("…and 1 more"))
     }
 
     @Test func conflictsAreNeverCapped() {
@@ -453,5 +477,88 @@ struct FlowTests {
         #expect(FileManager.default.fileExists(atPath: fresh.path))
         #expect(!FileManager.default.fileExists(atPath: old.path))
         #expect(FileManager.default.fileExists(atPath: temp.url.appending(path: "other-old").path))
+    }
+}
+
+@Suite("Create module selection")
+struct CreateModuleSelectionTests {
+    @Test func defaultsApplyWithNoExplicitPicks() {
+        let selection = CreateModuleSelection(report: report, explicit: [])
+        #expect(selection.effective == ["web-security"])
+        #expect(selection.defaults == ["web-security"])
+        #expect(selection.requiredBy.isEmpty)
+        #expect(selection.missingAlternatives.isEmpty)
+    }
+
+    @Test func passwordIncludesTransitiveRequirementsButNotEmailVerification() {
+        let selection = CreateModuleSelection(report: report, explicit: ["password"])
+        #expect(selection.effective == ["web-security", "password", "auth", "email", "database", "server-core"])
+        #expect(selection.requiredBy["auth"] == ["password"])
+        #expect(selection.requiredBy["database"] == ["auth"])
+        #expect(selection.requiredBy["server-core"] == ["database"])
+        #expect(selection.missingAlternatives.isEmpty)
+    }
+
+    @Test func removingPasswordLeavesIndependentlyPickedLegacyEmail() {
+        var explicit: Set<String> = ["email", "password"]
+        #expect(CreateModuleSelection(report: report, explicit: explicit).requiredBy["email"] == ["password"])
+        explicit.remove("password")
+        let selection = CreateModuleSelection(report: report, explicit: explicit)
+        #expect(selection.effective == ["web-security", "email"])
+        #expect(selection.requiredBy["email"] == nil)
+    }
+
+    @Test func removingOneConsumerKeepsSharedRequirements() {
+        var explicit: Set<String> = ["passkeys", "oauth"]
+        #expect(CreateModuleSelection(report: report, explicit: explicit).requiredBy["auth"] == ["oauth", "passkeys"])
+        explicit.remove("passkeys")
+        let selection = CreateModuleSelection(report: report, explicit: explicit)
+        #expect(selection.effective == ["web-security", "oauth", "auth", "database", "server-core"])
+        #expect(selection.requiredBy["auth"] == ["oauth"])
+    }
+
+    @Test func passkeysLeavesProviderUnresolvedUntilOAuthIsChosen() {
+        let unresolved = CreateModuleSelection(report: report, explicit: ["passkeys"])
+        #expect(unresolved.effective == ["web-security", "passkeys", "auth", "database", "server-core"])
+        #expect(unresolved.missingAlternatives.map(\.id) == ["auth"])
+        #expect(unresolved.missingAlternatives.first?.requiresOneOf == ["password", "oauth"])
+
+        let resolved = CreateModuleSelection(report: report, explicit: ["passkeys", "oauth"])
+        #expect(resolved.effective == ["web-security", "passkeys", "oauth", "auth", "database", "server-core"])
+        #expect(resolved.missingAlternatives.isEmpty)
+    }
+
+    @Test func noSearchResultsLeaveExplicitAndEffectiveSelectionIntact() {
+        let explicit: Set<String> = ["password"]
+        let modules = report.modules
+        #expect(groupModules(modules, matching: "no match", module: { $0 }).isEmpty)
+        let selection = CreateModuleSelection(report: report, explicit: explicit)
+        #expect(selection.effective.contains("password"))
+        #expect(selection.effective.contains("email"))
+        #expect(groupModules(modules, matching: "", module: { $0 }).flatMap(\.entries).contains { $0.id == "password" })
+    }
+
+    private var report: ModulesReport {
+        ModulesReport(schema: 1, commit: "commit", modules: [
+            module("server-core"),
+            module("database", requires: ["server-core"]),
+            module("email", internal: true),
+            module("auth", requires: ["database"], requiresOneOf: ["password", "oauth"]),
+            module("password", requires: ["auth", "email"]),
+            module("oauth", requires: ["auth"]),
+            module("passkeys", requires: ["auth"]),
+            module("email-verification", requires: ["password"]),
+            module("web-security", installByDefault: true),
+        ], installed: [])
+    }
+
+    private func module(
+        _ id: String, requires: [String] = [], requiresOneOf: [String] = [], internal: Bool = false,
+        installByDefault: Bool = false
+    ) -> KitModuleInfo {
+        KitModuleInfo(
+            id: id, title: id, description: "", requires: requires, internal: `internal`,
+            dependencies: [], devDependencies: [], scripts: [], env: [], bindings: [], rootFiles: [],
+            requiresOneOf: requiresOneOf, installByDefault: installByDefault)
     }
 }

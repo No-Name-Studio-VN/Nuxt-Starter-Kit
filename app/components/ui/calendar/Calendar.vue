@@ -6,7 +6,7 @@ import { CalendarDate, CalendarDateTime, ZonedDateTime, getLocalTimeZone, today 
 import { createReusableTemplate, reactiveOmit, useVModel } from '@vueuse/core'
 import { CalendarRoot, useDateFormatter, useForwardPropsEmits } from 'reka-ui'
 import { createYear, createYearRange, toDate } from 'reka-ui/date'
-import { computed, toRaw } from 'vue'
+import { computed, toRaw, watch } from 'vue'
 import { cn } from '@/lib/utils'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { CalendarCell, CalendarCellTrigger, CalendarGrid, CalendarGridBody, CalendarGridHead, CalendarGridRow, CalendarHeadCell, CalendarHeader, CalendarHeading, CalendarNextButton, CalendarPrevButton } from '.'
@@ -66,7 +66,10 @@ function setPlaceholderYear(event: Event) {
   placeholder.value = placeholder.value.set({ year: Number(target.value) })
 }
 
-const formatter = useDateFormatter(props.locale ?? 'en')
+const { locale, t } = useI18n()
+const calendarLocale = computed(() => props.locale ?? locale.value)
+const formatter = useDateFormatter(calendarLocale.value)
+watch(calendarLocale, (value) => formatter.setLocale(value))
 
 const yearRange = computed(() => {
   return props.yearRange ?? createYearRange({
@@ -93,6 +96,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         </div>
         <NativeSelect
           class="text-xs h-8 pr-6 pl-2 text-transparent relative"
+          :aria-label="t('calendar.month')"
           @change="setPlaceholderMonth"
         >
           <NativeSelectOption
@@ -116,6 +120,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         </div>
         <NativeSelect
           class="text-xs h-8 pr-6 pl-2 text-transparent relative"
+          :aria-label="t('calendar.year')"
           @change="setPlaceholderYear"
         >
           <NativeSelectOption
@@ -136,6 +141,8 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     v-bind="forwarded"
     v-model:placeholder="placeholder"
     data-slot="calendar"
+    :locale="calendarLocale"
+    :calendar-label="props.calendarLabel ?? t('calendar.label')"
     :class="cn('p-3', props.class)"
   >
     <CalendarHeader class="pt-0">

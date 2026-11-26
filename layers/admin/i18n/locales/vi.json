@@ -1,1 +1,11 @@
-{}
+{
+  "admin": {
+    "title": "Bảng điều khiển quản trị",
+    "description": "Quản lý nội dung, người dùng và cài đặt hệ thống của ứng dụng",
+    "label": "Quản trị",
+    "system": "Hệ thống",
+    "overview": "Tổng quan",
+    "dashboard": "Bảng điều khiển",
+    "users_sales": "Người dùng và doanh số"
+  }
+}

@@ -17,6 +17,10 @@ public enum CLIFailure: Error, Equatable {
     /// `pnpm build` failed; its stderr is the useful part.
     case buildFailed(stderr: String, exitCode: Int32)
     case unsupportedSchema(Int)
+    case projectComparisonUnsupported
+    case projectComparisonClosed
+    case projectCreationUnsupported
+    case projectCreationInsideKit
     case unavailable(CLIStatus)
 }
 
@@ -33,6 +37,14 @@ extension CLIFailure: LocalizedError {
             return "Building the nuxt-saas CLI failed (pnpm build exited with \(exitCode)): \(detail)"
         case .unsupportedSchema(let schema):
             return "The nuxt-saas CLI returned JSON schema \(schema), which this app does not support."
+        case .projectComparisonUnsupported:
+            return "This nuxt-saas CLI cannot preview project files. Update the kit checkout and rebuild the CLI in Kit Manager Settings."
+        case .projectComparisonClosed:
+            return "This project comparison has closed. Reopen it to refresh the baseline."
+        case .projectCreationUnsupported:
+            return "This nuxt-saas CLI cannot create projects from Kit Manager. Update the kit checkout and rebuild the CLI in Settings."
+        case .projectCreationInsideKit:
+            return "Choose a parent folder outside the kit checkout."
         case .unavailable(let status):
             switch status {
             case .ready:

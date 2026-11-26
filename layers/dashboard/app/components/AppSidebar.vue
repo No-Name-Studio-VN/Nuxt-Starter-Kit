@@ -46,7 +46,7 @@ const {
           >
             <Button variant="outline" class="w-full" size="lg">
               <SearchIcon />
-              <span>Quick Search</span>
+              <span>{{ $t('nav.quick_search') }}</span>
               <KbdGroup class="ml-auto">
                 <Kbd>Ctrl</Kbd>
                 <span>+</span>
@@ -78,7 +78,7 @@ const {
         <NavMain
           v-for="section in primarySections"
           :key="section.title"
-          :title="section.title"
+          :title="$te(section.title) ? $t(section.title) : section.title"
           :items="section.items"
         />
         <NavSecondary

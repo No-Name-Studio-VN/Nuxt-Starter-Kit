@@ -30,3 +30,5 @@ Configure your Cloudflare resources in `wrangler.jsonc`, then build and deploy:
 pnpm build
 pnpm deploy
 ```
+
+This project was created and is maintained using [Nuxt-Starter-Kit](https://nnsvn.me/products/nuxt-starter-kit).

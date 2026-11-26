@@ -14,7 +14,7 @@
       <!-- Closing Button -->
       <button
         v-show="!preventClose"
-        aria-label="Close"
+        :aria-label="$t('common.close')"
         class="absolute right-4 top-4 z-101 inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
         size="sm"
         @click="close"
@@ -71,7 +71,7 @@
                 "
                 variant="bars"
                 size="md"
-                label="Step in progress"
+                :label="$t('common.step_in_progress')"
                 class="text-primary"
               />
               <!-- check-circle-outline-heroicons -->

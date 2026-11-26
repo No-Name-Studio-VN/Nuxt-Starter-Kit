@@ -61,15 +61,6 @@ struct OverviewTests {
 
     // MARK: Changelog range
 
-    @Test func rangeStartsAtTheOldestTrackedCommit() {
-        let old = project(behind: 12)
-        let newer = project(behind: 3)
-        let uptodate = project(behind: 0)
-        let anchor = ChangelogRange.oldestCommit(in: [newer, old, uptodate])
-        #expect(anchor == String(repeating: "a", count: 40))
-        #expect(ChangelogRange.oldestCommit(in: [uptodate, newer]) == String(repeating: "a", count: 40))
-    }
-
     @Test func rangeSkipsProjectsThatAreNotTrackedOnMain() {
         let other = project(kit: "github:acme/fork", behind: 50)
         let offMain = project(behind: nil, availability: .notOnMain)

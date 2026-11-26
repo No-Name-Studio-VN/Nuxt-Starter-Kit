@@ -1,14 +1,17 @@
 import { execFile } from 'node:child_process';
-import { readFile, rm } from 'node:fs/promises';
+import { copyFile, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runInit } from '../../src/commands/init';
 import { runModuleChange } from '../../src/commands/modules';
 import { CliError } from '../../src/errors';
-import { DEFAULT_TEMPLATE, openKit, type KitSnapshot } from '../../src/kit/source';
+import { KIT_CONFIG_PATH, readKitConfig } from '../../src/kit/config';
+import { readKitModules } from '../../src/kit/modules';
+import { DEFAULT_TEMPLATE, openKit, resolveCommit, type KitSnapshot } from '../../src/kit/source';
 import { readState, STATE_FILE, writeState } from '../../src/project/state';
 import { listFiles, pathExists, writeTextFile } from '../../src/util/fs';
+import { kitRoot as realKitRoot } from '../kit/imports';
 import { createFixtureKit, makeTempDir } from '../support/fixtureKit';
 
 const run = promisify(execFile);
@@ -50,13 +53,21 @@ function init(requested: string[] = [], target = projectRoot, git = true) {
   return runInit({ target, identity, requested, kit, git });
 }
 
-function change(add: string[] = [], remove: string[] = [], check = false, force = false, backup = true) {
+function change(
+  add: string[] = [],
+  remove: string[] = [],
+  check = false,
+  force = false,
+  backup = true,
+) {
   return runModuleChange({ projectRoot, add, remove, kit, check, force, backup });
 }
 
 async function projectFiles(root: string, includeState = false): Promise<Map<string, Buffer>> {
   const paths = (await listFiles(root)).filter(
-    (path) => !path.startsWith('.git/') && (includeState || (path !== STATE_FILE && !path.startsWith('.nuxt-saas/'))),
+    (path) =>
+      !path.startsWith('.git/') &&
+      (includeState || (path !== STATE_FILE && !path.startsWith('.nuxt-saas/'))),
   );
   const files = new Map<string, Buffer>();
   for (const path of paths) files.set(path, await readFile(join(root, path)));
@@ -114,6 +125,49 @@ describe('runModuleChange', () => {
     expect(await pathExists(join(projectRoot, 'layers/beta'))).toBe(false);
     expect(report).toMatchObject({ addedModules: [], removedModules: ['beta'], applied: true });
     expect((await readState(projectRoot)).modules).toEqual(['alpha']);
+  });
+
+  it('keeps explicitly selected email transport when removing the unrelated dashboard', async () => {
+    const source = { kind: 'local', path: realKitRoot, allowDirty: true } satisfies Parameters<
+      typeof openKit
+    >[0];
+    const snapshot = await openKit(source, await resolveCommit(source), DEFAULT_TEMPLATE);
+    try {
+      // Overlay the working metadata on the tracked snapshot before exercising init and remove.
+      await copyFile(join(realKitRoot, KIT_CONFIG_PATH), join(snapshot.dir, KIT_CONFIG_PATH));
+      for (const id of ['server-core', 'database', 'cache', 'kv', 'email']) {
+        const path = join('layers', id, 'module.json');
+        await copyFile(join(realKitRoot, path), join(snapshot.dir, path));
+      }
+      const config = await readKitConfig(snapshot.dir);
+      const modules = await readKitModules(snapshot.dir, config);
+      const currentKit = { ...snapshot, modules, groups: config.groups };
+      const generated = await runInit({
+        target: projectRoot,
+        identity,
+        requested: ['email', 'dashboard'],
+        kit: currentKit,
+        git: true,
+      });
+      expect(generated.modules).toEqual(expect.arrayContaining(['email', 'dashboard']));
+
+      const report = await runModuleChange({
+        projectRoot,
+        add: [],
+        remove: ['dashboard'],
+        kit: currentKit,
+        check: false,
+        force: false,
+        backup: true,
+      });
+
+      expect(report).toMatchObject({ applied: true, removedModules: ['dashboard'] });
+      expect((await readState(projectRoot)).modules).toContain('email');
+      expect(await pathExists(join(projectRoot, 'layers/email/module.json'))).toBe(true);
+      expect(await pathExists(join(projectRoot, 'layers/dashboard/module.json'))).toBe(false);
+    } finally {
+      await snapshot.cleanup();
+    }
   });
 
   it('refuses removal of alpha while beta still requires it, before checking dirtiness', async () => {
@@ -212,9 +266,13 @@ describe('runModuleChange', () => {
     await writeTextFile(join(projectRoot, path), 'user schema\n');
     await expectRefused(change([], ['beta']), path);
     expect(await change([], ['beta'], false, true)).toMatchObject({
-      applied: true, unsaved: { risky: [{ path, kind: 'keep-edited' }] }, backup: { status: 'complete' },
+      applied: true,
+      unsaved: { risky: [{ path, kind: 'keep-edited' }] },
+      backup: { status: 'complete' },
     });
-    const saved: unknown = JSON.parse(await readFile(join(projectRoot, '.nuxt-saas/upgrade-report.json'), 'utf8'));
+    const saved: unknown = JSON.parse(
+      await readFile(join(projectRoot, '.nuxt-saas/upgrade-report.json'), 'utf8'),
+    );
     expect(saved).toMatchObject({ command: 'remove', fromVersion: '3.0.0', toVersion: '3.0.0' });
     expect(await readFile(join(projectRoot, path), 'utf8')).toBe('user schema\n');
     expect(await readFile(join(projectRoot, 'user.txt'), 'utf8')).toBe('dirty\n');
@@ -225,7 +283,10 @@ describe('runModuleChange', () => {
     await expectRefused(change(['beta']), "isn't in git");
     expect((await change(['beta'], [], true)).applied).toBe(false);
     await expectRefused(change(['beta'], [], false, true), '--no-backup');
-    expect(await change(['beta'], [], false, true, false)).toMatchObject({ applied: true, backup: null });
+    expect(await change(['beta'], [], false, true, false)).toMatchObject({
+      applied: true,
+      backup: null,
+    });
   });
 
   it.each(['add', 'remove'])(

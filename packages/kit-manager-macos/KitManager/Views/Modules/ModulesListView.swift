@@ -16,12 +16,8 @@ struct ModulesListView: View {
     private var query: String { searchText.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     private var visibleRows: [ModuleMatrix.Row] {
-        guard !query.isEmpty else { return rows }
-        return rows.filter { row in
-            row.module.title.localizedStandardContains(query)
-                || row.id.localizedStandardContains(query)
-                || row.module.description.localizedStandardContains(query)
-        }
+        let query = self.query
+        return rows.filter { $0.module.matchesSearch(query) }
     }
 
     private var collapsedGroups: Set<String> {

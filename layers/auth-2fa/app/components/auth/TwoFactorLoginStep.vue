@@ -59,8 +59,17 @@ const on2faSubmit = async () => {
       throw response;
     }
     emit('done', props.redirectTo);
-  } catch (err: unknown) {
-    error.value = parseApiError(err, 'Invalid authenticator code').message;
+  } catch (failure) {
+    const { code } = parseApiError(failure);
+    if (code === 'SESSION_INVALID' || code === 'USER_NOT_FOUND') {
+      error.value = 'auth.two_factor.session_expired';
+    } else if (code === 'TOTP_ATTEMPT_LIMIT_EXCEEDED') {
+      error.value = 'auth.two_factor.attempt_limit';
+    } else if (code === 'TWO_FACTOR_NOT_ENABLED') {
+      error.value = 'auth.two_factor.not_enabled';
+    } else {
+      error.value = 'auth.two_factor.sign_in_failed';
+    }
     triggerShakeAnimation();
     totpCode.value = '';
     isLoading.value = false;
@@ -71,18 +80,18 @@ const on2faSubmit = async () => {
 <template>
   <div class="space-y-1.5">
     <h1 id="two-factor-title" class="text-2xl font-semibold tracking-tight">
-      Two-factor authentication
+      {{ $t('auth.two_factor.title') }}
     </h1>
     <p id="two-factor-description" class="text-sm text-muted-foreground">
       <template v-if="useBackupCode">
         {{ t('auth.two_factor.backup_code_description') }}
       </template>
-      <template v-else> Enter the code from your authenticator app. </template>
+      <template v-else> {{ $t('auth.two_factor.authenticator_description') }} </template>
     </p>
   </div>
 
   <Alert v-if="error" id="two-factor-error" variant="destructive" role="alert">
-    <AlertDescription>{{ error }}</AlertDescription>
+    <AlertDescription>{{ t(error) }}</AlertDescription>
   </Alert>
 
   <form class="space-y-6" @submit.prevent="on2faSubmit">
@@ -129,7 +138,7 @@ const on2faSubmit = async () => {
       </InputOTP>
     </div>
     <Button type="submit" class="w-full" :is-loading="isLoading" :disabled="!isCodeValid">
-      Verify Code
+      {{ $t('auth.two_factor.verify') }}
     </Button>
     <Button
       type="button"
@@ -151,7 +160,7 @@ const on2faSubmit = async () => {
       :disabled="isLoading"
       @click="emit('cancel')"
     >
-      Back to login
+      {{ $t('auth.back_to_sign_in') }}
     </Button>
   </form>
 </template>

@@ -36,7 +36,7 @@ const isFormValid = computed(() => meta.value.valid && passwordStrength.value.sc
 
 const onSubmit = handleSubmit(async (formValues) => {
   if (!token.value) {
-    error.value = 'Invalid reset link. Please request a new one.';
+    error.value = 'auth_password.reset_password_invalid';
     return;
   }
 
@@ -64,7 +64,10 @@ const onSubmit = handleSubmit(async (formValues) => {
     oauthAccountsDisconnected.value = response.data.oauthAccountsDisconnected;
     success.value = true;
   } catch (err: unknown) {
-    error.value = parseApiError(err, 'Something went wrong. Please try again.').message;
+    error.value =
+      parseApiError(err).code === 'RESET_TOKEN_INVALID'
+        ? 'auth_password.reset_password_invalid'
+        : 'auth_password.reset_password_failed';
   } finally {
     isSubmitting.value = false;
   }
@@ -91,13 +94,17 @@ useSeo({
         <KeyRound aria-hidden="true" class="size-5" />
       </div>
       <div class="space-y-1.5">
-        <h1 class="text-2xl font-semibold tracking-tight">Set a new password</h1>
-        <p class="text-sm text-muted-foreground">Enter your new password below.</p>
+        <h1 class="text-2xl font-semibold tracking-tight">
+          {{ $t('auth_password.reset_password_heading') }}
+        </h1>
+        <p class="text-sm text-muted-foreground">
+          {{ $t('auth_password.reset_password_instruction') }}
+        </p>
       </div>
     </div>
 
     <Alert v-if="error" variant="destructive" role="alert">
-      <AlertDescription>{{ error }}</AlertDescription>
+      <AlertDescription>{{ t(error) }}</AlertDescription>
     </Alert>
 
     <Alert
@@ -107,19 +114,21 @@ useSeo({
     >
       <AlertDescription class="text-green-700 dark:text-green-300">
         <p>{{ t('auth_password.reset_password_success') }}</p>
-        <p v-if="oauthAccountsDisconnected">{{ t('auth_password.reset_password_oauth_disconnected') }}</p>
+        <p v-if="oauthAccountsDisconnected">
+          {{ t('auth_password.reset_password_oauth_disconnected') }}
+        </p>
       </AlertDescription>
     </Alert>
 
     <Alert v-if="!token" variant="destructive" role="alert">
       <AlertDescription>
         <p>
-          This reset link is invalid or has expired.
+          {{ $t('auth_password.reset_password_invalid') }}
           <NuxtLink
             :to="localePath(passwordRoutes.AUTH_FORGOT_PASSWORD)"
             class="font-medium underline underline-offset-4"
           >
-            Request a new one</NuxtLink
+            {{ $t('auth_password.reset_password_request_again') }}</NuxtLink
           >.
         </p>
       </AlertDescription>
@@ -128,49 +137,13 @@ useSeo({
     <form v-if="token && !success" class="flex flex-col gap-4" @submit.prevent="onSubmit">
       <VeeField v-slot="{ field, errors }" name="password">
         <Field :data-invalid="!!errors.length">
-          <FieldLabel for="new-password">New password</FieldLabel>
+          <FieldLabel for="new-password">{{ $t('settings.password.newPassword') }}</FieldLabel>
           <div class="relative">
             <Input
               id="new-password"
               :model-value="field.value"
               :type="showPassword ? 'text' : 'password'"
-              placeholder="Enter new password"
-              class="h-10 pr-10"
-              :disabled="isSubmitting"
-              :aria-invalid="!!errors.length"
-              autocomplete="new-password"
-              @update:model-value="field.onChange"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              class="absolute inset-y-0 right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
-              :aria-label="showPassword ? 'Hide password' : 'Show password'"
-              :aria-pressed="showPassword"
-              @click="showPassword = !showPassword"
-            >
-              <Eye v-if="!showPassword" aria-hidden="true" class="size-4" />
-              <EyeOff v-else aria-hidden="true" class="size-4" />
-            </Button>
-          </div>
-          <FieldError v-if="errors.length" :errors="errors" />
-          <PasswordStrengthIndicator
-            :password="values.password || ''"
-            :strength="passwordStrength"
-          />
-        </Field>
-      </VeeField>
-
-      <VeeField v-slot="{ field, errors }" name="confirmPassword">
-        <Field :data-invalid="!!errors.length">
-          <FieldLabel for="confirm-new-password">Confirm new password</FieldLabel>
-          <div class="relative">
-            <Input
-              id="confirm-new-password"
-              :model-value="field.value"
-              :type="showConfirmPassword ? 'text' : 'password'"
-              placeholder="Confirm new password"
+              :placeholder="$t('auth_password.new_password_placeholder')"
               class="h-10 pr-10"
               :disabled="isSubmitting"
               :aria-invalid="!!errors.length"
@@ -183,7 +156,54 @@ useSeo({
               size="icon"
               class="absolute inset-y-0 right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
               :aria-label="
-                showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'
+                $t(showPassword ? 'auth_password.hide_password' : 'auth_password.show_password')
+              "
+              :aria-pressed="showPassword"
+              @click="showPassword = !showPassword"
+            >
+              <Eye v-if="!showPassword" aria-hidden="true" class="size-4" />
+              <EyeOff v-else aria-hidden="true" class="size-4" />
+            </Button>
+          </div>
+          <FieldError
+            v-if="errors.length"
+            :errors="errors.map((key) => $t($te(key) ? key : 'errors.invalid_field'))"
+          />
+          <PasswordStrengthIndicator
+            :password="values.password || ''"
+            :strength="passwordStrength"
+          />
+        </Field>
+      </VeeField>
+
+      <VeeField v-slot="{ field, errors }" name="confirmPassword">
+        <Field :data-invalid="!!errors.length">
+          <FieldLabel for="confirm-new-password">{{
+            $t('auth_password.confirm_new_password')
+          }}</FieldLabel>
+          <div class="relative">
+            <Input
+              id="confirm-new-password"
+              :model-value="field.value"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              :placeholder="$t('auth_password.confirm_new_password')"
+              class="h-10 pr-10"
+              :disabled="isSubmitting"
+              :aria-invalid="!!errors.length"
+              autocomplete="new-password"
+              @update:model-value="field.onChange"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="absolute inset-y-0 right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              :aria-label="
+                $t(
+                  showConfirmPassword
+                    ? 'auth_password.hide_password_confirmation'
+                    : 'auth_password.show_password_confirmation',
+                )
               "
               :aria-pressed="showConfirmPassword"
               @click="showConfirmPassword = !showConfirmPassword"
@@ -192,19 +212,22 @@ useSeo({
               <EyeOff v-else aria-hidden="true" class="size-4" />
             </Button>
           </div>
-          <FieldError v-if="errors.length" :errors="errors" />
+          <FieldError
+            v-if="errors.length"
+            :errors="errors.map((key) => $t($te(key) ? key : 'errors.invalid_field'))"
+          />
         </Field>
       </VeeField>
 
       <Button type="submit" class="h-10 w-full" :disabled="!isFormValid" :is-loading="isSubmitting">
-        Reset password
+        {{ $t('auth_password.reset_password_breadcrumb') }}
       </Button>
 
       <p
         v-if="values.password && passwordStrength.score < 80"
         class="text-center text-xs text-muted-foreground"
       >
-        Password must be strong to reset
+        {{ $t('auth_password.reset_password_strength_required') }}
       </p>
     </form>
 
@@ -213,7 +236,7 @@ useSeo({
         :to="localePath(authRoutes.AUTH_LOGIN)"
         class="font-medium text-foreground underline-offset-4 hover:underline"
       >
-        Back to sign in
+        {{ $t('auth.back_to_sign_in') }}
       </NuxtLink>
     </p>
   </AuthPageLayout>

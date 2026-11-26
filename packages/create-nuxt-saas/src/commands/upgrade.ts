@@ -7,10 +7,12 @@ import { render } from '../render/render';
 import { planTransition } from '../transition/plan';
 import { runTransition, type SafetyOptions, type TransitionReport } from '../transition/run';
 
-export async function runUpgrade(opts: SafetyOptions & {
-  from: KitSnapshot;
-  to: KitSnapshot;
-}): Promise<TransitionReport> {
+export async function runUpgrade(
+  opts: SafetyOptions & {
+    from: KitSnapshot;
+    to: KitSnapshot;
+  },
+): Promise<TransitionReport> {
   const state = await readState(opts.projectRoot);
   const unresolved = await unresolvedConflicts(opts.projectRoot, state);
   if (unresolved.length > 0) {
@@ -46,16 +48,32 @@ export async function runUpgrade(opts: SafetyOptions & {
   if (missing.length > 0) {
     throw new CliError(`Installed modules missing from the target kit: ${missing.join(', ')}.`);
   }
-  const modules = resolveSelection(opts.to.modules, state.modules).sort();
+  // Only add newly introduced defaults. An existing default that the project removed stays removed.
+  const previous = new Set(opts.from.modules.map((module) => module.id));
+  const newDefaults = opts.to.modules
+    .filter((module) => module.installByDefault && !previous.has(module.id))
+    .map((module) => module.id);
+  const modules = resolveSelection(opts.to.modules, [...state.modules, ...newDefaults]).sort();
   validateSelection(opts.to.modules, modules);
 
   const base = await render(opts.from, state.modules, state.identity);
   const target = await render(opts.to, modules, state.identity);
   const plan = await planTransition(opts.projectRoot, base, target);
-  return runTransition(opts, 'upgrade', opts.from, opts.to, base, target, plan, state, {
-    ...state,
-    kit: opts.to.template,
-    commit: opts.to.commit,
-    modules,
-  }, false);
+  return runTransition(
+    opts,
+    'upgrade',
+    opts.from,
+    opts.to,
+    base,
+    target,
+    plan,
+    state,
+    {
+      ...state,
+      kit: opts.to.template,
+      commit: opts.to.commit,
+      modules,
+    },
+    false,
+  );
 }

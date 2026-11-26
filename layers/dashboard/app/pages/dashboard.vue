@@ -1,15 +1,13 @@
 <script setup lang="ts">
 definePageMeta({
-  title: 'Dashboard',
-  breadcrumb: 'Dashboard',
+  title: 'dashboard.title',
+  breadcrumb: 'dashboard.title',
   layout: 'dashboard',
 });
 </script>
 
 <template>
   <span>
-    This is a placeholder dashboard page. You can customize this page to display relevant
-    information, statistics, or quick links for your admin users. Consider adding widgets, charts,
-    or summaries that provide insights into your application's data and performance.
+    {{ $t('dashboard.description') }}
   </span>
 </template>

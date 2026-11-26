@@ -35,7 +35,7 @@ const { orientation, canScrollPrev, scrollPrev } = useCarousel()
   >
     <slot>
       <ArrowLeft />
-      <span class="sr-only">Previous Slide</span>
+      <span class="sr-only">{{ $t('common.previous_slide') }}</span>
     </slot>
   </Button>
 </template>

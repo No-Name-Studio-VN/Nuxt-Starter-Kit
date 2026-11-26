@@ -9,7 +9,6 @@ export function calculatePasswordStrength(password: string): PasswordStrength {
     return {
       score: 0,
       level: 'weak',
-      feedback: 'Enter a password',
       checks: {
         length: false,
         uppercase: false,
@@ -62,37 +61,30 @@ export function calculatePasswordStrength(password: string): PasswordStrength {
   // Cap at 100
   score = Math.min(score, 100);
 
-  // Determine level and feedback
+  // Determine level and color
   let level: PasswordStrength['level'];
-  let feedback: string;
   let color: string;
 
   if (score < 40) {
     level = 'weak';
-    feedback = 'Weak password - add more variety';
     color = 'var(--destructive)';
   } else if (score < 60) {
     level = 'fair';
-    feedback = 'Fair password - could be stronger';
     color = 'hsl(25, 95%, 53%)';
   } else if (score < 80) {
     level = 'good';
-    feedback = 'Good password';
     color = 'hsl(45, 93%, 47%)';
   } else if (score < 100) {
     level = 'strong';
-    feedback = 'Strong password';
     color = 'hsl(142, 76%, 36%)';
   } else {
     level = 'very-strong';
-    feedback = 'Very strong password!';
     color = 'hsl(142, 76%, 36%)';
   }
 
   return {
     score,
     level,
-    feedback,
     checks,
     color,
   };

@@ -7,11 +7,11 @@ import type { BreadcrumbItemType } from '~~/types/common';
 
 const router = useRouter();
 const route = useRoute();
-const { t } = useI18n();
+const { t, te } = useI18n();
 const pageBreadcrumbs = useCurrentPageBreadcrumbs();
 
 function resolveTitle(title: string) {
-  return title.includes('.') ? t(title) : title;
+  return te(title) ? t(title) : title;
 }
 
 // get fullWidth from page meta, default to true
@@ -122,7 +122,7 @@ withDefaults(
         <SidebarTrigger v-if="!hideSidebarTrigger" class="-ml-1" />
         <Button v-else variant="ghost" size="icon" class="size-7 -ml-1" @click="navigateTo('/')">
           <HomeIcon />
-          <span class="sr-only">{{ $t('common.toggle_sidebar') }}</span>
+          <span class="sr-only">{{ $t('common.go_home') }}</span>
         </Button>
         <Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
         <Breadcrumb>
@@ -145,7 +145,7 @@ withDefaults(
                   @click="navigateTo(parentBreadcrumb.href)"
                 >
                   <ChevronLeft class="size-4" />
-                  <span class="text-xs font-medium">Back</span>
+                  <span class="text-xs font-medium">{{ $t('common.back') }}</span>
                 </Button>
               </BreadcrumbItem>
               <BreadcrumbSeparator class="md:hidden" />

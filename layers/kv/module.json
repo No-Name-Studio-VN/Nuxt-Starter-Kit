@@ -1,7 +1,7 @@
 {
   "title": "KV storage",
   "description": "NuxtHub key-value storage and the useKV() server utility.",
-  "internal": true,
+  "group": "Miscellaneous",
   "requires": ["server-core"],
   "dependencies": ["@nuxthub/core"],
   "bindings": ["KV"],
@@ -16,6 +16,13 @@
         "layers/kv/README.md",
         "layers/kv/server/utils/kv.ts"
       ]
+    },
+    {
+      "id": "kv.catalog-selection",
+      "since": "4.2.0",
+      "title": "Select KV storage directly from the module catalog for NuxtHub KV and useKV().",
+      "kind": "feature",
+      "files": ["layers/kv/README.md", "layers/kv/module.json"]
     }
   ]
 }

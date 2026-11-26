@@ -16,23 +16,15 @@ import { useSidebar } from '@/components/ui/sidebar/utils';
 import type { SidebarItem } from '#layers/dashboard/types/sidebar';
 
 const route = useRoute();
-const { t } = useI18n();
+const { t, te } = useI18n();
 const localePath = useAppLocalePath();
 const { isMobile, setOpenMobile } = useSidebar();
 const { clearSidebarContextOverride } = useSidebarContext();
 
-withDefaults(
-  defineProps<{
-    title?: string;
-    items: SidebarItem[];
-  }>(),
-  {
-    title: 'Platform',
-  },
-);
+defineProps<{ title?: string; items: SidebarItem[] }>();
 
 function getItemTitle(item: SidebarItem) {
-  return item.titleKey ? t(item.titleKey) : item.title;
+  return item.titleKey ? t(item.titleKey) : te(item.title) ? t(item.title) : item.title;
 }
 
 function getItemUrl(itemUrl?: string) {
@@ -56,7 +48,7 @@ const handleNavigationClick = () => {
 
 <template>
   <SidebarGroup>
-    <SidebarGroupLabel>{{ title }}</SidebarGroupLabel>
+    <SidebarGroupLabel>{{ title ?? t('nav.platform') }}</SidebarGroupLabel>
     <SidebarMenu>
       <template v-for="item in items" :key="item.title">
         <!-- Item with sub-items (collapsible) -->

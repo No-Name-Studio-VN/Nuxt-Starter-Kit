@@ -17,6 +17,7 @@ const moduleSchema = z.object({
   requiresOneOf: z.array(z.string()).default([]),
   requires: z.array(z.string()).default([]),
   internal: z.boolean().default(false),
+  installByDefault: z.boolean().optional(),
   dependencies: z.array(z.string()).default([]),
   devDependencies: z.array(z.string()).default([]),
   scripts: z.array(z.string()).default([]),
@@ -47,9 +48,9 @@ export async function readKitModule(kitRoot: string, id: string): Promise<KitMod
 }
 
 export async function readKitModules(kitRoot: string, config?: KitConfig): Promise<KitModule[]> {
-  const metadata = config ?? (
-    (await pathExists(join(kitRoot, KIT_CONFIG_PATH))) ? await readKitConfig(kitRoot) : undefined
-  );
+  const metadata =
+    config ??
+    ((await pathExists(join(kitRoot, KIT_CONFIG_PATH))) ? await readKitConfig(kitRoot) : undefined);
   const groups = metadata?.groups;
   const layersRoot = join(kitRoot, 'layers');
   const entries = await readdir(layersRoot, { withFileTypes: true }).catch((error: unknown) => {
@@ -140,14 +141,45 @@ export function dependentsOf(modules: KitModule[], installed: string[], id: stri
   );
 }
 
+function missingAlternatives(modules: KitModule[], selected: ReadonlySet<string>) {
+  return modules
+    .filter(
+      ({ id, requiresOneOf }) =>
+        selected.has(id) &&
+        requiresOneOf.length > 0 &&
+        !requiresOneOf.some((candidate) => selected.has(candidate)),
+    )
+    .map(({ id, requiresOneOf }) => ({
+      id,
+      requiresOneOf,
+      message: `${id} needs at least one of ${requiresOneOf.join(', ')}.`,
+    }));
+}
+
 export function validateSelection(modules: KitModule[], selection: string[]): void {
-  const selected = new Set(selection);
+  const [missing] = missingAlternatives(modules, new Set(selection));
+  if (missing) throw new CliError(missing.message);
+}
+
+export function resolveInitSelection(modules: KitModule[], requested: string[]) {
+  const defaults = modules.filter((module) => module.installByDefault).map((module) => module.id);
+  return { defaults, effective: resolveSelection(modules, [...defaults, ...requested]) };
+}
+
+export function projectInitSelection(modules: KitModule[], requested: string[]) {
+  const { defaults, effective } = resolveInitSelection(modules, requested);
+  const selected = new Set(effective);
+  const requiredBy = new Map<string, string[]>();
+  // Every effective module contributes its direct edges, including transitive consumers.
   for (const module of modules) {
-    if (!selected.has(module.id) || module.requiresOneOf.length === 0) continue;
-    if (!module.requiresOneOf.some((id) => selected.has(id))) {
-      throw new CliError(`${module.id} needs at least one of ${module.requiresOneOf.join(', ')}.`);
+    if (!selected.has(module.id)) continue;
+    for (const id of new Set(module.requires)) {
+      const consumers = requiredBy.get(id) ?? [];
+      consumers.push(module.id);
+      requiredBy.set(id, consumers);
     }
   }
+  return { defaults, effective, requiredBy, missing: missingAlternatives(modules, selected) };
 }
 
 export function groupModules(modules: KitModule[], groups?: string[]): ModuleGroup[] {

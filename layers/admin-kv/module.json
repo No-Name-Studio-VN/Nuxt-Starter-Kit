@@ -15,6 +15,25 @@
         "layers/admin-kv/module.json",
         "layers/admin-kv/app/components/admin/kv/AdminKvManager.vue"
       ]
+    },
+    {
+      "id": "admin-kv.localized-kv-browser",
+      "since": "4.2.0",
+      "title": "Localize KV browsing, editing, validation, and temporary-entry warnings. Merge the KV locale catalogs with customized screens.",
+      "kind": "feature",
+      "files": [
+        "layers/admin-kv/app/components/admin/kv/AdminKvManager.vue",
+        "layers/admin-kv/app/components/admin/kv/AdminKvValueEditor.client.vue",
+        "layers/admin-kv/app/components/admin/kv/columns.ts",
+        "layers/admin-kv/app/pages/admin/kv.vue",
+        "layers/admin-kv/app/plugins/nav.ts",
+        "layers/admin-kv/i18n/locales/en.json",
+        "layers/admin-kv/i18n/locales/vi.json",
+        "layers/admin-kv/module.json",
+        "layers/admin-kv/nuxt.config.ts",
+        "layers/admin-kv/server/utils/adminKv.ts",
+        "layers/admin-kv/shared/schemas/adminKvSchema.ts"
+      ]
     }
   ]
 }

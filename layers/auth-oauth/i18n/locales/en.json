@@ -12,7 +12,12 @@
     "last_sign_in_provider": "Signed in with {provider}",
     "email_missing": "This provider didn't share an email address. Try another sign-in method. If you already have an account, sign in and connect this provider in Settings → Security.",
     "provider_conflict": "Your account is already connected to a different account from this provider. Sign in with your existing method, including a verification code if required, and manage your connected accounts in Settings → Security.",
-    "unavailable": "Could not load sign-in providers. Please try again later."
+    "unavailable": "Could not load sign-in providers. Please try again later.",
+    "popup_close_hint": "You can close this window if it does not close automatically.",
+    "already_linked": "This account is already linked to another user.",
+    "already_connected": "You already have an account from this provider linked.",
+    "authentication_failed": "Authentication failed. Please try again.",
+    "link_requires_sign_in": "You need to be logged in to link an account."
   },
   "settings": {
     "connected": {
@@ -46,7 +51,8 @@
         "oauth-already-connected": "You already have an account from this provider connected.",
         "oauth-error": "Couldn’t connect the account. Please try again.",
         "not-authenticated": "Sign in again before connecting an account."
-      }
+      },
+      "unlink_last_method": "You can't unlink your only sign-in method. Add another way to sign in first."
     }
   }
 }

@@ -1,10 +1,19 @@
 import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CliError } from '../../src/errors';
-import { dependentsOf, readKitModules, resolveSelection } from '../../src/kit/modules';
+import { readKitConfig } from '../../src/kit/config';
+import {
+  dependentsOf,
+  projectInitSelection,
+  readKitModules,
+  resolveSelection,
+  validateSelection,
+} from '../../src/kit/modules';
+import { printModulesJson } from '../../src/report';
 import { writeJsonAtomically, writeTextFile } from '../../src/util/fs';
 import { makeTempDir } from '../support/fixtureKit';
+import { kitRoot as realKitRoot } from './imports';
 
 let kitRoot: string;
 
@@ -26,6 +35,114 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(kitRoot, { recursive: true, force: true });
+});
+
+describe('real kit catalog', () => {
+  it('reports Essentials first and Miscellaneous last with independently selectable modules', async () => {
+    const config = await readKitConfig(realKitRoot);
+    const modules = await readKitModules(realKitRoot, config);
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    try {
+      printModulesJson(modules, [], 'a'.repeat(40), config.groups);
+      const output = stdout.mock.calls[0]?.[0];
+      const report: unknown = JSON.parse(String(output));
+      expect(report).toMatchObject({
+        groups: ['Essentials', 'Foundation', 'Authentication', 'App', 'Content', 'Miscellaneous'],
+        modules: expect.arrayContaining([
+          expect.objectContaining({ id: 'server-core', group: 'Essentials', internal: false }),
+          expect.objectContaining({ id: 'database', group: 'Essentials', internal: false }),
+          expect.objectContaining({ id: 'cache', group: 'Miscellaneous', internal: false }),
+          expect.objectContaining({ id: 'kv', group: 'Miscellaneous', internal: false }),
+          expect.objectContaining({ id: 'email', group: 'Miscellaneous', internal: false }),
+          expect.objectContaining({ id: 'bot-protection', group: 'Foundation' }),
+          expect.objectContaining({
+            id: 'auth-email-verification',
+            group: 'Authentication',
+            parent: 'auth-password',
+            internal: false,
+          }),
+        ]),
+      });
+    } finally {
+      stdout.mockRestore();
+    }
+  });
+
+  it('resolves password sign-in with email transport but without optional email verification', async () => {
+    const modules = await readKitModules(realKitRoot);
+    const defaults = modules.filter((module) => module.installByDefault).map((module) => module.id);
+    const selected = resolveSelection(modules, [...defaults, 'auth-password']);
+
+    expect(() => validateSelection(modules, selected)).not.toThrow();
+    expect(selected).toEqual(expect.arrayContaining(['auth-password', 'email']));
+    expect(selected).not.toContain('auth-email-verification');
+  });
+});
+
+describe('projectInitSelection', () => {
+  it('projects password sign-in and explains required layers without adding email verification', async () => {
+    const modules = await readKitModules(realKitRoot);
+    const preview = projectInitSelection(modules, ['auth-password']);
+
+    expect([...preview.effective].sort()).toEqual([
+      'auth',
+      'auth-password',
+      'database',
+      'email',
+      'server-core',
+      'web-security',
+    ]);
+    expect(preview.requiredBy.get('email')).toEqual(['auth-password']);
+    expect(preview.requiredBy.get('database')).toEqual(['auth']);
+    expect(preview.missing).toEqual([]);
+  });
+
+  it('keeps manually selected email when password sign-in is removed', async () => {
+    const modules = await readKitModules(realKitRoot);
+    expect(
+      projectInitSelection(modules, ['auth-password', 'email']).requiredBy.get('email'),
+    ).toEqual(['auth-password']);
+
+    const preview = projectInitSelection(modules, ['email']);
+    expect([...preview.effective].sort()).toEqual(['email', 'web-security']);
+    expect(preview.requiredBy.has('email')).toBe(false);
+  });
+
+  it('keeps a shared requirement when one of its consumers is removed', async () => {
+    const modules = await readKitModules(realKitRoot);
+    expect(
+      projectInitSelection(modules, ['auth-password', 'auth-oauth']).requiredBy.get('auth'),
+    ).toEqual(['auth-oauth', 'auth-password']);
+
+    const preview = projectInitSelection(modules, ['auth-oauth']);
+    expect(preview.effective).toContain('auth');
+    expect(preview.requiredBy.get('auth')).toEqual(['auth-oauth']);
+  });
+
+  it('reports the alternatives for passkeys and accepts OAuth without adding email', async () => {
+    const modules = await readKitModules(realKitRoot);
+    const incomplete = projectInitSelection(modules, ['auth-passkeys']);
+    expect(incomplete.missing).toMatchObject([
+      { id: 'auth', requiresOneOf: ['auth-password', 'auth-oauth'] },
+    ]);
+    expect(incomplete.effective).not.toContain('auth-password');
+    expect(incomplete.effective).not.toContain('auth-oauth');
+
+    const preview = projectInitSelection(modules, ['auth-passkeys', 'auth-oauth']);
+    expect(preview.missing).toEqual([]);
+    expect(preview.effective).toContain('auth-oauth');
+    expect(preview.effective).not.toContain('email');
+  });
+
+  it('includes default modules and their hard requirements with no explicit picks', async () => {
+    await writeModule('b', { installByDefault: true, requires: ['a'] });
+    const modules = await readKitModules(kitRoot);
+    const preview = projectInitSelection(modules, []);
+
+    expect(preview.defaults).toEqual(['b']);
+    expect(preview.effective).toEqual(['a', 'b']);
+    expect(preview.requiredBy.get('a')).toEqual(['b']);
+  });
 });
 
 describe('readKitModules', () => {

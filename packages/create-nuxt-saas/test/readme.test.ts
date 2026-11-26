@@ -16,19 +16,20 @@ describe('README module examples', () => {
     const internal = new Set(
       modules.filter((module) => module.internal).map((module) => module.id),
     );
+    const defaults = modules.filter((module) => module.installByDefault).map((module) => module.id);
     const commands = readme.replace(/\\\r?\n[ \t]*/g, ' ');
     const inits = [...commands.matchAll(initExample)];
     expect(inits.length).toBeGreaterThan(0);
     for (const [command, single, double, bare] of inits) {
       expect(() => {
         const requested = parseModules(single ?? double ?? bare ?? '');
-        validateSelection(modules, resolveSelection(modules, requested));
+        validateSelection(modules, resolveSelection(modules, [...defaults, ...requested]));
       }, command).not.toThrow();
     }
 
     // Each add/remove example block starts with a base project. Previews do not change it.
     for (const section of commands.split(/^```.*$/m)) {
-      let installed: string[] = [];
+      let installed = resolveSelection(modules, defaults);
       for (const [command, action, single, double, bare, rest] of section.matchAll(changeExample)) {
         const requested = parseModules(single ?? double ?? bare ?? '');
         expect(() => {

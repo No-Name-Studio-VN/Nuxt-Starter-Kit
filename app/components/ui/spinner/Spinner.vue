@@ -15,8 +15,6 @@ const props = withDefaults(defineProps<{
 }>(), {
   variant: 'default',
   size: 'md',
-  label: 'Loading',
-  text: 'Loading',
 })
 
 const rootClass = computed(() => cn(
@@ -59,7 +57,7 @@ const scaleClass = computed(() => {
 <template>
   <span
     role="status"
-    :aria-label="label"
+    :aria-label="label ?? $t('common.loading')"
     :class="rootClass"
   >
     <span
@@ -163,14 +161,14 @@ const scaleClass = computed(() => {
       v-else-if="variant === 'shimmer-text'"
       class="spinner-shimmer-text inline-block bg-clip-text text-transparent [animation:spinner-shimmer_1.5s_linear_infinite]"
       aria-hidden="true"
-    >{{ text }}</span>
+    >{{ text ?? $t('common.loading') }}</span>
 
     <span
       v-else-if="variant === 'loading-dots'"
       class="flex items-end justify-center"
       aria-hidden="true"
     >
-      <span class="pb-px">{{ text }}</span>
+      <span class="pb-px">{{ text ?? $t('common.loading') }}</span>
       <span class="ms-0.5 inline-flex items-end gap-px pb-px">
         <span class="inline-block [animation:spinner-ellipsis_1s_ease-in-out_infinite_0s]">.</span>
         <span class="inline-block [animation:spinner-ellipsis_1s_ease-in-out_infinite_0.12s]">.</span>
@@ -198,6 +196,6 @@ const scaleClass = computed(() => {
       <span :class="cn('rounded-full bg-current [animation:spinner-typing_1s_ease-in-out_infinite_0.4s]', dotSizeClass)" />
     </span>
 
-    <span class="sr-only">{{ label }}</span>
+    <span class="sr-only">{{ label ?? $t('common.loading') }}</span>
   </span>
 </template>

@@ -21,12 +21,15 @@ export const featureFlagRulesSchema = z
  */
 export const flagKeySchema = z
   .string()
-  .min(2, 'Flag key must be at least 2 characters')
-  .max(64, 'Flag key must be at most 64 characters')
-  .regex(
-    /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/,
-    'Flag key must be lowercase alphanumeric with hyphens (e.g., "new-reader-v2")',
-  );
+  .min(2, 'admin.flags.key_min')
+  .max(64, 'admin.flags.key_max')
+  .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'admin.flags.key_format');
+
+const rolloutPercentageSchema = z.coerce
+  .number({ error: 'admin.flags.rollout_range' })
+  .int('admin.flags.rollout_range')
+  .min(0, 'admin.flags.rollout_range')
+  .max(100, 'admin.flags.rollout_range');
 
 const featureFlagImportKeySchema = z
   .string()
@@ -39,11 +42,11 @@ const featureFlagImportKeySchema = z
  */
 export const featureFlagInsertSchema = createInsertSchema(featureFlags, {
   key: flagKeySchema,
-  description: z.string().max(500).default(''),
+  description: z.string().max(500, 'admin.flags.description_size').default(''),
   enabled: z.boolean().default(false),
   rules: featureFlagRulesSchema,
-  rolloutPct: z.coerce.number().int().min(0).max(100).default(100),
-  owner: z.string().max(100).default(''),
+  rolloutPct: rolloutPercentageSchema.default(100),
+  owner: z.string().max(100, 'admin.flags.owner_size').default(''),
   expiresAt: z.coerce.date().optional().nullable(),
   ...commonSchemaFragments.coerceDates,
 });
@@ -53,11 +56,11 @@ export const featureFlagInsertSchema = createInsertSchema(featureFlags, {
  */
 export const featureFlagUpdateSchema = createUpdateSchema(featureFlags, {
   key: flagKeySchema.optional(),
-  description: z.string().max(500).optional(),
+  description: z.string().max(500, 'admin.flags.description_size').optional(),
   enabled: z.boolean().optional(),
   rules: featureFlagRulesSchema,
-  rolloutPct: z.coerce.number().int().min(0).max(100).optional(),
-  owner: z.string().max(100).optional(),
+  rolloutPct: rolloutPercentageSchema.optional(),
+  owner: z.string().max(100, 'admin.flags.owner_size').optional(),
   expiresAt: z.coerce.date().optional().nullable(),
   ...commonSchemaFragments.coerceDates,
 });
@@ -69,11 +72,11 @@ export const featureFlagSelectSchema = createSelectSchema(featureFlags);
 
 export const featureFlagImportFlagSchema = z.object({
   key: featureFlagImportKeySchema,
-  description: z.string().max(500).default(''),
+  description: z.string().max(500, 'admin.flags.description_size').default(''),
   enabled: z.boolean().default(false),
   rules: featureFlagRulesSchema,
-  rolloutPct: z.coerce.number().int().min(0).max(100).default(100),
-  owner: z.string().max(100).default(''),
+  rolloutPct: rolloutPercentageSchema.default(100),
+  owner: z.string().max(100, 'admin.flags.owner_size').default(''),
   expiresAt: z
     .string()
     .datetime()

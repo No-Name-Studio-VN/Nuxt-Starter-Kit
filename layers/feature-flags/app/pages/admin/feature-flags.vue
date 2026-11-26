@@ -8,8 +8,14 @@
 import AdminFeatureFlagsManager from '#layers/feature-flags/app/components/admin/feature-flags/AdminFeatureFlagsManager.vue';
 
 definePageMeta({
-  title: 'Feature Flags',
-  breadcrumb: 'Feature Flags',
+  title: 'admin.flags.title',
+  breadcrumb: 'admin.flags.title',
   middleware: ['auth', 'admin'],
+});
+
+const { t } = useI18n();
+useSeoMeta({
+  title: () => t('admin.flags.title'),
+  description: () => t('admin.flags.description'),
 });
 </script>

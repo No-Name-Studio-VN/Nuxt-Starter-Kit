@@ -1,6 +1,6 @@
 import KitManagerCore
 
-/// How "Upgrade with Claude" or "Upgrade only" ended.
+/// How the upgrade or optional Claude handoff ended.
 enum UpgradeOutcome {
     /// The upgrade is applied on `branch` and Claude was opened in Terminal.
     case launched(branch: String)

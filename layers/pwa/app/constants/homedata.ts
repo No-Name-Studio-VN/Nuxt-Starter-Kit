@@ -3,26 +3,26 @@ import { Bell, Shield, Wifi, Zap } from '@lucide/vue';
 export const INSTALL_PROMPTER_FEATURES = [
   {
     icon: Zap,
-    title: 'Instant Access',
-    description: 'Launch directly from your home screen without opening a browser',
+    title: 'pwa.features.instant_access.title',
+    description: 'pwa.features.instant_access.description',
     colorClass: 'blue',
   },
   {
     icon: Wifi,
-    title: 'Offline Ready',
-    description: 'Continue learning even without internet connection',
+    title: 'pwa.features.offline.title',
+    description: 'pwa.features.offline.description',
     colorClass: 'green',
   },
   {
     icon: Bell,
-    title: 'Smart Notifications',
-    description: 'Get immediate notifications about new features and updates',
+    title: 'pwa.features.notifications.title',
+    description: 'pwa.features.notifications.description',
     colorClass: 'purple',
   },
   {
     icon: Shield,
-    title: 'Secure & Private',
-    description: 'Your data stays safe with enhanced security features',
+    title: 'pwa.features.privacy.title',
+    description: 'pwa.features.privacy.description',
     colorClass: 'orange',
   },
 ];

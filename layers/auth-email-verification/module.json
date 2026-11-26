@@ -14,6 +14,19 @@
         "layers/auth-email-verification/module.json",
         "layers/auth-email-verification/shared/constants/emailVerificationTokens.ts"
       ]
+    },
+    {
+      "id": "auth-email-verification.localized-verification-feedback",
+      "since": "4.2.0",
+      "title": "Localize email verification, resend confirmations, and link errors, with English fallbacks for auth errors.",
+      "kind": "feature",
+      "files": [
+        "layers/auth-email-verification/app/pages/auth/verify-email.vue",
+        "layers/auth-email-verification/i18n/locales/en.json",
+        "layers/auth-email-verification/i18n/locales/vi.json",
+        "layers/auth-email-verification/module.json",
+        "layers/auth-email-verification/shared/constants/emailVerificationMessages.ts"
+      ]
     }
   ]
 }

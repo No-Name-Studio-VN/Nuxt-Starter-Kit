@@ -81,8 +81,12 @@ async function resendVerification() {
     }
     resendSuccess.value = true;
   } catch (err: unknown) {
-    const parsed = parseApiError(err, 'Failed to resend verification email. Please try again.');
-    resendError.value = challenge.errorMessage(parsed) ?? parsed.message;
+    const parsed = parseApiError(err);
+    resendError.value =
+      challenge.errorKey(parsed) ??
+      (parsed.code === 'VERIFICATION_EMAIL_RATE_LIMITED'
+        ? 'auth.verify_email_resend_wait'
+        : 'auth.verify_email_resend_failed');
   } finally {
     challenge.reset();
     isResending.value = false;
@@ -98,13 +102,17 @@ async function resendVerification() {
       </div>
 
       <div class="space-y-1.5">
-        <h1 class="text-2xl font-semibold tracking-tight">Check your email</h1>
-        <p class="text-sm text-muted-foreground">
-          We've sent a verification link to
-          <strong v-if="email" class="font-medium text-foreground">{{ email }}</strong>
-          <span v-else>your email address</span>. Click the link in the email to verify your
-          account. If you don't see it, check your spam folder.
-        </p>
+        <h1 class="text-2xl font-semibold tracking-tight">{{ $t('auth.verify_email_heading') }}</h1>
+        <i18n-t
+          keypath="auth.verify_email_instructions"
+          tag="p"
+          class="text-sm text-muted-foreground"
+        >
+          <template #email>
+            <strong v-if="email" class="font-medium text-foreground">{{ email }}</strong>
+            <span v-else>{{ t('auth.verify_email_address') }}</span>
+          </template>
+        </i18n-t>
       </div>
     </div>
 
@@ -114,12 +122,12 @@ async function resendVerification() {
       class="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
     >
       <AlertDescription class="text-green-700 dark:text-green-300">
-        Verification email sent! Please check your inbox.
+        {{ $t('auth.verify_email_resent') }}
       </AlertDescription>
     </Alert>
 
     <Alert v-if="resendError" variant="destructive" role="alert">
-      <AlertDescription>{{ resendError }}</AlertDescription>
+      <AlertDescription>{{ t(resendError) }}</AlertDescription>
     </Alert>
 
     <FormChallenge v-if="email && !resendSuccess" :challenge="challenge.challenge" />
@@ -132,7 +140,7 @@ async function resendVerification() {
       :is-loading="isResending"
       @click="resendVerification"
     >
-      {{ resendSuccess ? 'Email sent' : 'Resend verification email' }}
+      {{ t(resendSuccess ? 'auth.verify_email_sent_button' : 'auth.verify_email_resend') }}
     </Button>
 
     <p class="text-center text-sm text-muted-foreground">
@@ -140,7 +148,7 @@ async function resendVerification() {
         :to="loginLink"
         class="font-medium text-foreground underline-offset-4 hover:underline"
       >
-        Back to sign in
+        {{ $t('auth.back_to_sign_in') }}
       </NuxtLink>
     </p>
   </AuthPageLayout>

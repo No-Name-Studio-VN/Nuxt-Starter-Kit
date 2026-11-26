@@ -82,6 +82,32 @@ struct UpgradeReportTests {
         #expect(UpgradeRiskSummary(nil) == nil)
     }
 
+    @Test func cleanReviewCannotAuthorizeNewRisk() {
+        let reviewed = upgradePreview()
+        let current = upgradePreview(risky: [RiskyFile(path: "app.vue", kind: .conflict)])
+        #expect(!reviewed.matchesUpgradePreview(current))
+    }
+
+    @Test func riskyReviewCannotAuthorizeDifferentRiskOnTheSamePath() {
+        let reviewed = upgradePreview(risky: [RiskyFile(path: "app.vue", kind: .keepEdited)])
+        let current = upgradePreview(risky: [RiskyFile(path: "app.vue", kind: .conflict)])
+        #expect(!reviewed.matchesUpgradePreview(current))
+    }
+
+    @Test func matchingRiskDoesNotHideAChangedPlan() {
+        let reviewed = upgradePreview(changes: [FileChangeSummary(path: "app.vue", kind: .update)])
+        let current = upgradePreview(changes: [FileChangeSummary(path: "app.vue", kind: .merge)])
+        #expect(reviewed.matchesUpgradePreview(reviewed))
+        #expect(!reviewed.matchesUpgradePreview(current))
+    }
+
+    private func upgradePreview(changes: [FileChangeSummary] = [], risky: [RiskyFile] = []) -> TransitionReport {
+        TransitionReport(
+            schema: 1, from: "old", to: "new", changes: changes, conflicts: [], followUps: [],
+            addedModules: [], removedModules: [], applied: false, upToDate: nil,
+            unsaved: UnsavedWork(total: risky.count, risky: risky, touched: [], untouched: 0))
+    }
+
     @Test func resolvingAKeptFileDoesNotReduceTheConflictCount() throws {
         let report = try JSONDecoder().decode(SavedReport.self, from: fixture("saved-report"))
         #expect(report.decisionsLeft == 1)

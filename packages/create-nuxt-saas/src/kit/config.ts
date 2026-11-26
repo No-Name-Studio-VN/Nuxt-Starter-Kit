@@ -18,6 +18,7 @@ export const DEFAULT_USER_OWNED = [
 export interface KitConfig {
   groups?: string[] | undefined;
   exclude: string[];
+  excludeScripts: string[];
   userOwned: string[];
   changes: KitChangeNote[];
 }
@@ -25,6 +26,7 @@ export interface KitConfig {
 const kitConfigSchema = z.object({
   groups: z.array(z.string().min(1)).optional(),
   exclude: z.array(z.string()),
+  excludeScripts: z.array(z.string()).default([]),
   userOwned: z.array(z.string()).default(DEFAULT_USER_OWNED),
   changes: changeNotesSchema,
 });
@@ -37,6 +39,8 @@ export async function readKitConfig(kitDir: string): Promise<KitConfig> {
     const parsed: unknown = JSON.parse(await readFile(path, 'utf8'));
     return kitConfigSchema.parse(parsed);
   } catch (error) {
-    throw new CliError(`Invalid kit config at ${path}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliError(
+      `Invalid kit config at ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }

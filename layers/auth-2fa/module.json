@@ -4,5 +4,19 @@
   "group": "Authentication",
   "parent": "auth-password",
   "requires": ["server-core", "auth-password"],
-  "dependencies": ["vue-input-otp", "otpauth", "uqr"]
+  "dependencies": ["vue-input-otp", "otpauth", "uqr"],
+  "changes": [
+    {
+      "id": "auth-2fa.localized-sign-in-challenge",
+      "since": "4.2.0",
+      "title": "Localize the two-factor sign-in prompt and its feedback.",
+      "kind": "feature",
+      "files": [
+        "layers/auth-2fa/app/components/auth/TwoFactorLoginStep.vue",
+        "layers/auth-2fa/i18n/locales/en.json",
+        "layers/auth-2fa/i18n/locales/vi.json",
+        "layers/auth-2fa/module.json"
+      ]
+    }
+  ]
 }

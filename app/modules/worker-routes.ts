@@ -17,8 +17,8 @@
  *   which hands anything else that still reaches the Worker back to the assets.
  *
  * Catch-all pages (`[...slug].vue`) never run on the Worker: every path they
- * serve must be prerendered (crawled or listed in `nitro.prerender.routes`).
- * Routes listed in `nitro.prerender.routes` that fail to prerender stay on the
+ * serve must be prerendered (crawled or listed in `prerender.routes`).
+ * Routes listed in `prerender.routes` that fail to prerender stay on the
  * Worker (rendered per request, as before) and are reported as a build warning.
  *
  * Non-GET/HEAD requests to unknown paths get 405 from the asset layer, not 404.

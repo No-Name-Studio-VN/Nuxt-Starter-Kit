@@ -3,20 +3,16 @@ import { isEmpty } from 'es-toolkit/compat';
 import { APP_MANIFEST } from '#shared/constants/manifest';
 
 definePageMeta({
-  breadcrumb: 'Home',
+  breadcrumb: 'common.home',
 });
+
+const { t } = useI18n();
 
 useSeo({
   title: APP_MANIFEST.short_name,
-  description: APP_MANIFEST.description,
+  description: computed(() => t('home.description')),
   type: 'website',
 });
-
-/**
- * The hero this page falls back to. The content module replaces it below with
- * the landing collection; without that module this is the whole homepage.
- */
-const hero = ref({ title: APP_MANIFEST.name, subtitle: APP_MANIFEST.description });
 
 const route = useRoute();
 if (!isEmpty(route.hash)) {
@@ -40,8 +36,8 @@ function scrollToSection(sectionId: string) {
     <ExtensionSlot name="home:hero">
       <div class="container py-16">
         <div class="prose max-w-none">
-          <h1>{{ hero.title }}</h1>
-          <p>{{ hero.subtitle }}</p>
+          <h1>{{ APP_MANIFEST.name }}</h1>
+          <p>{{ $t('home.description') }}</p>
         </div>
       </div>
     </ExtensionSlot>

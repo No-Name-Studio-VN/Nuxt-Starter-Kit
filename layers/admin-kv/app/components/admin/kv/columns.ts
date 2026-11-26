@@ -14,6 +14,8 @@ import {
 import type { AdminKvTableRow } from './types';
 
 export function createColumns(
+  t: (key: string, named?: Record<string, string>) => string,
+  locale: string,
   onEdit: (row: AdminKvTableRow) => void,
   onDelete: (row: AdminKvTableRow) => void,
 ): ColumnDef<StockFeatures, AdminKvTableRow>[] {
@@ -29,13 +31,13 @@ export function createColumns(
               'indeterminate'),
           'onUpdate:modelValue': (value: boolean | string) =>
             table.toggleAllPageRowsSelected(!!value),
-          ariaLabel: 'Select all KV keys on this page',
+          ariaLabel: t('admin.kv.select_all'),
         }),
       cell: ({ row }) =>
         h(Checkbox, {
           modelValue: row.getIsSelected(),
           'onUpdate:modelValue': (value: boolean | string) => row.toggleSelected(!!value),
-          ariaLabel: `Select KV key ${row.original.key}`,
+          ariaLabel: t('admin.kv.select_one', { key: row.original.key }),
         }),
       enableSorting: false,
       enableHiding: false,
@@ -50,7 +52,7 @@ export function createColumns(
             variant: 'ghost',
             onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
           },
-          () => ['Key', h(ArrowUpDown, { 'data-icon': 'inline-end' })],
+          () => [t('admin.kv.key'), h(ArrowUpDown, { 'data-icon': 'inline-end' })],
         ),
       cell: ({ row }) =>
         h('div', { class: 'flex min-w-[18rem] flex-col gap-1' }, [
@@ -58,40 +60,45 @@ export function createColumns(
           row.original.isTemporary
             ? h('span', { class: 'flex items-center gap-1 text-xs text-muted-foreground' }, [
                 h(AlertTriangle, { class: 'size-3' }),
-                'Temporary or cache-sensitive key',
+                t('admin.kv.temporary_title'),
               ])
             : null,
         ]),
     },
     {
       accessorKey: 'prefix',
-      header: 'Prefix',
+      header: t('admin.kv.prefix'),
       cell: ({ row }) => h(Badge, { variant: 'secondary' }, () => row.original.prefix),
     },
     {
       id: 'value',
-      header: 'Value preview',
+      header: t('admin.kv.preview'),
       cell: ({ row }) => {
         if (!row.original.value) {
-          return h('span', { class: 'text-sm text-muted-foreground' }, 'Loading on page…');
+          return h(
+            'span',
+            { class: 'text-sm text-muted-foreground' },
+            t('common.loading_ellipsis'),
+          );
         }
 
         return h('div', { class: 'flex max-w-[26rem] flex-col gap-1' }, [
           h(
             'span',
             { class: 'line-clamp-2 break-all font-mono text-xs text-muted-foreground' },
-            getValuePreview(row.original),
+            getValuePreview(row.original, t('admin.kv.empty_value')),
           ),
           h('div', { class: 'flex flex-wrap items-center gap-2' }, [
             h(
               Badge,
               { variant: row.original.value.mode === 'json' ? 'default' : 'secondary' },
-              () => row.original.value?.mode.toUpperCase() ?? 'RAW',
+              () =>
+                t(row.original.value?.mode === 'json' ? 'admin.kv.mode_json' : 'admin.kv.mode_raw'),
             ),
             h(
               'span',
               { class: 'text-xs text-muted-foreground' },
-              prettyBytes(row.original.value.valueBytes),
+              prettyBytes(row.original.value.valueBytes, { locale }),
             ),
           ]),
         ]);
@@ -100,15 +107,15 @@ export function createColumns(
     },
     {
       id: 'temporary',
-      header: 'Warning',
+      header: t('admin.kv.warning'),
       cell: ({ row }) =>
         row.original.isTemporary
-          ? h(Badge, { variant: 'destructive' }, () => 'Sensitive')
+          ? h(Badge, { variant: 'destructive' }, () => t('admin.kv.sensitive'))
           : h('span', { class: 'text-sm text-muted-foreground' }, '—'),
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: t('data_table.actions'),
       cell: ({ row }) =>
         h(
           DropdownMenu,
@@ -125,7 +132,7 @@ export function createColumns(
                       { variant: 'ghost', class: 'h-8 w-8 p-0' },
                       {
                         default: () => [
-                          h('span', { class: 'sr-only' }, 'Open menu'),
+                          h('span', { class: 'sr-only' }, t('data_table.open_menu')),
                           h(MoreHorizontal, { class: 'h-4 w-4' }),
                         ],
                       },
@@ -144,7 +151,7 @@ export function createColumns(
                         default: () =>
                           h('div', { class: 'flex items-center gap-2' }, [
                             h(Pencil, { class: 'h-4 w-4' }),
-                            h('span', {}, 'Edit value'),
+                            h('span', {}, t('admin.kv.edit_value')),
                           ]),
                       },
                     ),
@@ -158,7 +165,7 @@ export function createColumns(
                         default: () =>
                           h('div', { class: 'flex items-center gap-2' }, [
                             h(Trash2, { class: 'h-4 w-4' }),
-                            h('span', {}, 'Delete'),
+                            h('span', {}, t('common.delete')),
                           ]),
                       },
                     ),
@@ -175,13 +182,13 @@ export function createColumns(
   ];
 }
 
-function getValuePreview(row: AdminKvTableRow): string {
+function getValuePreview(row: AdminKvTableRow, emptyValue: string): string {
   if (!row.value) return '';
 
   const compactValue = row.value.value.replace(/\s+/g, ' ').trim();
 
   if (compactValue.length === 0) {
-    return 'Empty value';
+    return emptyValue;
   }
 
   return compactValue.length > 180 ? `${compactValue.slice(0, 180)}…` : compactValue;

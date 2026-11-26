@@ -3,7 +3,7 @@
     <iframe
       v-if="url"
       :src="url"
-      :title
+      :title="props.title ?? $t('docs.playground')"
       sandbox="allow-modals allow-forms allow-popups allow-scripts allow-same-origin"
       class="size-full min-h-150 overflow-hidden rounded-md"
     />
@@ -27,7 +27,6 @@ const props = withDefaults(
     repo: undefined,
     branch: 'main',
     dir: '',
-    title: 'Playground',
   },
 );
 

@@ -10,6 +10,7 @@ private actor StubRunner: ProcessRunning {
     }
 
     private let result: ProcessResult
+    var help: String?
     private(set) var calls: [Call] = []
     private(set) var timeouts: [Duration] = []
 
@@ -17,8 +18,9 @@ private actor StubRunner: ProcessRunning {
         self.result = result
     }
 
-    init(stdout: Data, stderr: String = "", exitCode: Int32 = 0) {
-        self.init(result: ProcessResult(exitCode: exitCode, stdout: stdout, stderr: Data(stderr.utf8)))
+    init(stdout: Data, stderr: String = "", exitCode: Int32 = 0, help: String? = nil) {
+        result = ProcessResult(exitCode: exitCode, stdout: stdout, stderr: Data(stderr.utf8))
+        self.help = help
     }
 
     init(stdout: String, stderr: String = "", exitCode: Int32 = 0) {
@@ -28,7 +30,34 @@ private actor StubRunner: ProcessRunning {
     func run(_ executable: String, _ arguments: [String], in directory: URL?, timeout: Duration) async throws -> ProcessResult {
         calls.append(Call(executable: executable, arguments: arguments))
         timeouts.append(timeout)
+        if arguments.last == "--help", let help {
+            return ProcessResult(exitCode: 0, stdout: Data(help.utf8), stderr: Data())
+        }
         return result
+    }
+}
+
+private actor ProjectComparisonRunner: ProcessRunning {
+    private(set) var calls: [[String]] = []
+
+    func run(_ executable: String, _ arguments: [String], in directory: URL?, timeout: Duration) async throws -> ProcessResult {
+        calls.append(arguments)
+        let stdout: Data
+        if arguments.last == "--help" {
+            stdout = Data("OPTIONS --baseline-dir --file --max-bytes".utf8)
+        } else if let argument = arguments.first(where: { $0.hasPrefix("--file=") }) {
+            let path = String(argument.dropFirst("--file=".count))
+            switch path {
+            case "README.md":
+                stdout = Data(#"{"schema":1,"path":"README.md","status":"text","patch":"diff --git a/README.md b/README.md\n"}"#.utf8)
+            default:
+                let statuses = ["logo.png": "binary", "huge": "tooLarge", "missing": "missing", "protected": "unavailable"]
+                stdout = Data(#"{"schema":1,"path":"\#(path)","status":"\#(statuses[path] ?? "unchanged")"}"#.utf8)
+            }
+        } else {
+            stdout = Data(#"{"schema":1,"commit":"installed","projectComparison":true}"#.utf8)
+        }
+        return ProcessResult(exitCode: 0, stdout: stdout, stderr: Data())
     }
 }
 
@@ -74,6 +103,52 @@ func fixture(_ name: String) throws -> Data {
 struct CLITests {
     private let project = URL(filePath: "/tmp/some project")
     private let sha = "bead6d4c1e7989d369942a70c35cba50c187006d"
+
+    @Test func createsAProjectFromAPinnedLocalKitRevision() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let runner = StubRunner(
+            stdout: Data(#"{"schema":1,"target":"/tmp/some project","modules":["auth"],"git":"initialised","followUps":["pnpm install"]}"#.utf8),
+            help: "OPTIONS --json --yes --modules --kit --to")
+        let report = try await NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+            .initialize(project: project, modules: ["auth"], at: sha)
+
+        #expect(report.target == project.path)
+        #expect(report.git == .initialised)
+        #expect(report.modules == ["auth"])
+        #expect(report.followUps == ["pnpm install"])
+        #expect(await runner.calls.map { Array($0.arguments.dropFirst()) } == [
+            ["init", "--help"],
+            ["init", project.path, "--json", "--yes", "--modules=auth", "--kit", kit.root.path, "--allow-dirty-kit", "--to", sha],
+        ])
+    }
+
+    @Test func oldCLICannotWriteAProjectWithoutJSONSupport() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let runner = StubRunner(stdout: Data("Created a project".utf8), help: "OPTIONS --yes --modules --kit --to")
+        let cli = NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+
+        await #expect(throws: CLIFailure.projectCreationUnsupported) {
+            try await cli.initialize(project: project, modules: [], at: sha)
+        }
+        #expect(await runner.calls.map { Array($0.arguments.dropFirst()) } == [["init", "--help"]])
+    }
+
+    @Test func cannotCreateAProjectInsideTheKitCheckoutThroughAnAlias() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let alias = FileManager.default.temporaryDirectory.appending(path: "kit-alias-\(UUID())")
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: kit.cliDirectory)
+        defer { try? FileManager.default.removeItem(at: alias) }
+        let runner = StubRunner(stdout: "")
+        let cli = NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+
+        await #expect(throws: CLIFailure.projectCreationInsideKit) {
+            try await cli.initialize(project: alias.appending(path: "new-app"), modules: [], at: sha)
+        }
+        #expect(await runner.calls.isEmpty)
+    }
 
     @Test func decodesTransitionFixture() async throws {
         let kit = try FakeKit()
@@ -213,6 +288,7 @@ struct CLITests {
         #expect(report.installed.isEmpty)
         #expect(report.modules.count == 20)
         let botProtection = try #require(report.modules.first { $0.id == "bot-protection" })
+        #expect(!botProtection.installByDefault) // Catalogs from older kit commits have no default flag.
         #expect(botProtection.group == "Foundation")
         #expect(botProtection.requires == ["server-core"])
         #expect(botProtection.env == ["NUXT_TURNSTILE_SITE_KEY", "NUXT_TURNSTILE_SECRET_KEY"])
@@ -275,6 +351,63 @@ struct CLITests {
         #expect(report.files.filter { $0.status == .edited }.count == 2)
         #expect(report.conflicts.unresolved.isEmpty)
         #expect(report.files.contains { $0.expected })
+    }
+
+    @Test func projectComparisonPreparesOnceAndLoadsOnlyTheSelectedPath() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let runner = ProjectComparisonRunner()
+        let cli = NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+        let comparison = try await cli.prepareProjectComparison(project: project)
+        defer { comparison.close() }
+        #expect(comparison.commit == "installed")
+        #expect(await runner.calls.count == 2)
+
+        #expect(try await comparison.patch(path: "README.md", maxBytes: 300) == .text("diff --git a/README.md b/README.md\n"))
+        #expect(try await comparison.patch(path: "logo.png") == .binary)
+        #expect(try await comparison.patch(path: "huge") == .tooLarge)
+        #expect(try await comparison.patch(path: "missing") == .missing)
+        #expect(try await comparison.patch(path: "protected") == .unavailable)
+        #expect(try await comparison.patch(path: "unchanged") == .unchanged)
+        let calls = Array(await runner.calls.dropFirst())
+        let preparation = try #require(calls.first)
+        let baseline = try #require(preparation.first { $0.hasPrefix("--baseline-dir=") })
+        let path = String(baseline.dropFirst("--baseline-dir=".count))
+        #expect(FileManager.default.fileExists(atPath: path))
+        #expect(preparation.contains("--kit"))
+        #expect(preparation.contains(kit.root.path))
+        #expect(calls.dropFirst().allSatisfy { $0.contains(baseline) && !$0.contains("--kit") })
+        #expect(calls.dropFirst().first?.contains("--file=README.md") == true)
+        #expect(calls.dropFirst().first?.contains("--max-bytes=300") == true)
+        comparison.close()
+        #expect(!FileManager.default.fileExists(atPath: path))
+        await #expect(throws: CLIFailure.self) { _ = try await comparison.patch(path: "README.md") }
+    }
+
+    @Test func olderCLIStillInspectsButExplainsHowToEnableProjectComparisons() async throws {
+        let kit = try FakeKit(version: "4.1.3")
+        defer { kit.remove() }
+        let runner = StubRunner(stdout: try fixture("inspect"), help: "OPTIONS --dir --json --added")
+        let cli = NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+        let installed = try await cli.inspect(project: project, source: .recorded)
+        #expect(!installed.files.isEmpty)
+        await #expect(throws: CLIFailure.projectComparisonUnsupported) {
+            _ = try await cli.prepareProjectComparison(project: project)
+        }
+        let calls = await runner.calls.map { Array($0.arguments.dropFirst()) }
+        #expect(calls == [["inspect", "--json", "--dir", project.path], ["inspect", "--help"]])
+        #expect(CLIFailure.projectComparisonUnsupported.errorDescription?.contains("rebuild") == true)
+    }
+
+    @Test func failedPreparationRemovesItsTemporaryDirectory() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let runner = StubRunner(stdout: try fixture("error"), exitCode: 1, help: "OPTIONS --baseline-dir")
+        let cli = NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+        await #expect(throws: CLIFailure.self) { _ = try await cli.prepareProjectComparison(project: project) }
+        let args = try #require(await runner.calls.last?.arguments)
+        let baseline = try #require(args.first { $0.hasPrefix("--baseline-dir=") })
+        #expect(!FileManager.default.fileExists(atPath: String(baseline.dropFirst("--baseline-dir=".count))))
     }
 
     @Test func summaryScore() {

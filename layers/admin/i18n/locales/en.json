@@ -1,1 +1,11 @@
-{}
+{
+  "admin": {
+    "title": "Admin Dashboard",
+    "description": "Manage your application's content, users, and system settings",
+    "label": "Admin",
+    "system": "System",
+    "overview": "Overview",
+    "dashboard": "Dashboard",
+    "users_sales": "Users & Sales"
+  }
+}

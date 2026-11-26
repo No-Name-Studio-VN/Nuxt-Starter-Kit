@@ -1,12 +1,7 @@
 <template>
   <div class="flex items-center justify-center" :class="containerClass">
     <div class="flex flex-col items-center gap-3">
-      <Spinner
-        variant="svg"
-        :size="size"
-        :label="text ?? 'Loading'"
-        class="text-muted-foreground"
-      />
+      <Spinner variant="svg" :size="size" :label="text" class="text-muted-foreground" />
       <p v-if="text" class="text-sm text-muted-foreground animate-pulse">
         {{ text }}
       </p>

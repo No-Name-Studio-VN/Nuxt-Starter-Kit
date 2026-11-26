@@ -13,6 +13,6 @@ const { loggedIn, user } = useUserSession();
     @click="navigateTo(authRoutes.AUTH_LOGIN)"
   >
     <LogInIcon />
-    <span class="hidden sm:flex">Sign In</span>
+    <span class="hidden sm:flex">{{ $t('common.sign_in') }}</span>
   </Button>
 </template>

@@ -1,18 +1,33 @@
+import en from '../../i18n/locales/en.json';
+import type { AuthErrorMessage } from '#layers/auth/types/auth';
 import type {
   EmailVerificationErrorCode,
   EmailVerificationSuccessCode,
 } from '../../types/emailVerification';
 
-export const EMAIL_VERIFICATION_ERROR_MESSAGES: Record<EmailVerificationErrorCode, string> = {
-  'email-not-verified':
-    'Your email address has not been verified. Please check your inbox for the verification link.',
-  'invalid-token': 'This verification link is invalid or has already been used.',
-  'token-expired': 'This link has expired. Please request a new one.',
-  'resend-too-soon':
-    'A verification email was recently sent. Please check your inbox or wait a moment before requesting another.',
+export const EMAIL_VERIFICATION_ERROR_MESSAGES: Record<
+  EmailVerificationErrorCode,
+  AuthErrorMessage
+> = {
+  'email-not-verified': {
+    key: 'auth.verify_email_required',
+    fallback: en.auth.verify_email_required,
+  },
+  'invalid-token': {
+    key: 'auth.verify_email_invalid_token',
+    fallback: en.auth.verify_email_invalid_token,
+  },
+  'token-expired': {
+    key: 'auth.verify_email_expired_token',
+    fallback: en.auth.verify_email_expired_token,
+  },
+  'resend-too-soon': {
+    key: 'auth.verify_email_resend_wait',
+    fallback: en.auth.verify_email_resend_wait,
+  },
 };
 
 export const EMAIL_VERIFICATION_SUCCESS_MESSAGES: Record<EmailVerificationSuccessCode, string> = {
-  'email-verified': 'Your email has been verified! You can now sign in.',
-  'verification-sent': 'A verification email has been sent. Please check your inbox.',
+  'email-verified': 'auth.email_verified',
+  'verification-sent': 'auth.verification_sent',
 };

@@ -10,11 +10,12 @@ import type { AnimatedTocProps } from './types';
 const props = withDefaults(defineProps<AnimatedTocProps>(), {
   rowHeight: 32,
   indent: 24,
-  title: 'On this page',
-  ariaLabel: 'On this page',
   progressBar: true,
   class: '',
 });
+const { t } = useI18n();
+const title = computed(() => props.title ?? t('common.on_this_page'));
+const ariaLabel = computed(() => props.ariaLabel ?? t('common.on_this_page'));
 const active = defineModel<number>({ default: 0 });
 const emit = defineEmits<{ select: [index: number, event: MouseEvent] }>();
 const reducedMotion = usePreferredReducedMotion();

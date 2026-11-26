@@ -45,11 +45,17 @@ export default defineNuxtConfig({
     '/onboarding': privateAccountPageRule,
   },
 
+  prerender: {
+    // Sign-in and account pages are rendered per request on the Worker.
+    ignore: [
+      /^\/(?:auth|settings|onboarding)(?:\/|\?|$)/,
+      ...locales
+        .filter((locale) => locale !== defaultLocale)
+        .map((locale) => new RegExp(`^/${locale}/auth(?:/|\\?|$)`)),
+    ],
+  },
+
   nitro: {
-    prerender: {
-      // Sign-in pages are rendered per request on the Worker.
-      ignore: ['/auth/**', '/settings', '/settings/**', '/onboarding'],
-    },
     typescript: {
       tsConfig: {
         // Nitro's generated tsconfig includes server/ and shared/*.d.ts only, so

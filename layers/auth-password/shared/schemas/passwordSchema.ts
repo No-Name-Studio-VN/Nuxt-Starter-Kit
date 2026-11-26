@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { emailFieldSchema } from '#shared/schemas/common';
-import { emailSchema, signInUsernameSchema, userNameSchema, usernameSchema } from '#layers/auth/shared/schemas/userSchema';
+import {
+  emailSchema,
+  signInUsernameSchema,
+  userNameSchema,
+  usernameSchema,
+} from '#layers/auth/shared/schemas/userSchema';
 
 /**
  * Enhanced password complexity validation
@@ -74,7 +79,7 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const forgotPasswordFormSchema = z.object({
-  email: emailFieldSchema('Please enter a valid email address'),
+  email: emailFieldSchema('validation.email_invalid'),
 });
 
 export const resetPasswordSchema = z
@@ -84,17 +89,17 @@ export const resetPasswordSchema = z
     confirmPassword: z.string().min(1),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    error: 'Passwords do not match',
+    error: 'validation.passwords_mismatch',
     path: ['confirmPassword'],
   });
 
 export const resetPasswordFormSchema = z
   .object({
     password: passwordComplexitySchema,
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    confirmPassword: z.string().min(1, 'validation.password_confirm_required'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    error: 'Passwords do not match',
+    error: 'validation.passwords_mismatch',
     path: ['confirmPassword'],
   });
 

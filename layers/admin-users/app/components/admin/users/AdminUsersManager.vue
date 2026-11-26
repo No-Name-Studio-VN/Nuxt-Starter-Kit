@@ -2,15 +2,15 @@
   <div class="space-y-6">
     <section class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="space-y-1">
-        <h2 class="text-2xl font-semibold text-foreground">Users</h2>
+        <h2 class="text-2xl font-semibold text-foreground">{{ $t('admin.users.heading') }}</h2>
         <p class="text-sm text-muted-foreground">
-          Manage accounts, roles, and recent access activity.
+          {{ $t('admin.users.summary') }}
         </p>
       </div>
 
       <Button v-if="canSetPasswords" @click="openAddDialog">
         <UserPlus class="size-4" />
-        Add user
+        {{ $t('admin.users.add') }}
       </Button>
     </section>
 
@@ -19,9 +19,10 @@
       :columns="columns"
       :data="users"
       :loading="loading"
-      search-placeholder="Search users, emails, or roles"
-      empty-title="No users match the current view."
-      empty-description="Adjust the search or add a new account."
+      :column-labels="columnLabels"
+      :search-placeholder="$t('admin.users.search')"
+      :empty-title="$t('admin.users.empty_title')"
+      :empty-description="$t('admin.users.empty_description')"
       @update:data="fetchUsers"
     />
 
@@ -29,28 +30,29 @@
       <div class="flex-1 flex items-center gap-2">
         <InfoIcon class="size-4 text-muted-foreground" />
         <span class="text-sm text-muted-foreground">
-          {{ selectedUserIds.length }} user(s) selected
+          {{ t('admin.users.selected', selectedUserIds.length) }}
         </span>
       </div>
       <Button variant="destructive" :disabled="loading" @click="openBatchDeleteDialog">
         <Trash2Icon class="size-4" />
-        Delete Selected
+        {{ $t('admin.users.delete_selected') }}
       </Button>
     </div>
 
     <AlertDialog v-model:open="singleDeleteDialogOpen">
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete user?</AlertDialogTitle>
+          <AlertDialogTitle>{{ $t('admin.users.delete_title') }}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete user "{{ userToDelete?.username }}"? This action cannot
-            be undone.
+            {{ t('admin.users.delete_description', { username: userToDelete?.username }) }}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel @click="closeSingleDeleteDialog"> Cancel </AlertDialogCancel>
+          <AlertDialogCancel @click="closeSingleDeleteDialog">
+            {{ $t('common.cancel') }}
+          </AlertDialogCancel>
           <AlertDialogAction :disabled="loading" @click="confirmSingleDelete">
-            Delete
+            {{ $t('common.delete') }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -59,19 +61,18 @@
     <AlertDialog v-model:open="batchDeleteDialogOpen">
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete selected users?</AlertDialogTitle>
+          <AlertDialogTitle>{{ $t('admin.users.delete_selected_title') }}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete {{ selectedUserIds.length }} user(s)? This action cannot
-            be undone.
+            {{ t('admin.users.delete_selected_description', selectedUserIds.length) }}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel> Cancel </AlertDialogCancel>
+          <AlertDialogCancel> {{ $t('common.cancel') }} </AlertDialogCancel>
           <AlertDialogAction
             :disabled="loading || selectedUserIds.length === 0"
             @click="confirmBatchDelete"
           >
-            Delete selected
+            {{ $t('admin.users.delete_selected') }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -81,22 +82,24 @@
       <DialogScrollContent class="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {{ isEditing ? 'Edit user' : 'Add user' }}
+            {{ t(isEditing ? 'admin.users.edit' : 'admin.users.add') }}
           </DialogTitle>
-          <DialogDescription> Account details and permissions. </DialogDescription>
+          <DialogDescription> {{ $t('admin.users.form_description') }} </DialogDescription>
         </DialogHeader>
 
         <form class="space-y-6" @submit.prevent="onSubmit">
           <FieldGroup>
             <FieldSet>
-              <FieldLegend>Basic information</FieldLegend>
+              <FieldLegend>{{ $t('admin.users.basic_info') }}</FieldLegend>
               <FieldGroup>
                 <VeeField v-slot="{ field, errors }" name="username">
                   <Field :data-invalid="!!errors.length">
-                    <FieldLabel for="admin-user-username"> Username </FieldLabel>
+                    <FieldLabel for="admin-user-username">
+                      {{ $t('account_page.username') }}
+                    </FieldLabel>
                     <Input
                       id="admin-user-username"
-                      placeholder="Enter username"
+                      :placeholder="$t('auth.username_placeholder')"
                       :disabled="isEditing"
                       autocomplete="off"
                       :aria-invalid="!!errors.length"
@@ -104,59 +107,79 @@
                       @update:model-value="field.onChange"
                     />
                     <FieldDescription v-if="isEditing">
-                      Username cannot be changed
+                      {{ $t('admin.users.username_fixed') }}
                     </FieldDescription>
-                    <FieldError v-if="errors.length" :errors="errors" />
+                    <FieldError
+                      v-if="errors.length"
+                      :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                    />
                   </Field>
                 </VeeField>
 
                 <VeeField v-slot="{ field, errors }" name="name">
                   <Field :data-invalid="!!errors.length">
-                    <FieldLabel for="admin-user-name"> Full Name </FieldLabel>
+                    <FieldLabel for="admin-user-name">
+                      {{ $t('account_page.full_name') }}
+                    </FieldLabel>
                     <Input
                       id="admin-user-name"
                       :model-value="field.value"
-                      placeholder="Enter full name"
+                      :placeholder="$t('admin.users.name_placeholder')"
                       :aria-invalid="!!errors.length"
                       @update:model-value="field.onChange"
                     />
-                    <FieldError v-if="errors.length" :errors="errors" />
+                    <FieldError
+                      v-if="errors.length"
+                      :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                    />
                   </Field>
                 </VeeField>
 
                 <VeeField v-slot="{ field, errors }" name="email">
                   <Field :data-invalid="!!errors.length">
-                    <FieldLabel for="admin-user-email"> Email </FieldLabel>
+                    <FieldLabel for="admin-user-email"> {{ $t('common.email') }} </FieldLabel>
                     <Input
                       id="admin-user-email"
                       :model-value="field.value"
                       type="email"
-                      placeholder="Enter email"
+                      :placeholder="$t('admin.users.email_placeholder')"
                       :aria-invalid="!!errors.length"
                       @update:model-value="field.onChange"
                     />
-                    <FieldError v-if="errors.length" :errors="errors" />
+                    <FieldError
+                      v-if="errors.length"
+                      :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                    />
                   </Field>
                 </VeeField>
 
                 <VeeField v-if="canSetPasswords" v-slot="{ field, errors }" name="password">
                   <Field :data-invalid="!!errors.length">
-                    <FieldLabel for="admin-user-password"> Password </FieldLabel>
+                    <FieldLabel for="admin-user-password">
+                      {{ $t('admin.users.password') }}
+                    </FieldLabel>
                     <Input
                       id="admin-user-password"
                       :model-value="field.value"
                       type="password"
                       :placeholder="
-                        isEditing ? 'Leave blank to keep current password' : 'Enter password'
+                        t(
+                          isEditing
+                            ? 'admin.users.password_keep'
+                            : 'admin.users.password_placeholder',
+                        )
                       "
                       autocomplete="new-password"
                       :aria-invalid="!!errors.length"
                       @update:model-value="field.onChange"
                     />
                     <FieldDescription v-if="isEditing">
-                      Only fill this if you want to change the password
+                      {{ $t('admin.users.password_change_hint') }}
                     </FieldDescription>
-                    <FieldError v-if="errors.length" :errors="errors" />
+                    <FieldError
+                      v-if="errors.length"
+                      :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                    />
                   </Field>
                 </VeeField>
               </FieldGroup>
@@ -165,16 +188,21 @@
             <FieldSeparator />
 
             <FieldSet>
-              <FieldLegend>Settings</FieldLegend>
+              <FieldLegend>{{ $t('settings.breadcrumb') }}</FieldLegend>
               <FieldGroup>
                 <VeeField v-slot="{ field, errors }" name="isAdmin">
                   <Field orientation="horizontal" :data-invalid="!!errors.length">
                     <FieldContent>
-                      <FieldLabel for="admin-user-is-admin"> Administrator </FieldLabel>
+                      <FieldLabel for="admin-user-is-admin">
+                        {{ $t('admin.users.administrator') }}
+                      </FieldLabel>
                       <FieldDescription>
-                        Mark as an admin user with elevated permissions
+                        {{ $t('admin.users.administrator_hint') }}
                       </FieldDescription>
-                      <FieldError v-if="errors.length" :errors="errors" />
+                      <FieldError
+                        v-if="errors.length"
+                        :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                      />
                     </FieldContent>
                     <Switch
                       id="admin-user-is-admin"
@@ -188,11 +216,16 @@
                 <VeeField v-if="isEditing" v-slot="{ field, errors }" name="emailVerified">
                   <Field orientation="horizontal" :data-invalid="!!errors.length">
                     <FieldContent>
-                      <FieldLabel for="admin-user-email-verified"> Email verified </FieldLabel>
+                      <FieldLabel for="admin-user-email-verified">
+                        {{ $t('admin.users.email_verified') }}
+                      </FieldLabel>
                       <FieldDescription>
-                        Allow this account to sign in without completing email verification.
+                        {{ $t('admin.users.email_verified_hint') }}
                       </FieldDescription>
-                      <FieldError v-if="errors.length" :errors="errors" />
+                      <FieldError
+                        v-if="errors.length"
+                        :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                      />
                     </FieldContent>
                     <Switch
                       id="admin-user-email-verified"
@@ -208,10 +241,10 @@
 
           <DialogFooter>
             <Button variant="outline" type="button" :disabled="loading" @click="closeDialog">
-              Cancel
+              {{ $t('common.cancel') }}
             </Button>
             <Button type="submit" :is-loading="loading">
-              {{ isEditing ? 'Save changes' : 'Create user' }}
+              {{ t(isEditing ? 'admin.users.save' : 'admin.users.create') }}
             </Button>
           </DialogFooter>
         </form>
@@ -255,6 +288,7 @@ const dataTableRef = ref<{
     resetRowSelection: () => void;
   };
 }>();
+const { t, te, locale } = useI18n();
 const users = ref<SafeUser[]>([]);
 const loading = ref(false);
 const showDialog = ref(false);
@@ -333,12 +367,28 @@ const onSubmit = handleSubmit(async (values) => {
       }
     }
 
-    toast.success(isEditing.value ? 'User updated successfully' : 'User created successfully');
+    toast.success(t(isEditing.value ? 'admin.users.updated' : 'admin.users.created'));
     closeDialog();
     await fetchUsers();
   } catch (error) {
-    const message = parseApiError(error, 'Failed to save the user record').message;
-    setFieldError('email', message);
+    const { fieldErrors } = parseApiError(error);
+    let hasFieldError = false;
+    const fields: (keyof UserFormValues)[] = [
+      'username',
+      'name',
+      'email',
+      'password',
+      'isAdmin',
+      'emailVerified',
+    ];
+    for (const field of fields) {
+      const key = fieldErrors[field]?.[0];
+      if (key) {
+        setFieldError(field, te(key) ? key : 'errors.invalid_field');
+        hasFieldError = true;
+      }
+    }
+    if (!hasFieldError) toast.error(t('admin.users.save_failed'));
   } finally {
     loading.value = false;
   }
@@ -361,7 +411,16 @@ const userToDelete = computed(() => {
   return users.value.find((user) => user.id === deleteUserId.value) ?? null;
 });
 
-const columns = computed(() => createColumns(handleEdit, handleDeleteConfirm));
+const columns = computed(() => createColumns(t, locale.value, handleEdit, handleDeleteConfirm));
+const columnLabels = computed(() => ({
+  username: t('account_page.username'),
+  name: t('account_page.full_name'),
+  email: t('common.email'),
+  isAdmin: t('admin.users.roles'),
+  emailVerified: t('admin.users.email_verification'),
+  createdAt: t('admin.users.created_at'),
+  lastLoginAt: t('admin.users.last_login'),
+}));
 
 async function fetchUsers() {
   try {
@@ -372,8 +431,8 @@ async function fetchUsers() {
     } else {
       throw res;
     }
-  } catch (error) {
-    toast.error(parseApiError(error, 'Failed to load the user records').message);
+  } catch {
+    toast.error(t('admin.users.load_failed'));
   } finally {
     loading.value = false;
   }
@@ -448,10 +507,10 @@ async function handleDelete(userId: number) {
     if (!response.success) {
       throw response;
     }
-    toast.success('User deleted successfully');
+    toast.success(t('admin.users.deleted'));
     await fetchUsers();
-  } catch (error) {
-    toast.error(parseApiError(error, 'Failed to delete the user record').message);
+  } catch {
+    toast.error(t('admin.users.delete_failed'));
   } finally {
     loading.value = false;
   }
@@ -475,12 +534,12 @@ async function handleBatchDelete() {
     if (!response.success) {
       throw response;
     }
-    toast.success(`Successfully deleted ${count} user(s)`);
+    toast.success(t('admin.users.deleted_many', count));
 
     dataTableRef.value?.table?.resetRowSelection();
     await fetchUsers();
-  } catch (error) {
-    toast.error(parseApiError(error, 'Failed to delete the selected users').message);
+  } catch {
+    toast.error(t('admin.users.delete_many_failed'));
   } finally {
     loading.value = false;
   }

@@ -13,7 +13,18 @@
     "last_sign_in_not_you": "Không phải bạn?",
     "last_sign_in_forget": "Quên thiết bị này",
     "username_taken": "Tên người dùng này đã được sử dụng.",
-    "onboarding_step_invalid": "Bước thiết lập này không khả dụng."
+    "onboarding_step_invalid": "Bước thiết lập này không khả dụng.",
+    "welcome_back": "Chào mừng bạn trở lại",
+    "login_breadcrumb": "Đăng nhập",
+    "navigating": "Đang chuyển trang...",
+    "back_to_sign_in": "Quay lại đăng nhập",
+    "username_placeholder": "Nhập tên người dùng",
+    "sign_in_agreement": "Khi đăng nhập, bạn đồng ý với {terms} và {privacy} của chúng tôi.",
+    "terms_of_service": "Điều khoản dịch vụ",
+    "privacy_policy": "Chính sách quyền riêng tư",
+    "validation_failed": "Vui lòng kiểm tra thông tin và thử lại. Bạn phải điền tất cả các trường.",
+    "unknown_error": "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.",
+    "request_failed": "Đã xảy ra lỗi. Vui lòng thử lại."
   },
   "common": {
     "log_out": "Đăng xuất",
@@ -90,7 +101,8 @@
     "email_in_use": "Địa chỉ email này đã được sử dụng.",
     "save_partial": "Đã lưu tên hoặc email, nhưng chưa cập nhật được tên người dùng.",
     "session_clear_failed": "Tài khoản đã được xóa, nhưng không thể kết thúc phiên đăng nhập. Vui lòng đăng xuất lại.",
-    "current_password": "Mật khẩu hiện tại"
+    "current_password": "Mật khẩu hiện tại",
+    "account": "Tài khoản"
   },
   "settings": {
     "page_title": "Cài đặt",
@@ -102,13 +114,18 @@
     "dismiss_notice": "Đóng thông báo",
     "profile_loading": "Đang tải thông tin tài khoản…",
     "profile_load_failed": "Không thể tải cài đặt tài khoản.",
-    "security_page_description": "Quản lý cách đăng nhập và bảo vệ tài khoản của bạn."
+    "security_page_description": "Quản lý cách đăng nhập và bảo vệ tài khoản của bạn.",
+    "appearance": "Giao diện"
   },
   "validation": {
     "name_required": "Vui lòng nhập họ và tên",
     "name_max": "Họ và tên không được dài quá 256 ký tự",
     "email_required": "Vui lòng nhập email hợp lệ",
     "current_password_required": "Vui lòng nhập mật khẩu hiện tại",
-    "current_password_incorrect": "Mật khẩu hiện tại không đúng."
+    "current_password_incorrect": "Mật khẩu hiện tại không đúng.",
+    "username_required": "Vui lòng nhập tên người dùng.",
+    "username_min": "Tên người dùng phải có ít nhất 3 ký tự.",
+    "username_max": "Tên người dùng không được dài quá 50 ký tự.",
+    "username_format": "Chỉ dùng chữ thường, số, dấu gạch dưới và dấu gạch ngang."
   }
 }

@@ -1,9 +1,11 @@
 {
-  "groups": ["Foundation", "Authentication", "App", "Content"],
+  "groups": ["Essentials", "Foundation", "Authentication", "App", "Content", "Miscellaneous"],
   "exclude": [
     "packages/**",
     "docs/**",
-    "tests/**",
+    "test/browser/**",
+    "test/fixtures/**",
+    "test/node/**",
     "test/**/*.test.ts",
     "test/**/*.spec.ts",
     "test/**/*.test.mjs",
@@ -26,12 +28,15 @@
     ".slim/**",
     ".ignore"
   ],
+  "excludeScripts": ["test:browser", "test:node", "test:ssr"],
   "userOwned": [
     "package.json",
     "wrangler.jsonc",
     ".env.example",
     "README.md",
     "site.config.ts",
+    "shared/constants/manifest.ts",
+    "layers/pwa/shared/constants/manifest.ts",
     "i18n/**",
     "public/**"
   ],
@@ -180,6 +185,114 @@
         "app/components/LoadingSpinner.vue",
         "app/components/RainbowButton.vue",
         "app/components/SiteIcon.vue"
+      ]
+    },
+    {
+      "id": "base.shared-interface-locales",
+      "since": "4.2.0",
+      "title": "Localize loading, errors, connection alerts, and shared control labels in English and Vietnamese. Merge the new keys into your project’s locale catalogs.",
+      "kind": "feature",
+      "files": [
+        "app/app.vue",
+        "app/components/CenteredAppLayout.vue",
+        "app/components/DarkModeToggle.vue",
+        "app/components/LoadingScreen.vue",
+        "app/components/LoadingSpinner.vue",
+        "app/components/MultiStepLoader.vue",
+        "app/components/ThemeCustomizer.vue",
+        "app/components/ui/alert-box/AlertBox.vue",
+        "app/components/ui/animated-toc/AnimatedToc.vue",
+        "app/components/ui/breadcrumb/Breadcrumb.vue",
+        "app/components/ui/breadcrumb/BreadcrumbEllipsis.vue",
+        "app/components/ui/button/Button.vue",
+        "app/components/ui/calendar/Calendar.vue",
+        "app/components/ui/calendar/CalendarNextButton.vue",
+        "app/components/ui/calendar/CalendarPrevButton.vue",
+        "app/components/ui/carousel/Carousel.vue",
+        "app/components/ui/carousel/CarouselItem.vue",
+        "app/components/ui/carousel/CarouselNext.vue",
+        "app/components/ui/carousel/CarouselPrevious.vue",
+        "app/components/ui/command/CommandDialog.vue",
+        "app/components/ui/dialog/DialogContent.vue",
+        "app/components/ui/dialog/DialogFooter.vue",
+        "app/components/ui/dialog/DialogScrollContent.vue",
+        "app/components/ui/pagination/Pagination.vue",
+        "app/components/ui/pagination/PaginationEllipsis.vue",
+        "app/components/ui/pagination/PaginationFirst.vue",
+        "app/components/ui/pagination/PaginationItem.vue",
+        "app/components/ui/pagination/PaginationLast.vue",
+        "app/components/ui/pagination/PaginationNext.vue",
+        "app/components/ui/pagination/PaginationPrevious.vue",
+        "app/components/ui/sheet/SheetContent.vue",
+        "app/components/ui/sidebar/Sidebar.vue",
+        "app/components/ui/sidebar/SidebarRail.vue",
+        "app/components/ui/sidebar/SidebarTrigger.vue",
+        "app/components/ui/sonner/Sonner.vue",
+        "app/components/ui/spinner/Spinner.vue",
+        "app/error.vue",
+        "app/layouts/default.vue",
+        "i18n/locales/en.json",
+        "i18n/locales/vi.json"
+      ]
+    },
+    {
+      "id": "base.shared-feedback-locales",
+      "since": "4.2.0",
+      "title": "Expose form challenge error keys for translation and format relative dates in the active locale.",
+      "kind": "feature",
+      "files": ["app/composables/useFormChallenge.ts", "app/lib/utils.ts"]
+    },
+    {
+      "id": "base.web-security-policy-migration",
+      "since": "4.2.0",
+      "title": "Move Nuxt Security to the removable Web Security layer, installed by default. Keep custom security and routeRules overrides, but remove the old nuxt-security module entry.",
+      "kind": "security",
+      "files": ["nuxt.config.ts"]
+    },
+    {
+      "id": "base.localized-home-seo",
+      "since": "4.2.0",
+      "title": "Normalize the site URL and localize the home description and social metadata. Keep your branding and merge home.description into your locale catalogs.",
+      "kind": "fix",
+      "files": [
+        "app/composables/useSeo.ts",
+        "app/pages/index.vue",
+        "i18n/locales/en.json",
+        "i18n/locales/vi.json",
+        "nuxt.config.ts",
+        "shared/constants/manifest.ts"
+      ]
+    },
+    {
+      "id": "base.api-prerender-exclusion",
+      "since": "4.2.0",
+      "title": "Move prerender routes and exclusions to Nuxt’s top-level prerender config so API routes are not prerendered. Carry over any custom rules.",
+      "kind": "fix",
+      "files": ["app/modules/worker-routes.ts", "nuxt.config.ts"]
+    },
+    {
+      "id": "base.kit-4-2-0-toolchain",
+      "since": "4.2.0",
+      "title": "Update the kit to 4.2.0, Nuxt 4.7, and pnpm 12.23.0. Merge the toolchain updates into your own package.json.",
+      "kind": "feature",
+      "files": [".github/workflows/lint-check.yml", "package.json"]
+    },
+    {
+      "id": "base.kit-test-workflow",
+      "since": "4.2.0",
+      "title": "Move kit-only Node, browser, and SSR checks out of tests/ and exclude them from new scaffolds. Keep any project-specific tests you added.",
+      "kind": "feature",
+      "files": [
+        "README.md",
+        "package.json",
+        "tests/blog-routes.test.mjs",
+        "tests/blog-toc.browser.test.mjs",
+        "tests/content-file-tree.test.mjs",
+        "tests/data-table-base.test.mjs",
+        "tests/docs-loading.test.mjs",
+        "tests/fixtures/blog-routes/content/blogs/route-tests/nested.md",
+        "tests/fixtures/blog-routes/content/vi/blogs/route-tests/nested.md",
+        "tests/fixtures/blog-routes/content/vi/blogs/route-tests/related.md"
       ]
     }
   ]

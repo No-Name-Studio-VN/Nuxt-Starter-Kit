@@ -73,10 +73,15 @@ public struct KitRepository: Sendable {
     /// Version tags (`v` and a digit, then anything) that point at a commit of `sha..origin/main`, by commit SHA. One
     /// `git log` pass with decorations, so it stays cheap on a long history.
     public func releaseTags(from sha: String) async throws -> [String: [String]] {
+        try await releaseTags(from: sha, through: Self.mainRef, forwardOnly: false)
+    }
+
+    private func releaseTags(from sha: String, through head: String, forwardOnly: Bool) async throws -> [String: [String]] {
         try requirePlainRevision(sha)
-        let output = try await text([
-            "log", "--decorate-refs=refs/tags/v[0-9]*", "--format=%H%x1f%D", "\(sha)..\(Self.mainRef)",
-        ])
+        try requirePlainRevision(head)
+        var arguments = ["log", "--decorate-refs=refs/tags/v[0-9]*", "--format=%H%x1f%D"]
+        if forwardOnly { arguments.append("--ancestry-path") }
+        let output = try await text(arguments + ["\(sha)..\(head)"])
         var tags: [String: [String]] = [:]
         for line in output.split(separator: "\n") {
             let fields = line.split(separator: "\u{1f}", maxSplits: 1, omittingEmptySubsequences: false)
@@ -91,6 +96,55 @@ public struct KitRepository: Sendable {
         return tags
     }
 
+    /// Stable releases on the path from the installed kit to the fetched main commit.
+    public func upgradeReleases(from installed: String, through main: String) async throws -> [UpgradeTarget] {
+        guard try await isAncestor(installed, of: main), installed != main else { return [] }
+        async let previous = text(["tag", "--merged", installed, "--list", "v[0-9]*"])
+        async let forward = releaseTags(from: installed, through: main, forwardOnly: true)
+        let installedRelease = try await previous.split(separator: "\n").map(String.init)
+            .compactMap(Self.stableVersion).max { $0.compare($1, options: .numeric) == .orderedAscending }
+        return try await forward.flatMap { commit, tags in
+            tags.compactMap { tag -> (version: String, target: UpgradeTarget)? in
+                guard let version = Self.stableVersion(tag),
+                    installedRelease.map({ $0.compare(version, options: .numeric) == .orderedAscending }) ?? true
+                else { return nil }
+                return (version, .release(commit: commit, tag: tag))
+            }
+        }.sorted {
+            let order = $0.version.compare($1.version, options: .numeric)
+            return order == .orderedSame ? $0.target.label < $1.target.label : order == .orderedDescending
+        }.map(\.target)
+    }
+
+    /// Check the name still identifies the reviewed commit; do not resolve a replacement to apply.
+    public func isCurrentUpgradeTarget(_ target: UpgradeTarget, from installed: String) async throws -> Bool {
+        guard installed != target.commit, try await isAncestor(installed, of: target.commit) else { return false }
+        let main = try await latestMain()
+        guard target.isRelease else { return main == target.commit }
+        guard try await isAncestor(target.commit, of: main) else { return false }
+        do {
+            return try await text(["rev-parse", "--verify", "--quiet", "refs/tags/\(target.label)^{commit}"]) == target.commit
+        } catch GitError.commandFailed(_, 1, _) {
+            return false // Deleted tag.
+        }
+    }
+
+    private static func stableVersion(_ tag: String) -> String? {
+        guard let match = tag.wholeMatch(of: /v((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?/) else { return nil }
+        return String(match.1)
+    }
+
+    private func isAncestor(_ base: String, of head: String) async throws -> Bool {
+        try requirePlainRevision(base)
+        try requirePlainRevision(head)
+        do {
+            try await git(["merge-base", "--is-ancestor", base, head])
+            return true
+        } catch GitError.commandFailed(_, 1, _) {
+            return false
+        }
+    }
+
     /// `commits(from:mapping:)` bucketed under release tags, for the kit changelog page.
     public func changelog(from sha: String, mapping: ModuleMapping) async throws -> [ReleaseSection] {
         async let commits = commits(from: sha, mapping: mapping)
@@ -98,34 +152,53 @@ public struct KitRepository: Sendable {
         return ReleaseGrouper.sections(commits: try await commits, tags: try await tags)
     }
 
-    /// Compares commits, or a single commit against its first parent. `nil` paths means all files;
-    /// an empty list means none. Only complete file patches within the byte limit are returned.
-    public func diff(from base: String?, to head: String, limitedTo paths: [String]?, maxBytes: Int) async throws -> KitDiff {
-        try requirePlainRevision(head)
-        if let base { try requirePlainRevision(base) }
-        if paths?.isEmpty == true { return KitDiff(text: "", files: [], isTruncated: false) }
-        let revisions = try await diffRevisions(from: base, to: head)
-        let output = try await git(
-            ["--no-lazy-fetch", "--literal-pathspecs", "-c", "core.quotePath=false"]
-                + Self.diffArguments + ["-M", "--raw", "-z", "--patch", "--src-prefix=a/", "--dst-prefix=b/"]
-                + revisions + ["--"] + (paths ?? [])).stdout
-        return KitDiff.preview(of: output, maxBytes: maxBytes)
-    }
-
-    /// Returns nil when the project file has no exact changed path in the kit.
-    public func focusedDiff(from base: String?, to head: String, path: String, maxBytes: Int) async throws -> KitDiff? {
-        guard !path.isEmpty, try await changedPaths(from: base, to: head).contains(path) else { return nil }
-        return try await diff(from: base, to: head, limitedTo: [path], maxBytes: maxBytes)
-    }
-
-    /// Includes both sides of renames so module scoping can match either the source or destination.
-    public func changedPaths(from base: String?, to head: String) async throws -> [String] {
+    /// List changes between fixed revisions, or from the first parent for a single commit.
+    public func prepareDiff(from base: String?, to head: String) async throws -> KitDiff {
         try requirePlainRevision(head)
         if let base { try requirePlainRevision(base) }
         let revisions = try await diffRevisions(from: base, to: head)
-        let output = try await git(
-            ["--no-lazy-fetch"] + Self.diffArguments + ["--no-renames", "--name-only", "-z"] + revisions + ["--"]).stdout
-        return output.split(separator: 0).map { String(decoding: $0, as: UTF8.self) }
+        let result = try await git(
+            ["--no-lazy-fetch"] + Self.diffArguments + ["--no-patch", "--raw", "--no-abbrev", "-M", "-z"] + revisions + ["--"])
+        return KitDiff(changes: KitDiff.Change.parse(result.stdout)) { change, limit in
+            try await patch(change, revisions: revisions, maxBytes: limit)
+        }
+    }
+
+    private func patch(_ change: KitDiff.Change, revisions: [String], maxBytes: Int) async throws -> FilePatch {
+        // Only read regular blobs, and check input size before Git generates any patch.
+        guard change.modes.allSatisfy({ ["000000", "100644", "100755"].contains($0) }) else { return .unavailable }
+        guard maxBytes > 0 else { return .tooLarge }
+        for (mode, object) in zip(change.modes, change.objects) where mode != "000000" {
+            let size = try await text(["--no-lazy-fetch", "cat-file", "-s", object])
+            guard let bytes = Int(size) else { return .unavailable }
+            if bytes > maxBytes { return .tooLarge }
+        }
+
+        let paths = [change.file.previousPath, change.file.path].compactMap { $0 }.map(Self.exactPathspec)
+        let output: Data
+        do {
+            output = try await git(
+                ["--no-lazy-fetch", "-c", "core.quotePath=false"] + Self.diffArguments
+                    + ["-M", "--patch", "--src-prefix=a/", "--dst-prefix=b/"] + revisions + ["--"] + paths,
+                outputLimit: maxBytes).stdout
+        } catch ProcessError.outputLimitExceeded {
+            return .tooLarge
+        }
+        guard !output.isEmpty else { return .unavailable }
+        guard let patch = String(data: output, encoding: .utf8), !output.contains(0) else { return .binary }
+        if patch.split(separator: "\n").contains(where: { $0.hasPrefix("Binary files ") }) { return .binary }
+        return .text(patch)
+    }
+
+    private static func exactPathspec(_ path: String) -> String {
+        // An escaped glob matches the exact file. An unescaped literal can also match
+        // descendants when the path was a directory on the other side of the comparison.
+        let bytes = Array(path.utf8)
+        let nameStart = bytes.lastIndex(of: 47).map { $0 + 1 } ?? 0
+        let escaped = bytes.enumerated().flatMap { index, byte in
+            index == nameStart || [UInt8(42), 63, 91, 92].contains(byte) ? [92, byte] : [byte]
+        }
+        return ":(top,glob)" + String(decoding: escaped, as: UTF8.self)
     }
 
     /// `v3.0.1` for an exact tag, `v3.0.1 +4` for four commits past it; nil when unrecognised.
@@ -152,8 +225,12 @@ public struct KitRepository: Sendable {
     ]
 
     private func diffRevisions(from base: String?, to head: String) async throws -> [String] {
-        let target = "\(head)^{commit}"
-        if let base { return ["\(base)^{commit}", target] }
+        let resolve = ["--no-lazy-fetch", "rev-parse", "--verify", "--end-of-options"]
+        let target = try await text(resolve + ["\(head)^{commit}"])
+        if let base {
+            let start = try await text(resolve + ["\(base)^{commit}"])
+            return [start, target]
+        }
         // Read the real parent header, so a shallow boundary is not mistaken for a root commit.
         let commit = try await text(["--no-lazy-fetch", "cat-file", "commit", target])
         if let parent = commit.split(separator: "\n", omittingEmptySubsequences: false)
@@ -205,9 +282,13 @@ public struct KitRepository: Sendable {
     }
 
     @discardableResult
-    private func git(_ arguments: [String], timeout: Duration = .seconds(30)) async throws -> ProcessResult {
+    private func git(_ arguments: [String], timeout: Duration = .seconds(30), outputLimit: Int? = nil) async throws -> ProcessResult {
         let full = ["--no-optional-locks", "-C", root.path] + arguments
-        let result = try await runner.run("git", full, in: nil, timeout: timeout)
+        let result = if let outputLimit {
+            try await runner.run("git", full, in: nil, timeout: timeout, outputLimit: outputLimit)
+        } else {
+            try await runner.run("git", full, in: nil, timeout: timeout)
+        }
         guard result.exitCode == 0 else {
             throw GitError.commandFailed(
                 arguments: arguments, exitCode: result.exitCode,

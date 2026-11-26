@@ -44,7 +44,7 @@ function onKeyDown(event: KeyboardEvent) {
     data-slot="carousel"
     :class="cn('relative', props.class)"
     role="region"
-    aria-roledescription="carousel"
+    :aria-roledescription="$t('carousel.label')"
     tabindex="0"
     @keydown="onKeyDown"
   >

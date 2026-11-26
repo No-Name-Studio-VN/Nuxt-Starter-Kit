@@ -50,6 +50,10 @@ The app is signed ad hoc and is not sandboxed, because it launches `node`, `git`
 ## Using the app
 
 - **Kit path:** Settings (⌘,) holds the path to your Nuxt-Starter-Kit checkout. It defaults to `~/Documents/GitHub/Nuxt-Starter-Kit` when that folder exists. Upgrade previews, version labels, the kit changelog and the module list all come from this checkout, and the app fetches it every 30 minutes by default (adjustable in Settings).
+- **Create a project:** Choose **New Project** (⌘N), pick a parent folder, enter a folder name and select any optional modules. Kit Manager creates the files from the configured checkout’s locally available `origin/main`, then adds and selects the project. It does not install dependencies or deploy. Older CLI builds may need to be updated and rebuilt in Settings. Use **Add Existing Project** to register a folder you already have.
+- **Remove Web Security:** New projects include Web Security by default. Use **Add or Remove Modules** to remove it without removing your server features. This also removes the kit's Nuxt Security policy and default API rate limits.
+- **Upgrade a project:** Choose **Review upgrade**. The default target is the fetched `origin/main`; choosing a newer stable release applies only to this upgrade. Review the changes and click **Apply upgrade** to update on a new branch. No Terminal or Claude session is required. Check **Last Update** for file decisions and backup recovery.
+- **Review your changes:** Select an edited or deleted file under project customization to compare it with the kit version installed in that project. The file list is searchable (⌘F); selecting a file loads its patch in unified or side-by-side view. If your CLI predates project diffs, update your local kit checkout and rebuild its CLI. The installed kit commit must be available in that checkout.
 - **Menu bar extra:** a menu bar item shows how many projects need attention and lists them, with quick actions and a way back to the main window.
 - **Quick switcher:** ⌘K opens the quick switcher over all projects. ⌘R refreshes every project.
 

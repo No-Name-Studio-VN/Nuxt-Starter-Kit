@@ -16,7 +16,9 @@
             class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <CtIcon :name="main.issueLink.icon" class="size-3.5" />
-            <span class="truncate">{{ $t(main.issueLink.text) }}</span>
+            <span class="truncate">{{
+              $te(main.issueLink.text) ? $t(main.issueLink.text) : main.issueLink.text
+            }}</span>
           </NuxtLinkLocale>
 
           <span class="text-xs text-muted-foreground/50">·</span>
@@ -28,7 +30,7 @@
             class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <CtIcon :name="icon" class="size-3.5" />
-            <span class="truncate">{{ $t(text) }}</span>
+            <span class="truncate">{{ $te(text) ? $t(text) : text }}</span>
           </NuxtLinkLocale>
         </div>
       </div>

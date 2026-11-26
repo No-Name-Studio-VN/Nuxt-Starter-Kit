@@ -10,7 +10,7 @@ const username = ref(rememberedUsername ?? '');
 <template>
   <div class="flex flex-col gap-3">
     <Field>
-      <FieldLabel for="passkey-username">Username</FieldLabel>
+      <FieldLabel for="passkey-username">{{ $t('account_page.username') }}</FieldLabel>
       <Input
         id="passkey-username"
         v-model="username"
@@ -19,7 +19,7 @@ const username = ref(rememberedUsername ?? '');
         autocomplete="username webauthn"
         autocapitalize="none"
         :spellcheck="false"
-        placeholder="Enter your username"
+        :placeholder="$t('auth.username_placeholder')"
         class="h-10"
         :disabled="pending"
       />

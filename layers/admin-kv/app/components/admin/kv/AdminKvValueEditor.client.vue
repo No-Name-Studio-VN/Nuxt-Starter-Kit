@@ -2,11 +2,7 @@
   <div class="flex flex-col gap-3">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <p class="text-xs text-muted-foreground">
-        {{
-          mode === 'json'
-            ? 'JSON mode validates and formats the current value.'
-            : 'Raw mode saves the value exactly as text.'
-        }}
+        {{ t(mode === 'json' ? 'admin.kv.json_hint' : 'admin.kv.raw_hint') }}
       </p>
       <div v-if="mode === 'json'" class="flex flex-wrap items-center gap-2">
         <Button
@@ -16,13 +12,13 @@
           :disabled="disabled"
           @click="validateJson"
         >
-          Validate JSON
+          {{ $t('admin.kv.validate_json') }}
         </Button>
         <Button type="button" variant="outline" size="sm" :disabled="disabled" @click="formatJson">
-          Format
+          {{ $t('admin.kv.format') }}
         </Button>
         <Button type="button" variant="outline" size="sm" :disabled="disabled" @click="minifyJson">
-          Minify
+          {{ $t('admin.kv.minify') }}
         </Button>
       </div>
     </div>
@@ -31,7 +27,7 @@
       v-if="editorError"
       class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
     >
-      {{ editorError }} Falling back to a plain textarea.
+      {{ t('admin.kv.editor_unavailable') }}
     </div>
 
     <div
@@ -67,7 +63,8 @@ const emit = defineEmits<{
 }>();
 
 const editorHost = ref<HTMLDivElement | null>(null);
-const editorError = ref('');
+const { t } = useI18n();
+const editorError = ref(false);
 let editorView: CodeMirrorEditorView | null = null;
 
 onMounted(async () => {
@@ -94,8 +91,8 @@ onMounted(async () => {
         }),
       ],
     });
-  } catch (error) {
-    editorError.value = getErrorMessage(error);
+  } catch {
+    editorError.value = true;
   }
 });
 
@@ -126,11 +123,11 @@ function validateJson() {
   const result = parseJson(props.modelValue);
 
   if (!result.success) {
-    toast.error(result.message);
+    toast.error(t('admin.kv.invalid_json'));
     return;
   }
 
-  toast.success('JSON is valid');
+  toast.success(t('admin.kv.valid_json'));
 }
 
 function formatJson() {
@@ -145,7 +142,7 @@ function updateWithJsonSpacing(spaces: number) {
   const result = parseJson(props.modelValue);
 
   if (!result.success) {
-    toast.error(result.message);
+    toast.error(t('admin.kv.invalid_json'));
     return;
   }
 
@@ -153,28 +150,15 @@ function updateWithJsonSpacing(spaces: number) {
   emit('update:modelValue', formatted);
 }
 
-function parseJson(
-  value: string,
-): { success: true; value: unknown } | { success: false; message: string } {
+function parseJson(value: string): { success: true; value: unknown } | { success: false } {
   try {
     return {
       success: true,
       value: JSON.parse(value),
     };
-  } catch (error) {
-    return {
-      success: false,
-      message: getErrorMessage(error),
-    };
+  } catch {
+    return { success: false };
   }
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return 'Unable to load the editor.';
 }
 </script>
 

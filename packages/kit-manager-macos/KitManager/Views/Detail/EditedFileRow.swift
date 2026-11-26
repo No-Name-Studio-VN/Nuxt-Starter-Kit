@@ -3,8 +3,7 @@ import KitManagerCore
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// One edited or deleted kit file: its Finder icon, name and folder, and its module. Edited files
-/// open in VS Code on click; deleted ones are struck through and badged.
+/// One edited or deleted kit file. Both open a comparison; deleted files are struck through and badged.
 struct EditedFileRow: View {
     let file: InspectFile
     /// The module that owns the file; nil for the base layer.
@@ -68,23 +67,22 @@ struct EditedFileRow: View {
                 if isDeleted {
                     ToneBadge(title: "Deleted", tone: .critical)
                 }
-                Image(systemName: "arrow.up.forward.square")
+                Image(systemName: "chevron.right")
                     .font(.callout)
                     .foregroundStyle(.secondary)
-                    .opacity(isHovered && !isDeleted ? 1 : 0)
+                    .opacity(isHovered ? 1 : 0)
                     .frame(width: 16)
                     .accessibilityHidden(true)
             }
         }
         .buttonStyle(RowButtonStyle())
-        .disabled(isDeleted)
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: 0.12), value: isHovered)
-        .help(isDeleted ? "\(file.path) was deleted" : "Open \(file.path) in VS Code")
+        .help("View changes to \(file.path)")
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(isDeleted ? "Deleted" : "Edited"): \(file.path)")
         .accessibilityValue(layerTitle ?? "")
-        .accessibilityHint(isDeleted ? "" : "Opens the file in VS Code")
+        .accessibilityHint("Compares this file with the installed kit")
         .accessibilityAddTraits(.isButton)
     }
 }

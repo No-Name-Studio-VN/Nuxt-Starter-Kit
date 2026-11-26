@@ -5,12 +5,12 @@ const localePath = useAppLocalePath();
 
 <template>
   <p class="text-center text-sm text-muted-foreground">
-    Don't have an account?
+    {{ $t('auth_password.no_account') }}
     <NuxtLink
       :to="localePath(passwordRoutes.AUTH_REGISTER)"
       class="font-medium text-foreground underline-offset-4 hover:underline"
     >
-      Sign up
+      {{ $t('auth_password.sign_up') }}
     </NuxtLink>
   </p>
 </template>

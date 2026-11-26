@@ -1,5 +1,8 @@
+import { execFile } from 'node:child_process';
 import { cp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { promisify } from 'node:util';
 import { downloadTemplate } from 'giget';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CliError } from '../../src/errors';
@@ -99,6 +102,31 @@ describe('local kit sources', () => {
     await snapshot.cleanup();
     await snapshot.cleanup();
     expect(await pathExists(snapshot.dir)).toBe(false);
+  });
+
+  it('requires template blobs to be present without fetching missing objects from a local kit remote', async () => {
+    const git = promisify(execFile);
+    const partial = `${kit.root}-partial`;
+    await git('git', ['-C', kit.root, 'config', 'uploadpack.allowFilter', 'true']);
+    await git('git', ['-C', kit.root, 'config', 'uploadpack.allowAnySHA1InWant', 'true']);
+    try {
+      await git('git', [
+        'clone',
+        '--no-checkout',
+        '--filter=blob:none',
+        pathToFileURL(kit.root).href,
+        partial,
+      ]);
+      const source = { kind: 'local', path: partial, allowDirty: true } satisfies Parameters<
+        typeof openKit
+      >[0];
+      const opening = openKit(source, kit.v1, DEFAULT_TEMPLATE).then((snapshot) =>
+        snapshot.cleanup(),
+      );
+      await expect(opening).rejects.toThrow('Unable to open kit');
+    } finally {
+      await rm(partial, { recursive: true, force: true });
+    }
   });
 
   it('explains how to recover an unavailable commit in a local kit', async () => {

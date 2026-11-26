@@ -1,7 +1,7 @@
 <template>
   <nav
     v-if="surroundings && surroundings.length > 0"
-    aria-label="Page navigation"
+    :aria-label="$t('docs.page_navigation')"
     class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2"
   >
     <LayoutPrevNextButton v-if="surroundings[0]" :prev-next="surroundings[0]" side="left" />

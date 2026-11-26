@@ -21,6 +21,24 @@
         "layers/auth-passkeys/app/components/auth/PasskeyLoginMethod.vue",
         "layers/auth-passkeys/app/plugins/login-alternatives.ts"
       ]
+    },
+    {
+      "id": "auth-passkeys.localized-passkey-sign-in",
+      "since": "4.2.0",
+      "title": "Localize passkey username prompts and let the sign-in page translate passkey errors.",
+      "kind": "feature",
+      "files": [
+        "layers/auth-passkeys/app/components/auth/PasskeyLoginAlternative.vue",
+        "layers/auth-passkeys/app/components/auth/PasskeyLoginMethod.vue",
+        "layers/auth-passkeys/module.json"
+      ]
+    },
+    {
+      "id": "auth-passkeys.webauthn-permissions-policy",
+      "since": "4.2.0",
+      "title": "Web Security now allows same-origin passkey registration and sign-in when Passkeys is installed. Review any custom permissions-policy overrides.",
+      "kind": "security",
+      "files": ["layers/auth-passkeys/nuxt.config.ts"]
     }
   ]
 }

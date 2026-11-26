@@ -1,4 +1,4 @@
-/// Whether "Upgrade with Claude" may start, and if not, the first reason why (spec 2.8).
+/// Whether a project can review an upgrade, and if not, the first reason why.
 public enum UpgradePrecondition: Sendable, Equatable {
     /// Not a kit v3 project, or the kit checkout itself.
     case notKitV3

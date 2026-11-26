@@ -14,6 +14,8 @@ import type { SafeUser } from '#layers/auth/types/auth';
 import { formatRelativeTime } from '@/lib/utils';
 
 export function createColumns(
+  t: (key: string) => string,
+  locale: string,
   onEdit: (user: SafeUser) => void,
   onDelete: (userId: number) => void,
 ): ColumnDef<StockFeatures, SafeUser>[] {
@@ -29,13 +31,13 @@ export function createColumns(
               'indeterminate'),
           'onUpdate:modelValue': (value: boolean | string) =>
             table.toggleAllPageRowsSelected(!!value),
-          ariaLabel: 'Select all',
+          ariaLabel: t('data_table.select_all'),
         }),
       cell: ({ row }) =>
         h(Checkbox, {
           modelValue: row.getIsSelected(),
           'onUpdate:modelValue': (value: boolean | string) => row.toggleSelected(!!value),
-          ariaLabel: 'Select row',
+          ariaLabel: t('data_table.select_row'),
         }),
       enableSorting: false,
       enableHiding: false,
@@ -57,7 +59,7 @@ export function createColumns(
             variant: 'ghost',
             onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
           },
-          () => ['Username', h(ArrowUpDown, { 'data-icon': 'inline-end' })],
+          () => [t('account_page.username'), h(ArrowUpDown, { 'data-icon': 'inline-end' })],
         );
       },
       cell: ({ row }) => h('div', { class: 'font-medium' }, row.getValue('username')),
@@ -71,7 +73,7 @@ export function createColumns(
             variant: 'ghost',
             onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
           },
-          () => ['Name', h(ArrowUpDown, { 'data-icon': 'inline-end' })],
+          () => [t('account_page.full_name'), h(ArrowUpDown, { 'data-icon': 'inline-end' })],
         );
       },
       cell: ({ row }) => h('div', { class: 'text-sm' }, row.getValue('name')),
@@ -85,7 +87,7 @@ export function createColumns(
             variant: 'ghost',
             onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
           },
-          () => ['Email', h(ArrowUpDown, { 'data-icon': 'inline-end' })],
+          () => [t('common.email'), h(ArrowUpDown, { 'data-icon': 'inline-end' })],
         );
       },
       cell: ({ row }) =>
@@ -93,23 +95,26 @@ export function createColumns(
     },
     {
       accessorKey: 'isAdmin',
-      header: 'Roles',
+      header: t('admin.users.roles'),
       cell: ({ row }) => {
         const user = row.original;
         return h('div', { class: 'flex gap-2' }, [
-          user.isAdmin && h(Badge, { variant: 'destructive', class: 'text-xs' }, () => 'Admin'),
+          user.isAdmin &&
+            h(Badge, { variant: 'destructive', class: 'text-xs' }, () =>
+              t('admin.users.administrator'),
+            ),
         ]);
       },
     },
     {
       accessorKey: 'emailVerified',
-      header: 'Email verification',
+      header: t('admin.users.email_verification'),
       cell: ({ row }) => {
         const isEmailVerified = row.original.emailVerified;
         return h(
           Badge,
           { variant: isEmailVerified ? 'default' : 'secondary', class: 'text-xs' },
-          () => (isEmailVerified ? 'Verified' : 'Unverified'),
+          () => (isEmailVerified ? t('admin.users.verified') : t('admin.users.unverified')),
         );
       },
     },
@@ -122,14 +127,18 @@ export function createColumns(
             variant: 'ghost',
             onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
           },
-          () => ['Created at', h(ArrowUpDown, { 'data-icon': 'inline-end' })],
+          () => [t('admin.users.created_at'), h(ArrowUpDown, { 'data-icon': 'inline-end' })],
         );
       },
       cell: ({ row }) =>
         h(
           'div',
           { class: 'text-sm text-muted-foreground whitespace-nowrap' },
-          formatRelativeTime(row.getValue('createdAt')),
+          formatRelativeTime(row.getValue('createdAt'), {
+            locale,
+            justNow: t('admin.users.just_now'),
+            inAMoment: t('admin.users.in_a_moment'),
+          }),
         ),
     },
     {
@@ -141,19 +150,23 @@ export function createColumns(
             variant: 'ghost',
             onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
           },
-          () => ['Last Login', h(ArrowUpDown, { 'data-icon': 'inline-end' })],
+          () => [t('admin.users.last_login'), h(ArrowUpDown, { 'data-icon': 'inline-end' })],
         );
       },
       cell: ({ row }) =>
         h(
           'div',
           { class: 'text-sm text-muted-foreground whitespace-nowrap' },
-          formatRelativeTime(row.getValue('lastLoginAt')),
+          formatRelativeTime(row.getValue('lastLoginAt'), {
+            locale,
+            justNow: t('admin.users.just_now'),
+            inAMoment: t('admin.users.in_a_moment'),
+          }),
         ),
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: t('data_table.actions'),
       cell: ({ row }) => {
         const user = row.original;
         return h(
@@ -171,7 +184,7 @@ export function createColumns(
                       { variant: 'ghost', class: 'h-8 w-8 p-0' },
                       {
                         default: () => [
-                          h('span', { class: 'sr-only' }, 'Open menu'),
+                          h('span', { class: 'sr-only' }, t('data_table.open_menu')),
                           h(MoreHorizontal, { class: 'h-4 w-4' }),
                         ],
                       },
@@ -192,7 +205,7 @@ export function createColumns(
                         default: () =>
                           h('div', { class: 'flex items-center gap-2' }, [
                             h(Pencil, { class: 'h-4 w-4' }),
-                            h('span', {}, 'Edit'),
+                            h('span', {}, t('data_table.edit')),
                           ]),
                       },
                     ),
@@ -206,7 +219,7 @@ export function createColumns(
                         default: () =>
                           h('div', { class: 'flex items-center gap-2' }, [
                             h(Trash2, { class: 'h-4 w-4' }),
-                            h('span', {}, 'Delete'),
+                            h('span', {}, t('common.delete')),
                           ]),
                       },
                     ),

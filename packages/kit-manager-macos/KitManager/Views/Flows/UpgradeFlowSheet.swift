@@ -1,27 +1,48 @@
 import KitManagerCore
 import SwiftUI
 
-/// Confirms an upgrade (spec 2.8): the preconditions, the latest preview and the branch it will use.
-/// On confirm the project moves to a new branch, the CLI applies the upgrade, and Claude opens in Terminal.
+/// Reviews one kit destination before applying it to the project on a separate branch.
 struct UpgradeFlowSheet: View {
     let project: Project
 
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openKitDiff) private var openKitDiff
 
     @State private var phase: UpgradeFlowPhase = .review
+    @State private var mainTarget: UpgradeTarget?
+    @State private var releases: [UpgradeTarget] = []
+    @State private var selectedTag: String?
+    @State private var releaseError: String?
+    @State private var preview: Loadable<UpgradeReview> = .idle
+    @State private var generation = 0
+    @State private var selectionRevision = 0
     @State private var branchName: String?
     @State private var backsUp = true
     @State private var showsRiskFiles = false
-    @State private var isRefreshingPreview = true
+    @State private var isLoadingTargets = true
     /// Why the last "Switch back" failed; the button stays so it can be retried.
     @State private var rollbackError: PresentedError?
     /// Why "Resolve with Claude" could not open Terminal; the button stays so it can be retried.
     @State private var resolveError: PresentedError?
 
-    private var snapshot: ProjectSnapshot? { model.snapshots[project.id] }
+    private struct PreviewRequest: Equatable {
+        let generation: Int
+        let selectionRevision: Int
+        let target: UpgradeTarget?
+    }
 
+    private var snapshot: ProjectSnapshot? { model.snapshots[project.id] }
     private var precondition: UpgradePrecondition { model.upgradePrecondition(project) }
+    private var target: UpgradeTarget? {
+        guard let selectedTag else { return mainTarget }
+        return releases.first { $0.label == selectedTag }
+    }
+
+    private var previewRequest: PreviewRequest {
+        PreviewRequest(
+            generation: generation, selectionRevision: selectionRevision, target: isLoadingTargets ? nil : target)
+    }
 
     private var isBusy: Bool {
         switch phase {
@@ -31,6 +52,8 @@ struct UpgradeFlowSheet: View {
     }
 
     var body: some View {
+        let revision = generation
+        let request = previewRequest
         VStack(spacing: 0) {
             Form {
                 content
@@ -44,10 +67,13 @@ struct UpgradeFlowSheet: View {
         }
         .frame(width: 540)
         .interactiveDismissDisabled(isBusy)
-        .task(id: model.latestMain) {
-            guard case .review = phase else { return }
-            branchName = await model.proposedUpgradeBranch(for: project)
-            await refreshPreview()
+        .task(id: revision) { await loadTargets(for: revision) }
+        .task(id: request) { await loadPreview(request) }
+        .onChange(of: model.latestMain) { _, main in
+            guard case .review = phase, case .loaded(let review, stale: false) = preview,
+                !review.target.isRelease, review.target.commit != main
+            else { return }
+            preview = .loaded(review, stale: true)
         }
     }
 
@@ -62,12 +88,15 @@ struct UpgradeFlowSheet: View {
         }
     }
 
-    private var reviewedReport: TransitionReport? {
-        guard !isRefreshingPreview, case .loaded(let report, stale: false) = snapshot?.preview,
-            report.from == snapshot?.kitState?.commit, report.to == model.latestMain
+    private var review: UpgradeReview? {
+        guard case .loaded(let review, stale: false) = preview, !isLoadingTargets,
+            review.target == target, review.context.state == snapshot?.kitState,
+            review.context.branch == snapshot?.git?.branch, review.context.url == project.url
         else { return nil }
-        return report
+        return review
     }
+
+    private var reviewedReport: TransitionReport? { review?.report }
 
     // MARK: Content
 
@@ -77,25 +106,44 @@ struct UpgradeFlowSheet: View {
         case .review:
             Section {
                 versions
+                if !releases.isEmpty || selectedTag != nil { releasePicker }
+                if let releaseError {
+                    Label("Stable releases could not be loaded.", systemImage: "info.circle")
+                        .foregroundStyle(.secondary)
+                        .help(releaseError)
+                }
                 preconditionRow
                 if branchName != nil || snapshot?.git?.branch != nil {
-                    branchDetails(update: branchName, previous: snapshot?.git?.branch)
+                    branchDetails(update: branchName, previous: review?.context.branch ?? snapshot?.git?.branch)
                 }
             } header: {
-                Text(model.targetLabel.map { "Update to Kit \($0.trimmingPrefix("v"))" } ?? "Kit Update")
+                Text("Review upgrade")
                     .accessibilityAddTraits(.isHeader)
             }
-            if let report = reviewedReport, report.upToDate != true {
+            if let review, review.report.upToDate != true {
                 Section {
-                    TransitionBackupToggle(backsUp: $backsUp, hasUnsaved: (report.unsaved?.total ?? 0) > 0)
+                    TransitionBackupToggle(backsUp: $backsUp, hasUnsaved: (review.report.unsaved?.total ?? 0) > 0)
                 }
                 Section("Preview (nothing is changed yet)") {
-                    TransitionGroupedCounts(counts: report.groupedCounts)
-                    ChangeFileList(report: report, modules: snapshot?.kitState.map { Set($0.modules) }, limit: 6)
+                    let modules = Set(review.context.state.modules)
+                    TransitionGroupedCounts(counts: review.report.groupedCounts)
+                    ChangeFileList(report: review.report, modules: modules, limit: 6)
+                    Text("File diffs show upstream kit changes, not the merged project files.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let openKitDiff {
+                        Button("Compare kit changes", systemImage: "doc.text.magnifyingglass") {
+                            openKitDiff(DiffRequest(
+                                title: "Upstream changes to \(review.target.label)", base: review.report.from,
+                                head: review.target.commit, modules: modules))
+                        }
+                        .buttonStyle(.glass)
+                        .help("Compare the installed and target kit commits, not the merged project files")
+                    }
                 }
             } else {
                 Section("Preview (nothing is changed yet)") {
-                    preview
+                    previewContent
                 }
             }
         case .running:
@@ -119,21 +167,47 @@ struct UpgradeFlowSheet: View {
     }
 
     private var versions: some View {
-        HStack(spacing: 8) {
-            Text(snapshot?.versionLabel ?? snapshot?.kitState.map { String($0.commit.prefix(7)) } ?? "—")
-                .foregroundStyle(.secondary)
-            Image(systemName: "arrow.right").foregroundStyle(.secondary).accessibilityLabel("to")
-            Text(model.targetLabel ?? "—")
-                .fontWeight(.medium)
-            if let counts = reviewedReport?.groupedCounts {
-                Spacer(minLength: 8)
-                let changed = counts.appliedAutomatically
-                Text("\(changed) \(changed == 1 ? "file changes" : "files change") · \(counts.newFiles) new")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(ProjectRow(project: project, snapshot: snapshot).name)
+                .font(.headline)
+            LabeledContent("Installed") {
+                version(snapshot?.versionLabel, commit: snapshot?.kitState?.commit)
+            }
+            LabeledContent("Target") {
+                version(target?.label, commit: target?.commit)
             }
         }
+    }
+
+    private func version(_ label: String?, commit: String?) -> some View {
+        let short = commit.map { String($0.prefix(7)) }
+        return HStack(spacing: 6) {
+            if let label, label != short { Text(label) }
+            Text(short ?? "—").font(.callout.monospaced()).foregroundStyle(.secondary)
+        }
         .accessibilityElement(children: .combine)
+    }
+
+    private var releasePicker: some View {
+        Picker("Upgrade source", selection: Binding(
+            get: { selectedTag },
+            set: { tag in
+                guard tag != selectedTag else { return }
+                resetPreview()
+                selectedTag = tag
+                selectionRevision += 1
+            }
+        )) {
+            Text("origin/main (default)").tag(Optional<String>.none)
+            ForEach(releases, id: \.label) { release in
+                Text(release.label).tag(Optional(release.label))
+            }
+            if let selectedTag, target == nil {
+                Text("\(selectedTag) (unavailable)").tag(Optional(selectedTag))
+            }
+        }
+        .disabled(isLoadingTargets)
+        .help("Pick a release for this upgrade only. The project will still follow main.")
     }
 
     private var preconditionRow: some View {
@@ -220,45 +294,90 @@ struct UpgradeFlowSheet: View {
     }
 
     @ViewBuilder
-    private var preview: some View {
-        if isRefreshingPreview {
-            progress("Previewing update…")
-        } else {
-            switch snapshot?.preview ?? .idle {
-            case .idle:
+    private var previewContent: some View {
+        switch preview {
+        case .failed(let message):
+            FailureView(message: message)
+            previewAgain
+        case .loading:
+            progress(isLoadingTargets ? "Checking upgrade targets…" : "Previewing upgrade…")
+        case .idle:
+            if isLoadingTargets || target != nil {
+                progress(isLoadingTargets ? "Checking upgrade targets…" : "Previewing upgrade…")
+            } else {
                 Text("No preview yet.").foregroundStyle(.secondary)
-            case .loading:
-                progress("Previewing update…")
-            case .failed(let message):
-                FailureView(message: message)
                 previewAgain
-            case .loaded(_, true):
-                Label("Computed for an earlier state of the project.", systemImage: "clock")
+            }
+        case .loaded:
+            if reviewedReport?.upToDate == true {
+                Text("Nothing to upgrade.").foregroundStyle(.secondary)
+            } else {
+                Label("This preview is no longer current.", systemImage: "clock")
                     .foregroundStyle(.secondary)
                 previewAgain
-            case .loaded(_, false):
-                if reviewedReport?.upToDate == true {
-                    Text("Nothing to update.").foregroundStyle(.secondary)
-                } else {
-                    Label("Computed for an earlier state of the project.", systemImage: "clock")
-                        .foregroundStyle(.secondary)
-                    previewAgain
-                }
             }
         }
     }
 
     private var previewAgain: some View {
-        Button("Preview Again", systemImage: "arrow.clockwise") { Task { await refreshPreview() } }
-            .buttonStyle(.glass)
-            .disabled(model.cliStatus != .ready)
+        Button("Preview Again", systemImage: "arrow.clockwise") {
+            resetPreview()
+            isLoadingTargets = true
+            generation += 1
+        }
+        .buttonStyle(.glass)
+        .disabled(model.cliStatus != .ready)
     }
 
-    private func refreshPreview() async {
-        isRefreshingPreview = true
-        defer { isRefreshingPreview = false }
-        guard model.canUpgrade(project) else { return }
-        await model.loadPreview(project)
+    private func resetPreview() {
+        preview = .idle
+        branchName = nil
+        backsUp = true
+        showsRiskFiles = false
+    }
+
+    private func loadTargets(for revision: Int) async {
+        guard case .review = phase, revision == generation else { return }
+        isLoadingTargets = true
+        if revision > 0 { await model.refresh(project, force: true) }
+        do {
+            let choices = try await model.upgradeTargets(for: project)
+            guard !Task.isCancelled, revision == generation else { return }
+            mainTarget = choices.main
+            switch choices.releases {
+            case .success(let eligible):
+                releases = eligible
+                releaseError = nil
+            case .failure(let error):
+                releases = []
+                releaseError = error.localizedDescription
+            }
+            if let selectedTag, target == nil {
+                preview = .failed("\(selectedTag) is no longer available for this upgrade. Choose origin/main or another release.")
+            }
+        } catch {
+            guard !Task.isCancelled, revision == generation else { return }
+            mainTarget = nil
+            releases = []
+            preview = .failed(error.localizedDescription)
+        }
+        isLoadingTargets = false
+    }
+
+    private func loadPreview(_ request: PreviewRequest) async {
+        guard case .review = phase, request == previewRequest, let target = request.target else { return }
+        preview = .loading
+        let branch = await model.proposedUpgradeBranch(for: project, target: target)
+        guard !Task.isCancelled, request == previewRequest else { return }
+        branchName = branch
+        do {
+            let review = try await model.loadUpgradePreview(project, target: target)
+            guard !Task.isCancelled, request == previewRequest else { return }
+            preview = .loaded(review, stale: false)
+        } catch {
+            guard !Task.isCancelled, request == previewRequest else { return }
+            preview = .failed(error.localizedDescription)
+        }
     }
 
     private func progress(_ text: String) -> some View {
@@ -331,7 +450,7 @@ struct UpgradeFlowSheet: View {
         if model.cliStatus != .ready { return "Build the nuxt-saas CLI first" }
         guard let report = reviewedReport else { return "A current update preview is required" }
         if report.upToDate == true { return "Already up to date with the latest kit" }
-        return "Create the branch, apply the update and open Claude"
+        return "Apply the reviewed upgrade on a new branch"
     }
 
     /// The branch the app created and the one it started from, read from the model, not the snapshot.
@@ -344,18 +463,11 @@ struct UpgradeFlowSheet: View {
             case .review:
                 secondaryButton("Cancel", role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
                 Spacer()
-                secondaryButton("Update only") { start(withClaude: false) }
+                Button("Apply upgrade") { start() }
+                    .buttonStyle(.glassProminent)
+                    .keyboardShortcut(.defaultAction)
                     .disabled(!canUpgrade)
-                    .help("Apply the update without opening Claude")
-                Button {
-                    start(withClaude: true)
-                } label: {
-                    Label("Update with Claude", systemImage: "sparkles")
-                }
-                .buttonStyle(.glassProminent)
-                .keyboardShortcut(.defaultAction)
-                .disabled(!canUpgrade)
-                .help(confirmHelp)
+                    .help(confirmHelp)
             case .running, .rollingBack:
                 Spacer()
             case .finished(.failed(let branch, _)):
@@ -365,15 +477,12 @@ struct UpgradeFlowSheet: View {
                 Spacer()
                 secondaryButton("Close") { dismiss() }.keyboardShortcut(.cancelAction)
             case .finished(.applied(let branch, let report, let prompt)) where !report.conflicts.isEmpty:
-                secondaryButton("Done") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button("Resolve with Claude", systemImage: "sparkles") { resolve(branch: branch, prompt: prompt) }
+                    .buttonStyle(.glass)
                 Spacer()
-                Button {
-                    resolve(branch: branch, prompt: prompt)
-                } label: {
-                    Label("Resolve with Claude", systemImage: "sparkles")
-                }
-                .buttonStyle(.glassProminent)
-                .keyboardShortcut(.defaultAction)
+                Button("Done") { dismiss() }
+                    .buttonStyle(.glassProminent)
+                    .keyboardShortcut(.defaultAction)
             case .finished, .rolledBack:
                 Spacer()
                 Button("Done") { dismiss() }
@@ -390,14 +499,20 @@ struct UpgradeFlowSheet: View {
 
     // MARK: Actions
 
-    private func start(withClaude: Bool) {
-        guard canUpgrade, let report = reviewedReport else { return }
+    private func start() {
+        guard canUpgrade, let review else { return }
         rollbackError = nil
         resolveError = nil
         phase = .running
         let backup = backsUp
         Task {
-            phase = .finished(await model.runUpgrade(project, withClaude: withClaude, reviewed: report, backup: backup))
+            do {
+                phase = .finished(try await model.runUpgrade(project, reviewed: review, backup: backup))
+            } catch {
+                resetPreview()
+                preview = .failed(error.localizedDescription)
+                phase = .review
+            }
         }
     }
 

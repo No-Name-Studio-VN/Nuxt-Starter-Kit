@@ -83,7 +83,7 @@ Do not change the root kit version for a CLI-only release. Never bypass commit h
 
 `.github/workflows/cli-release.yml` runs for `cli-v*` tags and manual dispatches. It:
 
-1. Uses Node 26 and pnpm 12.14.0; ensures npm is at least 11.5.1 for trusted publishing.
+1. Uses Node 26 and pnpm 12.23.0; ensures npm is at least 11.5.1 for trusted publishing.
 2. Installs with `pnpm --filter create-nuxt-saas install --frozen-lockfile`.
 3. Checks that the tag version equals the CLI package version (on tag runs).
 4. Runs CLI tests, typecheck and build. Runtime dependencies are bundled into `dist/`.

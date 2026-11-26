@@ -1,10 +1,25 @@
 {
   "title": "Database",
   "description": "A Cloudflare D1 (SQLite) database through NuxtHub and Drizzle ORM, with generated migrations.",
-  "group": "Foundation",
+  "group": "Essentials",
   "requires": ["server-core"],
-  "dependencies": ["@libsql/client", "@nuxthub/core", "better-sqlite3", "drizzle-orm", "drizzle-zod"],
+  "dependencies": [
+    "@libsql/client",
+    "@nuxthub/core",
+    "better-sqlite3",
+    "drizzle-orm",
+    "drizzle-zod"
+  ],
   "devDependencies": ["@types/better-sqlite3", "drizzle-kit"],
   "scripts": ["db:generate", "deploy:db"],
-  "bindings": ["DB"]
+  "bindings": ["DB"],
+  "changes": [
+    {
+      "id": "database.essentials-catalog-group",
+      "since": "4.2.0",
+      "title": "Find Database in the Essentials group; the storage and migration setup is unchanged.",
+      "kind": "feature",
+      "files": ["layers/database/module.json"]
+    }
+  ]
 }

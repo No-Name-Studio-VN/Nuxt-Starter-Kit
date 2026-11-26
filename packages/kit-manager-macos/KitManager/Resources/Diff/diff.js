@@ -2,33 +2,6 @@
 
 const target = document.getElementById('diff');
 
-// Treat file-list links as in-document controls without issuing a navigation.
-target.addEventListener('click', (event) => {
-  const link = event.target.closest('a');
-  if (!link) return;
-  event.preventDefault();
-  const href = link.getAttribute('href');
-  if (!href?.startsWith('#')) return;
-  const header = document.getElementById(href.slice(1))?.querySelector('.d2h-file-header');
-  if (!header) return;
-  header.tabIndex = -1;
-  header.focus({ preventScroll: true });
-  header.scrollIntoView({ block: 'start' });
-});
-
-function useCollapsibleFileList() {
-  const wrapper = target.querySelector('.d2h-file-list-wrapper');
-  const list = wrapper?.querySelector('.d2h-file-list');
-  if (!list) return;
-  const count = list.children.length;
-  const details = document.createElement('details');
-  const summary = document.createElement('summary');
-  summary.textContent = count === 1 ? '1 changed file' : `${count} changed files`;
-  details.open = count <= 5;
-  details.append(summary, list);
-  wrapper.replaceChildren(details);
-}
-
 function styleFileNames() {
   for (const name of target.querySelectorAll('.d2h-file-name')) {
     const path = name.textContent.trim();
@@ -66,12 +39,12 @@ function labelScrollAreas() {
   }
 }
 
-window.renderDiff = (patch, layout, showsFileList = true) => {
+window.renderDiff = (patch, layout) => {
   const renderer = new window.Diff2HtmlUI(target, patch, {
     outputFormat: layout,
     colorScheme: 'light', // The stylesheet sets the colours for both appearances.
-    drawFileList: showsFileList,
-    fileListToggle: false, // Use a keyboard-accessible details element instead.
+    drawFileList: false,
+    fileListToggle: false,
     fileContentToggle: false,
     stickyFileHeaders: false,
     synchronisedScroll: false,
@@ -87,7 +60,6 @@ window.renderDiff = (patch, layout, showsFileList = true) => {
     header.setAttribute('role', 'heading');
     header.setAttribute('aria-level', '2');
   }
-  useCollapsibleFileList();
   styleFileNames();
   labelScrollAreas();
 };

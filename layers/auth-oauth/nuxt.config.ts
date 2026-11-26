@@ -5,9 +5,4 @@ export default defineNuxtConfig({
       { code: 'vi', file: 'vi.json' },
     ],
   },
-  security: {
-    headers: {
-      crossOriginOpenerPolicy: 'same-origin-allow-popups',
-    },
-  },
 });

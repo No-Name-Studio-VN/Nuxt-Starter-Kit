@@ -1,8 +1,8 @@
 {
   "title": "Server core",
   "description": "The API response envelope, error helpers and request utilities shared by server modules.",
+  "group": "Essentials",
   "requires": [],
-  "internal": true,
   "changes": [
     {
       "id": "server-core.storage-split",
@@ -16,6 +16,20 @@
         "layers/database/module.json",
         "layers/database/README.md"
       ]
+    },
+    {
+      "id": "server-core.catalog-selection",
+      "since": "4.2.0",
+      "title": "Select Server core directly from Essentials to use the shared API helpers.",
+      "kind": "feature",
+      "files": ["layers/server-core/README.md", "layers/server-core/module.json"]
+    },
+    {
+      "id": "server-core.api-rate-limit-policy",
+      "since": "4.2.0",
+      "title": "Web Security now supplies the default API rate limit. Keep it installed or configure a separate limit if you opt out.",
+      "kind": "security",
+      "files": ["layers/server-core/nuxt.config.ts"]
     }
   ]
 }

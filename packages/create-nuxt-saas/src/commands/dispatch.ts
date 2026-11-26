@@ -1,6 +1,12 @@
 import { basename, join, resolve } from 'node:path';
 import type { ParsedArgs } from 'citty';
-import type { inspectArgs, listArgs, moduleChangeArgs, resolveArgs, upgradeArgs } from '../arguments';
+import type {
+  inspectArgs,
+  listArgs,
+  moduleChangeArgs,
+  resolveArgs,
+  upgradeArgs,
+} from '../arguments';
 import { CliError } from '../errors';
 import { kitSource, targetCommit } from '../kit/context';
 import { DEFAULT_TEMPLATE, openKit, resolveCommit } from '../kit/source';
@@ -19,26 +25,41 @@ import {
   printUnsaved,
 } from '../report';
 import type { SafetyOptions, TransitionReport } from '../transition/run';
-import type { JsonResolution } from '../types/json';
+import { JSON_SCHEMA, type JsonResolution } from '../types/json';
 import type { InitOptions } from '../types/cli';
 import { pathExists } from '../util/fs';
 import { runInit } from './init';
 import { runInspect } from './inspect';
 import { runModuleChange } from './modules';
+import {
+  MAX_PROJECT_PATCH_BYTES,
+  prepareProjectComparison,
+  projectFilePatch,
+} from './projectComparison';
 import { runResolve } from './resolve';
 import { runUpgrade } from './upgrade';
 
-function safetyOptions(args: ParsedArgs<typeof upgradeArgs> | ParsedArgs<typeof moduleChangeArgs>): Omit<SafetyOptions, 'projectRoot'> {
+function safetyOptions(
+  args: ParsedArgs<typeof upgradeArgs> | ParsedArgs<typeof moduleChangeArgs>,
+): Omit<SafetyOptions, 'projectRoot'> {
   const { check, force, backup, json } = args;
   const options: Omit<SafetyOptions, 'projectRoot'> = { check, force, backup };
   if (isInteractive(json)) options.confirmRisk = (unsaved) => promptRisk(unsaved, backup);
-  if (!json) options.onUnsaved = (unsaved) => {
-    if (force || options.confirmRisk || !unsaved.risky.length) printUnsaved(unsaved, force, backup);
-  };
+  if (!json)
+    options.onUnsaved = (unsaved) => {
+      if (force || options.confirmRisk || !unsaved.risky.length)
+        printUnsaved(unsaved, force, backup);
+    };
   return options;
 }
 
-function finishTransition(report: TransitionReport, from: string, to: string, json: boolean, check: boolean): number {
+function finishTransition(
+  report: TransitionReport,
+  from: string,
+  to: string,
+  json: boolean,
+  check: boolean,
+): number {
   if (json) printTransitionJson(report, from, to);
   else printTransitionReport(report, check || report.preview === true);
   return !report.cancelled && report.conflicts.length > 0 ? 3 : 0;
@@ -63,7 +84,8 @@ export async function initCommand(args: InitOptions): Promise<number> {
       kit,
       git: args.git,
     });
-    printInitReport(report);
+    if (args.json) printJson({ schema: JSON_SCHEMA, ...report });
+    else printInitReport(report);
     return 0;
   } finally {
     await kit.cleanup();
@@ -77,7 +99,8 @@ export async function moduleCommand(
   const projectRoot = resolve(args.dir);
   const state = await readState(projectRoot);
   const source = kitSource(args, state.kit);
-  if (args['use-uncommitted-kit']) throw new CliError('Use upgrade --use-uncommitted-kit before changing modules.');
+  if (args['use-uncommitted-kit'])
+    throw new CliError('Use upgrade --use-uncommitted-kit before changing modules.');
   if (source.kind === 'local') await resolveCommit(source);
   const kit = await openKit(source, state.commit, state.kit);
   try {
@@ -131,8 +154,12 @@ export async function modulesCommand(args: ParsedArgs<typeof listArgs>): Promise
   const template = state?.kit ?? args.template ?? DEFAULT_TEMPLATE;
   const source = kitSource(args, template);
   if (state && source.kind === 'local') await resolveCommit(source);
-  if (state && args['use-uncommitted-kit']) throw new CliError('--use-uncommitted-kit is only valid outside a project when listing modules.');
-  const commit = state?.commit ?? (await targetCommit(source, args.to, args['use-uncommitted-kit']));
+  if (state && args['use-uncommitted-kit'])
+    throw new CliError(
+      '--use-uncommitted-kit is only valid outside a project when listing modules.',
+    );
+  const commit =
+    state?.commit ?? (await targetCommit(source, args.to, args['use-uncommitted-kit']));
   const kit = await openKit(source, commit, template);
   try {
     const installed = state?.modules ?? [];
@@ -146,11 +173,32 @@ export async function modulesCommand(args: ParsedArgs<typeof listArgs>): Promise
 
 export async function inspectCommand(args: ParsedArgs<typeof inspectArgs>): Promise<number> {
   const projectRoot = resolve(args.dir);
+  const { file, 'baseline-dir': baseline, 'max-bytes': limit } = args;
+  if ((file !== undefined || limit !== undefined) && !baseline)
+    throw new CliError('A file comparison requires --baseline-dir.');
+  if (baseline && (!args.json || args.added))
+    throw new CliError('A baseline requires --json without --added.');
+  if (baseline && file !== undefined) {
+    const maxBytes = limit === undefined ? MAX_PROJECT_PATCH_BYTES : Number(limit);
+    if (!Number.isInteger(maxBytes) || maxBytes < 0 || maxBytes > MAX_PROJECT_PATCH_BYTES) {
+      throw new CliError(
+        `--max-bytes must be an integer between 0 and ${MAX_PROJECT_PATCH_BYTES}.`,
+      );
+    }
+    printJson(await projectFilePatch(projectRoot, resolve(baseline), file, maxBytes));
+    return 0;
+  }
+  if (baseline && !args.kit)
+    throw new CliError('Preparing a baseline requires a local --kit checkout.');
   const state = await readState(projectRoot);
   const source = kitSource(args, state.kit);
-  if (source.kind === 'local') await resolveCommit(source);
+  if (!baseline && source.kind === 'local') await resolveCommit(source);
   const kit = await openKit(source, state.commit, state.kit);
   try {
+    if (baseline) {
+      printJson(await prepareProjectComparison(projectRoot, resolve(baseline), kit, state));
+      return 0;
+    }
     const report = await runInspect({ projectRoot, kit, added: args.added });
     if (args.json) printInspectJson(report);
     else printInspect(report);
@@ -163,9 +211,11 @@ export async function inspectCommand(args: ParsedArgs<typeof inspectArgs>): Prom
 export async function resolveCommand(args: ParsedArgs<typeof resolveArgs>): Promise<number> {
   const actions: JsonResolution['action'][] = ['keep-mine', 'take-kit', 'combine'];
   const selected = actions.filter((action) => args[action]);
-  if (selected.length > 1) throw new CliError('Choose only one of --keep-mine, --take-kit, or --combine.');
+  if (selected.length > 1)
+    throw new CliError('Choose only one of --keep-mine, --take-kit, or --combine.');
   const [action] = selected;
-  if (!args.json && args.file && !action) throw new CliError('Choose --keep-mine, --take-kit, or --combine for this file.');
+  if (!args.json && args.file && !action)
+    throw new CliError('Choose --keep-mine, --take-kit, or --combine for this file.');
   if (args.file && args.all) throw new CliError('--all is only for the walkthrough.');
   const interactive = isInteractive(args.json) && !args.file && !action;
   const { cancelled, ...report } = await runResolve({
@@ -174,12 +224,16 @@ export async function resolveCommand(args: ParsedArgs<typeof resolveArgs>): Prom
     ...(action ? { action } : {}),
     decline: args.decline,
     all: args.all,
-    ...(interactive ? { walkthrough: {
-      show: printResolveView,
-      choose: promptResolve,
-      showSides: console.log,
-      showError: (message) => console.error(`  ${message}`),
-    } } : {}),
+    ...(interactive
+      ? {
+          walkthrough: {
+            show: printResolveView,
+            choose: promptResolve,
+            showSides: console.log,
+            showError: (message) => console.error(`  ${message}`),
+          },
+        }
+      : {}),
   });
   const pending = report.decisions.filter((decision) => decision.pending);
   if (args.json) printJson(report);
@@ -188,13 +242,18 @@ export async function resolveCommand(args: ParsedArgs<typeof resolveArgs>): Prom
     if (report.resolved) console.log(`Resolved ${report.resolved.path}.`);
     if (!interactive && !report.resolved) {
       for (const decision of pending) {
-        if (decision.kind === 'conflict' || args.all) console.log(`  ${decision.path}  ${decision.kind}`);
+        if (decision.kind === 'conflict' || args.all)
+          console.log(`  ${decision.path}  ${decision.kind}`);
       }
     }
     const conflicts = pending.filter(({ kind }) => kind === 'conflict').length;
     const kept = pending.length - conflicts;
-    if (conflicts) console.log(`${conflicts} ${conflicts === 1 ? 'conflict remains' : 'conflicts remain'}.`);
-    if (kept) console.log(`${kept} ${kept === 1 ? 'kept file' : 'kept files'} to review with nuxt-saas resolve --all.`);
+    if (conflicts)
+      console.log(`${conflicts} ${conflicts === 1 ? 'conflict remains' : 'conflicts remain'}.`);
+    if (kept)
+      console.log(
+        `${kept} ${kept === 1 ? 'kept file' : 'kept files'} to review with nuxt-saas resolve --all.`,
+      );
     if (!pending.length) console.log('No pending decisions.');
   }
   return !cancelled && pending.some(({ kind }) => kind === 'conflict') ? 3 : 0;

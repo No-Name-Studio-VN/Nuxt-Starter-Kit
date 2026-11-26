@@ -11,7 +11,13 @@
     },
     "issuelink": {
       "title": "Create an issue"
-    }
+    },
+    "page_navigation": "Page navigation",
+    "search_tabs": "Search Tab...",
+    "no_tab": "No tab found.",
+    "copy_code": "Copy code",
+    "banner_welcome": "Welcome to **{site}**",
+    "playground": "Playground"
   },
   "blog": {
     "badge": "Blog",

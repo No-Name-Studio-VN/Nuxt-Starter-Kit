@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import { lstat, mkdir, readdir, readFile, rename, rmdir, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { lstat, mkdir, open, readdir, readFile, rename, rmdir, writeFile } from 'node:fs/promises';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
 import { CliError } from '../errors';
 
@@ -32,6 +33,60 @@ export async function hasSymbolicLink(root: string, filePath: string): Promise<b
     }
   }
   return false;
+}
+
+export function readRegularFile(root: string, path: string): Promise<Buffer | null | 'owned'>;
+export function readRegularFile(
+  root: string,
+  path: string,
+  maxBytes: number,
+): Promise<Buffer | null | 'owned' | 'tooLarge'>;
+/** Reject links and non-regular files. An optional cap applies even if a file grows during the read. */
+export async function readRegularFile(
+  root: string,
+  path: string,
+  maxBytes?: number,
+): Promise<Buffer | null | 'owned' | 'tooLarge'> {
+  try {
+    if ((await hasSymbolicLink(root, path)) || !(await lstat(path)).isFile()) return 'owned';
+    if (maxBytes === undefined) return await readFile(path);
+    const flags = constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
+    const file = await open(path, flags);
+    try {
+      const stats = await file.stat();
+      const current = await lstat(path);
+      if (
+        !stats.isFile() ||
+        !current.isFile() ||
+        stats.dev !== current.dev ||
+        stats.ino !== current.ino ||
+        (await hasSymbolicLink(root, path))
+      )
+        return 'owned';
+      if (stats.size > maxBytes) return 'tooLarge';
+      let buffer = Buffer.allocUnsafe(stats.size + 1);
+      let offset = 0;
+      while (offset <= maxBytes) {
+        if (offset === buffer.length) {
+          const grown = Buffer.allocUnsafe(Math.min(maxBytes + 1, buffer.length * 2));
+          buffer.copy(grown);
+          buffer = grown;
+        }
+        const { bytesRead } = await file.read(buffer, offset, buffer.length - offset, null);
+        if (!bytesRead) return buffer.subarray(0, offset);
+        offset += bytesRead;
+      }
+      return 'tooLarge';
+    } finally {
+      await file.close();
+    }
+  } catch (error) {
+    if (error instanceof Error && 'code' in error) {
+      if (error.code === 'ENOENT') return null;
+      if (error.code === 'ENOTDIR' || error.code === 'ELOOP') return 'owned';
+    }
+    throw error;
+  }
 }
 
 export async function listFiles(root: string): Promise<string[]> {

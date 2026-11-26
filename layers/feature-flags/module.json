@@ -15,6 +15,23 @@
         "layers/feature-flags/module.json",
         "layers/feature-flags/app/components/admin/feature-flags/AdminFeatureFlagsManager.vue"
       ]
+    },
+    {
+      "id": "feature-flags.localized-flag-management",
+      "since": "4.2.0",
+      "title": "Localize flag editing, rollout and import validation, and table actions. Merge the new flag catalogs with customized screens.",
+      "kind": "feature",
+      "files": [
+        "layers/feature-flags/app/components/admin/feature-flags/AdminFeatureFlagsManager.vue",
+        "layers/feature-flags/app/components/admin/feature-flags/columns.ts",
+        "layers/feature-flags/app/pages/admin/feature-flags.vue",
+        "layers/feature-flags/app/plugins/nav.ts",
+        "layers/feature-flags/i18n/locales/en.json",
+        "layers/feature-flags/i18n/locales/vi.json",
+        "layers/feature-flags/module.json",
+        "layers/feature-flags/nuxt.config.ts",
+        "layers/feature-flags/shared/schemas/featureFlagSchema.ts"
+      ]
     }
   ]
 }

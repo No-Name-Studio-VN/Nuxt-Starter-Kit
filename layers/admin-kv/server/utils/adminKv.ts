@@ -22,8 +22,7 @@ interface ParseAdminKvJsonResult {
 const temporaryPrefixDefinitions: TemporaryPrefixDefinition[] = [
   {
     prefix: 'auth:challenge:',
-    reason:
-      'Short-lived WebAuthn challenge. Editing or deleting it can break an in-progress sign-in or passkey flow.',
+    reason: 'admin.kv.temporary_auth_challenge',
   },
 ];
 

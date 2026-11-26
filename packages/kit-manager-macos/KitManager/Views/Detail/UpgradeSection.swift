@@ -394,7 +394,7 @@ struct UpgradeSection: View {
     }
 
     private var updateButton: some View {
-        Button("Update with Claude", systemImage: "sparkles") {
+        Button("Review upgrade", systemImage: "arrow.up.circle") {
             model.flow = .upgrade(project)
         }
         .buttonStyle(.glassProminent)

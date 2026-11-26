@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'jsonc-parser';
@@ -209,13 +209,19 @@ describe('render real kit', () => {
     >[0];
     const kit = await openKit(source, await resolveCommit(source), DEFAULT_TEMPLATE);
     try {
-      // The two new kit inputs are not in HEAD until this task is committed.
-      for (const path of ['kit.json', 'templates/README.md']) {
-        await mkdir(join(kit.dir, 'packages/create-nuxt-saas', path, '..'), { recursive: true });
-        await copyFile(
-          join(root, 'packages/create-nuxt-saas', path),
-          join(kit.dir, 'packages/create-nuxt-saas', path),
-        );
+      // Exercise the current render inputs even when the local snapshot comes from HEAD.
+      for (const path of [
+        'package.json',
+        'packages/create-nuxt-saas/kit.json',
+        'packages/create-nuxt-saas/templates/README.md',
+      ]) {
+        await mkdir(join(kit.dir, path, '..'), { recursive: true });
+        await copyFile(join(root, path), join(kit.dir, path));
+      }
+      // A local HEAD from before the move still has the old harness in the archive.
+      await rm(join(kit.dir, 'tests'), { recursive: true, force: true });
+      for (const directory of ['test/browser', 'test/fixtures', 'test/node']) {
+        await cp(join(root, directory), join(kit.dir, directory), { recursive: true });
       }
       await mkdir(join(kit.dir, 'test/unit/render-regression'), { recursive: true });
       for (const extension of ['ts', 'mjs', 'js']) {
@@ -253,12 +259,17 @@ describe('render real kit', () => {
             leaks.push(`${label}: layer ${module.id}`);
         }
         for (const path of markerLeaks(tree)) leaks.push(`${label}: nsk in ${path}`);
+        expect(text(tree, 'README.md')).toContain(
+          'This project was created and is maintained using [Nuxt-Starter-Kit](https://nnsvn.me/products/nuxt-starter-kit).',
+        );
         expect(tree.has('app/app.vue')).toBe(true);
         expect(tree.has('layers/auth/module.json')).toBe(selected.length > 0);
         expect(tree.has('content/blogs/sample.md')).toBe(selected.length > 0);
-        expect([...tree.keys()].some((path) => /^(?:packages|docs|tests)\//.test(path))).toBe(
-          false,
-        );
+        expect(
+          [...tree.keys()].filter((path) =>
+            /^(?:packages|docs|test\/(?:browser|fixtures|node))\//.test(path),
+          ),
+        ).toEqual([]);
         expect(tree.has('vitest.config.ts')).toBe(true);
         expect(tree.has('.nuxtrc')).toBe(true);
         expect(tree.has('test/unit/setup/h3Globals.ts')).toBe(true);
@@ -266,7 +277,10 @@ describe('render real kit', () => {
         expect(
           [...tree.keys()].filter((path) => /^test\/.*\.(?:test|spec)\.[^/]+$/.test(path)),
         ).toEqual([]);
-        expect(pkg.scripts).not.toHaveProperty('typecheck:test');
+        expect(pkg.scripts.test).toBe('vitest run && pnpm run --if-present test:node');
+        for (const script of ['test:browser', 'test:node', 'test:ssr', 'typecheck:test']) {
+          expect(pkg.scripts).not.toHaveProperty(script);
+        }
         const worker: unknown = parse(text(tree, 'wrangler.jsonc'));
         expect(worker).toMatchObject({ name: 'my-app' });
         expect(worker).not.toHaveProperty('routes');

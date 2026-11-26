@@ -12,7 +12,7 @@
           <Download v-else :size="18" />
         </span>
         <p :class="cn('whitespace-nowrap', sidebarOpen ? 'opacity-100' : 'opacity-0 hidden')">
-          {{ isPWA ? 'Installed' : 'Install App' }}
+          {{ $t(isPWA ? 'pwa.installed' : 'pwa.install') }}
         </p>
         <span v-if="isPWA" class="ml-2 text-xs text-muted-foreground">
           {{ config.public.version }}
@@ -29,9 +29,9 @@
     <DialogHeader>
       <DialogTitle class="flex items-center gap-2">
         <Smartphone class="size-5" />
-        Install App
+        {{ $t('pwa.install') }}
       </DialogTitle>
-      <DialogDescription> Get the best experience with our progressive web app </DialogDescription>
+      <DialogDescription> {{ $t('pwa.install_description') }} </DialogDescription>
     </DialogHeader>
 
     <div class="space-y-4">
@@ -42,9 +42,9 @@
               <component :is="i.icon" :class="`text-${i.colorClass}-600`" />
             </ItemMedia>
             <ItemContent>
-              <ItemTitle>{{ i.title }}</ItemTitle>
+              <ItemTitle>{{ $t(i.title) }}</ItemTitle>
               <ItemDescription>
-                {{ i.description }}
+                {{ $t(i.description) }}
               </ItemDescription>
             </ItemContent>
           </Item>
@@ -52,17 +52,17 @@
       </ItemGroup>
       <div class="border-t pt-4">
         <p class="text-xs text-muted-foreground text-center">
-          Takes up minimal storage space on your device
+          {{ $t('pwa.storage') }}
         </p>
       </div>
     </div>
 
     <DialogFooter class="flex-col sm:flex-row gap-2">
       <Button variant="ghost" class="w-full sm:w-auto" @click="isDialogOpen = false">
-        Not Now
+        {{ $t('pwa.not_now') }}
       </Button>
       <Button class="w-full sm:w-auto group" :disabled="!canInstall" @click="onInstallPWA">
-        Install App
+        {{ $t('pwa.install') }}
         <ArrowRight class="ml-2 size-4 group-hover:translate-x-1 transition-transform" />
       </Button>
     </DialogFooter>

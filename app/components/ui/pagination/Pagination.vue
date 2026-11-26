@@ -18,6 +18,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
   <PaginationRoot
     v-slot="slotProps"
     data-slot="pagination"
+    :aria-label="$t('pagination.label')"
     v-bind="forwarded"
     :class="cn('mx-auto flex w-full justify-center', props.class)"
   >

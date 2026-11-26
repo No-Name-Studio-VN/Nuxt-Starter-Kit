@@ -11,7 +11,6 @@ export interface PasswordStrengthChecks {
 export interface PasswordStrength {
   score: number;
   level: PasswordStrengthLevel;
-  feedback: string;
   checks: PasswordStrengthChecks;
   color: string;
 }

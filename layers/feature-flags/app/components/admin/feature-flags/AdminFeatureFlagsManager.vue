@@ -3,15 +3,15 @@
     <!-- Header with Actions -->
     <div class="flex justify-between items-center">
       <div>
-        <h2 class="text-2xl font-semibold">Feature Flags</h2>
+        <h2 class="text-2xl font-semibold">{{ $t('admin.flags.title') }}</h2>
         <p class="text-sm text-muted-foreground mt-1">
-          Create, manage, and control feature rollouts for your application
+          {{ $t('admin.flags.description') }}
         </p>
       </div>
       <div class="flex items-center gap-2">
         <Button variant="outline" :disabled="loading" @click="addMissingDefaults">
           <RefreshCw class="size-4" :class="{ 'animate-spin': loading }" />
-          Add Missing Defaults
+          {{ $t('admin.flags.add_defaults') }}
         </Button>
         <!-- Import / Export -->
         <input
@@ -25,17 +25,17 @@
           <DropdownMenuTrigger as-child>
             <Button variant="outline">
               <ArrowUpDown class="size-4" />
-              Import / Export
+              {{ $t('admin.flags.import_export') }}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem @click="exportFlags">
               <Download class="size-4" />
-              Export as JSON
+              {{ $t('admin.flags.export_json') }}
             </DropdownMenuItem>
             <DropdownMenuItem @click="triggerImport">
               <Upload class="size-4" />
-              Import from JSON
+              {{ $t('admin.flags.import_json') }}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -44,17 +44,17 @@
           <DialogTrigger as-child>
             <Button @click="openCreateDialog">
               <Plus class="size-4" />
-              Add Flag
+              {{ $t('admin.flags.add') }}
             </Button>
           </DialogTrigger>
           <DialogScrollContent>
             <DialogHeader>
-              <DialogTitle>{{ isEditMode ? 'Edit Feature Flag' : 'Create New Flag' }}</DialogTitle>
+              <DialogTitle>{{
+                t(isEditMode ? 'admin.flags.edit' : 'admin.flags.create_title')
+              }}</DialogTitle>
               <DialogDescription>
                 {{
-                  isEditMode
-                    ? 'Update flag configuration and targeting rules.'
-                    : 'Add a new feature flag to control feature rollouts.'
+                  t(isEditMode ? 'admin.flags.edit_description' : 'admin.flags.create_description')
                 }}
               </DialogDescription>
             </DialogHeader>
@@ -65,54 +65,67 @@
                   <FieldGroup>
                     <VeeField v-slot="{ field, errors }" name="key">
                       <Field :data-invalid="!!errors.length">
-                        <FieldLabel for="key"> Flag Key </FieldLabel>
+                        <FieldLabel for="key"> {{ $t('admin.flags.key') }} </FieldLabel>
                         <Input
                           id="key"
                           :model-value="field.value"
-                          placeholder="e.g., new-reader-v2"
+                          :placeholder="$t('admin.flags.key_example')"
                           class="font-mono"
                           :disabled="isEditMode"
                           :aria-invalid="!!errors.length"
                           @update:model-value="field.onChange"
                         />
                         <FieldDescription>
-                          Lowercase alphanumeric with hyphens. Cannot be changed after creation.
+                          {{ $t('admin.flags.key_hint') }}
                         </FieldDescription>
-                        <FieldError v-if="errors.length" :errors="errors" />
+                        <FieldError
+                          v-if="errors.length"
+                          :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                        />
                       </Field>
                     </VeeField>
                     <VeeField v-slot="{ field, errors }" name="description">
                       <Field :data-invalid="!!errors.length">
-                        <FieldLabel for="description"> Description </FieldLabel>
+                        <FieldLabel for="description">
+                          {{ $t('admin.flags.description_label') }}
+                        </FieldLabel>
                         <Textarea
                           id="description"
                           :model-value="field.value"
-                          placeholder="What does this flag control?"
+                          :placeholder="$t('admin.flags.description_placeholder')"
                           class="resize-none"
                           :rows="2"
                           :aria-invalid="!!errors.length"
                           @update:model-value="field.onChange"
                         />
-                        <FieldError v-if="errors.length" :errors="errors" />
+                        <FieldError
+                          v-if="errors.length"
+                          :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                        />
                       </Field>
                     </VeeField>
                     <div class="grid gap-4 sm:grid-cols-2">
                       <VeeField v-slot="{ field, errors }" name="owner">
                         <Field :data-invalid="!!errors.length">
-                          <FieldLabel for="owner"> Owner </FieldLabel>
+                          <FieldLabel for="owner"> {{ $t('admin.flags.owner') }} </FieldLabel>
                           <Input
                             id="owner"
                             :model-value="field.value"
-                            placeholder="e.g., Team Name"
+                            :placeholder="$t('admin.flags.owner_placeholder')"
                             :aria-invalid="!!errors.length"
                             @update:model-value="field.onChange"
                           />
-                          <FieldError v-if="errors.length" :errors="errors" />
+                          <FieldError
+                            v-if="errors.length"
+                            :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                          />
                         </Field>
                       </VeeField>
                       <VeeField v-slot="{ field, errors }" name="rolloutPct">
                         <Field :data-invalid="!!errors.length">
-                          <FieldLabel for="rolloutPct"> Rollout % </FieldLabel>
+                          <FieldLabel for="rolloutPct">
+                            {{ $t('admin.flags.rollout_label') }}
+                          </FieldLabel>
                           <Input
                             id="rolloutPct"
                             :model-value="String(field.value ?? '')"
@@ -124,9 +137,12 @@
                             @update:model-value="(value) => field.onChange(toOptionalNumber(value))"
                           />
                           <FieldDescription>
-                            Percentage of users who see this feature (0-100)
+                            {{ $t('admin.flags.rollout_hint') }}
                           </FieldDescription>
-                          <FieldError v-if="errors.length" :errors="errors" />
+                          <FieldError
+                            v-if="errors.length"
+                            :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                          />
                         </Field>
                       </VeeField>
                     </div>
@@ -137,7 +153,9 @@
                           :model-value="field.value"
                           @update:model-value="field.onChange"
                         />
-                        <Label for="enabled" class="cursor-pointer"> Enabled </Label>
+                        <Label for="enabled" class="cursor-pointer">
+                          {{ $t('admin.flags.enabled') }}
+                        </Label>
                       </div>
                     </VeeField>
                   </FieldGroup>
@@ -147,9 +165,9 @@
 
                 <!-- Targeting Rules -->
                 <FieldSet>
-                  <FieldLegend>Targeting Rules</FieldLegend>
+                  <FieldLegend>{{ $t('admin.flags.rules') }}</FieldLegend>
                   <FieldDescription>
-                    Optional: restrict this flag to specific user segments
+                    {{ $t('admin.flags.rules_hint') }}
                   </FieldDescription>
                   <FieldGroup>
                     <VeeField v-slot="{ field }" name="rules.adminOnly">
@@ -159,12 +177,14 @@
                           :model-value="field.value"
                           @update:model-value="field.onChange"
                         />
-                        <Label for="adminOnly" class="cursor-pointer"> Admin Only </Label>
+                        <Label for="adminOnly" class="cursor-pointer">
+                          {{ $t('admin.flags.admin_only') }}
+                        </Label>
                       </div>
                     </VeeField>
                     <VeeField v-slot="{ field }" name="rules.allowedTiers">
                       <Field>
-                        <FieldLabel for="allowedTiers"> Allowed Tiers </FieldLabel>
+                        <FieldLabel for="allowedTiers"> {{ $t('admin.flags.tiers') }} </FieldLabel>
                         <div class="flex gap-3">
                           <div
                             v-for="tier in ['free', 'premium']"
@@ -190,20 +210,28 @@
                               "
                             />
                             <Label :for="`tier-${tier}`" class="cursor-pointer capitalize">
-                              {{ tier }}
+                              {{
+                                t(
+                                  tier === 'free'
+                                    ? 'admin.flags.tier.free'
+                                    : 'admin.flags.tier.premium',
+                                )
+                              }}
                             </Label>
                           </div>
                         </div>
-                        <FieldDescription> Leave unchecked to allow all tiers </FieldDescription>
+                        <FieldDescription> {{ $t('admin.flags.tiers_hint') }} </FieldDescription>
                       </Field>
                     </VeeField>
                     <VeeField v-slot="{ field }" name="rules.allowedUserIds">
                       <Field>
-                        <FieldLabel for="allowedUserIds"> Allowed User IDs </FieldLabel>
+                        <FieldLabel for="allowedUserIds">
+                          {{ $t('admin.flags.user_ids') }}
+                        </FieldLabel>
                         <Input
                           id="allowedUserIds"
                           :model-value="Array.isArray(field.value) ? field.value.join(', ') : ''"
-                          placeholder="e.g., 1, 5, 42"
+                          :placeholder="$t('admin.flags.user_ids_placeholder')"
                           @update:model-value="
                             (value) => {
                               const str = String(value).trim();
@@ -219,7 +247,7 @@
                           "
                         />
                         <FieldDescription>
-                          Comma-separated list of user IDs. Leave empty for all users.
+                          {{ $t('admin.flags.user_ids_hint') }}
                         </FieldDescription>
                       </Field>
                     </VeeField>
@@ -230,15 +258,17 @@
 
                 <!-- Lifecycle -->
                 <FieldSet>
-                  <FieldLegend>Lifecycle</FieldLegend>
-                  <FieldDescription> Set an expiry date to prevent stale flags </FieldDescription>
+                  <FieldLegend>{{ $t('admin.flags.lifecycle') }}</FieldLegend>
+                  <FieldDescription> {{ $t('admin.flags.lifecycle_hint') }} </FieldDescription>
                   <FieldGroup>
                     <Field>
                       <div class="flex items-center justify-between">
                         <div class="space-y-1">
-                          <FieldLabel for="has-expiry"> Set expiry date </FieldLabel>
+                          <FieldLabel for="has-expiry">
+                            {{ $t('admin.flags.set_expiry') }}
+                          </FieldLabel>
                           <FieldDescription>
-                            Choose when this feature flag should expire.
+                            {{ $t('admin.flags.set_expiry_hint') }}
                           </FieldDescription>
                         </div>
                         <Switch
@@ -250,16 +280,20 @@
                     </Field>
                     <VeeField v-if="hasExpiry" v-slot="{ errors }" name="expiresAt">
                       <Field :data-invalid="!!errors.length">
-                        <FieldLabel for="expiresAt"> Expiry date </FieldLabel>
+                        <FieldLabel for="expiresAt"> {{ $t('admin.flags.expiry') }} </FieldLabel>
                         <Calendar
                           id="expiresAt"
                           v-model="expiryDate"
                           layout="month-and-year"
+                          :locale="locale"
                           weekday-format="short"
                           class="rounded-md border shadow-sm mt-2 **:data-[slot=calendar-cell-trigger]:size-15.5!"
                           :aria-invalid="!!errors.length"
                         />
-                        <FieldError v-if="errors.length" :errors="errors" />
+                        <FieldError
+                          v-if="errors.length"
+                          :errors="errors.map((key) => t(te(key) ? key : 'errors.invalid_field'))"
+                        />
                       </Field>
                     </VeeField>
                   </FieldGroup>
@@ -267,9 +301,11 @@
               </FieldGroup>
               <DialogFooter>
                 <Button type="submit">
-                  {{ isEditMode ? 'Update' : 'Create' }}
+                  {{ t(isEditMode ? 'admin.flags.update' : 'admin.flags.create') }}
                 </Button>
-                <Button variant="outline" type="button" @click="closeDialog"> Cancel </Button>
+                <Button variant="outline" type="button" @click="closeDialog">
+                  {{ $t('common.cancel') }}
+                </Button>
               </DialogFooter>
             </form>
           </DialogScrollContent>
@@ -278,7 +314,13 @@
     </div>
 
     <!-- Feature Flags DataTable -->
-    <DataTable :columns="columns" :data="flags" :loading="loading" @update:data="fetchFlags" />
+    <DataTable
+      :columns="columns"
+      :data="flags"
+      :loading="loading"
+      :column-labels="columnLabels"
+      @update:data="fetchFlags"
+    />
   </div>
 </template>
 
@@ -297,6 +339,7 @@ import { fromDate, getLocalTimeZone } from '@internationalized/date';
 import { Field as VeeField, useForm } from 'vee-validate';
 import type { z } from 'zod';
 
+const { t, te, locale, n } = useI18n();
 const loading = ref(false);
 const fileInputRef = ref<HTMLInputElement>();
 const flags = ref<DBFeatureFlag[]>([]);
@@ -309,8 +352,23 @@ const expiryDate = shallowRef<DateValue>(fromDate(new Date(), getLocalTimeZone()
 
 // Create columns with callbacks
 const columns = computed(() =>
-  createColumns(openEditDialog, handleToggleEnabled, handleDeleteConfirm),
+  createColumns(
+    t,
+    locale.value,
+    (percent) => n(percent / 100, { style: 'percent' }),
+    openEditDialog,
+    handleToggleEnabled,
+    handleDeleteConfirm,
+  ),
 );
+
+const columnLabels = computed(() => ({
+  key: t('admin.flags.key'),
+  enabled: t('admin.flags.status'),
+  rolloutPct: t('admin.flags.rollout'),
+  owner: t('admin.flags.owner'),
+  expiresAt: t('admin.flags.expires'),
+}));
 
 const defaultFlagValues: z.input<typeof featureFlagInsertSchema> = {
   key: '',
@@ -364,12 +422,8 @@ const onSubmit = handleSubmit(
     }
   },
   (context) => {
-    const errorList = Object.values(context.errors).flat().filter(Boolean);
-    const msg =
-      errorList.length > 0
-        ? errorList[0] || 'Please fix the errors above'
-        : 'Please fix the errors above';
-    toast.error(msg);
+    const key = Object.values(context.errors).flat().find(Boolean);
+    toast.error(t(key && te(key) ? key : 'errors.invalid_form'));
   },
 );
 
@@ -434,8 +488,8 @@ async function fetchFlags() {
       throw response;
     }
     flags.value = response.data;
-  } catch (error: unknown) {
-    toast.error(parseApiError(error, 'Failed to load feature flags').message);
+  } catch {
+    toast.error(t('admin.flags.load_failed'));
   }
   loading.value = false;
 }
@@ -456,10 +510,10 @@ async function addMissingDefaults() {
     }
 
     const { created, skipped } = response.data;
-    toast.success(`Defaults added: ${created} created, ${skipped} skipped`);
+    toast.success(t('admin.flags.defaults_added', { created, skipped }));
     await fetchFlags();
-  } catch (error: unknown) {
-    toast.error(parseApiError(error, 'Failed to add missing defaults').message);
+  } catch {
+    toast.error(t('admin.flags.defaults_failed'));
   } finally {
     loading.value = false;
   }
@@ -471,6 +525,19 @@ function handleToggleEnabled(flag: DBFeatureFlag) {
 
 function handleDeleteConfirm(flagKey: string) {
   deleteFlag(flagKey);
+}
+
+function flagErrorMessage(error: unknown, fallback: string) {
+  const { code, fieldErrors } = parseApiError(error);
+  if (code === 'FEATURE_FLAG_ALREADY_EXISTS') return t('admin.flags.key_exists');
+  if (code === 'FEATURE_FLAG_NOT_FOUND') return t('admin.flags.not_found');
+  if (code === 'VALIDATION_ERROR') {
+    const key = Object.values(fieldErrors)
+      .flat()
+      .find((key) => te(key));
+    return t(key ?? 'errors.invalid_form');
+  }
+  return t(fallback);
 }
 
 async function createFlag(data: ReturnType<typeof buildFeatureFlagPayload>) {
@@ -486,12 +553,12 @@ async function createFlag(data: ReturnType<typeof buildFeatureFlagPayload>) {
     if (!response.success) {
       throw response;
     }
-    toast.success('Feature flag created successfully');
+    toast.success(t('admin.flags.created'));
     closeDialog();
     await fetchFlags();
     loading.value = false;
-  } catch (error: unknown) {
-    toast.error(parseApiError(error, 'Failed to create flag').message);
+  } catch (error) {
+    toast.error(flagErrorMessage(error, 'admin.flags.create_failed'));
   }
   loading.value = false;
 }
@@ -509,11 +576,11 @@ async function updateFlag(data: ReturnType<typeof buildFeatureFlagPayload>) {
     if (!response.success) {
       throw response;
     }
-    toast.success('Feature flag updated successfully');
+    toast.success(t('admin.flags.updated'));
     closeDialog();
     await fetchFlags();
-  } catch (error: unknown) {
-    toast.error(parseApiError(error, 'Failed to update flag').message);
+  } catch (error) {
+    toast.error(flagErrorMessage(error, 'admin.flags.update_failed'));
   }
   loading.value = false;
 }
@@ -530,10 +597,10 @@ async function deleteFlag(key: string) {
     if (!response.success) {
       throw response;
     }
-    toast.success('Feature flag deleted successfully');
+    toast.success(t('admin.flags.deleted'));
     await fetchFlags();
-  } catch (error: unknown) {
-    toast.error(parseApiError(error, 'Failed to delete flag').message);
+  } catch (error) {
+    toast.error(flagErrorMessage(error, 'admin.flags.delete_failed'));
   }
   loading.value = false;
 }
@@ -551,10 +618,12 @@ async function toggleEnabled(flag: DBFeatureFlag) {
     if (!response.success) {
       throw response;
     }
-    toast.success(`Flag "${flag.key}" ${flag.enabled ? 'disabled' : 'enabled'}`);
+    toast.success(
+      t(flag.enabled ? 'admin.flags.flag_disabled' : 'admin.flags.flag_enabled', { key: flag.key }),
+    );
     await fetchFlags();
-  } catch (error: unknown) {
-    toast.error(parseApiError(error, 'Failed to toggle flag').message);
+  } catch (error) {
+    toast.error(flagErrorMessage(error, 'admin.flags.toggle_failed'));
   }
   loading.value = false;
 }
@@ -577,9 +646,9 @@ async function exportFlags() {
     a.download = `feature-flags-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(`Exported ${response.data.length} flag(s)`);
-  } catch (error: unknown) {
-    toast.error(parseApiError(error, 'Failed to export flags').message);
+    toast.success(t('admin.flags.exported', response.data.length));
+  } catch {
+    toast.error(t('admin.flags.export_failed'));
   }
   loading.value = false;
 }
@@ -600,14 +669,14 @@ async function handleFileImport(event: Event) {
     const parsed = parseImportPayload(text);
 
     if (!parsed) {
-      toast.error('Invalid JSON file');
+      toast.error(t('admin.flags.invalid_json'));
       return;
     }
 
     const flags = isUnknownArray(parsed) ? parsed : hasFlagsArray(parsed) ? parsed.flags : null;
 
     if (!flags) {
-      toast.error('Expected a JSON array of flag objects');
+      toast.error(t('admin.flags.invalid_array'));
       return;
     }
 
@@ -623,15 +692,11 @@ async function handleFileImport(event: Event) {
     }
 
     const { created, updated, skipped } = response.data;
-    const parts: string[] = [];
-    if (created > 0) parts.push(`${created} created`);
-    if (updated > 0) parts.push(`${updated} updated`);
-    if (skipped > 0) parts.push(`${skipped} skipped`);
-    toast.success(`Import complete: ${parts.join(', ')}`);
+    toast.success(t('admin.flags.imported', { created, updated, skipped }));
 
     await fetchFlags();
-  } catch (error: unknown) {
-    toast.error(parseApiError(error, 'Failed to import flags').message);
+  } catch (error) {
+    toast.error(flagErrorMessage(error, 'admin.flags.import_failed'));
   } finally {
     // Reset file input so the same file can be re-selected
     input.value = '';

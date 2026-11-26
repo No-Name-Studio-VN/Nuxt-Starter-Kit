@@ -126,8 +126,8 @@ struct KitTests {
         #expect(!Glob(".github/workflows/release.yml").matches(".github/workflows/ci.yml"))
         #expect(Glob("pnpm-lock.yaml").matches("pnpm-lock.yaml"))
         #expect(Glob("packages/**").matches("packages/kit-manager-macos/Package.swift"))
-        #expect(Glob("tests/**").matches("tests/a.ts"))
-        #expect(!Glob("tests/**").matches("test/a.ts"))
+        #expect(Glob("test/fixtures/**").matches("test/fixtures/blog-routes/content/blogs/route-tests/nested.md"))
+        #expect(!Glob("test/fixtures/**").matches("test/unit/setup/h3Globals.ts"))
         #expect(Glob("CLAUDE.MD").matches("CLAUDE.MD"))
         #expect(Glob("*").matches(".env"))
         #expect(!Glob("*").matches("a/b"))
@@ -271,6 +271,58 @@ struct KitTests {
         let tags = try await repository.releaseTags(from: fixture.shas[0])
         #expect(tags == [fixture.shas[1]: ["v1.1.0"]])
         await #expect(throws: GitError.self) { try await repository.releaseTags(from: "--all") }
+    }
+
+    @Test func upgradeOffersOnlyNewerStableReleasesDescendingFromTheInstalledCommit() async throws {
+        let fixture = try await makeKitFixture()
+        defer { fixture.temp.remove() }
+        let installed = fixture.shas[1]
+        try await git(fixture.work, ["tag", "v1.1.0", installed])
+        try await git(fixture.work, ["tag", "v1.0.9", fixture.shas[2]])
+        try await git(fixture.work, ["tag", "v2.0.0-rc.1", fixture.shas[2]])
+        try await git(fixture.work, ["tag", "-a", "v1.10.0", "-m", "release", fixture.shas[2]])
+        try await git(fixture.work, ["tag", "v1.9.0", fixture.shas[3]])
+        try await git(fixture.work, ["switch", "-c", "side", fixture.shas[0]])
+        let side = try await commitFiles(fixture.work, ["side.txt"], message: "side")
+        try await git(fixture.work, ["tag", "v9.9.9", side])
+        try await git(fixture.work, ["tag", "v9.9.8", try await commitFiles(fixture.work, ["unmerged.txt"], message: "unmerged")])
+        try await git(fixture.work, ["switch", "main"])
+        try await git(fixture.work, ["merge", "--no-edit", side])
+        try await git(fixture.work, ["push", "origin", "main", "--tags"])
+
+        let main = try await fixture.repository.latestMain()
+        let targets = try await fixture.repository.upgradeReleases(from: installed, through: main)
+        #expect(targets.map(\.label) == ["v1.10.0", "v1.9.0"])
+        #expect(targets.map(\.commit) == [fixture.shas[2], fixture.shas[3]])
+    }
+
+    @Test func movedTagRequiresReviewInsteadOfChangingTheSelectedCommit() async throws {
+        let fixture = try await makeKitFixture()
+        defer { fixture.temp.remove() }
+        let repository = fixture.repository
+        try await git(fixture.work, ["tag", "v1.1.0", fixture.shas[2]])
+        let main = try await repository.latestMain()
+        let releases = try await repository.upgradeReleases(from: fixture.shas[0], through: main)
+        let reviewed = try #require(releases.first)
+        #expect(try await repository.isCurrentUpgradeTarget(reviewed, from: fixture.shas[0]))
+
+        try await git(fixture.work, ["tag", "-f", "v1.1.0", main])
+        #expect(try await !repository.isCurrentUpgradeTarget(reviewed, from: fixture.shas[0]))
+        #expect(reviewed.commit == fixture.shas[2])
+    }
+
+    @Test func movedMainRequiresReviewInsteadOfChangingTheDefaultCommit() async throws {
+        let fixture = try await makeKitFixture()
+        defer { fixture.temp.remove() }
+        let repository = fixture.repository
+        let reviewed = UpgradeTarget.main(commit: try await repository.latestMain(), label: nil)
+        #expect(try await repository.isCurrentUpgradeTarget(reviewed, from: fixture.shas[0]))
+
+        let advanced = try await commitFiles(fixture.work, ["new.txt"], message: "new main")
+        try await git(fixture.work, ["push", "origin", "main"])
+        #expect(try await !repository.isCurrentUpgradeTarget(reviewed, from: fixture.shas[0]))
+        #expect(reviewed.commit == fixture.shas[3])
+        #expect(try await repository.latestMain() == advanced)
     }
 
     @Test func kitConfigIsReadFromRef() async throws {

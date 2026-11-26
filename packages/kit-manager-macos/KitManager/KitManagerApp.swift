@@ -28,6 +28,15 @@ struct KitManagerApp: App {
         .modelContainer(container)
         .defaultSize(width: 1180, height: 720)
         .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("New Project…") {
+                    openWindow(id: Self.mainWindowID)
+                    NSApp.activate()
+                    model.beginProjectCreation()
+                }
+                .keyboardShortcut("n")
+                .disabled(model.flow != nil || model.isSwitcherPresented)
+            }
             CommandGroup(after: .toolbar) {
                 Button("Refresh All Projects") { Task { await model.refreshAll(force: true) } }
                     .keyboardShortcut("r")

@@ -13,7 +13,18 @@
     "last_sign_in_not_you": "Not you?",
     "last_sign_in_forget": "Forget this device",
     "username_taken": "This username is already taken.",
-    "onboarding_step_invalid": "This onboarding step is not available."
+    "onboarding_step_invalid": "This onboarding step is not available.",
+    "welcome_back": "Welcome back",
+    "login_breadcrumb": "Sign in",
+    "navigating": "Navigating...",
+    "back_to_sign_in": "Back to sign in",
+    "username_placeholder": "Enter your username",
+    "sign_in_agreement": "By signing in, you agree to our {terms} and {privacy}.",
+    "terms_of_service": "Terms of Service",
+    "privacy_policy": "Privacy Policy",
+    "validation_failed": "Please check your input and try again. All fields are required.",
+    "unknown_error": "An unexpected error occurred. Please try again later.",
+    "request_failed": "An error occurred. Please try again."
   },
   "common": {
     "log_out": "Log out",
@@ -90,7 +101,8 @@
     "email_in_use": "This email address is already in use.",
     "save_partial": "Your name or email was saved, but your username wasn’t updated.",
     "session_clear_failed": "Your account was deleted, but we couldn’t clear your session. Please sign out again.",
-    "current_password": "Current password"
+    "current_password": "Current password",
+    "account": "Account"
   },
   "settings": {
     "page_title": "Settings",
@@ -102,13 +114,18 @@
     "dismiss_notice": "Dismiss notice",
     "profile_loading": "Loading your account…",
     "profile_load_failed": "Couldn’t load your account settings.",
-    "security_page_description": "Manage how you sign in and keep your account safe."
+    "security_page_description": "Manage how you sign in and keep your account safe.",
+    "appearance": "Appearance"
   },
   "validation": {
     "name_required": "Name is required",
     "name_max": "Name must be at most 256 characters",
     "email_required": "Valid email is required",
     "current_password_required": "Current password is required",
-    "current_password_incorrect": "The current password provided is incorrect."
+    "current_password_incorrect": "The current password provided is incorrect.",
+    "username_required": "Enter your username.",
+    "username_min": "Username must be at least 3 characters.",
+    "username_max": "Username cannot exceed 50 characters.",
+    "username_format": "Use only lowercase letters, numbers, underscores, and hyphens."
   }
 }

@@ -32,7 +32,7 @@
           </CommandGroup>
           <CommandSeparator v-if="item.children" />
         </template>
-        <CommandGroup heading="Theme" class="p-1.5">
+        <CommandGroup :heading="$t('common.theme')" class="p-1.5">
           <CommandItem value="light" @click="colorMode.preference = 'light'">
             <CtIcon name="lucide:sun" class="mr-2 size-4" />
             <span>{{ $t('common.light') }}</span>

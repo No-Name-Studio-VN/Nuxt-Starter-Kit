@@ -2,15 +2,18 @@ import { toast } from 'vue-sonner';
 
 export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.hook('app:mounted', () => {
-    const { $pwa } = nuxtApp;
+    const {
+      $pwa,
+      $i18n: { t },
+    } = nuxtApp;
     if ($pwa?.offlineReady) {
-      toast.success('App is ready to work offline.');
+      toast.success(t('pwa.offline_ready'));
     }
 
     if ($pwa?.needRefresh) {
-      toast.warning('A new version is available.', {
+      toast.warning(t('pwa.update_available'), {
         action: {
-          label: 'Update',
+          label: t('pwa.update'),
           onClick: () => {
             $pwa.updateServiceWorker();
             window.location.reload();

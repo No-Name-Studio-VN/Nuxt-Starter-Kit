@@ -1,8 +1,9 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { glob } from 'tinyglobby';
+import { CliError } from '../errors';
 import { readKitConfig } from '../kit/config';
 import type { KitSnapshot } from '../kit/source';
+import { readRegularFile } from '../util/fs';
 import { resolveInside, toPosixPath } from '../util/paths';
 import { composeEnvExample, composePackageJson, composeWrangler, type Claims } from './compose';
 
@@ -23,7 +24,28 @@ export async function render(
   selected: string[],
   identity: ProjectIdentity,
 ): Promise<Tree> {
-  const cliRoot = join(kit.dir, 'packages/create-nuxt-saas');
+  const tree: Tree = new Map();
+  for await (const [path, file] of renderFiles(kit, selected, identity)) {
+    if (file !== 'tooLarge') tree.set(path, file);
+  }
+  return new Map([...tree].sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)));
+}
+
+/** The same render for inspection and comparison; a preview can skip paths and cap each input. */
+export async function* renderFiles(
+  kit: KitSnapshot,
+  selected: string[],
+  identity: ProjectIdentity,
+  preview?: { include: (path: string) => boolean; maxBytes: number },
+): AsyncGenerator<[string, TreeFile | 'tooLarge']> {
+  async function read(path: string): Promise<Buffer | 'tooLarge'> {
+    const absolute = resolveInside(kit.dir, path, 'Kit file');
+    if (!preview) return readFile(absolute);
+    const result = await readRegularFile(kit.dir, absolute, preview.maxBytes);
+    if (result === null || result === 'owned')
+      throw new CliError(`Cannot read rendered kit file ${path}.`);
+    return result;
+  }
   const config = await readKitConfig(kit.dir);
   const selectedIds = new Set(selected);
   const dropped = kit.modules.filter((module) => !selectedIds.has(module.id));
@@ -37,7 +59,7 @@ export async function render(
   const drop: Claims = {
     dependencies: unselectedClaims('dependencies'),
     devDependencies: unselectedClaims('devDependencies'),
-    scripts: unselectedClaims('scripts'),
+    scripts: new Set([...config.excludeScripts, ...unselectedClaims('scripts')]),
   };
   const dropEnv = unselectedClaims('env');
   const dropBindings = unselectedClaims('bindings');
@@ -53,9 +75,13 @@ export async function render(
       ...dropped.flatMap((module) => [`layers/${module.id}/**`, ...module.rootFiles]),
     ],
   });
-  const tree: Tree = new Map();
   for (const path of paths.map(toPosixPath).sort()) {
-    let content = await readFile(resolveInside(kit.dir, path, 'Kit file'));
+    if (preview && !preview.include(path)) continue;
+    let content = await read(path);
+    if (content === 'tooLarge') {
+      yield [path, content];
+      continue;
+    }
     if (path === 'package.json') {
       content = Buffer.from(composePackageJson(content.toString('utf8'), drop, identity));
     } else if (path === '.env.example') {
@@ -63,8 +89,9 @@ export async function render(
     } else if (path === 'wrangler.jsonc') {
       content = Buffer.from(composeWrangler(content.toString('utf8'), dropBindings, identity));
     }
-    tree.set(path, { content, binary: content.includes(0) });
+    yield [path, { content, binary: content.includes(0) }];
   }
+  if (preview && !preview.include('README.md')) return;
   const modules =
     kit.modules
       .filter((module) => selectedIds.has(module.id) && !module.internal)
@@ -72,13 +99,15 @@ export async function render(
       .map((module) => `- **${module.title}** — ${module.description}`)
       .join('\n') || '- None (base only)';
   const values: Record<string, string> = { ...identity, modules };
-  const template = await readFile(join(cliRoot, 'templates/README.md'), 'utf8');
+  const template = await read('packages/create-nuxt-saas/templates/README.md');
+  if (template === 'tooLarge') {
+    yield ['README.md', template];
+    return;
+  }
   const content = Buffer.from(
-    template.replace(
-      /\{\{(name|description|modules)\}\}/g,
-      (match, key: string) => values[key] ?? match,
-    ),
+    template
+      .toString('utf8')
+      .replace(/\{\{(name|description|modules)\}\}/g, (match, key: string) => values[key] ?? match),
   );
-  tree.set('README.md', { content, binary: content.includes(0) });
-  return new Map([...tree].sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)));
+  yield ['README.md', { content, binary: content.includes(0) }];
 }

@@ -4,7 +4,14 @@
       "use_backup_code": "Use a backup code",
       "use_authenticator": "Use authenticator app",
       "backup_code": "Backup code",
-      "backup_code_description": "Enter one of your 8-character backup codes. Each code can only be used once."
+      "backup_code_description": "Enter one of your 8-character backup codes. Each code can only be used once.",
+      "title": "Two-factor authentication",
+      "authenticator_description": "Enter the code from your authenticator app.",
+      "verify": "Verify Code",
+      "sign_in_failed": "Could not verify the code. Check it and try again.",
+      "session_expired": "Your sign-in session expired. Please sign in again.",
+      "attempt_limit": "Too many attempts. Try signing in again later.",
+      "not_enabled": "Two-factor authentication is not enabled for this account."
     }
   },
   "settings": {

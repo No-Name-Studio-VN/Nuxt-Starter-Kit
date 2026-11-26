@@ -22,12 +22,13 @@ const forwarded = useForwardProps(delegatedProps)
 <template>
   <PaginationPrev
     data-slot="pagination-previous"
+    :aria-label="$t('pagination.previous')"
     :class="cn(buttonVariants({ variant: 'ghost', size }), 'gap-1 px-2.5 sm:pr-2.5', props.class)"
     v-bind="forwarded"
   >
     <slot>
       <ChevronLeftIcon />
-      <span class="hidden sm:block">Previous</span>
+      <span class="hidden sm:block">{{ $t('data_table.previous') }}</span>
     </slot>
   </PaginationPrev>
 </template>

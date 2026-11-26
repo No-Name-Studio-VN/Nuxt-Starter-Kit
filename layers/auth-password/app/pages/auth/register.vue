@@ -20,11 +20,17 @@ const requestUrl = useRequestURL();
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const isLoading = ref(false);
-const error = ref('');
+const errorCode = ref('');
+const methodError = ref('');
 const formEl = useTemplateRef<HTMLFormElement>('registerForm');
 const challenge = useFormChallenge();
 const { pending: challengePending } = challenge;
-const { t } = useI18n();
+const { t, te } = useI18n();
+const error = computed(
+  () =>
+    getAuthErrorMessage(errorCode.value, t) ??
+    (te(methodError.value) ? t(methodError.value) : methodError.value),
+);
 
 const localePath = useAppLocalePath();
 const redirectTo = computed(() => safeRedirectPath(route.query.redirectTo, '/', requestUrl.origin));
@@ -71,9 +77,9 @@ const isFormValid = computed(() => {
 watch(
   () => route.query.error,
   (queryValue) => {
-    const errorCode = getQueryString(queryValue);
-    if (errorCode) {
-      error.value = getAuthErrorMessage(errorCode, t) || 'An error occurred during registration';
+    const code = getQueryString(queryValue);
+    if (code) {
+      errorCode.value = code;
     }
   },
   { immediate: true },
@@ -81,11 +87,15 @@ watch(
 
 function onMethodPending(pending: boolean) {
   isLoading.value = pending;
-  if (pending) error.value = '';
+  if (pending) {
+    errorCode.value = '';
+    methodError.value = '';
+  }
 }
 
 function onMethodError(message: string) {
-  error.value = message;
+  errorCode.value = '';
+  methodError.value = message;
 }
 
 function completeRegistration(redirect: string) {
@@ -96,8 +106,12 @@ function completeRegistration(redirect: string) {
 <template>
   <AuthPageLayout page="register">
     <div class="space-y-1.5">
-      <h1 class="text-2xl font-semibold tracking-tight">Create an account</h1>
-      <p class="text-sm text-muted-foreground">Get started with {{ siteConfig.site.name }}.</p>
+      <h1 class="text-2xl font-semibold tracking-tight">
+        {{ $t('auth_password.register_title') }}
+      </h1>
+      <p class="text-sm text-muted-foreground">
+        {{ $t('auth_password.register_subtitle', { site: siteConfig.site.name }) }}
+      </p>
     </div>
 
     <Alert v-if="error" variant="destructive" role="alert">
@@ -128,7 +142,7 @@ function completeRegistration(redirect: string) {
       <div class="grid gap-4 sm:grid-cols-2">
         <VeeField v-slot="{ field, errors }" name="username">
           <Field :data-invalid="!!errors.length">
-            <FieldLabel for="username">Username</FieldLabel>
+            <FieldLabel for="username">{{ $t('account_page.username') }}</FieldLabel>
             <Input
               id="username"
               :model-value="field.value"
@@ -137,52 +151,61 @@ function completeRegistration(redirect: string) {
               autocomplete="username"
               autocapitalize="none"
               :spellcheck="false"
-              placeholder="Enter your username"
+              :placeholder="$t('auth.username_placeholder')"
               class="h-10"
               :aria-invalid="!!errors.length"
               :disabled="isLoading"
               @update:model-value="field.onChange"
             />
-            <FieldError v-if="errors.length" :errors="errors" />
+            <FieldError
+              v-if="errors.length"
+              :errors="errors.map((key) => $t($te(key) ? key : 'errors.invalid_field'))"
+            />
           </Field>
         </VeeField>
 
         <VeeField v-slot="{ field, errors }" name="name">
           <Field :data-invalid="!!errors.length">
-            <FieldLabel for="name">Display name</FieldLabel>
+            <FieldLabel for="name">{{ $t('auth_password.display_name') }}</FieldLabel>
             <Input
               id="name"
               :model-value="field.value"
               name="name"
               type="text"
               autocomplete="name"
-              placeholder="Enter your display name"
+              :placeholder="$t('auth_password.display_name_placeholder')"
               class="h-10"
               :aria-invalid="!!errors.length"
               :disabled="isLoading"
               @update:model-value="field.onChange"
             />
-            <FieldError v-if="errors.length" :errors="errors" />
+            <FieldError
+              v-if="errors.length"
+              :errors="errors.map((key) => $t($te(key) ? key : 'errors.invalid_field'))"
+            />
           </Field>
         </VeeField>
       </div>
 
       <VeeField v-slot="{ field, errors }" name="email">
         <Field :data-invalid="!!errors.length">
-          <FieldLabel for="email">Email</FieldLabel>
+          <FieldLabel for="email">{{ $t('common.email') }}</FieldLabel>
           <Input
             id="email"
             :model-value="field.value"
             name="email"
             type="email"
             autocomplete="email"
-            placeholder="Enter your email"
+            :placeholder="$t('auth_password.email_placeholder')"
             class="h-10"
             :aria-invalid="!!errors.length"
             :disabled="isLoading"
             @update:model-value="field.onChange"
           />
-          <FieldError v-if="errors.length" :errors="errors" />
+          <FieldError
+            v-if="errors.length"
+            :errors="errors.map((key) => $t($te(key) ? key : 'errors.invalid_field'))"
+          />
         </Field>
       </VeeField>
 
@@ -190,7 +213,7 @@ function completeRegistration(redirect: string) {
         <div class="grid gap-4 sm:grid-cols-2">
           <VeeField v-slot="{ field, errors }" name="password">
             <Field :data-invalid="!!errors.length">
-              <FieldLabel for="password">Password</FieldLabel>
+              <FieldLabel for="password">{{ $t('auth_password.password') }}</FieldLabel>
               <div class="relative">
                 <Input
                   id="password"
@@ -198,7 +221,7 @@ function completeRegistration(redirect: string) {
                   name="password"
                   :type="showPassword ? 'text' : 'password'"
                   autocomplete="new-password"
-                  placeholder="Create a password"
+                  :placeholder="$t('auth_password.create_password_placeholder')"
                   class="h-10 pr-10"
                   :aria-invalid="!!errors.length"
                   :disabled="isLoading"
@@ -209,7 +232,9 @@ function completeRegistration(redirect: string) {
                   variant="ghost"
                   size="icon"
                   class="absolute inset-y-0 right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
-                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                  :aria-label="
+                    $t(showPassword ? 'auth_password.hide_password' : 'auth_password.show_password')
+                  "
                   :aria-pressed="showPassword"
                   @click="showPassword = !showPassword"
                 >
@@ -222,7 +247,9 @@ function completeRegistration(redirect: string) {
 
           <VeeField v-slot="{ field, errors }" name="confirm-password">
             <Field :data-invalid="!!errors.length">
-              <FieldLabel for="confirmPassword">Confirm password</FieldLabel>
+              <FieldLabel for="confirmPassword">{{
+                $t('auth_password.confirm_password')
+              }}</FieldLabel>
               <div class="relative">
                 <Input
                   id="confirmPassword"
@@ -230,7 +257,7 @@ function completeRegistration(redirect: string) {
                   name="confirm-password"
                   :type="showConfirmPassword ? 'text' : 'password'"
                   autocomplete="new-password"
-                  placeholder="Repeat password"
+                  :placeholder="$t('auth_password.repeat_password_placeholder')"
                   class="h-10 pr-10"
                   :aria-invalid="!!errors.length"
                   :disabled="isLoading"
@@ -242,9 +269,11 @@ function completeRegistration(redirect: string) {
                   size="icon"
                   class="absolute inset-y-0 right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
                   :aria-label="
-                    showConfirmPassword
-                      ? 'Hide password confirmation'
-                      : 'Show password confirmation'
+                    $t(
+                      showConfirmPassword
+                        ? 'auth_password.hide_password_confirmation'
+                        : 'auth_password.show_password_confirmation',
+                    )
                   "
                   :aria-pressed="showConfirmPassword"
                   @click="showConfirmPassword = !showConfirmPassword"
@@ -253,7 +282,10 @@ function completeRegistration(redirect: string) {
                   <EyeOff v-else aria-hidden="true" class="size-4" />
                 </Button>
               </div>
-              <FieldError v-if="errors.length" :errors="errors" />
+              <FieldError
+                v-if="errors.length"
+                :errors="errors.map((key) => $t($te(key) ? key : 'errors.invalid_field'))"
+              />
             </Field>
           </VeeField>
         </div>
@@ -262,48 +294,59 @@ function completeRegistration(redirect: string) {
 
       <FormChallenge :challenge="challenge.challenge" />
       <input type="hidden" name="redirect-to" :value="redirectTo" />
-      <Button type="submit" class="h-10 w-full" :disabled="!isFormValid || isLoading || challengePending" :is-loading="isLoading">
-        Create account
+      <Button
+        type="submit"
+        class="h-10 w-full"
+        :disabled="!isFormValid || isLoading || challengePending"
+        :is-loading="isLoading"
+      >
+        {{ $t('auth_password.register_breadcrumb') }}
       </Button>
       <p
         v-if="values.password && passwordStrength.score < 80"
         class="text-center text-xs text-muted-foreground"
       >
-        Password must be strong to create an account
+        {{ $t('auth_password.register_password_strength_required') }}
       </p>
     </form>
 
     <div class="space-y-3">
       <p class="text-center text-sm text-muted-foreground">
-        Already have an account?
+        {{ $t('auth_password.has_account') }}
         <NuxtLink
           :to="localePath(authRoutes.AUTH_LOGIN)"
           class="font-medium text-foreground underline-offset-4 hover:underline"
         >
-          Sign in
+          {{ $t('common.sign_in') }}
         </NuxtLink>
       </p>
 
-      <p class="text-center text-xs text-muted-foreground text-balance">
-        By creating an account, you agree to our
-        <NuxtLink
-          to="https://nnsvn.me/terms"
-          class="underline underline-offset-4 hover:text-foreground"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Terms of Service
-        </NuxtLink>
-        and
-        <NuxtLink
-          to="https://nnsvn.me/privacy"
-          class="underline underline-offset-4 hover:text-foreground"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Privacy Policy
-        </NuxtLink>
-      </p>
+      <i18n-t
+        keypath="auth_password.register_agreement"
+        tag="p"
+        class="text-center text-xs text-muted-foreground text-balance"
+      >
+        <template #terms>
+          <NuxtLink
+            to="https://nnsvn.me/terms"
+            class="underline underline-offset-4 hover:text-foreground"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ $t('auth.terms_of_service') }}
+          </NuxtLink>
+        </template>
+        <template #privacy>
+          <NuxtLink
+            to="https://nnsvn.me/privacy"
+            class="underline underline-offset-4 hover:text-foreground"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ $t('auth.privacy_policy') }}
+          </NuxtLink>
+        </template>
+      </i18n-t>
     </div>
   </AuthPageLayout>
 </template>

@@ -1,9 +1,17 @@
 import { defaultLocale } from '../../../../i18n-constants';
 import { APP_MANIFEST as SITE_IDENTITY } from '../../../../shared/constants/manifest';
+import en from '../../../../i18n/locales/en.json';
+import vi from '../../../../i18n/locales/vi.json';
+import pwaEn from '../../i18n/locales/en.json';
+import pwaVi from '../../i18n/locales/vi.json';
 import type { PwaManifest } from '../../types/manifest';
+
+const messages = { en, vi }[defaultLocale];
+const pwaMessages = { en: pwaEn, vi: pwaVi }[defaultLocale];
 
 export const APP_MANIFEST: PwaManifest = {
   ...SITE_IDENTITY,
+  description: messages.home.description,
   start_url: '/pwa',
   display: 'standalone',
   display_override: ['window-controls-overlay', 'standalone'],
@@ -55,9 +63,9 @@ export const APP_MANIFEST: PwaManifest = {
   ],
   shortcuts: [
     {
-      name: 'Home',
-      short_name: 'Home',
-      description: 'Go to home page',
+      name: messages.common.home,
+      short_name: messages.common.home,
+      description: pwaMessages.pwa.home_shortcut_description,
       url: '/',
       icons: [
         {

@@ -114,43 +114,22 @@ function formatDateValue(
   return date.toLocaleString(locale, dateOptions);
 }
 
-/**
- * Format a date/time in a Facebook-like relative format using Luxon
- *
- * Past:
- * - Just now (< 1 minute)
- * - X minutes ago (1-59 minutes)
- * - X hours ago (1-23 hours)
- * - Yesterday at HH:MM
- * - Day at HH:MM (within the last week)
- * - MMM D, YYYY (beyond threshold)
- *
- * Future:
- * - In a moment (< 1 minute)
- * - In X minutes (1-59 minutes)
- * - In X hours (1-23 hours)
- * - Tomorrow at HH:MM
- * - Day at HH:MM (within the next week)
- * - MMM D, YYYY (beyond threshold)
- *
- * @param date - The date to format (Date object, timestamp, or ISO string)
- * @param options - Configuration options
- * @param options.relativeDaysThreshold - Maximum time in days to show relative time (default: 7)
- * @param options.locale - Locale for date formatting (default: 'en-US')
- * @returns Formatted relative time string
- */
+/** Format dates in the active locale, using relative time within the given threshold. */
 export function formatRelativeTime(
   date: Date | number | string,
   options: {
     /** Maximum time in days to show relative time (default: 7) */
     relativeDaysThreshold?: number;
-    /** Locale for date formatting (default: 'en-US') */
+    /** Locale for date formatting (defaults to the environment locale). */
     locale?: string;
+    justNow?: string;
+    inAMoment?: string;
   } = {},
 ): string {
-  const { relativeDaysThreshold = 7, locale = 'en-US' } = options;
+  const { relativeDaysThreshold = 7, locale, justNow, inAMoment } = options;
 
   const dt = toDateTime(date);
+  const localized = locale ? dt.setLocale(locale) : dt;
   const now = DateTime.now();
   const diffMillis = now.diff(dt).toMillis();
   const isFuture = diffMillis < 0;
@@ -164,45 +143,15 @@ export function formatRelativeTime(
 
   // Within relative threshold
   if ((days ?? 0) < relativeDaysThreshold) {
-    // Just now / In a moment (< 1 minute)
     if ((minutes ?? 0) < 1 && (hours ?? 0) === 0 && (days ?? 0) === 0) {
-      return isFuture ? 'In a moment' : 'Just now';
+      const label = isFuture ? inAMoment : justNow;
+      if (label) return label;
     }
-
-    // Minutes (< 1 hour)
-    if ((hours ?? 0) < 1 && (days ?? 0) === 0) {
-      const m = Math.floor(minutes ?? 0);
-      if (isFuture) {
-        return dt.toRelative({ locale, unit: 'minutes' }) ?? `in ${m} minute${m === 1 ? '' : 's'}`;
-      }
-      return dt.toRelative({ locale, unit: 'minutes' }) ?? `${m} minute${m === 1 ? '' : 's'} ago`;
-    }
-
-    // Hours (< 24 hours)
-    if ((days ?? 0) < 1) {
-      const h = Math.floor(hours ?? 0);
-      if (isFuture) {
-        return dt.toRelative({ locale, unit: 'hours' }) ?? `in ${h} hour${h === 1 ? '' : 's'}`;
-      }
-      return dt.toRelative({ locale, unit: 'hours' }) ?? `${h} hour${h === 1 ? '' : 's'} ago`;
-    }
-
-    // Tomorrow / Yesterday
-    if (isFuture && dt.hasSame(now.plus({ days: 1 }), 'day')) {
-      return `Tomorrow at ${dt.toFormat('h:mm a', { locale })}`;
-    }
-    if (!isFuture && dt.hasSame(now.minus({ days: 1 }), 'day')) {
-      return `Yesterday at ${dt.toFormat('h:mm a', { locale })}`;
-    }
-
-    // Within week (show day name)
-    if ((days ?? 0) < 7) {
-      return `${dt.toFormat('cccc', { locale })} at ${dt.toFormat('h:mm a', { locale })}`;
-    }
+    if ((days ?? 0) === 0) return localized.toRelative({ base: now }) ?? '';
+    return localized.toRelativeCalendar({ base: now }) ?? '';
   }
 
-  // Beyond threshold - show absolute date
-  return formatAbsoluteDate(dt, now, locale);
+  return localized.toLocaleString(DateTime.DATE_MED);
 }
 
 /**
@@ -216,11 +165,4 @@ function toDateTime(date: Date | number | string): DateTime {
     return DateTime.fromMillis(date);
   }
   return DateTime.fromISO(date);
-}
-
-/**
- * Format an absolute date in Facebook style using Luxon "MMM D, YYYY" (e.g., "Nov 26, 2024")
- */
-function formatAbsoluteDate(dt: DateTime, now: DateTime, locale: string) {
-  return dt.toFormat('LLL d, yyyy', { locale });
 }
