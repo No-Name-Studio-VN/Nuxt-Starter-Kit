@@ -16,6 +16,8 @@ export type KitSource =
   | { kind: 'local'; path: string; allowDirty: boolean };
 
 export const DEFAULT_TEMPLATE = 'github:No-Name-Studio-VN/Nuxt-Starter-Kit';
+// A local source must not fetch missing objects on demand in a partial clone.
+export const LOCAL_KIT_GIT_ENV = { GIT_NO_LAZY_FETCH: '1', GIT_ALLOW_PROTOCOL: '' };
 
 export interface KitSnapshot {
   dir: string;
@@ -43,13 +45,13 @@ export function parseTemplate(template: string): { repo: string; ref: string } {
 export async function resolveCommit(source: KitSource): Promise<string> {
   if (source.kind === 'local') {
     try {
-      const status = await git(source.path, ['status', '--porcelain']);
+      const status = await git(source.path, ['status', '--porcelain'], LOCAL_KIT_GIT_ENV);
       if (status.trim() && !source.allowDirty) {
         throw new CliError(
           `Kit at ${source.path} has uncommitted changes. Commit them or use --allow-dirty-kit.`,
         );
       }
-      const commit = (await git(source.path, ['rev-parse', 'HEAD'])).trim();
+      const commit = (await git(source.path, ['rev-parse', 'HEAD'], LOCAL_KIT_GIT_ENV)).trim();
       if (!shaPattern.test(commit))
         throw new CliError(`Invalid commit returned by kit at ${source.path}.`);
       return commit;
@@ -143,7 +145,7 @@ export async function openKit(
   try {
     if (source.kind === 'local') {
       try {
-        await git(source.path, ['cat-file', '-e', `${commit}^{commit}`]);
+        await git(source.path, ['cat-file', '-e', `${commit}^{commit}`], LOCAL_KIT_GIT_ENV);
       } catch {
         throw new CliError(
           `Kit commit ${commit} is not in the local kit checkout at ${source.path}. Fetch the ref containing that commit or use --kit with another clone that has it.`,
@@ -156,7 +158,11 @@ export async function openKit(
       );
       try {
         const archive = join(archiveDir, 'kit.tar');
-        await git(source.path, ['archive', '--format=tar', '--output', archive, commit]);
+        await git(
+          source.path,
+          ['archive', '--format=tar', '--output', archive, commit],
+          LOCAL_KIT_GIT_ENV,
+        );
         await run('tar', ['-xf', archive, '-C', dir]);
       } finally {
         stopWatchingArchive();
