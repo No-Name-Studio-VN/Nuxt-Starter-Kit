@@ -35,7 +35,7 @@ struct ProjectMenuItems: View {
                 EmptyView()
             case .upgrade(let isEnabled):
                 Divider()
-                Button("Update with Claude…", systemImage: "sparkles") { model.flow = .upgrade(project) }
+                Button("Review upgrade…", systemImage: "arrow.up.circle") { model.flow = .upgrade(project) }
                     .disabled(!isEnabled)
             case .migrate:
                 Divider()

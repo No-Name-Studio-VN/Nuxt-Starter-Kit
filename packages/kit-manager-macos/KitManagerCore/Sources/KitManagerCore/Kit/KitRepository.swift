@@ -73,10 +73,15 @@ public struct KitRepository: Sendable {
     /// Version tags (`v` and a digit, then anything) that point at a commit of `sha..origin/main`, by commit SHA. One
     /// `git log` pass with decorations, so it stays cheap on a long history.
     public func releaseTags(from sha: String) async throws -> [String: [String]] {
+        try await releaseTags(from: sha, through: Self.mainRef, forwardOnly: false)
+    }
+
+    private func releaseTags(from sha: String, through head: String, forwardOnly: Bool) async throws -> [String: [String]] {
         try requirePlainRevision(sha)
-        let output = try await text([
-            "log", "--decorate-refs=refs/tags/v[0-9]*", "--format=%H%x1f%D", "\(sha)..\(Self.mainRef)",
-        ])
+        try requirePlainRevision(head)
+        var arguments = ["log", "--decorate-refs=refs/tags/v[0-9]*", "--format=%H%x1f%D"]
+        if forwardOnly { arguments.append("--ancestry-path") }
+        let output = try await text(arguments + ["\(sha)..\(head)"])
         var tags: [String: [String]] = [:]
         for line in output.split(separator: "\n") {
             let fields = line.split(separator: "\u{1f}", maxSplits: 1, omittingEmptySubsequences: false)
@@ -89,6 +94,55 @@ public struct KitRepository: Sendable {
             if !names.isEmpty { tags[String(fields[0])] = names }
         }
         return tags
+    }
+
+    /// Stable releases on the path from the installed kit to the fetched main commit.
+    public func upgradeReleases(from installed: String, through main: String) async throws -> [UpgradeTarget] {
+        guard try await isAncestor(installed, of: main), installed != main else { return [] }
+        async let previous = text(["tag", "--merged", installed, "--list", "v[0-9]*"])
+        async let forward = releaseTags(from: installed, through: main, forwardOnly: true)
+        let installedRelease = try await previous.split(separator: "\n").map(String.init)
+            .compactMap(Self.stableVersion).max { $0.compare($1, options: .numeric) == .orderedAscending }
+        return try await forward.flatMap { commit, tags in
+            tags.compactMap { tag -> (version: String, target: UpgradeTarget)? in
+                guard let version = Self.stableVersion(tag),
+                    installedRelease.map({ $0.compare(version, options: .numeric) == .orderedAscending }) ?? true
+                else { return nil }
+                return (version, .release(commit: commit, tag: tag))
+            }
+        }.sorted {
+            let order = $0.version.compare($1.version, options: .numeric)
+            return order == .orderedSame ? $0.target.label < $1.target.label : order == .orderedDescending
+        }.map(\.target)
+    }
+
+    /// Check the name still identifies the reviewed commit; do not resolve a replacement to apply.
+    public func isCurrentUpgradeTarget(_ target: UpgradeTarget, from installed: String) async throws -> Bool {
+        guard installed != target.commit, try await isAncestor(installed, of: target.commit) else { return false }
+        let main = try await latestMain()
+        guard target.isRelease else { return main == target.commit }
+        guard try await isAncestor(target.commit, of: main) else { return false }
+        do {
+            return try await text(["rev-parse", "--verify", "--quiet", "refs/tags/\(target.label)^{commit}"]) == target.commit
+        } catch GitError.commandFailed(_, 1, _) {
+            return false // Deleted tag.
+        }
+    }
+
+    private static func stableVersion(_ tag: String) -> String? {
+        guard let match = tag.wholeMatch(of: /v((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?/) else { return nil }
+        return String(match.1)
+    }
+
+    private func isAncestor(_ base: String, of head: String) async throws -> Bool {
+        try requirePlainRevision(base)
+        try requirePlainRevision(head)
+        do {
+            try await git(["merge-base", "--is-ancestor", base, head])
+            return true
+        } catch GitError.commandFailed(_, 1, _) {
+            return false
+        }
     }
 
     /// `commits(from:mapping:)` bucketed under release tags, for the kit changelog page.

@@ -514,7 +514,7 @@ final class AppModel {
         (try? context.fetch(FetchDescriptor<Project>(sortBy: [SortDescriptor(\.addedAt)]))) ?? []
     }
 
-    private func fetchProject(id: UUID) -> Project? {
+    func fetchProject(id: UUID) -> Project? {
         var descriptor = FetchDescriptor<Project>(predicate: #Predicate { $0.id == id })
         descriptor.fetchLimit = 1
         return try? context.fetch(descriptor).first

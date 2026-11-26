@@ -35,58 +35,105 @@ extension AppModel {
         }
     }
 
-    /// What the upgrade branch would be called right now.
-    func proposedUpgradeBranch(for project: Project) async -> String? {
-        guard let label = targetLabel else { return nil }
-        guard let existing = try? await git.localBranches(project.url) else { return nil }
-        return BranchNamer.upgradeBranch(label: label, existing: existing)
-    }
-
-    /// `v3.1.0 +2` for the latest main, the short commit when git cannot describe it.
-    var targetLabel: String? {
-        latestLabel ?? latestMain.map { String($0.prefix(7)) }
-    }
-
-    /// Switches to a new `kit-upgrade/…` branch, applies the upgrade onto it, and (with Claude) opens
-    /// Terminal on a prompt. Record whether it started dirty so rollback knows to use a backup.
-    func runUpgrade(_ project: Project, withClaude: Bool, reviewed: TransitionReport, backup: Bool) async -> UpgradeOutcome {
-        let precondition = upgradePrecondition(project)
-        guard precondition == .ready, let snapshot = snapshots[project.id], let target = latestMain,
-            let label = targetLabel, let state = snapshot.kitState
-        else {
-            return Self.failure(precondition)
+    /// The default and optional one-time targets in the same fetched main history.
+    func upgradeTargets(for project: Project) async throws -> (main: UpgradeTarget, releases: Result<[UpgradeTarget], any Error>) {
+        guard let state = snapshots[project.id]?.kitState else { throw FlowError.projectUnknown }
+        let kit = kit
+        let main = try await kit.latestMain()
+        let target = UpgradeTarget.main(commit: main, label: await kit.versionLabel(for: main))
+        do {
+            return (target, .success(try await kit.upgradeReleases(from: state.commit, through: main)))
+        } catch {
+            return (target, .failure(error))
         }
+    }
+
+    func proposedUpgradeBranch(for project: Project, target: UpgradeTarget) async -> String? {
+        guard let existing = try? await git.localBranches(project.url) else { return nil }
+        return BranchNamer.upgradeBranch(label: target.label, existing: existing)
+    }
+
+    /// Keep one-time target previews in the sheet; the dashboard's cached preview still follows main.
+    func loadUpgradePreview(_ project: Project, target: UpgradeTarget) async throws -> UpgradeReview {
+        let ref = ProjectRef(project)
+        guard canUpgrade(project), let state = snapshots[ref.id]?.kitState else {
+            if let reason = upgradePrecondition(project).reason { throw UpdateReportError.actionNotApplied(reason) }
+            throw CLIFailure.unavailable(cliStatus)
+        }
+        let (before, _) = try await readUpgradeContext(ref)
+        guard before.state == state, try await kit.isCurrentUpgradeTarget(target, from: state.commit) else {
+            throw FlowError.upgradePreviewChanged
+        }
+        let report = try await checkUpgrade(ref.url, target: target)
+        let (after, _) = try await readUpgradeContext(ref)
+        guard before == after, try await kit.isCurrentUpgradeTarget(target, from: after.state.commit),
+            let review = UpgradeReview(context: before, target: target, report: report)
+        else {
+            throw FlowError.upgradePreviewChanged
+        }
+        return review
+    }
+
+    private func checkUpgrade(_ url: URL, target: UpgradeTarget) async throws -> TransitionReport {
+        let cli = cli
+        return try await limiter.run {
+            try await cli.upgrade(project: url, to: target.commit, source: .local, check: true)
+        }
+    }
+
+    private func readUpgradeContext(_ ref: ProjectRef) async throws -> (UpgradeReview.Context, GitStatus) {
+        let git = git
+        let kitPath = AppSettings.kitPath
+        async let status = git.status(ref.url)
+        async let fingerprint = git.fingerprint(ref.url)
+        let current = try await status
+        let tree = try await fingerprint
+        guard isCurrentUpgradeProject(ref, kitPath: kitPath),
+            case .kitV3(let state) = ProjectClassifier.classify(ref.url), state.usesDefaultTemplate,
+            let branch = current.branch
+        else { throw FlowError.upgradePreviewChanged }
+        return (UpgradeReview.Context(
+            id: ref.id, url: ref.url, state: state, branch: branch, fingerprint: tree, kitPath: kitPath), current)
+    }
+
+    private func isCurrentUpgradeProject(_ ref: ProjectRef, kitPath: String) -> Bool {
+        guard case .upgrade(let project)? = flow, project.id == ref.id else { return false }
+        return fetchProject(id: ref.id)?.url == ref.url && AppSettings.kitPath == kitPath
+    }
+
+    /// Recheck the same plan before switching to a new branch. Claude is never launched by Apply.
+    func runUpgrade(_ project: Project, reviewed: UpgradeReview, backup: Bool) async throws -> UpgradeOutcome {
+        let ref = ProjectRef(project)
+        guard upgradePrecondition(project) == .ready, let snapshot = snapshots[ref.id],
+            snapshot.kitState == reviewed.context.state, reviewed.context.id == ref.id, reviewed.context.url == ref.url,
+            reviewed.context.kitPath == AppSettings.kitPath
+        else { throw FlowError.upgradePreviewChanged }
         guard cliStatus == .ready else {
             return .failed(branch: nil, error: PresentedError(CLIFailure.unavailable(cliStatus)))
         }
 
-        guard reviewed.from == state.commit, reviewed.to == target, reviewed.upToDate != true else {
-            return .failed(branch: nil, error: PresentedError(UpdateReportError.previewChanged))
-        }
-        let url = project.url
-        let cli = cli
-        let force = reviewed.unsaved?.risky.isEmpty == false
+        let target = reviewed.target
         let record: UpgradeBranchRecord
         do {
-            if force {
-                try await limiter.run {
-                    let current = try await cli.upgrade(project: url, to: target, source: .local, check: true)
-                    try reviewed.checkReviewedRisk(against: current)
-                }
+            guard let (before, _) = try? await readUpgradeContext(ref), before == reviewed.context else {
+                throw FlowError.upgradePreviewChanged
             }
-            let status = try await git.status(url)
-            guard let current = status.branch else { return Self.failure(.noBranch) }
-            let branch = BranchNamer.upgradeBranch(label: label, existing: try await git.localBranches(url))
-            try await git.createAndSwitch(url, branch: branch)
-            record = UpgradeBranchRecord(branch: branch, previous: current, startedDirty: status.dirtyCount > 0)
+            let branch = BranchNamer.upgradeBranch(label: target.label, existing: try await git.localBranches(ref.url))
+            guard let current = try? await checkUpgrade(ref.url, target: target),
+                (try? await kit.isCurrentUpgradeTarget(target, from: before.state.commit)) == true,
+                let (after, status) = try? await readUpgradeContext(ref), reviewed.matches(context: after, report: current)
+            else { throw FlowError.upgradePreviewChanged }
+            try await git.createAndSwitch(ref.url, branch: branch)
+            record = UpgradeBranchRecord(branch: branch, previous: after.branch, startedDirty: status.dirtyCount > 0)
+        } catch FlowError.upgradePreviewChanged {
+            throw FlowError.upgradePreviewChanged
         } catch {
             return .failed(branch: nil, error: PresentedError(error))
         }
-        upgradeBranches[project.id] = record
+        upgradeBranches[ref.id] = record
 
-        let outcome = await applyUpgrade(
-            project, snapshot: snapshot, state: state, target: target, targetLabel: label,
-            record: record, withClaude: withClaude, force: force, backup: backup)
+        let outcome = try await applyUpgrade(
+            project, ref: ref, snapshot: snapshot, reviewed: reviewed, record: record, backup: backup)
         await refresh(project, force: true)
         return outcome
     }
@@ -97,42 +144,64 @@ extension AppModel {
     }
 
     private func applyUpgrade(
-        _ project: Project, snapshot: ProjectSnapshot, state: KitState, target: String, targetLabel: String,
-        record: UpgradeBranchRecord, withClaude: Bool, force: Bool, backup: Bool
-    ) async -> UpgradeOutcome {
+        _ project: Project, ref: ProjectRef, snapshot: ProjectSnapshot, reviewed: UpgradeReview,
+        record: UpgradeBranchRecord, backup: Bool
+    ) async throws -> UpgradeOutcome {
         let cli = cli
-        let url = project.url
+        let git = git
+        let kit = kit
+        let target = reviewed.target
+        let context = reviewed.context
+        let url = context.url
         let branch = record.branch
         let previousBackups = record.startedDirty && backup ? try? await cli.backups(project: url) : nil
         let previousFingerprint = record.startedDirty ? try? await git.fingerprint(url) : nil
         do {
+            let force = reviewed.report.unsaved?.risky.isEmpty == false
             let report = try await limiter.run {
-                try await cli.upgrade(project: url, to: target, source: .local, check: false, force: force, backup: backup)
+                // Branch switching or waiting for a render slot may have allowed another edit.
+                guard (try? await kit.isCurrentUpgradeTarget(target, from: context.state.commit)) == true,
+                    (try? await git.status(url).branch) == branch,
+                    (try? await git.fingerprint(url)) == context.fingerprint,
+                    ProjectClassifier.classify(url) == .kitV3(context.state),
+                    await self.isCurrentUpgradeProject(ref, kitPath: context.kitPath)
+                else { throw FlowError.upgradePreviewChanged }
+                return try await cli.upgrade(
+                    project: url, to: target.commit, source: .local, check: false, force: force, backup: backup)
             }
             if report.upToDate == true {
                 return await abandonUpToDate(project, record: record)
             }
             if record.startedDirty {
-                upgradeBranches[project.id] = UpgradeBranchRecord(
+                upgradeBranches[context.id] = UpgradeBranchRecord(
                     branch: branch, previous: record.previous, keepsChanges: !report.applied && report.backup == nil,
                     startedDirty: true, backupName: report.backup?.name)
             }
-            guard report.applied else {
-                return .failed(branch: branch, error: PresentedError(message: "The nuxt-saas CLI did not apply the update."))
+            guard report.applied, report.to == target.commit else {
+                return .failed(branch: branch, error: PresentedError(message: "The nuxt-saas CLI did not apply the reviewed upgrade."))
             }
             let input = UpgradePromptInput(
                 projectName: ProjectRow(project: project, snapshot: snapshot).name,
-                fromLabel: snapshot.versionLabel ?? String(state.commit.prefix(7)), toLabel: targetLabel,
+                fromLabel: snapshot.versionLabel ?? String(context.state.commit.prefix(7)), toLabel: target.label,
                 report: report, scripts: snapshot.package?.scripts ?? [])
-            guard withClaude else {
-                upgradeBranches[project.id] = nil
-                return .applied(branch: branch, report: report, prompt: input)
+            upgradeBranches[context.id] = nil
+            return .applied(branch: branch, report: report, prompt: input)
+        } catch FlowError.upgradePreviewChanged {
+            // Apply never ran, so any new edits belong to the user. Never offer discard here.
+            upgradeBranches[context.id] = UpgradeBranchRecord(
+                branch: branch, previous: record.previous, keepsChanges: true, startedDirty: record.startedDirty)
+            do {
+                guard try await git.status(url).branch == branch else {
+                    throw FlowError.rollbackRefused("The current branch changed. No project files were overwritten.")
+                }
+                try await git.switchBackKeepingChanges(url, branch: branch, returningTo: record.previous)
+                upgradeBranches[context.id] = nil
+            } catch {
+                return .failed(branch: branch, error: PresentedError(error))
             }
-            try await launchUpgradeResolution(project, prompt: input)
-            upgradeBranches[project.id] = nil
-            return .launched(branch: branch)
+            throw FlowError.upgradePreviewChanged
         } catch {
-            if record.startedDirty, upgradeBranches[project.id] == record {
+            if record.startedDirty, upgradeBranches[context.id] == record {
                 await recordFailedDirtyUpgrade(
                     project, record: record, cli: cli, previousBackups: previousBackups, previousFingerprint: previousFingerprint)
             }

@@ -103,6 +103,38 @@ struct FlowTests {
         #expect(UpgradePrecondition(snapshot: snapshot, latestMain: latest) == .unresolvedConflicts)
     }
 
+    @Test func reviewCanOnlyBeAppliedToTheSameProjectRevision() throws {
+        let state = kitState()
+        let id = UUID()
+        let url = URL(filePath: "/projects/acme")
+        func revision(id: UUID = id, url: URL = url, branch: String = "main", fingerprint: String = "original") -> UpgradeReview.Context {
+            UpgradeReview.Context(
+                id: id, url: url, state: state, branch: branch, fingerprint: fingerprint, kitPath: "/kit")
+        }
+        let target = UpgradeTarget.main(commit: latest, label: "v4.1.3 +2")
+        let preview = TransitionReport(
+            schema: 1, from: sha, to: latest, changes: [], conflicts: [], followUps: [],
+            addedModules: [], removedModules: [], applied: false, upToDate: nil)
+        let reviewed = try #require(UpgradeReview(context: revision(), target: target, report: preview))
+
+        #expect(reviewed.matches(context: revision(), report: preview))
+        #expect(!reviewed.matches(context: revision(id: UUID()), report: preview))
+        #expect(!reviewed.matches(context: revision(url: URL(filePath: "/projects/moved")), report: preview))
+        #expect(!reviewed.matches(context: revision(branch: "another"), report: preview))
+        #expect(!reviewed.matches(context: revision(fingerprint: "edited"), report: preview))
+    }
+
+    @Test func reviewedReportCannotBeReusedAfterSwitchingTargets() {
+        let context = UpgradeReview.Context(
+            id: UUID(), url: URL(filePath: "/projects/acme"), state: kitState(), branch: "main",
+            fingerprint: "original", kitPath: "/kit")
+        let tag = UpgradeTarget.release(commit: "feed000000000000000000000000000000000000", tag: "v4.1.2")
+        let preview = TransitionReport(
+            schema: 1, from: sha, to: latest, changes: [], conflicts: [], followUps: [],
+            addedModules: [], removedModules: [], applied: false, upToDate: nil)
+        #expect(UpgradeReview(context: context, target: tag, report: preview) == nil)
+    }
+
     // MARK: Discarding an upgrade
 
     @Test func discardChangesRemovesEditsStagedAndUntrackedButKeepsIgnored() async throws {
