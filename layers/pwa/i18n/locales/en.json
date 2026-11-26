@@ -3,5 +3,34 @@
     "offline_title": "You're offline",
     "offline_description": "Check your internet connection and try again.",
     "try_again": "Try again"
+  },
+  "pwa": {
+    "installed": "Installed",
+    "install": "Install App",
+    "install_description": "Get the best experience with our progressive web app",
+    "storage": "Takes up minimal storage space on your device",
+    "not_now": "Not Now",
+    "offline_ready": "App is ready to work offline.",
+    "update_available": "A new version is available.",
+    "update": "Update",
+    "home_shortcut_description": "Go to home page",
+    "features": {
+      "instant_access": {
+        "title": "Instant Access",
+        "description": "Launch directly from your home screen without opening a browser"
+      },
+      "offline": {
+        "title": "Offline Ready",
+        "description": "Continue learning even without internet connection"
+      },
+      "notifications": {
+        "title": "Smart Notifications",
+        "description": "Get immediate notifications about new features and updates"
+      },
+      "privacy": {
+        "title": "Secure & Private",
+        "description": "Your data stays safe with enhanced security features"
+      }
+    }
   }
 }

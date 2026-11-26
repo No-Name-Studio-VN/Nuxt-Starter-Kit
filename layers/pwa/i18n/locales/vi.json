@@ -3,5 +3,34 @@
     "offline_title": "Bạn đang ngoại tuyến",
     "offline_description": "Kiểm tra kết nối internet rồi thử lại.",
     "try_again": "Thử lại"
+  },
+  "pwa": {
+    "installed": "Đã cài đặt",
+    "install": "Cài đặt ứng dụng",
+    "install_description": "Trải nghiệm tốt nhất với ứng dụng web tiến bộ của chúng tôi",
+    "storage": "Chiếm rất ít dung lượng trên thiết bị",
+    "not_now": "Để sau",
+    "offline_ready": "Ứng dụng đã sẵn sàng hoạt động ngoại tuyến.",
+    "update_available": "Đã có phiên bản mới.",
+    "update": "Cập nhật",
+    "home_shortcut_description": "Đi đến trang chủ",
+    "features": {
+      "instant_access": {
+        "title": "Truy cập tức thì",
+        "description": "Mở trực tiếp từ màn hình chính mà không cần mở trình duyệt"
+      },
+      "offline": {
+        "title": "Sẵn sàng ngoại tuyến",
+        "description": "Tiếp tục học ngay cả khi không có kết nối Internet"
+      },
+      "notifications": {
+        "title": "Thông báo thông minh",
+        "description": "Nhận ngay thông báo về tính năng mới và bản cập nhật"
+      },
+      "privacy": {
+        "title": "An toàn và riêng tư",
+        "description": "Dữ liệu của bạn được bảo vệ bằng các tính năng bảo mật tăng cường"
+      }
+    }
   }
 }
