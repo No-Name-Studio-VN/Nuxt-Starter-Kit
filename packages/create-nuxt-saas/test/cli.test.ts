@@ -81,58 +81,58 @@ describe('CLI routing and commands', () => {
   it('initializes a base-only project with an explicit init subcommand', async () => {
     expect(await main(['init', project, '--yes', ...kitArgs()])).toBe(0);
     expect((await readState(project)).modules).toEqual([]);
-    it('reports JSON after scaffolding selected modules from a pinned local commit', async () => {
-      const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-      const target = join(parent, 'with spaces', 'new-app');
-
-      expect(
-        await main([
-          'init',
-          target,
-          '--json',
-          '--yes',
-          '--modules=beta',
-          '--kit',
-          fixture.root,
-          '--allow-dirty-kit',
-          '--to',
-          fixture.v1,
-        ]),
-      ).toBe(0);
-      expect(stdout).toHaveBeenCalledTimes(1);
-      expect(JSON.parse(String(stdout.mock.calls[0]?.[0]))).toMatchObject({
-        schema: 1,
-        target,
-        modules: ['alpha', 'beta'],
-        git: 'committed',
-        followUps: expect.arrayContaining(['pnpm install']),
-      });
-      expect(output()).toBe('');
-      expect(await readState(target)).toMatchObject({
-        commit: fixture.v1,
-        identity: { name: 'new-app' },
-      });
-      expect(await pathExists(join(target, 'node_modules'))).toBe(false);
-    });
-
-    it('uses defaults for JSON init without prompting even on a TTY', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { configurable: true, get: () => true });
-      const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-
-      expect(await main(['init', '--json', ...kitArgs()])).toBe(0);
-      expect(stdout).toHaveBeenCalledTimes(1);
-      expect(JSON.parse(String(stdout.mock.calls[0]?.[0]))).toMatchObject({
-        schema: 1,
-        target: join(process.cwd(), 'my-nuxt-app'),
-        modules: [],
-      });
-      expect((await readState(join(parent, 'my-nuxt-app'))).modules).toEqual([]);
-    });
-
     expect(await pathExists(join(project, '.git'))).toBe(true);
     expect(await pathExists(join(project, 'layers/alpha'))).toBe(false);
     expect(output()).toContain(project);
     expect(output()).toContain('pnpm install');
+  });
+
+  it('reports JSON after scaffolding selected modules from a pinned local commit', async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const target = join(parent, 'with spaces', 'new-app');
+
+    expect(
+      await main([
+        'init',
+        target,
+        '--json',
+        '--yes',
+        '--modules=beta',
+        '--kit',
+        fixture.root,
+        '--allow-dirty-kit',
+        '--to',
+        fixture.v1,
+      ]),
+    ).toBe(0);
+    expect(stdout).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(stdout.mock.calls[0]?.[0]))).toMatchObject({
+      schema: 1,
+      target,
+      modules: ['alpha', 'beta'],
+      git: 'committed',
+      followUps: expect.arrayContaining(['pnpm install']),
+    });
+    expect(output()).toBe('');
+    expect(await readState(target)).toMatchObject({
+      commit: fixture.v1,
+      identity: { name: 'new-app' },
+    });
+    expect(await pathExists(join(target, 'node_modules'))).toBe(false);
+  });
+
+  it('uses defaults for JSON init without prompting even on a TTY', async () => {
+    Object.defineProperty(process.stdin, 'isTTY', { configurable: true, get: () => true });
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    expect(await main(['init', '--json', ...kitArgs()])).toBe(0);
+    expect(stdout).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(stdout.mock.calls[0]?.[0]))).toMatchObject({
+      schema: 1,
+      target: join(process.cwd(), 'my-nuxt-app'),
+      modules: [],
+    });
+    expect((await readState(join(parent, 'my-nuxt-app'))).modules).toEqual([]);
   });
 
   it('routes a directory invocation to init without running it twice', async () => {
