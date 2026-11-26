@@ -2,12 +2,13 @@ import KitManagerCore
 import SwiftUI
 
 /// How many kit-owned files the project has edited or deleted, per layer, with the edited files
-/// themselves (click to open in VS Code).
+/// themselves (click to compare with the installed kit).
 struct CustomisationSection: View {
     let project: Project
     let snapshot: ProjectSnapshot
 
     @Environment(AppModel.self) private var model
+    @Environment(\.openKitDiff) private var openKitDiff
     @State private var showExpected = false
     @State private var showAllFiles = false
 
@@ -188,7 +189,14 @@ struct CustomisationSection: View {
                         layerTitle: file.layer == ModuleMapping.base ? nil : layerTitle(file.layer),
                         layerColor: colors[file.layer] ?? .gray
                     ) {
-                        Task { await model.openInVSCode(project, relativePath: file.path) }
+                        openKitDiff?(DiffRequest(project: project.url, files: files, focusPath: file.path))
+                    }
+                    .contextMenu {
+                        if model.projectDiffEditorFile(in: project.url, path: file.path) != nil {
+                            Button("Open in Editor", systemImage: "chevron.left.forwardslash.chevron.right") {
+                                Task { await model.openProjectDiffFile(in: project.url, path: file.path) }
+                            }
+                        }
                     }
                 }
             }

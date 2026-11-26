@@ -84,6 +84,33 @@ public struct NuxtSaasCLI: Sendable {
         return try await execute(arguments, as: InspectReport.self)
     }
 
+    public func prepareProjectComparison(project: URL) async throws -> ProjectComparison {
+        // Older CLIs ignore unrecognized flags, so probe without reading the project first.
+        let help = try await executeProcess(["inspect", "--help"])
+        guard help.exitCode == 0 else {
+            throw CLIFailure.unparsable(stderr: Self.text(help.stderr), exitCode: help.exitCode)
+        }
+        guard Self.text(help.stdout).contains("--baseline-dir") else { throw CLIFailure.projectComparisonUnsupported }
+        try Task.checkCancellation()
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "kit-manager-comparison-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(
+            at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        let arguments = ["inspect", "--json", "--dir=\(project.path)", "--baseline-dir=\(directory.path)"]
+        do {
+            let baseline = try await execute(arguments + localKitArguments, as: ProjectComparisonReport.self)
+            guard baseline.projectComparison else { throw CLIFailure.projectComparisonUnsupported }
+            try Task.checkCancellation()
+            return ProjectComparison(commit: baseline.commit, directory: directory) { path, maxBytes in
+                let result = try await execute(arguments + ["--file=\(path)", "--max-bytes=\(maxBytes)"], as: ProjectFilePatchReport.self)
+                return try result.patch(for: path, maxBytes: maxBytes)
+            }
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            throw error
+        }
+    }
+
     public func upgrade(
         project: URL, to commit: String?, source: KitSourceMode, check: Bool, force: Bool = false, backup: Bool = true
     ) async throws -> TransitionReport {
@@ -157,10 +184,14 @@ public struct NuxtSaasCLI: Sendable {
     private func execute<Report: Decodable>(
         _ arguments: [String], as type: Report.Type, timeout: Duration = commandTimeout
     ) async throws -> Report {
+        let result = try await executeProcess(arguments, timeout: timeout)
+        return try Self.decode(result, as: type)
+    }
+
+    private func executeProcess(_ arguments: [String], timeout: Duration = commandTimeout) async throws -> ProcessResult {
         let current = status()
         guard current == .ready else { throw CLIFailure.unavailable(current) }
-        let result = try await runner.run("node", [scriptPath] + arguments, in: nil, timeout: timeout)
-        return try Self.decode(result, as: type)
+        return try await runner.run("node", [scriptPath] + arguments, in: nil, timeout: timeout)
     }
 
     private struct Envelope: Decodable {

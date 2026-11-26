@@ -1,47 +1,118 @@
 import Foundation
+import Observation
 
-/// Whole-file patches from the kit checkout, and the paths included in the preview.
-public struct KitDiff: Sendable, Equatable {
-    public let text: String
-    public let files: [String]
-    public let isTruncated: Bool
+/// Result for one literal path, not a patch for the entire comparison.
+public enum FilePatch: Sendable, Equatable {
+    case text(String)
+    case unchanged
+    case missing
+    case unavailable
+    case binary
+    case tooLarge
 
-    static func preview(of output: Data, maxBytes: Int) -> KitDiff {
-        // `--raw -z --patch` emits NUL-delimited metadata, an extra NUL, then the patch.
-        // The raw entries give us literal paths without decoding quoted patch headers.
-        guard let separator = output.range(of: Data([0, 0])) else {
-            return KitDiff(text: "", files: [], isTruncated: false)
+    public static let maximumBytes = 1_500_000
+}
+
+public struct DiffFile: Sendable, Identifiable {
+    public enum Status: String, Sendable {
+        case added = "A", modified = "M", deleted = "D", renamed = "R", copied = "C", typeChanged = "T"
+    }
+
+    // Git paths are byte-exact; Unicode spellings that Swift considers equal can be separate files.
+    public let id: Data
+    public let path: String
+    public let status: Status
+    public let previousPath: String?
+
+    public init(path: String, status: Status, previousPath: String? = nil) {
+        id = Data(path.utf8)
+        self.path = path
+        self.status = status
+        self.previousPath = previousPath
+    }
+
+    public func matches(path: String) -> Bool {
+        self.path.utf8.elementsEqual(path.utf8) || previousPath?.utf8.elementsEqual(path.utf8) == true
+    }
+}
+
+/// An upstream comparison fixes both revisions and lists files without keeping their patches.
+public struct KitDiff: Sendable {
+    let changes: [Change]
+    let load: @Sendable (Change, Int) async throws -> FilePatch
+
+    public var files: [DiffFile] { changes.map(\.file) }
+
+    public func files(ownedBy modules: Set<String>, using mapping: ModuleMapping) -> [DiffFile] {
+        files.filter { file in
+            !mapping.paths([file.previousPath, file.path].compactMap { $0 }, ownedBy: modules).isEmpty
         }
-        let patch = output[separator.upperBound...]
-        let limit = min(max(0, maxBytes), patch.count)
-        let boundary = Data("\ndiff --git ".utf8)
-        let raw = output[..<separator.lowerBound].split(separator: 0)
-        var fields = raw.makeIterator()
-        var files: [String] = []
-        var fileEnd = patch.startIndex
-        // Look only far enough to recognize a new file starting at the byte limit.
-        let searchEnd = patch.startIndex + limit + min(patch.count - limit, boundary.count)
-        while fileEnd < patch.endIndex, let header = fields.next(), let path = fields.next() {
-            let status = header.split(separator: 32).last?.first
-            let destination: Data
-            if status == 82 || status == 67 { // R (rename), C (copy)
-                guard let newPath = fields.next() else { break }
-                destination = newPath
-            } else {
-                destination = path
+    }
+
+    public func file(at path: String) -> DiffFile? { change(at: path)?.file }
+
+    public func patch(path: String, maxBytes: Int = FilePatch.maximumBytes) async throws -> FilePatch {
+        try Task.checkCancellation()
+        guard let change = change(at: path) else { return .missing }
+        return try await load(change, min(max(0, maxBytes), FilePatch.maximumBytes))
+    }
+
+    private func change(at path: String) -> Change? { changes.first { $0.file.matches(path: path) } }
+
+    struct Change: Sendable {
+        let file: DiffFile
+        let modes: [String]
+        let objects: [String]
+
+        static func parse(_ data: Data) -> [Change] {
+            var fields = data.split(separator: 0).makeIterator()
+            var changes: [Change] = []
+            while let raw = fields.next(), let path = fields.next() {
+                let header = String(decoding: raw, as: UTF8.self).dropFirst().split(separator: " ")
+                guard header.count == 5, let code = header[4].first else { break }
+                let paired = code == "R" || code == "C"
+                let destination = paired ? fields.next() : path
+                guard let destination, let status = DiffFile.Status(rawValue: String(code)),
+                    let name = String(data: destination, encoding: .utf8), let source = String(data: path, encoding: .utf8)
+                else { continue }
+                changes.append(Change(
+                    file: DiffFile(path: name, status: status, previousPath: paired ? source : nil),
+                    modes: header.prefix(2).map(String.init), objects: header[2...3].map(String.init)))
             }
-            var end = fileEnd
-            // Git represents a type change (T) with a deletion and an addition in one raw entry.
-            for _ in 0..<(status == 84 ? 2 : 1) {
-                guard end < searchEnd else { break }
-                end = patch.range(of: boundary, in: end..<searchEnd).map { $0.lowerBound + 1 } ?? patch.endIndex
-            }
-            guard end - patch.startIndex <= limit else { break }
-            files.append(String(decoding: destination, as: UTF8.self))
-            fileEnd = end
+            return changes
         }
-        return KitDiff(
-            text: String(decoding: patch[..<fileEnd], as: UTF8.self), files: files,
-            isTruncated: fileEnd < patch.endIndex)
+    }
+}
+
+/// One selection's patch. The layout is presentation only and does not invalidate the result.
+@MainActor @Observable
+public final class FileDiffSelection {
+    private var id: DiffFile.ID?
+    private var generation = UUID()
+    private var result: Loadable<FilePatch> = .idle
+
+    public init() {}
+
+    public func patch(for file: DiffFile) -> Loadable<FilePatch> { id == file.id ? result : .idle }
+
+    public func load(_ file: DiffFile?, patch: (String) async throws -> FilePatch) async {
+        guard !Task.isCancelled else { return }
+        if id == file?.id, case .loaded = result { return }
+        id = file?.id
+        let token = UUID()
+        generation = token
+        guard let file else {
+            result = .idle
+            return
+        }
+        result = .loading
+        let loaded: Loadable<FilePatch>
+        do {
+            loaded = .loaded(try await patch(file.path), stale: false)
+        } catch {
+            loaded = .failed(error.localizedDescription)
+        }
+        guard generation == token, !Task.isCancelled else { return }
+        result = loaded
     }
 }
