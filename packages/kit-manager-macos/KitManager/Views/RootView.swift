@@ -228,6 +228,12 @@ struct RootView: View {
     @ViewBuilder
     private func flowSheet(for request: FlowRequest) -> some View {
         switch request {
+        case .newProject:
+            NewProjectSheet { target in
+                guard model.openCreatedProject(at: target) else { return false }
+                searchText = ""
+                return true
+            }
         case .upgrade(let project):
             UpgradeFlowSheet(project: project)
                 .kitDiffPresentation()

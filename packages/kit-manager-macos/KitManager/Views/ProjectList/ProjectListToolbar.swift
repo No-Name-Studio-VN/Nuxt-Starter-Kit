@@ -13,8 +13,11 @@ struct ProjectListToolbar: ToolbarContent {
     // scan is ignored here.
     var body: some ToolbarContent {
         ToolbarItemGroup {
-            Button("Add Project", systemImage: "plus") { importRequest = .add }
-                .help("Add project folders")
+            Menu("Projects", systemImage: "plus") {
+                Button("New Project…", action: model.beginProjectCreation)
+                Button("Add Existing Project…") { importRequest = .add }
+            }
+            .help("Create a project or add an existing folder")
             Button("Scan Folder", systemImage: "folder.badge.questionmark") {
                 if !isScanning { importRequest = .scan }
             }

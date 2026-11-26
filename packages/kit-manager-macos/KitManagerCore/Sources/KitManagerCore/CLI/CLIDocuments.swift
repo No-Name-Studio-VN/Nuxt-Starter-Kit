@@ -453,6 +453,7 @@ public struct KitModuleInfo: Codable, Sendable, Hashable, Identifiable {
     public let rootFiles: [String]
     public let group: String?
     public let parent: String?
+    public let installByDefault: Bool
     public let requiresOneOf: [String]
     public let changes: [KitModuleChange]?
 
@@ -461,14 +462,14 @@ public struct KitModuleInfo: Codable, Sendable, Hashable, Identifiable {
 
     private enum CodingKeys: String, CodingKey {
         case id, title, description, requires, `internal`, dependencies, devDependencies, scripts
-        case env, bindings, rootFiles, group, parent, requiresOneOf, changes
+        case env, bindings, rootFiles, group, parent, requiresOneOf, changes, installByDefault
     }
 
     public init(
         id: String, title: String, description: String, requires: [String], internal: Bool,
         dependencies: [String], devDependencies: [String], scripts: [String], env: [String],
         bindings: [String], rootFiles: [String], group: String? = nil, parent: String? = nil,
-        requiresOneOf: [String] = [], changes: [KitModuleChange]? = nil
+        requiresOneOf: [String] = [], changes: [KitModuleChange]? = nil, installByDefault: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -483,6 +484,7 @@ public struct KitModuleInfo: Codable, Sendable, Hashable, Identifiable {
         self.rootFiles = rootFiles
         self.group = group
         self.parent = parent
+        self.installByDefault = installByDefault
         self.requiresOneOf = requiresOneOf
         self.changes = changes
     }
@@ -502,9 +504,21 @@ public struct KitModuleInfo: Codable, Sendable, Hashable, Identifiable {
         rootFiles = try values.decode([String].self, forKey: .rootFiles)
         group = try values.decodeIfPresent(String.self, forKey: .group)
         parent = try values.decodeIfPresent(String.self, forKey: .parent)
+        installByDefault = try values.decodeIfPresent(Bool.self, forKey: .installByDefault) ?? false
         requiresOneOf = try values.decodeIfPresent([String].self, forKey: .requiresOneOf) ?? []
         changes = try values.decodeIfPresent([KitModuleChange].self, forKey: .changes)
     }
+}
+
+public struct InitReport: Decodable, Sendable {
+    public enum Git: String, Decodable, Sendable {
+        case committed, initialised, skipped
+    }
+
+    public let target: String
+    public let modules: [String]
+    public let git: Git
+    public let followUps: [String]
 }
 
 public struct ModulesReport: Codable, Sendable, Equatable {

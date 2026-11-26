@@ -19,6 +19,8 @@ public enum CLIFailure: Error, Equatable {
     case unsupportedSchema(Int)
     case projectComparisonUnsupported
     case projectComparisonClosed
+    case projectCreationUnsupported
+    case projectCreationInsideKit
     case unavailable(CLIStatus)
 }
 
@@ -39,6 +41,10 @@ extension CLIFailure: LocalizedError {
             return "This nuxt-saas CLI cannot preview project files. Update the kit checkout and rebuild the CLI in Kit Manager Settings."
         case .projectComparisonClosed:
             return "This project comparison has closed. Reopen it to refresh the baseline."
+        case .projectCreationUnsupported:
+            return "This nuxt-saas CLI cannot create projects from Kit Manager. Update the kit checkout and rebuild the CLI in Settings."
+        case .projectCreationInsideKit:
+            return "Choose a parent folder outside the kit checkout."
         case .unavailable(let status):
             switch status {
             case .ready:

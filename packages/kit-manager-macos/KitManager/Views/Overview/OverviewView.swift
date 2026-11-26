@@ -160,7 +160,7 @@ struct OverviewView: View {
             Button("Scan Folder…") { importRequest = .scan }
                 .help("Find projects inside a folder")
                 .disabled(isScanning)
-            Button("Add Project…") { importRequest = .add }
+            Button("Add Existing Project…") { importRequest = .add }
                 .help("Add project folders")
         }
         .buttonStyle(.bordered)

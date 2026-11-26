@@ -79,6 +79,27 @@ public struct NuxtSaasCLI: Sendable {
         return try await execute(arguments, as: ModulesReport.self)
     }
 
+    public func initialize(project: URL, modules: [String], at commit: String) async throws -> InitReport {
+        // Resolve the parent, not the new folder: init must see and reject a symlink at the target itself.
+        let parent = project.deletingLastPathComponent().resolvingSymlinksInPath()
+        var relationship: FileManager.URLRelationship = .other
+        try FileManager.default.getRelationship(
+            &relationship, ofDirectoryAt: kitRoot.resolvingSymlinksInPath(), toItemAt: parent)
+        guard relationship == .other else { throw CLIFailure.projectCreationInsideKit }
+
+        // Older CLIs ignore unrecognized flags; probe before running any command that writes files.
+        let help = try await executeProcess(["init", "--help"])
+        guard help.exitCode == 0 else {
+            throw CLIFailure.unparsable(stderr: Self.text(help.stderr), exitCode: help.exitCode)
+        }
+        guard Self.text(help.stdout).contains("--json") else { throw CLIFailure.projectCreationUnsupported }
+        try Task.checkCancellation()
+        let target = parent.appending(path: project.lastPathComponent)
+        let arguments = ["init", target.path, "--json", "--yes", "--modules=\(modules.joined(separator: ","))"]
+            + localKitArguments + ["--to", commit]
+        return try await execute(arguments, as: InitReport.self, timeout: Self.writeTimeout)
+    }
+
     public func inspect(project: URL, source: KitSourceMode) async throws -> InspectReport {
         let arguments = ["inspect", "--json", "--dir", project.path] + kitArguments(for: source)
         return try await execute(arguments, as: InspectReport.self)

@@ -48,11 +48,12 @@ struct WelcomeView: View {
             Section {
                 HStack {
                     Spacer(minLength: 0)
-                    Button("Add Project…") { importRequest = .add }
-                        .buttonStyle(.glass)
-                        .help("Add project folders")
-                    Button("Scan Folder…") { importRequest = .scan }
+                    Button("New Project…", action: model.beginProjectCreation)
                         .buttonStyle(.glassProminent)
+                    Button("Add Existing Project…") { importRequest = .add }
+                        .buttonStyle(.glass)
+                    Button("Scan Folder…") { importRequest = .scan }
+                        .buttonStyle(.glass)
                         .help("Find projects inside a folder")
                         .disabled(isScanning)
                     if isScanning {

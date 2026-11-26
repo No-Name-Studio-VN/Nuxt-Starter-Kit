@@ -1,3 +1,5 @@
+import Foundation
+
 enum ModuleGroupPlacement: Hashable, Sendable {
     case named(String, index: Int)
     case ungrouped
@@ -34,10 +36,18 @@ public struct ModuleSection<Item: Identifiable>: Identifiable {
     public var id: String? { name }
 }
 
-/// Orders the supplied rows by kit group, then by ancestry. Rows whose parent is missing or
-/// filtered out become roots. Without group metadata, rows stay flat and in order within each section.
+extension KitModuleInfo {
+    public func matchesSearch(_ query: String) -> Bool {
+        query.isEmpty || title.localizedStandardContains(query)
+            || id.localizedStandardContains(query) || description.localizedStandardContains(query)
+    }
+}
+
+/// Orders rows by kit group and ancestry, retaining ancestors of search matches.
+/// Without group metadata, rows stay flat and in order within each section.
 public func groupModules<Item: Identifiable>(
-    _ items: [Item], showsInternalSection: Bool = false, module: (Item) -> KitModuleInfo?
+    _ items: [Item], showsInternalSection: Bool = false, matching searchText: String = "",
+    module: (Item) -> KitModuleInfo?
 ) -> [ModuleSection<Item>] where Item.ID == String {
     let rows = items.map { (item: $0, module: module($0)) }
     let hasGroupMetadata = rows.contains { $0.module?.groupPlacement != nil }
@@ -47,27 +57,61 @@ public func groupModules<Item: Identifiable>(
         }
         return row.module?.groupPlacement ?? .ungrouped
     }
-    return groups.sorted { $0.key.index < $1.key.index }.map { placement, members in
-        guard hasGroupMetadata else {
-            return ModuleSection(name: placement.name, entries: members.map { .init(item: $0.item, depth: 0) })
-        }
+    let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    return groups.sorted { $0.key.index < $1.key.index }.compactMap { placement, members in
         let ids = Set(members.map(\.item.id))
         let children = Dictionary(grouping: members) { row in
-            row.module?.parent.flatMap { ids.contains($0) ? $0 : nil }
+            hasGroupMetadata ? row.module?.parent.flatMap { ids.contains($0) ? $0 : nil } : nil
         }
-        var entries: [ModuleSection<Item>.Entry] = []
-        func visit(_ parent: String?, depth: Int) {
-            for row in children[parent, default: []] {
-                entries.append(.init(item: row.item, depth: depth))
-                visit(row.item.id, depth: depth + 1)
+        func entries(_ parent: String?, depth: Int) -> [ModuleSection<Item>.Entry] {
+            children[parent, default: []].flatMap { row -> [ModuleSection<Item>.Entry] in
+                let descendants = entries(row.item.id, depth: depth + 1)
+                let matches = row.module?.matchesSearch(query) ?? (query.isEmpty || row.item.id.localizedStandardContains(query))
+                guard matches || !descendants.isEmpty else { return [] }
+                return [.init(item: row.item, depth: depth)] + descendants
             }
         }
-        visit(nil, depth: 0)
-        return ModuleSection(name: placement.name, entries: entries)
+        let matches = entries(nil, depth: 0)
+        return matches.isEmpty ? nil : ModuleSection(name: placement.name, entries: matches)
     }
 }
 
 /// Direct requirements only; alternatives and transitive dependencies do not count.
 public func modulesRequiring(_ moduleID: String, in catalogue: [KitModuleInfo]) -> [KitModuleInfo] {
     catalogue.filter { $0.requires.contains(moduleID) }
+}
+
+/// Preview init's hard requirements and defaults without choosing any one-of alternatives.
+public struct CreateModuleSelection {
+    public let effective: Set<String>
+    public let defaults: Set<String>
+    public let requiredBy: [String: [String]]
+    public let missingAlternatives: [KitModuleInfo]
+
+    public init(report: ModulesReport, explicit: Set<String>) {
+        let modules = report.modules
+        let byID = Dictionary(uniqueKeysWithValues: modules.map { ($0.id, $0) })
+        let defaults = Set(modules.filter(\.installByDefault).map(\.id))
+        var effective: Set<String> = []
+        var pending = Array(explicit.union(defaults))
+        while let id = pending.popLast() {
+            if let module = byID[id], effective.insert(id).inserted {
+                pending.append(contentsOf: module.requires)
+            }
+        }
+
+        let selectedModules = modules.filter { effective.contains($0.id) }
+        var requiredBy: [String: [String]] = [:]
+        for module in selectedModules {
+            for required in Set(module.requires) {
+                requiredBy[required, default: []].append(module.id)
+            }
+        }
+        self.effective = effective
+        self.defaults = defaults
+        self.requiredBy = requiredBy
+        self.missingAlternatives = selectedModules.filter {
+            !$0.requiresOneOf.isEmpty && effective.isDisjoint(with: $0.requiresOneOf)
+        }
+    }
 }

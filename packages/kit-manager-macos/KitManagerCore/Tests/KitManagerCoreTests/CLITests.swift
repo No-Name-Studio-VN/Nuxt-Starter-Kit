@@ -104,6 +104,52 @@ struct CLITests {
     private let project = URL(filePath: "/tmp/some project")
     private let sha = "bead6d4c1e7989d369942a70c35cba50c187006d"
 
+    @Test func createsAProjectFromAPinnedLocalKitRevision() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let runner = StubRunner(
+            stdout: Data(#"{"schema":1,"target":"/tmp/some project","modules":["auth"],"git":"initialised","followUps":["pnpm install"]}"#.utf8),
+            help: "OPTIONS --json --yes --modules --kit --to")
+        let report = try await NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+            .initialize(project: project, modules: ["auth"], at: sha)
+
+        #expect(report.target == project.path)
+        #expect(report.git == .initialised)
+        #expect(report.modules == ["auth"])
+        #expect(report.followUps == ["pnpm install"])
+        #expect(await runner.calls.map { Array($0.arguments.dropFirst()) } == [
+            ["init", "--help"],
+            ["init", project.path, "--json", "--yes", "--modules=auth", "--kit", kit.root.path, "--allow-dirty-kit", "--to", sha],
+        ])
+    }
+
+    @Test func oldCLICannotWriteAProjectWithoutJSONSupport() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let runner = StubRunner(stdout: Data("Created a project".utf8), help: "OPTIONS --yes --modules --kit --to")
+        let cli = NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+
+        await #expect(throws: CLIFailure.projectCreationUnsupported) {
+            try await cli.initialize(project: project, modules: [], at: sha)
+        }
+        #expect(await runner.calls.map { Array($0.arguments.dropFirst()) } == [["init", "--help"]])
+    }
+
+    @Test func cannotCreateAProjectInsideTheKitCheckoutThroughAnAlias() async throws {
+        let kit = try FakeKit()
+        defer { kit.remove() }
+        let alias = FileManager.default.temporaryDirectory.appending(path: "kit-alias-\(UUID())")
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: kit.cliDirectory)
+        defer { try? FileManager.default.removeItem(at: alias) }
+        let runner = StubRunner(stdout: "")
+        let cli = NuxtSaasCLI(kitRoot: kit.root, runner: runner)
+
+        await #expect(throws: CLIFailure.projectCreationInsideKit) {
+            try await cli.initialize(project: alias.appending(path: "new-app"), modules: [], at: sha)
+        }
+        #expect(await runner.calls.isEmpty)
+    }
+
     @Test func decodesTransitionFixture() async throws {
         let kit = try FakeKit()
         defer { kit.remove() }
@@ -242,6 +288,7 @@ struct CLITests {
         #expect(report.installed.isEmpty)
         #expect(report.modules.count == 20)
         let botProtection = try #require(report.modules.first { $0.id == "bot-protection" })
+        #expect(!botProtection.installByDefault) // Catalogs from older kit commits have no default flag.
         #expect(botProtection.group == "Foundation")
         #expect(botProtection.requires == ["server-core"])
         #expect(botProtection.env == ["NUXT_TURNSTILE_SITE_KEY", "NUXT_TURNSTILE_SECRET_KEY"])

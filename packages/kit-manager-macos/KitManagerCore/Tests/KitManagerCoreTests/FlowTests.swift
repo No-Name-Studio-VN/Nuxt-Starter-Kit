@@ -455,3 +455,86 @@ struct FlowTests {
         #expect(FileManager.default.fileExists(atPath: temp.url.appending(path: "other-old").path))
     }
 }
+
+@Suite("Create module selection")
+struct CreateModuleSelectionTests {
+    @Test func defaultsApplyWithNoExplicitPicks() {
+        let selection = CreateModuleSelection(report: report, explicit: [])
+        #expect(selection.effective == ["web-security"])
+        #expect(selection.defaults == ["web-security"])
+        #expect(selection.requiredBy.isEmpty)
+        #expect(selection.missingAlternatives.isEmpty)
+    }
+
+    @Test func passwordIncludesTransitiveRequirementsButNotEmailVerification() {
+        let selection = CreateModuleSelection(report: report, explicit: ["password"])
+        #expect(selection.effective == ["web-security", "password", "auth", "email", "database", "server-core"])
+        #expect(selection.requiredBy["auth"] == ["password"])
+        #expect(selection.requiredBy["database"] == ["auth"])
+        #expect(selection.requiredBy["server-core"] == ["database"])
+        #expect(selection.missingAlternatives.isEmpty)
+    }
+
+    @Test func removingPasswordLeavesIndependentlyPickedLegacyEmail() {
+        var explicit: Set<String> = ["email", "password"]
+        #expect(CreateModuleSelection(report: report, explicit: explicit).requiredBy["email"] == ["password"])
+        explicit.remove("password")
+        let selection = CreateModuleSelection(report: report, explicit: explicit)
+        #expect(selection.effective == ["web-security", "email"])
+        #expect(selection.requiredBy["email"] == nil)
+    }
+
+    @Test func removingOneConsumerKeepsSharedRequirements() {
+        var explicit: Set<String> = ["passkeys", "oauth"]
+        #expect(CreateModuleSelection(report: report, explicit: explicit).requiredBy["auth"] == ["oauth", "passkeys"])
+        explicit.remove("passkeys")
+        let selection = CreateModuleSelection(report: report, explicit: explicit)
+        #expect(selection.effective == ["web-security", "oauth", "auth", "database", "server-core"])
+        #expect(selection.requiredBy["auth"] == ["oauth"])
+    }
+
+    @Test func passkeysLeavesProviderUnresolvedUntilOAuthIsChosen() {
+        let unresolved = CreateModuleSelection(report: report, explicit: ["passkeys"])
+        #expect(unresolved.effective == ["web-security", "passkeys", "auth", "database", "server-core"])
+        #expect(unresolved.missingAlternatives.map(\.id) == ["auth"])
+        #expect(unresolved.missingAlternatives.first?.requiresOneOf == ["password", "oauth"])
+
+        let resolved = CreateModuleSelection(report: report, explicit: ["passkeys", "oauth"])
+        #expect(resolved.effective == ["web-security", "passkeys", "oauth", "auth", "database", "server-core"])
+        #expect(resolved.missingAlternatives.isEmpty)
+    }
+
+    @Test func noSearchResultsLeaveExplicitAndEffectiveSelectionIntact() {
+        let explicit: Set<String> = ["password"]
+        let modules = report.modules
+        #expect(groupModules(modules, matching: "no match", module: { $0 }).isEmpty)
+        let selection = CreateModuleSelection(report: report, explicit: explicit)
+        #expect(selection.effective.contains("password"))
+        #expect(selection.effective.contains("email"))
+        #expect(groupModules(modules, matching: "", module: { $0 }).flatMap(\.entries).contains { $0.id == "password" })
+    }
+
+    private var report: ModulesReport {
+        ModulesReport(schema: 1, commit: "commit", modules: [
+            module("server-core"),
+            module("database", requires: ["server-core"]),
+            module("email", internal: true),
+            module("auth", requires: ["database"], requiresOneOf: ["password", "oauth"]),
+            module("password", requires: ["auth", "email"]),
+            module("oauth", requires: ["auth"]),
+            module("passkeys", requires: ["auth"]),
+            module("email-verification", requires: ["password"]),
+            module("web-security", installByDefault: true),
+        ], installed: [])
+    }
+
+    private func module(
+        _ id: String, requires: [String] = [], requiresOneOf: [String] = [], internal: Bool = false,
+        installByDefault: Bool = false
+    ) -> KitModuleInfo {
+        KitModuleInfo(
+            id: id, title: id, description: "", requires: requires, internal: `internal`,
+            dependencies: [], devDependencies: [], scripts: [], env: [], bindings: [], rootFiles: [],
+            requiresOneOf: requiresOneOf, installByDefault: installByDefault)
+    }
+}

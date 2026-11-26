@@ -97,12 +97,39 @@ struct ModuleGroupingTests {
         #expect(modulesRequiring("cache", in: catalogue).isEmpty)
     }
 
+    @Test func searchPreservesReportOrderAndLegacyInternals() {
+        let report = ModulesReport(schema: 1, commit: "commit", modules: [
+            module("logs", group: "Aardvark", description: "Runtime storage"),
+            module("files", group: "Zebra", title: "Storage browser"),
+            module("storage-kv", internal: true),
+            module("unrelated", group: "Zebra"),
+        ], installed: [], groups: ["Zebra", "Aardvark"])
+
+        let groups = groupModules(report.modules, matching: "  STORAGE ", module: { $0 })
+        #expect(groups.map(\.name) == ["Zebra", "Aardvark", nil])
+        #expect(groups.map { $0.entries.map(\.id) } == [["files"], ["logs"], ["storage-kv"]])
+    }
+
+    @Test func matchingChildKeepsOnlyItsAncestors() {
+        let report = ModulesReport(schema: 1, commit: "commit", modules: [
+            module("verification", group: "Accounts", parent: "password", title: "Email verification"),
+            module("oauth", group: "Accounts", parent: "auth"),
+            module("password", group: "Accounts", parent: "auth"),
+            module("auth", group: "Accounts"),
+            module("two-factor", group: "Accounts", parent: "password"),
+        ], installed: [], groups: ["Accounts"])
+
+        let groups = groupModules(report.modules, matching: "VERIFICATION", module: { $0 })
+        #expect(groups.first?.entries.map(\.id) == ["auth", "password", "verification"])
+        #expect(groups.first?.entries.map(\.depth) == [0, 1, 2])
+    }
+
     private func module(
         _ id: String, group: String? = nil, parent: String? = nil, internal: Bool = false,
-        requires: [String]? = nil, requiresOneOf: [String] = []
+        requires: [String]? = nil, requiresOneOf: [String] = [], title: String? = nil, description: String = ""
     ) -> KitModuleInfo {
         KitModuleInfo(
-            id: id, title: id, description: "", requires: requires ?? parent.map { [$0] } ?? [], internal: `internal`,
+            id: id, title: title ?? id, description: description, requires: requires ?? parent.map { [$0] } ?? [], internal: `internal`,
             dependencies: [], devDependencies: [], scripts: [], env: [], bindings: [], rootFiles: [],
             group: group, parent: parent, requiresOneOf: requiresOneOf)
     }
