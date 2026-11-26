@@ -6,6 +6,7 @@
   "assets": {
     "directory": "./.output/public/",
     "binding": "ASSETS",
+    "html_handling": "drop-trailing-slash",
   },
   "observability": {
     "enabled": true,
