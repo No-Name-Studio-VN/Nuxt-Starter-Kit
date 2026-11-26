@@ -155,26 +155,26 @@ export default defineNuxtConfig({
         },
       },
     },
-    prerender: {
-      // Public pages are served as static files; the Worker renders routes that
-      // fail to prerender (see app/modules/worker-routes.ts). 404.html is what
-      // Cloudflare serves for unknown URLs.
-      routes: [
-        '/',
-        ...locales.filter((locale) => locale !== defaultLocale).map((locale) => `/${locale}`),
-        '/404.html',
-        '/robots.txt',
-      ],
-      // A page that fails to prerender stays on the Worker and is reported by
-      // app/modules/worker-routes.ts instead of failing the build.
-      failOnError: false,
-      ignore: ['/api/**'],
-    },
+    // Failed prerenders stay on the Worker and are reported by worker-routes.
+    prerender: { failOnError: false },
     typescript: {
       tsConfig: {
         exclude: ['**/dist/**', '**/node_modules/**'],
       },
     },
+  },
+
+  prerender: {
+    // Public pages are served as static files; the Worker renders routes that
+    // fail to prerender (see app/modules/worker-routes.ts). 404.html is what
+    // Cloudflare serves for unknown URLs.
+    routes: [
+      '/',
+      ...locales.filter((locale) => locale !== defaultLocale).map((locale) => `/${locale}`),
+      '/404.html',
+      '/robots.txt',
+    ],
+    ignore: [/^\/api(?:\/|\?|$)/],
   },
 
   vite: {

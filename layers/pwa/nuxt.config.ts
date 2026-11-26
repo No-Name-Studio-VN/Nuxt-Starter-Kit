@@ -71,8 +71,8 @@ export default defineNuxtConfig({
     '/pwa': { ssr: true, prerender: true },
   },
 
-  nitro: {
-    prerender: { ignore: ['/pwa', '/__og-image__/static/pwa'] },
+  prerender: {
+    ignore: [/^\/(?:pwa|__og-image__\/static\/pwa)(?:\/|\?|$)/],
   },
 
   seo: {

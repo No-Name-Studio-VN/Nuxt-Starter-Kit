@@ -5,17 +5,8 @@ const { resolve } = createResolver(import.meta.url);
 export default defineNuxtConfig({
   modules: ['nuxt-studio', 'nuxt-component-meta'],
   css: [resolve('./app/assets/css/content.css')],
-  nitro: {
-    prerender: {
-      ignore: [
-        '/_studio',
-        '/_studio/**',
-        '/__nuxt_studio',
-        '/__nuxt_studio/**',
-        '/admin/studio',
-        '/admin/studio/**',
-      ],
-    },
+  prerender: {
+    ignore: [/^\/(?:_studio|__nuxt_studio|admin\/studio)(?:\/|\?|$)/],
   },
   routeRules: {
     '/_studio/**': { ssr: true },

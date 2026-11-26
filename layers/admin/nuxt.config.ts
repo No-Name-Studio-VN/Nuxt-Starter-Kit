@@ -40,10 +40,11 @@ export default defineNuxtConfig({
       // The `db:seed` task (`pnpm db:seed`).
       tasks: true,
     },
-    prerender: {
-      // The admin area renders in the browser, for signed-in admins only.
-      ignore: ['/admin', '/admin/**'],
-    },
+  },
+
+  prerender: {
+    // The admin area renders in the browser, for signed-in admins only.
+    ignore: [/^\/admin(?:\/|\?|$)/],
   },
 
   sitemap: {
